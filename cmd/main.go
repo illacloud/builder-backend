@@ -16,7 +16,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/illa-family/build-backend/internal/router"
+	"github.com/illa-family/builder-backend/internal/router"
 )
 
 func main() {
