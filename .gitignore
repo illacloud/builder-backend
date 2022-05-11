@@ -9,3 +9,6 @@
 
 # vim
 *.swp
+
+# project env file
+.env
