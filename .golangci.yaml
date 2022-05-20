@@ -1,0 +1,16 @@
+run:
+  timeout: 3m
+  deadline: 5m
+
+linters:
+  disable-all: true
+  enable:
+    - gofmt
+    - ineffassign
+    - unused
+    - bodyclose
+    - stylecheck
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
