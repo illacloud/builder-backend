@@ -16,7 +16,7 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/illa-family/builder-backend/api/restHandler"
+	"github.com/illa-family/builder-backend/api/resthandler"
 )
 
 type ActionRouter interface {
@@ -24,10 +24,10 @@ type ActionRouter interface {
 }
 
 type ActionRouterImpl struct {
-	actionRestHandler restHandler.ActionRestHandler
+	actionRestHandler resthandler.ActionRestHandler
 }
 
-func NewActionRouterImpl(actionRestHandler restHandler.ActionRestHandler) *ActionRouterImpl {
+func NewActionRouterImpl(actionRestHandler resthandler.ActionRestHandler) *ActionRouterImpl {
 	return &ActionRouterImpl{actionRestHandler: actionRestHandler}
 }
 
