@@ -16,7 +16,7 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/illa-family/builder-backend/api/restHandler"
+	"github.com/illa-family/builder-backend/api/resthandler"
 )
 
 type ResourceRouter interface {
@@ -24,10 +24,10 @@ type ResourceRouter interface {
 }
 
 type ResourceRouterImpl struct {
-	resourceRestHandler restHandler.ResourceRestHandler
+	resourceRestHandler resthandler.ResourceRestHandler
 }
 
-func NewResourceRouterImpl(resourceRestHandler restHandler.ResourceRestHandler) *ResourceRouterImpl {
+func NewResourceRouterImpl(resourceRestHandler resthandler.ResourceRestHandler) *ResourceRouterImpl {
 	return &ResourceRouterImpl{resourceRestHandler: resourceRestHandler}
 }
 
