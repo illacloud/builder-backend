@@ -25,7 +25,7 @@ import (
 )
 
 type Config struct {
-	MONGODB_URI string `env:"ILLA_MONGODB_URI"`
+	MongodbURI string `env:"ILLA_MONGODB_URI"`
 }
 
 func GetConfig() (*Config, error) {
@@ -44,7 +44,7 @@ func GetConfig() (*Config, error) {
 
 // NewMongoClient return a new mongo connection to work with
 func NewMongoClient(cfg *Config, logger *zap.SugaredLogger) (*mongo.Client, error) {
-	clientOptions := options.Client().ApplyURI(cfg.MONGODB_URI)
+	clientOptions := options.Client().ApplyURI(cfg.MongodbURI)
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
 		logger.Errorw("error in connecting mongo ", "mongoDB", cfg, "err", err)
