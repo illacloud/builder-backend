@@ -12,18 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package db
 
-import (
-	"github.com/illa-family/builder-backend/cmd/server"
-	"log"
+import "github.com/google/wire"
+
+var DbWireSet = wire.NewSet(
+	GetConfig,
+	NewDbConnection,
 )
-
-func main() {
-	app, err := server.Initialize()
-	if err != nil {
-		log.Panic(err)
-	}
-
-	app.Start()
-}

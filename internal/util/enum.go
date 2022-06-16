@@ -12,18 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package util
 
-import (
-	"github.com/illa-family/builder-backend/cmd/server"
-	"log"
-)
+type ResourceOptionFactory interface {
+	BuildOption()
+}
 
-func main() {
-	app, err := server.Initialize()
-	if err != nil {
-		log.Panic(err)
-	}
+type MySQLOption struct {
+	Username string `json:"username"`
+}
 
-	app.Start()
+type PgSQLOption struct {
+	Username string `json:"username"`
+}
+
+func (m *MySQLOption) BuildOption() {
+	return
+}
+
+func (p *PgSQLOption) BuildOption() {
+	return
 }

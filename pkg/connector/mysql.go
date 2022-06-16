@@ -12,18 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package connector
 
 import (
-	"github.com/illa-family/builder-backend/cmd/server"
+	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
 	"log"
 )
 
-func main() {
-	app, err := server.Initialize()
+func TestMySQLConnection(dsn string) error {
+	db, err := sql.Open("mysql", dsn+"?timeout=5s")
 	if err != nil {
-		log.Panic(err)
+		log.Printf("Error %s when opening DB\n", err)
+		return err
 	}
-
-	app.Start()
+	err = db.Ping()
+	if err != nil {
+		log.Printf("Error %s when opening DB\n", err)
+		return err
+	}
+	defer db.Close()
+	return nil
 }
