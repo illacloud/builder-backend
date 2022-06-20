@@ -24,12 +24,11 @@ import (
 )
 
 type Config struct {
-	Addr            string `env:"ILLA_PG_ADDR" envDefault:"127.0.0.1"`
-	Port            string `env:"ILLA_PG_PORT" envDefault:"5432"`
-	User            string `env:"ILLA_PG_USER" envDefault:""`
-	Password        string `env:"ILLA_PG_PASSWORD" envDefault:""`
-	Database        string `env:"ILLA_PG_DATABASE" envDefault:"illa"`
-	ApplicationName string `env:"ILLA_APP" envDefault:"illa"`
+	Addr     string `env:"ILLA_PG_ADDR" envDefault:"127.0.0.1"`
+	Port     string `env:"ILLA_PG_PORT" envDefault:"5432"`
+	User     string `env:"ILLA_PG_USER" envDefault:""`
+	Password string `env:"ILLA_PG_PASSWORD" envDefault:""`
+	Database string `env:"ILLA_PG_DATABASE" envDefault:"illa"`
 }
 
 func GetConfig() (*Config, error) {
@@ -40,15 +39,18 @@ func GetConfig() (*Config, error) {
 
 func NewDbConnection(cfg *Config, logger *zap.SugaredLogger) (*sql.DB, error) {
 	db, err := gorm.Open(postgres.New(postgres.Config{
-		DSN: fmt.Sprintf("host='%s' user='%s' password='%s' dbname='%s' port='%s' appliction_name='%s'",
-			cfg.Addr, cfg.User, cfg.Password, cfg.Database, cfg.Port, cfg.ApplicationName),
+		DSN: fmt.Sprintf("host='%s' user='%s' password='%s' dbname='%s' port='%s'",
+			cfg.Addr, cfg.User, cfg.Password, cfg.Database, cfg.Port),
 		PreferSimpleProtocol: true, // disables implicit prepared statement usage
-	}), &gorm.Config{})
+	}), &gorm.Config{
+		SkipDefaultTransaction: true,
+	})
 	sqlDB, err := db.DB()
 	if err != nil {
 		logger.Errorw("error in connecting db ", "db", cfg, "err", err)
 		return nil, err
 	}
+
 	// check db connection
 	err = sqlDB.Ping()
 	if err != nil {
