@@ -41,9 +41,7 @@ func NewDbConnection(cfg *Config, logger *zap.SugaredLogger) (*gorm.DB, error) {
 		DSN: fmt.Sprintf("host='%s' user='%s' password='%s' dbname='%s' port='%s'",
 			cfg.Addr, cfg.User, cfg.Password, cfg.Database, cfg.Port),
 		PreferSimpleProtocol: true, // disables implicit prepared statement usage
-	}), &gorm.Config{
-		SkipDefaultTransaction: true,
-	})
+	}), &gorm.Config{})
 	sqlDB, err := db.DB()
 	if err != nil {
 		logger.Errorw("error in connecting db ", "db", cfg, "err", err)
