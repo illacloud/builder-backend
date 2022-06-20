@@ -15,7 +15,6 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/caarlos0/env"
 	"go.uber.org/zap"
@@ -37,7 +36,7 @@ func GetConfig() (*Config, error) {
 	return cfg, err
 }
 
-func NewDbConnection(cfg *Config, logger *zap.SugaredLogger) (*sql.DB, error) {
+func NewDbConnection(cfg *Config, logger *zap.SugaredLogger) (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN: fmt.Sprintf("host='%s' user='%s' password='%s' dbname='%s' port='%s'",
 			cfg.Addr, cfg.User, cfg.Password, cfg.Database, cfg.Port),
@@ -64,5 +63,5 @@ func NewDbConnection(cfg *Config, logger *zap.SugaredLogger) (*sql.DB, error) {
 	} else {
 		logger.Infow("connected with db", "db", cfg)
 	}
-	return sqlDB, err
+	return db, err
 }
