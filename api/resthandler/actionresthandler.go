@@ -1,0 +1,62 @@
+// Copyright 2022 The ILLA Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package resthandler
+
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/illa-family/builder-backend/pkg/action"
+	"go.uber.org/zap"
+	"net/http"
+)
+
+type ActionRestHandler interface {
+	CreateAction(c *gin.Context)
+	DeleteAction(c *gin.Context)
+	UpdateAction(c *gin.Context)
+	PreviewAction(c *gin.Context)
+	RunAction(c *gin.Context)
+}
+
+type ActionRestHandlerImpl struct {
+	logger        *zap.SugaredLogger
+	actionService action.ActionService
+}
+
+func NewActionRestHandlerImpl(logger *zap.SugaredLogger, actionService action.ActionService) *ActionRestHandlerImpl {
+	return &ActionRestHandlerImpl{
+		logger:        logger,
+		actionService: actionService,
+	}
+}
+
+func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
+	c.JSON(http.StatusOK, "pass")
+}
+
+func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
+	c.JSON(http.StatusOK, "pass")
+}
+
+func (impl ActionRestHandlerImpl) DeleteAction(c *gin.Context) {
+	c.JSON(http.StatusOK, "pass")
+}
+
+func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
+	c.JSON(http.StatusOK, "pass")
+}
+
+func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
+	c.JSON(http.StatusOK, "pass")
+}
