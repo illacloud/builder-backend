@@ -15,8 +15,10 @@
 package resource
 
 import (
+	"github.com/google/uuid"
 	"github.com/illa-family/builder-backend/internal/repository"
 	"go.uber.org/zap"
+	"time"
 )
 
 type ResourceService interface {
@@ -26,7 +28,14 @@ type ResourceService interface {
 }
 
 type ResourceDto struct {
-	id string
+	ResourceId   uuid.UUID              `json:"resourceId"`
+	ResourceName string                 `json:"resourceName"`
+	ResourceType string                 `json:"resourceType"`
+	Options      map[string]interface{} `json:"options"`
+	CreateBy     uuid.UUID              `json:"createBy"`
+	CreateAt     time.Time              `json:"createdAt"`
+	UpdatedBy    uuid.UUID              `json:"lastModifiedBy"`
+	UpdatedAt    time.Time              `json:"lastModifiedAt"`
 }
 
 type ResourceServiceImpl struct {

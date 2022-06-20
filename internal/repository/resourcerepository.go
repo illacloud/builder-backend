@@ -15,34 +15,46 @@
 package repository
 
 import (
-	"database/sql"
+	"github.com/google/uuid"
+	"github.com/illa-family/builder-backend/pkg/db"
+	"github.com/jackc/pgtype"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type Resource struct {
-	Id int
+	ID      uuid.UUID    `gorm:"column:id;type:uuid;default:uuid_generate_v4();primary_key;unique"`
+	Name    string       `gorm:"column:name;type:varchar"`
+	Kind    string       `gorm:"column:kind;type:varchar"`
+	Options pgtype.JSONB `gorm:"column:options;type:jsonb"`
+	db.AuditLog
 }
 
 type ResourceRepository interface {
-	Save(action *Resource) (*Resource, error)
-	Delete(actionId string) error
-	Update(action *Resource) (*Resource, error)
+	Save(resource *Resource) error
+	Delete(resourceId string) error
+	Update(resource *Resource) (*Resource, error)
+	RetrieveById(resourceId string) (*Resource, error)
+	RetrieveAll() ([]*Resource, error)
 }
 
 type ResourceRepositoryImpl struct {
 	logger *zap.SugaredLogger
-	db     *sql.DB
+	db     *gorm.DB
 }
 
-func NewResourceRepositoryImpl(logger *zap.SugaredLogger, db *sql.DB) *ResourceRepositoryImpl {
+func NewResourceRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *ResourceRepositoryImpl {
 	return &ResourceRepositoryImpl{
 		logger: logger,
 		db:     db,
 	}
 }
 
-func (impl *ResourceRepositoryImpl) Save(resource *Resource) (*Resource, error) {
-	return &Resource{}, nil
+func (impl *ResourceRepositoryImpl) Save(resource *Resource) error {
+	if err := impl.db.Create(resource).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (impl *ResourceRepositoryImpl) Delete(resourceId string) error {
@@ -51,4 +63,12 @@ func (impl *ResourceRepositoryImpl) Delete(resourceId string) error {
 
 func (impl *ResourceRepositoryImpl) Update(resource *Resource) (*Resource, error) {
 	return &Resource{}, nil
+}
+
+func (impl *ResourceRepositoryImpl) RetrieveById(resourceId string) (*Resource, error) {
+	return &Resource{}, nil
+}
+
+func (impl *ResourceRepositoryImpl) RetrieveAll() ([]*Resource, error) {
+	return nil, nil
 }
