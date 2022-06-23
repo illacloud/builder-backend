@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
+package main
 
 import (
+	"github.com/caarlos0/env"
 	"github.com/gin-gonic/gin"
 	"github.com/illa-family/builder-backend/api/router"
 	"go.uber.org/zap"
@@ -22,13 +23,13 @@ import (
 )
 
 type Config struct {
-	ILLA_SERVER_HOST string
-	ILLA_SERVER_PORT string
-	ILLA_SERVER_MODE string
+	ILLA_SERVER_HOST string `env:"ILLA_SERVER_HOST" envDefault:"127.0.0.1"`
+	ILLA_SERVER_PORT string `env:"ILLA_SERVER_PORT" envDefault:"8999"`
+	ILLA_SERVER_MODE string `env:"ILLA_SERVER_MODE" envDefault:"debug"`
 }
 
 type Server struct {
-	Engine     *gin.Engine
+	engine     *gin.Engine
 	restRouter *router.RESTRouter
 	logger     *zap.SugaredLogger
 	cfg        *Config
@@ -37,28 +38,29 @@ type Server struct {
 
 func GetAppConfig() (*Config, error) {
 	cfg := &Config{}
+	err := env.Parse(cfg)
+	if err != nil {
+		return nil, err
+	}
 	return cfg, nil
 }
 
 func NewServer(cfg *Config, engine *gin.Engine, restRouter *router.RESTRouter, logger *zap.SugaredLogger) *Server {
 	return &Server{
-		Engine:     engine,
+		engine:     engine,
 		cfg:        cfg,
 		restRouter: restRouter,
 		logger:     logger,
 	}
 }
 
-func Initialize() (*Server, error) {
-	return nil, nil
-}
-
 func (server *Server) Start() {
 	server.logger.Infow("Starting server")
 
-	server.restRouter.Init()
+	gin.SetMode(server.cfg.ILLA_SERVER_MODE)
+	server.restRouter.InitRouter(server.engine.Group("/api"))
 
-	err := server.Engine.Run(server.cfg.ILLA_SERVER_HOST + ":" + server.cfg.ILLA_SERVER_PORT)
+	err := server.engine.Run(server.cfg.ILLA_SERVER_HOST + ":" + server.cfg.ILLA_SERVER_PORT)
 	if err != nil {
 		server.logger.Errorw("Error in startup", "err", err)
 		os.Exit(2)

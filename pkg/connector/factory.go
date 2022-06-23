@@ -12,24 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util
+package connector
 
-type ResourceOptionFactory interface {
-	BuildOption()
+import "database/sql"
+
+type DbConnector interface {
+	Generate() *DbConnection
 }
 
-type MySQLOption struct {
-	Username string `json:"username"`
+type DbConnection interface {
+	Format(connector *Connector) error
+	Connection() (*sql.DB, error)
 }
 
-type PgSQLOption struct {
-	Username string `json:"username"`
+type Connector struct {
+	Type    string
+	Options map[string]interface{}
 }
 
-func (m *MySQLOption) BuildOption() {
-	return
-}
-
-func (p *PgSQLOption) BuildOption() {
-	return
+func (c *Connector) Generate() DbConnection {
+	switch c.Type {
+	case "mysql":
+		return &MySQLConnection{Kind: c.Type}
+	default:
+		return nil
+	}
 }

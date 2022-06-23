@@ -1,3 +1,6 @@
+//go:build wireinject
+// +build wireinject
+
 // Copyright 2022 The ILLA Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,32 +15,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package router
+package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/illa-family/builder-backend/api"
+	"github.com/google/wire"
+	"github.com/illa-family/builder-backend/api/router"
+	"github.com/illa-family/builder-backend/cmd/wireset"
+	"github.com/illa-family/builder-backend/internal/util"
+	"github.com/illa-family/builder-backend/pkg/db"
 )
 
-func WsPing() func(c *gin.Context) {
-	return func(c *gin.Context) {
-		ws, err := api.UpGrader.Upgrade(c.Writer, c.Request, nil)
-		if err != nil {
-			return
-		}
-		defer ws.Close()
-		for {
-			mt, message, err := ws.ReadMessage()
-			if err != nil {
-				break
-			}
-			if string(message) == "ping" {
-				message = []byte("pong")
-			}
-			err = ws.WriteMessage(mt, message)
-			if err != nil {
-				break
-			}
-		}
-	}
+func Initialize() (*Server, error) {
+	wire.Build(
+		db.DbWireSet,
+		util.NewSugardLogger,
+		wireset.ResourceWireSet,
+		wireset.AppWireSet,
+		wireset.ActionWireSet,
+		router.NewRESTRouter,
+		GetAppConfig,
+		gin.New,
+		NewServer,
+	)
+	return &Server{}, nil
 }

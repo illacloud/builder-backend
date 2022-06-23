@@ -23,10 +23,10 @@ import (
 )
 
 type Config struct {
-	Addr     string `env:"ILLA_PG_ADDR" envDefault:"127.0.0.1"`
-	Port     string `env:"ILLA_PG_PORT" envDefault:"5432"`
-	User     string `env:"ILLA_PG_USER" envDefault:""`
-	Password string `env:"ILLA_PG_PASSWORD" envDefault:""`
+	Addr     string `env:"ILLA_PG_ADDR" envDefault:"dev.illasoft.com"`
+	Port     string `env:"ILLA_PG_PORT" envDefault:"32660"`
+	User     string `env:"ILLA_PG_USER" envDefault:"illa"`
+	Password string `env:"ILLA_PG_PASSWORD" envDefault:"illa2022"`
 	Database string `env:"ILLA_PG_DATABASE" envDefault:"illa"`
 }
 

@@ -15,7 +15,7 @@
 package util
 
 import (
-	"github.com/spf13/viper"
+	"github.com/caarlos0/env"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -23,17 +23,12 @@ import (
 var logger *zap.SugaredLogger
 
 type LogConfig struct {
-	ILLA_LOG_LEVEL int
+	ILLA_LOG_LEVEL int `env:"ILLA_LOG_LEVEL" envDefault:"0"`
 }
 
 func init() {
 	cfg := &LogConfig{}
-	viper.SetConfigFile(".env")
-	viper.AutomaticEnv()
-	if err := viper.ReadInConfig(); err != nil {
-		return
-	}
-	err := viper.Unmarshal(&cfg)
+	err := env.Parse(cfg)
 	if err != nil {
 		return
 	}
@@ -47,6 +42,6 @@ func init() {
 	logger = baseLogger.Sugar()
 }
 
-func NewSugarLogger() *zap.SugaredLogger {
+func NewSugardLogger() *zap.SugaredLogger {
 	return logger
 }

@@ -16,21 +16,79 @@ package connector
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"log"
+	"github.com/mitchellh/mapstructure"
 )
 
-func TestMySQLConnection(dsn string) error {
+type MySQLConnection struct {
+	Kind    string
+	Options MySQLOption
+}
+
+type MySQLOption struct {
+	Host             string
+	Port             string
+	DatabaseName     string
+	DatabaseUsername string
+	DatabasePassword string
+	SSL              bool
+	SSH              bool
+	AdvancedOptions  AdvancedOptions
+}
+
+type AdvancedOptions struct {
+	SSHHost       string
+	SSHPort       string
+	SSHUsername   string
+	SSHPassword   string
+	SSHPrivateKey string
+	SSHPassphrase string
+	ServerCert    string
+	ClientKey     string
+	ClientCert    string
+}
+
+func (m *MySQLConnection) Format(connector *Connector) error {
+	if err := mapstructure.Decode(connector.Options, &m.Options); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *MySQLConnection) Connection() (*sql.DB, error) {
+	var db *sql.DB
+	var err error
+	if m.Options.SSH {
+		db, err = m.ConnectionViaSSH()
+	} else if m.Options.SSL {
+		db, err = m.ConnectionViaSSL()
+	} else {
+		db, err = m.ConnectionPure()
+	}
+	return db, err
+}
+
+func (m *MySQLConnection) ConnectionViaSSH() (*sql.DB, error) {
+	// TODO: to complete code
+	return nil, nil
+}
+
+func (m *MySQLConnection) ConnectionViaSSL() (*sql.DB, error) {
+	// TODO: to complete code
+	return nil, nil
+}
+
+func (m *MySQLConnection) ConnectionPure() (*sql.DB, error) {
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.Options.DatabaseUsername, m.Options.DatabasePassword,
+		m.Options.Host, m.Options.Port, m.Options.DatabaseName)
 	db, err := sql.Open("mysql", dsn+"?timeout=5s")
 	if err != nil {
-		log.Printf("Error %s when opening DB\n", err)
-		return err
+		return nil, err
 	}
 	err = db.Ping()
 	if err != nil {
-		log.Printf("Error %s when opening DB\n", err)
-		return err
+		return nil, err
 	}
-	defer db.Close()
-	return nil
+	return db, nil
 }

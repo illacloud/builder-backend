@@ -15,8 +15,8 @@
 package repository
 
 import (
-	"database/sql"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type Action struct {
@@ -31,10 +31,10 @@ type ActionRepository interface {
 
 type ActionRepositoryImpl struct {
 	logger *zap.SugaredLogger
-	db     *sql.DB
+	db     *gorm.DB
 }
 
-func NewActionRepositoryImpl(logger *zap.SugaredLogger, db *sql.DB) *ActionRepositoryImpl {
+func NewActionRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *ActionRepositoryImpl {
 	return &ActionRepositoryImpl{
 		logger: logger,
 		db:     db,
