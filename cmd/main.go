@@ -14,10 +14,12 @@
 
 package main
 
+import "log"
+
 func main() {
 	server, err := Initialize()
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	server.Start()
