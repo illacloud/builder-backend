@@ -27,26 +27,22 @@ type RESTRouter struct {
 	ResourceRouter ResourceRouter
 }
 
-func NewRESTRouter(logger *zap.SugaredLogger, router *gin.RouterGroup, appRouter AppRouter,
+func NewRESTRouter(logger *zap.SugaredLogger, appRouter AppRouter,
 	actionRouter ActionRouter, resourceRouter ResourceRouter) *RESTRouter {
 	return &RESTRouter{
 		logger:         logger,
-		Router:         router,
 		AppRouter:      appRouter,
 		ActionRouter:   actionRouter,
 		ResourceRouter: resourceRouter,
 	}
 }
 
-func (r RESTRouter) Init() {
-	v1 := r.Router.Group("/v1")
+func (r RESTRouter) InitRouter(router *gin.RouterGroup) {
+	v1 := router.Group("/v1")
 
-	appRouter := v1.Group("/app")
-	r.AppRouter.InitAppRouter(appRouter)
+	r.AppRouter.InitAppRouter(v1)
 
-	actionRouter := v1.Group("/actions")
-	r.ActionRouter.InitActionRouter(actionRouter)
+	r.ActionRouter.InitActionRouter(v1)
 
-	resourceRouter := v1.Group("/resources")
-	r.ResourceRouter.InitResourceRouter(resourceRouter)
+	r.ResourceRouter.InitResourceRouter(v1)
 }

@@ -14,16 +14,11 @@
 
 package main
 
-import (
-	"github.com/illa-family/builder-backend/cmd/server"
-	"log"
-)
-
 func main() {
-	app, err := server.Initialize()
+	server, err := Initialize()
 	if err != nil {
-		log.Panic(err)
+		panic(err)
 	}
 
-	app.Start()
+	server.Start()
 }

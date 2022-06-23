@@ -15,8 +15,8 @@
 package repository
 
 import (
-	"database/sql"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type App struct {
@@ -32,10 +32,10 @@ type AppRepository interface {
 
 type AppRepositoryImpl struct {
 	logger *zap.SugaredLogger
-	db     *sql.DB
+	db     *gorm.DB
 }
 
-func NewAppRepositoryImpl(logger *zap.SugaredLogger, db *sql.DB) *AppRepositoryImpl {
+func NewAppRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *AppRepositoryImpl {
 	return &AppRepositoryImpl{
 		logger: logger,
 		db:     db,

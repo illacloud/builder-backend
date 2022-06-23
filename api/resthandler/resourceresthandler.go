@@ -15,49 +15,168 @@
 package resthandler
 
 import (
+	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/illa-family/builder-backend/internal/repository"
+	"github.com/illa-family/builder-backend/pkg/resource"
 	"go.uber.org/zap"
-	"time"
+	"net/http"
 )
 
-type ResourceService interface {
-	CreateResource(resource ResourceDto) (ResourceDto, error)
-	DeleteResource(resourceId string) error
-	UpdateResource(resource ResourceDto) (ResourceDto, error)
+type ResourceRestHandler interface {
+	FindAllResources(c *gin.Context)
+	CreateResource(c *gin.Context)
+	GetResource(c *gin.Context)
+	UpdateResource(c *gin.Context)
+	DeleteResource(c *gin.Context)
+	TestConnection(c *gin.Context)
 }
 
-type ResourceDto struct {
-	ResourceId   uuid.UUID              `json:"resourceId"`
-	ResourceName string                 `json:"resourceName"`
-	ResourceType string                 `json:"resourceType"`
-	Options      map[string]interface{} `json:"options"`
-	CreateBy     uuid.UUID              `json:"createBy"`
-	CreateAt     time.Time              `json:"createdAt"`
-	UpdatedBy    uuid.UUID              `json:"lastModifiedBy"`
-	UpdatedAt    time.Time              `json:"lastModifiedAt"`
+type ResourceRestHandlerImpl struct {
+	logger          *zap.SugaredLogger
+	resourceService resource.ResourceService
 }
 
-type ResourceServiceImpl struct {
-	logger             *zap.SugaredLogger
-	resourceRepository repository.ResourceRepository
-}
-
-func NewResourceServiceImpl(logger *zap.SugaredLogger, resourceRepository repository.ResourceRepository) *ResourceServiceImpl {
-	return &ResourceServiceImpl{
-		logger:             logger,
-		resourceRepository: resourceRepository,
+func NewResourceRestHandlerImpl(logger *zap.SugaredLogger, resourceService resource.ResourceService) *ResourceRestHandlerImpl {
+	return &ResourceRestHandlerImpl{
+		logger:          logger,
+		resourceService: resourceService,
 	}
 }
 
-func (impl *ResourceServiceImpl) CreateResource(resource ResourceDto) (ResourceDto, error) {
-	return ResourceDto{}, nil
+func (impl ResourceRestHandlerImpl) FindAllResources(c *gin.Context) {
+	res, err := impl.resourceService.FindAllResources()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
 }
 
-func (impl *ResourceServiceImpl) DeleteResource(resourceId string) error {
-	return nil
+func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
+	var rsc resource.ResourceDto
+	if err := json.NewDecoder(c.Request.Body).Decode(&rsc); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	rsc.ResourceId = uuid.New()
+	res, err := impl.resourceService.CreateResource(rsc)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
 }
 
-func (impl *ResourceServiceImpl) UpdateResource(resource ResourceDto) (ResourceDto, error) {
-	return ResourceDto{}, nil
+func (impl ResourceRestHandlerImpl) GetResource(c *gin.Context) {
+	resourceId := c.Param("id")
+	id, err := uuid.Parse(resourceId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	res, err := impl.resourceService.GetResource(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
+	resourceId := c.Param("id")
+	id, err := uuid.Parse(resourceId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	var rsc resource.ResourceDto
+	if err := json.NewDecoder(c.Request.Body).Decode(&rsc); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	rsc.ResourceId = id
+	res, err := impl.resourceService.UpdateResource(rsc)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func (impl ResourceRestHandlerImpl) DeleteResource(c *gin.Context) {
+	resourceId := c.Param("id")
+	id, err := uuid.Parse(resourceId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	if err := impl.resourceService.DeleteResource(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"resourceId": resourceId,
+	})
+}
+
+func (impl ResourceRestHandlerImpl) TestConnection(c *gin.Context) {
+	// format data to DTO struct
+	var rsc resource.ResourceDto
+	if err := json.NewDecoder(c.Request.Body).Decode(&rsc); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	dbConn, err := impl.resourceService.OpenConnection(rsc)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	if err := dbConn.Ping(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	defer dbConn.Close()
+	c.JSON(http.StatusOK, gin.H{
+		"message": "test connection successfully",
+	})
 }

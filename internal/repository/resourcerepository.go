@@ -17,24 +17,27 @@ package repository
 import (
 	"github.com/google/uuid"
 	"github.com/illa-family/builder-backend/pkg/db"
-	"github.com/jackc/pgtype"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"time"
 )
 
 type Resource struct {
-	ID      uuid.UUID    `gorm:"column:id;type:uuid;default:uuid_generate_v4();primary_key;unique"`
-	Name    string       `gorm:"column:name;type:varchar"`
-	Kind    string       `gorm:"column:kind;type:varchar"`
-	Options pgtype.JSONB `gorm:"column:options;type:jsonb"`
-	db.AuditLog
+	ID        uuid.UUID `gorm:"column:id;type:uuid;default:uuid_generate_v4();primary_key;unique"`
+	Name      string    `gorm:"column:name;type:varchar"`
+	Kind      string    `gorm:"column:kind;type:varchar"`
+	Options   db.JSONB  `gorm:"column:options;type:jsonb"`
+	CreatedBy uuid.UUID `gorm:"column:created_by;type:uuid"`
+	CreatedAt time.Time `gorm:"column:created_at;type:timestamp"`
+	UpdatedBy uuid.UUID `gorm:"column:updated_by;type:uuid"`
+	UpdatedAt time.Time `gorm:"column:updated_at;type:timestamp"`
 }
 
 type ResourceRepository interface {
-	Save(resource *Resource) error
-	Delete(resourceId string) error
-	Update(resource *Resource) (*Resource, error)
-	RetrieveById(resourceId string) (*Resource, error)
+	Create(resource *Resource) error
+	Delete(resourceId uuid.UUID) error
+	Update(resource *Resource) error
+	RetrieveById(resourceId uuid.UUID) (*Resource, error)
 	RetrieveAll() ([]*Resource, error)
 }
 
@@ -50,25 +53,44 @@ func NewResourceRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *Resource
 	}
 }
 
-func (impl *ResourceRepositoryImpl) Save(resource *Resource) error {
+func (impl *ResourceRepositoryImpl) Create(resource *Resource) error {
 	if err := impl.db.Create(resource).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (impl *ResourceRepositoryImpl) Delete(resourceId string) error {
+func (impl *ResourceRepositoryImpl) Delete(resourceId uuid.UUID) error {
+	if err := impl.db.Delete(&Resource{}, resourceId).Error; err != nil {
+		return err
+	}
 	return nil
 }
 
-func (impl *ResourceRepositoryImpl) Update(resource *Resource) (*Resource, error) {
-	return &Resource{}, nil
+func (impl *ResourceRepositoryImpl) Update(resource *Resource) error {
+	if err := impl.db.Model(resource).Updates(Resource{
+		Name:      resource.Name,
+		Options:   resource.Options,
+		UpdatedBy: resource.UpdatedBy,
+		UpdatedAt: resource.UpdatedAt,
+	}).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
-func (impl *ResourceRepositoryImpl) RetrieveById(resourceId string) (*Resource, error) {
-	return &Resource{}, nil
+func (impl *ResourceRepositoryImpl) RetrieveById(resourceId uuid.UUID) (*Resource, error) {
+	resource := &Resource{}
+	if err := impl.db.First(resource, resourceId).Error; err != nil {
+		return &Resource{}, err
+	}
+	return resource, nil
 }
 
 func (impl *ResourceRepositoryImpl) RetrieveAll() ([]*Resource, error) {
-	return nil, nil
+	var resources []*Resource
+	if err := impl.db.Find(&resources).Error; err != nil {
+		return nil, err
+	}
+	return resources, nil
 }

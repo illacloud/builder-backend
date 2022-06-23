@@ -27,7 +27,7 @@ type Config struct {
 	Port     string `env:"ILLA_PG_PORT" envDefault:"5432"`
 	User     string `env:"ILLA_PG_USER" envDefault:""`
 	Password string `env:"ILLA_PG_PASSWORD" envDefault:""`
-	Database string `env:"ILLA_PG_DATABASE" envDefault:"illa"`
+	Database string `env:"ILLA_PG_DATABASE" envDefault:""`
 }
 
 func GetConfig() (*Config, error) {
