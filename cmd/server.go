@@ -18,6 +18,7 @@ import (
 	"github.com/caarlos0/env"
 	"github.com/gin-gonic/gin"
 	"github.com/illa-family/builder-backend/api/router"
+	"github.com/illa-family/builder-backend/pkg/cors"
 	"go.uber.org/zap"
 	"os"
 )
@@ -58,8 +59,9 @@ func (server *Server) Start() {
 	server.logger.Infow("Starting server")
 
 	gin.SetMode(server.cfg.ILLA_SERVER_MODE)
+	server.engine.Use(cors.Cors())
 	server.restRouter.InitRouter(server.engine.Group("/api"))
-
+	
 	err := server.engine.Run(server.cfg.ILLA_SERVER_HOST + ":" + server.cfg.ILLA_SERVER_PORT)
 	if err != nil {
 		server.logger.Errorw("Error in startup", "err", err)
