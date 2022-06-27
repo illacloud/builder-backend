@@ -53,5 +53,12 @@ func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
 }
 
 func (impl AppRestHandlerImpl) GetAllApp(c *gin.Context) {
-	c.JSON(http.StatusOK, "pass")
+	c.JSON(http.StatusOK, []map[string]interface{}{
+		{"appId": "1f221b62-568b-448c-989e-d3a376273134",
+			"appName":          "illa example app",
+			"currentVersionId": "450ca3c2-38ff-4f27-a1f7-3e71452f49cd",
+			"lastModifiedBy":   "Zhanjiao Deng",
+			"lastModifiedAt":   "2022-06-06T14:00:30.780+00:00",
+		},
+	})
 }

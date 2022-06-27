@@ -12,33 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package connector
+package action
 
-import "database/sql"
-
-var (
-	MYSQLRESOURCE = "mysql"
+import (
+	"github.com/illa-family/builder-backend/pkg/connector"
 )
 
-type DbConnector interface {
-	Generate() *DbConnection
+type RestApiAction struct {
+	Type            string
+	RestApiTemplate RestApiTemplate
+	Resource        *connector.Connector
 }
 
-type DbConnection interface {
-	Format(connector *Connector) error
-	Connection() (*sql.DB, error)
+type RestApiTemplate struct {
+	Curl string
 }
 
-type Connector struct {
-	Type    string
-	Options map[string]interface{}
-}
-
-func (c *Connector) Generate() DbConnection {
-	switch c.Type {
-	case MYSQLRESOURCE:
-		return &MySQLConnection{Kind: c.Type}
-	default:
-		return nil
-	}
+func (r *RestApiAction) Run() (interface{}, error) {
+	return nil, nil
 }

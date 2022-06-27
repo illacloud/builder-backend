@@ -42,7 +42,7 @@ type ResourceDto struct {
 	CreatedBy    uuid.UUID              `json:"createdBy,omitempty"`
 	CreatedAt    time.Time              `json:"createdAt,omitempty"`
 	UpdatedBy    uuid.UUID              `json:"updatedBy,omitempty"`
-	UpdatedAt    time.Time              `json:"UpdatedAt,omitempty"`
+	UpdatedAt    time.Time              `json:"updatedAt,omitempty"`
 }
 
 type ResourceServiceImpl struct {

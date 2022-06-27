@@ -15,7 +15,9 @@
 package resthandler
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/illa-family/builder-backend/pkg/action"
 	"go.uber.org/zap"
 	"net/http"
@@ -25,6 +27,8 @@ type ActionRestHandler interface {
 	CreateAction(c *gin.Context)
 	DeleteAction(c *gin.Context)
 	UpdateAction(c *gin.Context)
+	GetAction(c *gin.Context)
+	FindActions(c *gin.Context)
 	PreviewAction(c *gin.Context)
 	RunAction(c *gin.Context)
 }
@@ -42,21 +46,174 @@ func NewActionRestHandlerImpl(logger *zap.SugaredLogger, actionService action.Ac
 }
 
 func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
-	c.JSON(http.StatusOK, "pass")
+	versionId := c.Param("versionId")
+	vId, err := uuid.Parse(versionId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	var act action.ActionDto
+	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	act.ActionId = uuid.New()
+	res, err := impl.actionService.CreateAction(vId, act)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
-	c.JSON(http.StatusOK, "pass")
+	actionId := c.Param("id")
+	aId, err := uuid.Parse(actionId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	versionId := c.Param("versionId")
+	vId, err := uuid.Parse(versionId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	var act action.ActionDto
+	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	act.ActionId = aId
+	res, err := impl.actionService.UpdateAction(vId, act)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 func (impl ActionRestHandlerImpl) DeleteAction(c *gin.Context) {
-	c.JSON(http.StatusOK, "pass")
+	actionId := c.Param("id")
+	aId, err := uuid.Parse(actionId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	if err := impl.actionService.DeleteAction(aId); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"actionId": actionId,
+	})
+}
+
+func (impl ActionRestHandlerImpl) GetAction(c *gin.Context) {
+	actionId := c.Param("id")
+	aId, err := uuid.Parse(actionId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	res, err := impl.actionService.GetAction(aId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
+	versionId := c.Param("versionId")
+	vId, err := uuid.Parse(versionId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	res, err := impl.actionService.FindActionsByVersion(vId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
-	c.JSON(http.StatusOK, "pass")
+	var act action.ActionDto
+	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	res, err := impl.actionService.RunAction(act)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
-	c.JSON(http.StatusOK, "pass")
+	var act action.ActionDto
+	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	res, err := impl.actionService.RunAction(act)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
 }

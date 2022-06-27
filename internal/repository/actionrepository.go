@@ -15,18 +15,32 @@
 package repository
 
 import (
+	"github.com/google/uuid"
+	"github.com/illa-family/builder-backend/pkg/db"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"time"
 )
 
 type Action struct {
-	ID int
+	ID             uuid.UUID `gorm:"column:id;type:uuid;default:uuid_generate_v4();primary_key;unique"`
+	VersionID      uuid.UUID `gorm:"column:version_id;type:uuid"`
+	ResourceID     uuid.UUID `gorm:"column:resource_id;type:uuid"`
+	Name           string    `gorm:"column:name;type:varchar"`
+	Type           string    `gorm:"column:type;type:varchar"`
+	ActionTemplate db.JSONB  `gorm:"column:action_template;type:jsonb"`
+	CreatedBy      uuid.UUID `gorm:"column:created_by;type:uuid"`
+	CreatedAt      time.Time `gorm:"column:created_at;type:timestamp"`
+	UpdatedBy      uuid.UUID `gorm:"column:updated_by;type:uuid"`
+	UpdatedAt      time.Time `gorm:"column:updated_at;type:timestamp"`
 }
 
 type ActionRepository interface {
-	Save(action *Action) (*Action, error)
-	Delete(actionId string) error
-	Update(action *Action) (*Action, error)
+	Create(action *Action) error
+	Delete(actionId uuid.UUID) error
+	Update(action *Action) error
+	RetrieveById(actionId uuid.UUID) (*Action, error)
+	RetrieveActionsByVersion(versionId uuid.UUID) ([]*Action, error)
 }
 
 type ActionRepositoryImpl struct {
@@ -41,14 +55,44 @@ func NewActionRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *ActionRepo
 	}
 }
 
-func (impl *ActionRepositoryImpl) Save(action *Action) (*Action, error) {
-	return &Action{}, nil
-}
-
-func (impl *ActionRepositoryImpl) Delete(actionId string) error {
+func (impl *ActionRepositoryImpl) Create(action *Action) error {
+	if err := impl.db.Create(action).Error; err != nil {
+		return err
+	}
 	return nil
 }
 
-func (impl *ActionRepositoryImpl) Update(action *Action) (*Action, error) {
-	return &Action{}, nil
+func (impl *ActionRepositoryImpl) Delete(actionId uuid.UUID) error {
+	if err := impl.db.Delete(&Action{}, actionId).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (impl *ActionRepositoryImpl) Update(action *Action) error {
+	if err := impl.db.Model(action).Updates(Action{
+		Name:           action.Name,
+		ActionTemplate: action.ActionTemplate,
+		UpdatedBy:      action.UpdatedBy,
+		UpdatedAt:      action.UpdatedAt,
+	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (impl *ActionRepositoryImpl) RetrieveById(actionId uuid.UUID) (*Action, error) {
+	action := &Action{}
+	if err := impl.db.First(action, actionId).Error; err != nil {
+		return &Action{}, err
+	}
+	return action, nil
+}
+
+func (impl *ActionRepositoryImpl) RetrieveActionsByVersion(versionId uuid.UUID) ([]*Action, error) {
+	var actions []*Action
+	if err := impl.db.Where("version_id = ?", versionId).Find(&actions).Error; err != nil {
+		return nil, err
+	}
+	return actions, nil
 }

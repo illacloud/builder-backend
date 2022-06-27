@@ -15,40 +15,168 @@
 package action
 
 import (
+	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"github.com/illa-family/builder-backend/internal/repository"
+	"github.com/illa-family/builder-backend/pkg/connector"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"time"
 )
 
 type ActionService interface {
-	CreateAction(action ActionDto) (ActionDto, error)
-	DeleteAction(actionId string) error
-	UpdateAction(action ActionDto) (ActionDto, error)
+	CreateAction(versionId uuid.UUID, action ActionDto) (ActionDto, error)
+	DeleteAction(actionId uuid.UUID) error
+	UpdateAction(versionId uuid.UUID, action ActionDto) (ActionDto, error)
+	GetAction(actionID uuid.UUID) (ActionDto, error)
+	FindActionsByVersion(versionId uuid.UUID) ([]ActionDto, error)
+	RunAction(action ActionDto) (interface{}, error)
 }
 
 type ActionDto struct {
-	id string
+	ActionId       uuid.UUID              `json:"actionId"`
+	ResourceId     uuid.UUID              `json:"resourceId,omitempty"`
+	DisplayName    string                 `json:"displayName,omitempty" validate:"required"`
+	ActionType     string                 `json:"actionType,omitempty" validate:"required"`
+	ActionTemplate map[string]interface{} `json:"actionTemplate,omitempty" validate:"required"`
+	CreatedBy      uuid.UUID              `json:"createdBy,omitempty"`
+	CreatedAt      time.Time              `json:"createdAt,omitempty"`
+	UpdatedBy      uuid.UUID              `json:"updatedBy,omitempty"`
+	UpdatedAt      time.Time              `json:"updatedAt,omitempty"`
 }
 
 type ActionServiceImpl struct {
-	logger           *zap.SugaredLogger
-	actionRepository repository.ActionRepository
+	logger             *zap.SugaredLogger
+	actionRepository   repository.ActionRepository
+	resourceRepository repository.ResourceRepository
 }
 
-func NewActionServiceImpl(logger *zap.SugaredLogger, actionRepository repository.ActionRepository) *ActionServiceImpl {
+func NewActionServiceImpl(logger *zap.SugaredLogger, actionRepository repository.ActionRepository,
+	resourceRepository repository.ResourceRepository) *ActionServiceImpl {
 	return &ActionServiceImpl{
-		logger:           logger,
-		actionRepository: actionRepository,
+		logger:             logger,
+		actionRepository:   actionRepository,
+		resourceRepository: resourceRepository,
 	}
 }
 
-func (impl *ActionServiceImpl) CreateAction(action ActionDto) (ActionDto, error) {
-	return ActionDto{}, nil
+func (impl *ActionServiceImpl) CreateAction(versionId uuid.UUID, action ActionDto) (ActionDto, error) {
+	// TODO: validate the versionId
+	validate := validator.New()
+	if err := validate.Struct(action); err != nil {
+		return ActionDto{}, err
+	}
+	action.CreatedAt = time.Now().UTC()
+	action.UpdatedAt = time.Now().UTC()
+	if err := impl.actionRepository.Create(&repository.Action{
+		ID:             action.ActionId,
+		VersionID:      versionId,
+		ResourceID:     action.ResourceId,
+		Name:           action.DisplayName,
+		Type:           action.ActionType,
+		ActionTemplate: action.ActionTemplate,
+		CreatedBy:      action.CreatedBy,
+		CreatedAt:      action.CreatedAt,
+		UpdatedBy:      action.UpdatedBy,
+		UpdatedAt:      action.UpdatedAt,
+	}); err != nil {
+		return ActionDto{}, err
+	}
+	return action, nil
 }
 
-func (impl *ActionServiceImpl) DeleteAction(actionId string) error {
+func (impl *ActionServiceImpl) DeleteAction(actionId uuid.UUID) error {
+	if err := impl.actionRepository.Delete(actionId); err != nil {
+		return err
+	}
 	return nil
 }
 
-func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (ActionDto, error) {
-	return ActionDto{}, nil
+func (impl *ActionServiceImpl) UpdateAction(versionId uuid.UUID, action ActionDto) (ActionDto, error) {
+	validate := validator.New()
+	if err := validate.Struct(action); err != nil {
+		return ActionDto{}, err
+	}
+	action.UpdatedAt = time.Now().UTC()
+	if err := impl.actionRepository.Update(&repository.Action{
+		ID:             action.ActionId,
+		VersionID:      versionId,
+		ResourceID:     action.ResourceId,
+		Name:           action.DisplayName,
+		Type:           action.ActionType,
+		ActionTemplate: action.ActionTemplate,
+		CreatedBy:      action.CreatedBy,
+		CreatedAt:      action.CreatedAt,
+		UpdatedBy:      action.UpdatedBy,
+		UpdatedAt:      action.UpdatedAt,
+	}); err != nil {
+		return ActionDto{}, err
+	}
+	return action, nil
+}
+
+func (impl *ActionServiceImpl) GetAction(actionId uuid.UUID) (ActionDto, error) {
+	res, err := impl.actionRepository.RetrieveById(actionId)
+	if err != nil {
+		return ActionDto{}, err
+	}
+	resDto := ActionDto{
+		ActionId:       res.ID,
+		ResourceId:     res.ResourceID,
+		DisplayName:    res.Name,
+		ActionType:     res.Type,
+		ActionTemplate: res.ActionTemplate,
+		CreatedBy:      res.CreatedBy,
+		CreatedAt:      res.CreatedAt,
+		UpdatedBy:      res.UpdatedBy,
+		UpdatedAt:      res.UpdatedAt,
+	}
+	return resDto, nil
+}
+
+func (impl *ActionServiceImpl) FindActionsByVersion(versionId uuid.UUID) ([]ActionDto, error) {
+	res, err := impl.actionRepository.RetrieveActionsByVersion(versionId)
+	if err != nil {
+		return nil, err
+	}
+	resDtoSlice := make([]ActionDto, 0, len(res))
+	for _, value := range res {
+		resDtoSlice = append(resDtoSlice, ActionDto{
+			ActionId:       value.ID,
+			ResourceId:     value.ResourceID,
+			DisplayName:    value.Name,
+			ActionType:     value.Type,
+			ActionTemplate: value.ActionTemplate,
+			CreatedBy:      value.CreatedBy,
+			CreatedAt:      value.CreatedAt,
+			UpdatedBy:      value.UpdatedBy,
+			UpdatedAt:      value.UpdatedAt,
+		})
+	}
+	return resDtoSlice, nil
+}
+
+func (impl *ActionServiceImpl) RunAction(action ActionDto) (interface{}, error) {
+	rsc, err := impl.resourceRepository.RetrieveById(action.ResourceId)
+	if err != nil {
+		return nil, err
+	}
+	resourceConn := &connector.Connector{
+		Type:    rsc.Kind,
+		Options: rsc.Options,
+	}
+	actionFactory := &Factory{
+		Type:     action.ActionType,
+		Template: action.ActionTemplate,
+		Resource: resourceConn,
+	}
+	actionAssemblyline := actionFactory.Build()
+	if actionAssemblyline == nil {
+		return nil, errors.New("invalid ActionType:: unsupported type")
+	}
+	res, err := actionAssemblyline.Run()
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
