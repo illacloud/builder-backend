@@ -137,5 +137,11 @@ func (r *RestApiAction) Run() (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return respBody, nil
+
+	res := make(map[string]interface{})
+	if err := json.Unmarshal(respBody, &res); err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
