@@ -40,6 +40,9 @@ var (
 	BODY_NONE   = "none"
 	BODY_BINARY = "binary"
 	BODY_XWFU   = "x-www-form-urlencoded"
+
+	AUTH_BASIC  = "basic"
+	AUTH_BEARER = "bearer"
 )
 
 type RestApiAction struct {
@@ -56,6 +59,18 @@ type RestApiTemplate struct {
 	BodyType  string
 	Body      [][]string
 	Cookies   [][]string
+}
+
+type RestApiResource struct {
+	Headers               [][]string
+	Authentication        string
+	AuthenticationOptions AuthenticationOptions
+}
+
+type AuthenticationOptions struct {
+	BasicUsername string
+	BasicPassword string
+	BearerToken   string
 }
 
 func (r *RestApiAction) Run() (interface{}, error) {
@@ -90,14 +105,26 @@ func (r *RestApiAction) Run() (interface{}, error) {
 	}
 
 	if r.Resource != nil {
-		var resourceHeader RestApiTemplate
-		mapstructure.Decode(r.Resource.Options, resourceHeader)
-		for _, header := range resourceHeader.Headers {
-			req.Header.Set(header[0], header[1])
+		var resourceApi RestApiResource
+		mapstructure.Decode(r.Resource.Options, resourceApi)
+		for _, header := range resourceApi.Headers {
+			req.Header.Add(header[0], header[1])
 		}
+		switch resourceApi.Authentication {
+		case AUTH_BASIC:
+			req.SetBasicAuth(resourceApi.AuthenticationOptions.BasicUsername, resourceApi.AuthenticationOptions.BasicPassword)
+			break
+		case AUTH_BEARER:
+			bearer := "Bearer " + resourceApi.AuthenticationOptions.BearerToken
+			req.Header.Add("Authorization", bearer)
+			break
+		default:
+			break
+		}
+
 	}
 	for _, header := range r.RestApiTemplate.Headers {
-		req.Header.Set(header[0], header[1])
+		req.Header.Add(header[0], header[1])
 	}
 
 	resp, err := client.Do(req)
