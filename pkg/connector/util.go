@@ -18,14 +18,14 @@ import (
 	"database/sql"
 )
 
-func RetrieveToMap(rows *sql.Rows) (map[string][]interface{}, error) {
+func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 	columns, err := rows.Columns()
 	if err != nil {
 		return nil, err
 	}
 	// count of columns
 	count := len(columns)
-	mapData := make(map[string][]interface{})
+	mapData := make([]map[string]interface{}, 0)
 
 	// value of every row
 	values := make([]interface{}, count)
@@ -41,6 +41,9 @@ func RetrieveToMap(rows *sql.Rows) (map[string][]interface{}, error) {
 		// get query result
 		rows.Scan(valPointers...)
 
+		// value for every single row
+		entry := make(map[string]interface{})
+
 		for i, col := range columns {
 			var v interface{}
 
@@ -52,8 +55,9 @@ func RetrieveToMap(rows *sql.Rows) (map[string][]interface{}, error) {
 			} else {
 				v = val
 			}
-			mapData[col] = append(mapData[col], v)
+			entry[col] = v
 		}
+		mapData = append(mapData, entry)
 	}
 
 	return mapData, nil
