@@ -17,14 +17,14 @@ package connector
 import "database/sql"
 
 var (
-	MYSQLRESOURCE = "mysql"
+	MYSQL_RESOURCE = "mysql"
 )
 
-type DbConnector interface {
-	Generate() *DbConnection
+type BaseConnector interface {
+	Generate() BaseConnection
 }
 
-type DbConnection interface {
+type BaseConnection interface {
 	Format(connector *Connector) error
 	Connection() (*sql.DB, error)
 }
@@ -34,9 +34,9 @@ type Connector struct {
 	Options map[string]interface{}
 }
 
-func (c *Connector) Generate() DbConnection {
+func (c *Connector) Generate() BaseConnection {
 	switch c.Type {
-	case MYSQLRESOURCE:
+	case MYSQL_RESOURCE:
 		return &MySQLConnection{Kind: c.Type}
 	default:
 		return nil

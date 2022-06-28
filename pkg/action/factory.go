@@ -16,16 +16,17 @@ package action
 
 import (
 	"github.com/illa-family/builder-backend/pkg/connector"
+
 	"github.com/mitchellh/mapstructure"
 )
 
 var (
-	RESTACTION = "RESTApi"
-	SQLACTION  = "SQL"
+	REST_ACTION  = "restapi"
+	MYSQL_ACTION = "mysql"
 )
 
 type ActionFactory interface {
-	Generate() *ActionAssemblyline
+	Generate() ActionAssemblyline
 }
 
 type ActionAssemblyline interface {
@@ -40,14 +41,14 @@ type Factory struct {
 
 func (f *Factory) Build() ActionAssemblyline {
 	switch f.Type {
-	case RESTACTION:
+	case REST_ACTION:
 		restapiAction := &RestApiAction{
 			Type:     f.Type,
 			Resource: f.Resource,
 		}
 		mapstructure.Decode(f.Template, &restapiAction.RestApiTemplate)
 		return restapiAction
-	case SQLACTION:
+	case MYSQL_ACTION:
 		sqlAction := &SqlAction{
 			Type:     f.Type,
 			Resource: f.Resource,

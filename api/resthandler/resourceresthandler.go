@@ -16,11 +16,13 @@ package resthandler
 
 import (
 	"encoding/json"
+	"net/http"
+
+	"github.com/illa-family/builder-backend/pkg/resource"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/illa-family/builder-backend/pkg/resource"
 	"go.uber.org/zap"
-	"net/http"
 )
 
 type ResourceRestHandler interface {

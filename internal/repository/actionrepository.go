@@ -15,11 +15,13 @@
 package repository
 
 import (
-	"github.com/google/uuid"
+	"time"
+
 	"github.com/illa-family/builder-backend/pkg/db"
+
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Action struct {

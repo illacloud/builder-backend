@@ -16,6 +16,7 @@ package action
 
 import (
 	"github.com/illa-family/builder-backend/pkg/connector"
+
 	"github.com/pkg/errors"
 )
 
@@ -26,7 +27,7 @@ type SqlAction struct {
 }
 
 type SqlTemplate struct {
-	Sql string
+	Query string
 }
 
 func (s *SqlAction) Run() (interface{}, error) {
@@ -44,7 +45,7 @@ func (s *SqlAction) Run() (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	res, err := dbConn.Exec(s.SqlTemplate.Sql)
+	res, err := dbConn.Exec(s.SqlTemplate.Query)
 	if err != nil {
 		return nil, err
 	}

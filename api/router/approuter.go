@@ -15,8 +15,9 @@
 package router
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/illa-family/builder-backend/api/resthandler"
+
+	"github.com/gin-gonic/gin"
 )
 
 type AppRouter interface {

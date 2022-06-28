@@ -15,11 +15,12 @@
 package wireset
 
 import (
-	"github.com/google/wire"
 	"github.com/illa-family/builder-backend/api/resthandler"
 	"github.com/illa-family/builder-backend/api/router"
 	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/pkg/app"
+
+	"github.com/google/wire"
 )
 
 var AppWireSet = wire.NewSet(

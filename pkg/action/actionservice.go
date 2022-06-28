@@ -15,13 +15,15 @@
 package action
 
 import (
-	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
+	"time"
+
 	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/pkg/connector"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"time"
 )
 
 type ActionService interface {
@@ -157,18 +159,27 @@ func (impl *ActionServiceImpl) FindActionsByVersion(versionId uuid.UUID) ([]Acti
 }
 
 func (impl *ActionServiceImpl) RunAction(action ActionDto) (interface{}, error) {
-	rsc, err := impl.resourceRepository.RetrieveById(action.ResourceId)
-	if err != nil {
-		return nil, err
-	}
-	resourceConn := &connector.Connector{
-		Type:    rsc.Kind,
-		Options: rsc.Options,
-	}
-	actionFactory := &Factory{
-		Type:     action.ActionType,
-		Template: action.ActionTemplate,
-		Resource: resourceConn,
+	var actionFactory *Factory
+	if action.ResourceId != uuid.Nil {
+		rsc, err := impl.resourceRepository.RetrieveById(action.ResourceId)
+		if err != nil {
+			return nil, err
+		}
+		resourceConn := &connector.Connector{
+			Type:    rsc.Kind,
+			Options: rsc.Options,
+		}
+		actionFactory = &Factory{
+			Type:     action.ActionType,
+			Template: action.ActionTemplate,
+			Resource: resourceConn,
+		}
+	} else {
+		actionFactory = &Factory{
+			Type:     action.ActionType,
+			Template: action.ActionTemplate,
+			Resource: nil,
+		}
 	}
 	actionAssemblyline := actionFactory.Build()
 	if actionAssemblyline == nil {

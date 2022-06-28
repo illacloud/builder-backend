@@ -16,6 +16,7 @@ package db
 
 import (
 	"fmt"
+
 	"github.com/caarlos0/env"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"

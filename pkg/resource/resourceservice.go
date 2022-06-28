@@ -17,12 +17,14 @@ package resource
 import (
 	"database/sql"
 	"errors"
-	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
+	"time"
+
 	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/pkg/connector"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"time"
 )
 
 type ResourceService interface {

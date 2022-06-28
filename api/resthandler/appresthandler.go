@@ -15,10 +15,12 @@
 package resthandler
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/illa-family/builder-backend/pkg/app"
-	"go.uber.org/zap"
 	"net/http"
+
+	"github.com/illa-family/builder-backend/pkg/app"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type AppRestHandler interface {
