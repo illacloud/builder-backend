@@ -17,6 +17,7 @@ package action
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -133,6 +134,9 @@ func (r *RestApiAction) Run() (interface{}, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		return nil, errors.New("invalid response")
+	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
