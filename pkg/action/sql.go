@@ -15,12 +15,11 @@
 package action
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/illa-family/builder-backend/pkg/connector"
-
-	"github.com/pkg/errors"
 )
 
 type SqlAction struct {

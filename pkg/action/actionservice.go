@@ -15,6 +15,7 @@
 package action
 
 import (
+	"errors"
 	"time"
 
 	"github.com/illa-family/builder-backend/internal/repository"
@@ -22,7 +23,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 

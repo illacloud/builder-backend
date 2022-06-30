@@ -17,9 +17,9 @@ package db
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 
 	"github.com/jackc/pgtype"
-	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
