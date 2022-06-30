@@ -73,6 +73,8 @@ func (impl *ActionRepositoryImpl) Delete(actionId uuid.UUID) error {
 
 func (impl *ActionRepositoryImpl) Update(action *Action) error {
 	if err := impl.db.Model(action).Updates(Action{
+		ResourceID:     action.ResourceID,
+		Type:           action.Type,
 		Name:           action.Name,
 		ActionTemplate: action.ActionTemplate,
 		UpdatedBy:      action.UpdatedBy,
