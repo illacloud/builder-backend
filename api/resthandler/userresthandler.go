@@ -230,7 +230,7 @@ func (impl UserRestHandlerImpl) SignIn(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
-			"errorMessage": err.Error(),
+			"errorMessage": errors.New("invalid password").Error(),
 		})
 		return
 	}

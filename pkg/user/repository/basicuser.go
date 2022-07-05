@@ -24,7 +24,7 @@ import (
 
 type User struct {
 	ID             uuid.UUID `gorm:"column:id;type:uuid;default:uuid_generate_v4();primary_key;unique"`
-	Username       string    `gorm:"column:user_name;type:varchar"`
+	Username       string    `gorm:"column:username;type:varchar"`
 	PasswordDigest string    `gorm:"column:password_digest;type:varchar"`
 	Email          string    `gorm:"column:email;type:varchar"`
 	Language       string    `gorm:"column:language;type:varchar"`
