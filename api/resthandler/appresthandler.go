@@ -29,6 +29,7 @@ type AppRestHandler interface {
 	RenameApp(c *gin.Context)
 	GetAllApp(c *gin.Context)
 	GetCurrentVersion(c *gin.Context)
+	DuplicateApp(c *gin.Context)
 }
 
 type AppRestHandlerImpl struct {
@@ -115,4 +116,8 @@ func (impl AppRestHandlerImpl) GetCurrentVersion(c *gin.Context) {
 		"createdAt":             "2022-06-06T12:00:30.780+00:00",
 		"updatedAt":             "2022-06-06T14:00:30.780+00:00",
 	})
+}
+
+func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
+	c.JSON(http.StatusOK, "pass")
 }

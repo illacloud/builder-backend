@@ -15,9 +15,9 @@
 package router
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/illa-family/builder-backend/pkg/cors"
 	"github.com/illa-family/builder-backend/pkg/user"
+
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
@@ -42,7 +42,6 @@ func NewRESTRouter(logger *zap.SugaredLogger, userRouter UserRouter, appRouter A
 }
 
 func (r RESTRouter) InitRouter(router *gin.RouterGroup) {
-	router.Use(cors.Cors())
 	v1 := router.Group("/v1")
 
 	authRouter := v1.Group("/auth")

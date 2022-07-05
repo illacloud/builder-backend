@@ -38,4 +38,5 @@ func (impl AppRouterImpl) InitAppRouter(appRouter *gin.RouterGroup) {
 	appRouter.PUT(":id", impl.appRestHandler.RenameApp)
 	appRouter.GET("", impl.appRestHandler.GetAllApp)
 	appRouter.GET(":id/versions/:versionId", impl.appRestHandler.GetCurrentVersion)
+	appRouter.POST(":id/duplication", impl.appRestHandler.DuplicateApp)
 }
