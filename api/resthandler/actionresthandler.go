@@ -18,6 +18,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/illa-family/builder-backend/pkg/action"
 
@@ -267,6 +270,24 @@ func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 	}
 	res, err := impl.actionService.RunAction(act)
 	if err != nil {
+		if strings.HasPrefix(err.Error(), "Error 1064:") {
+			lineNumber, _ := strconv.Atoi(err.Error()[len(err.Error())-1:])
+			message := ""
+			regexp, _ := regexp.Compile(`to use`)
+			match := regexp.FindStringIndex(err.Error())
+			if len(match) == 2 {
+				message = err.Error()[match[1]:]
+			}
+			c.JSON(http.StatusBadRequest, gin.H{
+				"errorCode":    400,
+				"errorMessage": errors.New("SQL syntax error").Error(),
+				"errorData": map[string]interface{}{
+					"lineNumber": lineNumber,
+					"message":    "SQL syntax error" + message,
+				},
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"errorCode":    500,
 			"errorMessage": err.Error(),
