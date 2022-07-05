@@ -21,7 +21,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 
 	"github.com/illa-family/builder-backend/pkg/connector"
 
@@ -78,13 +77,6 @@ func (r *RestApiAction) Run() (interface{}, error) {
 	client := &http.Client{}
 
 	reqUrl := r.RestApiTemplate.Url
-	params := url.Values{}
-	for _, param := range r.RestApiTemplate.UrlParams {
-		params.Set(param[0], param[1])
-	}
-	if len(params) > 0 {
-		reqUrl = reqUrl + "?" + params.Encode()
-	}
 
 	var reqBody io.Reader
 	switch r.RestApiTemplate.BodyType {
@@ -105,11 +97,21 @@ func (r *RestApiAction) Run() (interface{}, error) {
 		return nil, err
 	}
 
+	query := req.URL.Query()
+	for _, param := range r.RestApiTemplate.UrlParams {
+		if len(param) == 2 {
+			query.Add(param[0], param[1])
+		}
+	}
+	req.URL.RawQuery = query.Encode()
+
 	if r.Resource != nil {
 		var resourceApi RestApiResource
 		mapstructure.Decode(r.Resource.Options, resourceApi)
 		for _, header := range resourceApi.Headers {
-			req.Header.Add(header[0], header[1])
+			if len(header) == 2 {
+				req.Header.Add(header[0], header[1])
+			}
 		}
 		switch resourceApi.Authentication {
 		case AUTH_BASIC:
@@ -122,10 +124,11 @@ func (r *RestApiAction) Run() (interface{}, error) {
 		default:
 			break
 		}
-
 	}
 	for _, header := range r.RestApiTemplate.Headers {
-		req.Header.Add(header[0], header[1])
+		if len(header) == 2 {
+			req.Header.Add(header[0], header[1])
+		}
 	}
 
 	resp, err := client.Do(req)
