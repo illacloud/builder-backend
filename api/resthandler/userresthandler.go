@@ -210,14 +210,7 @@ func (impl UserRestHandlerImpl) SignIn(c *gin.Context) {
 
 	// fetch user by email
 	userDto, err := impl.userService.FindUserByEmail(payload.Email)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": err.Error(),
-		})
-		return
-	}
-	if userDto.UserId == uuid.Nil {
+	if err != nil || userDto.UserId == uuid.Nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": errors.New("no such user").Error(),
