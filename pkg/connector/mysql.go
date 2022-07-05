@@ -43,11 +43,11 @@ type AdvancedOptions struct {
 	SSHPort       string
 	SSHUsername   string
 	SSHPassword   string
-	SSHPrivateKey string
+	SSHPrivateKey map[string]interface{}
 	SSHPassphrase string
-	ServerCert    string
-	ClientKey     string
-	ClientCert    string
+	ServerCert    map[string]interface{}
+	ClientKey     map[string]interface{}
+	ClientCert    map[string]interface{}
 }
 
 func (m *MySQLConnection) Format(connector *Connector) error {
