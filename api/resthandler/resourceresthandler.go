@@ -16,6 +16,7 @@ package resthandler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/illa-family/builder-backend/pkg/resource"
@@ -59,6 +60,32 @@ func (impl ResourceRestHandlerImpl) FindAllResources(c *gin.Context) {
 }
 
 func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
+	// get user as creator
+	userID, ok := c.Get("userId")
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"errorCode":    401,
+			"errorMessage": errors.New("unauthorized").Error(),
+		})
+		return
+	}
+	userId, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"errorCode":    401,
+			"errorMessage": errors.New("unauthorized").Error(),
+		})
+		return
+	}
+	user, err := uuid.Parse(userId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+
 	var rsc resource.ResourceDto
 	if err := json.NewDecoder(c.Request.Body).Decode(&rsc); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -68,6 +95,8 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 		return
 	}
 	rsc.ResourceId = uuid.New()
+	rsc.CreatedBy = user
+	rsc.UpdatedBy = user
 	res, err := impl.resourceService.CreateResource(rsc)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -101,6 +130,32 @@ func (impl ResourceRestHandlerImpl) GetResource(c *gin.Context) {
 }
 
 func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
+	// get user as creator
+	userID, ok := c.Get("userId")
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"errorCode":    401,
+			"errorMessage": errors.New("unauthorized").Error(),
+		})
+		return
+	}
+	userId, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"errorCode":    401,
+			"errorMessage": errors.New("unauthorized").Error(),
+		})
+		return
+	}
+	user, err := uuid.Parse(userId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+
 	resourceId := c.Param("id")
 	id, err := uuid.Parse(resourceId)
 	if err != nil {
@@ -119,6 +174,7 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 		return
 	}
 	rsc.ResourceId = id
+	rsc.UpdatedBy = user
 	res, err := impl.resourceService.UpdateResource(rsc)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

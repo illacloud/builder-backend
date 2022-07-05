@@ -16,21 +16,25 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/illa-family/builder-backend/pkg/cors"
+	"github.com/illa-family/builder-backend/pkg/user"
 	"go.uber.org/zap"
 )
 
 type RESTRouter struct {
 	logger         *zap.SugaredLogger
 	Router         *gin.RouterGroup
+	UserRouter     UserRouter
 	AppRouter      AppRouter
 	ActionRouter   ActionRouter
 	ResourceRouter ResourceRouter
 }
 
-func NewRESTRouter(logger *zap.SugaredLogger, appRouter AppRouter,
+func NewRESTRouter(logger *zap.SugaredLogger, userRouter UserRouter, appRouter AppRouter,
 	actionRouter ActionRouter, resourceRouter ResourceRouter) *RESTRouter {
 	return &RESTRouter{
 		logger:         logger,
+		UserRouter:     userRouter,
 		AppRouter:      appRouter,
 		ActionRouter:   actionRouter,
 		ResourceRouter: resourceRouter,
@@ -38,11 +42,23 @@ func NewRESTRouter(logger *zap.SugaredLogger, appRouter AppRouter,
 }
 
 func (r RESTRouter) InitRouter(router *gin.RouterGroup) {
+	router.Use(cors.Cors())
 	v1 := router.Group("/v1")
 
-	r.AppRouter.InitAppRouter(v1)
+	authRouter := v1.Group("/auth")
+	userRouter := v1.Group("/users")
+	appRouter := v1.Group("/apps")
+	actionRouter := v1.Group("/versions/:versionId")
+	resourceRouter := v1.Group("/resources")
 
-	r.ActionRouter.InitActionRouter(v1)
+	userRouter.Use(user.JWTAuth())
+	appRouter.Use(user.JWTAuth())
+	actionRouter.Use(user.JWTAuth())
+	resourceRouter.Use(user.JWTAuth())
 
-	r.ResourceRouter.InitResourceRouter(v1)
+	r.UserRouter.InitAuthRouter(authRouter)
+	r.UserRouter.InitUserRouter(userRouter)
+	r.AppRouter.InitAppRouter(appRouter)
+	r.ActionRouter.InitActionRouter(actionRouter)
+	r.ResourceRouter.InitResourceRouter(resourceRouter)
 }

@@ -28,6 +28,7 @@ type AppRestHandler interface {
 	DeleteApp(c *gin.Context)
 	RenameApp(c *gin.Context)
 	GetAllApp(c *gin.Context)
+	GetCurrentVersion(c *gin.Context)
 }
 
 type AppRestHandlerImpl struct {
@@ -62,5 +63,56 @@ func (impl AppRestHandlerImpl) GetAllApp(c *gin.Context) {
 			"lastModifiedBy":   "Zhanjiao Deng",
 			"lastModifiedAt":   "2022-06-06T14:00:30.780+00:00",
 		},
+	})
+}
+
+func (impl AppRestHandlerImpl) GetCurrentVersion(c *gin.Context) {
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"versionId":   "450ca3c2-38ff-4f27-a1f7-3e71452f49cd",
+		"appId":       "1f221b62-568b-448c-989e-d3a376273134",
+		"versionName": "v1",
+		"components": map[string]interface{}{
+			"rootDsl": map[string]interface{}{
+				"displayName":    "root",
+				"parentNode":     nil,
+				"showName":       "root",
+				"childrenNode":   nil,
+				"type":           "DOT_PANEL",
+				"containerType":  "EDITOR_DOT_PANEL",
+				"verticalResize": true,
+				"h":              0,
+				"w":              0,
+				"x":              -1,
+				"y":              -1,
+			},
+		},
+		"actions": []map[string]interface{}{
+			{
+				"actionId":    "7a68c10e-16b4-4459-9be0-f55a03321a17",
+				"resourceId":  "6448c819-2e6b-4f19-976d-19d290e42c3a",
+				"displayName": "mysql1",
+				"actionType":  "mysql",
+				"actionTemplate": map[string]interface{}{
+					"mode":  "sql",
+					"query": "SELECT * FROM `order` WHERE charge_total > 100 LIMIT 100;",
+				},
+				"createdBy": "00000000-0000-0000-0000-000000000000",
+				"createdAt": "2022-06-27T07:46:08.384931Z",
+				"updatedBy": "00000000-0000-0000-0000-000000000000",
+				"updatedAt": "2022-06-27T16:03:26.658313Z",
+			},
+		},
+		"dependenciesState": map[string]interface{}{},
+		"executionState": map[string]interface{}{
+			"result": map[string]interface{}{},
+			"error":  map[string]interface{}{},
+		},
+		"dragShadowState":       map[string]interface{}{},
+		"dottedLineSquareState": map[string]interface{}{},
+		"displayNameState":      map[string]interface{}{},
+		"createdBy":             "1f221b62-568b-448c-989easdqwe2",
+		"updatedBy":             "1f221b62-568b-448c-989easdqwe2",
+		"createdAt":             "2022-06-06T12:00:30.780+00:00",
+		"updatedAt":             "2022-06-06T14:00:30.780+00:00",
 	})
 }

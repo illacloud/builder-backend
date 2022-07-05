@@ -33,10 +33,10 @@ func NewResourceRouterImpl(resourceRestHandler resthandler.ResourceRestHandler) 
 }
 
 func (impl ResourceRouterImpl) InitResourceRouter(resourceRouter *gin.RouterGroup) {
-	resourceRouter.GET("/resources", impl.resourceRestHandler.FindAllResources)
-	resourceRouter.POST("/resources", impl.resourceRestHandler.CreateResource)
-	resourceRouter.GET("/resources/:id", impl.resourceRestHandler.GetResource)
-	resourceRouter.PUT("/resources/:id", impl.resourceRestHandler.UpdateResource)
-	resourceRouter.DELETE("/resources/:id", impl.resourceRestHandler.DeleteResource)
-	resourceRouter.POST("/resources/testConnection", impl.resourceRestHandler.TestConnection)
+	resourceRouter.GET("", impl.resourceRestHandler.FindAllResources)
+	resourceRouter.POST("", impl.resourceRestHandler.CreateResource)
+	resourceRouter.GET("/:id", impl.resourceRestHandler.GetResource)
+	resourceRouter.PUT("/:id", impl.resourceRestHandler.UpdateResource)
+	resourceRouter.DELETE("/:id", impl.resourceRestHandler.DeleteResource)
+	resourceRouter.POST("/testConnection", impl.resourceRestHandler.TestConnection)
 }

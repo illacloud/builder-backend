@@ -22,6 +22,7 @@ import (
 	"github.com/illa-family/builder-backend/cmd/wireset"
 	"github.com/illa-family/builder-backend/internal/util"
 	"github.com/illa-family/builder-backend/pkg/db"
+	"github.com/illa-family/builder-backend/pkg/smtp"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
@@ -30,10 +31,12 @@ import (
 func Initialize() (*Server, error) {
 	wire.Build(
 		db.DbWireSet,
+		smtp.SMTPWireSet,
 		util.NewSugardLogger,
 		wireset.ResourceWireSet,
 		wireset.AppWireSet,
 		wireset.ActionWireSet,
+		wireset.UserWireSet,
 		router.NewRESTRouter,
 		GetAppConfig,
 		gin.New,

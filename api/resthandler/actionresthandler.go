@@ -16,6 +16,7 @@ package resthandler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/illa-family/builder-backend/pkg/action"
@@ -48,6 +49,32 @@ func NewActionRestHandlerImpl(logger *zap.SugaredLogger, actionService action.Ac
 }
 
 func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
+	// get user as creator
+	userID, ok := c.Get("userId")
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"errorCode":    401,
+			"errorMessage": errors.New("unauthorized").Error(),
+		})
+		return
+	}
+	userId, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"errorCode":    401,
+			"errorMessage": errors.New("unauthorized").Error(),
+		})
+		return
+	}
+	user, err := uuid.Parse(userId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+
 	versionId := c.Param("versionId")
 	vId, err := uuid.Parse(versionId)
 	if err != nil {
@@ -66,6 +93,8 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 		return
 	}
 	act.ActionId = uuid.New()
+	act.CreatedBy = user
+	act.UpdatedBy = user
 	res, err := impl.actionService.CreateAction(vId, act)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -78,6 +107,32 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 }
 
 func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
+	// get user as creator
+	userID, ok := c.Get("userId")
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"errorCode":    401,
+			"errorMessage": errors.New("unauthorized").Error(),
+		})
+		return
+	}
+	userId, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"errorCode":    401,
+			"errorMessage": errors.New("unauthorized").Error(),
+		})
+		return
+	}
+	user, err := uuid.Parse(userId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+
 	actionId := c.Param("id")
 	aId, err := uuid.Parse(actionId)
 	if err != nil {
@@ -105,6 +160,7 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 		return
 	}
 	act.ActionId = aId
+	act.UpdatedBy = user
 	res, err := impl.actionService.UpdateAction(vId, act)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

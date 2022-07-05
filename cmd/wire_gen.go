@@ -10,12 +10,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/illa-family/builder-backend/api/resthandler"
 	"github.com/illa-family/builder-backend/api/router"
-	"github.com/illa-family/builder-backend/internal/repository"
+	repository2 "github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/internal/util"
 	"github.com/illa-family/builder-backend/pkg/action"
 	"github.com/illa-family/builder-backend/pkg/app"
 	"github.com/illa-family/builder-backend/pkg/db"
 	"github.com/illa-family/builder-backend/pkg/resource"
+	"github.com/illa-family/builder-backend/pkg/smtp"
+	"github.com/illa-family/builder-backend/pkg/user"
+	"github.com/illa-family/builder-backend/pkg/user/repository"
 )
 
 // Injectors from wire.go:
@@ -35,19 +38,28 @@ func Initialize() (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	appRepositoryImpl := repository.NewAppRepositoryImpl(sugaredLogger, gormDB)
+	userRepositoryImpl := repository.NewUserRepositoryImpl(gormDB, sugaredLogger)
+	smtpConfig, err := smtp.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+	smtpServer := smtp.NewSMTPServer(smtpConfig)
+	userServiceImpl := user.NewUserServiceImpl(userRepositoryImpl, sugaredLogger, smtpServer)
+	userRestHandlerImpl := resthandler.NewUserRestHandlerImpl(sugaredLogger, userServiceImpl)
+	userRouterImpl := router.NewUserRouterImpl(userRestHandlerImpl)
+	appRepositoryImpl := repository2.NewAppRepositoryImpl(sugaredLogger, gormDB)
 	appServiceImpl := app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl)
 	appRestHandlerImpl := resthandler.NewAppRestHandlerImpl(sugaredLogger, appServiceImpl)
 	appRouterImpl := router.NewAppRouterImpl(appRestHandlerImpl)
-	actionRepositoryImpl := repository.NewActionRepositoryImpl(sugaredLogger, gormDB)
-	resourceRepositoryImpl := repository.NewResourceRepositoryImpl(sugaredLogger, gormDB)
+	actionRepositoryImpl := repository2.NewActionRepositoryImpl(sugaredLogger, gormDB)
+	resourceRepositoryImpl := repository2.NewResourceRepositoryImpl(sugaredLogger, gormDB)
 	actionServiceImpl := action.NewActionServiceImpl(sugaredLogger, actionRepositoryImpl, resourceRepositoryImpl)
 	actionRestHandlerImpl := resthandler.NewActionRestHandlerImpl(sugaredLogger, actionServiceImpl)
 	actionRouterImpl := router.NewActionRouterImpl(actionRestHandlerImpl)
 	resourceServiceImpl := resource.NewResourceServiceImpl(sugaredLogger, resourceRepositoryImpl)
 	resourceRestHandlerImpl := resthandler.NewResourceRestHandlerImpl(sugaredLogger, resourceServiceImpl)
 	resourceRouterImpl := router.NewResourceRouterImpl(resourceRestHandlerImpl)
-	restRouter := router.NewRESTRouter(sugaredLogger, appRouterImpl, actionRouterImpl, resourceRouterImpl)
+	restRouter := router.NewRESTRouter(sugaredLogger, userRouterImpl, appRouterImpl, actionRouterImpl, resourceRouterImpl)
 	server := NewServer(config, engine, restRouter, sugaredLogger)
 	return server, nil
 }

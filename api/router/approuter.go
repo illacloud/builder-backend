@@ -33,8 +33,9 @@ func NewAppRouterImpl(appRestHandler resthandler.AppRestHandler) *AppRouterImpl 
 }
 
 func (impl AppRouterImpl) InitAppRouter(appRouter *gin.RouterGroup) {
-	appRouter.POST("/apps", impl.appRestHandler.CreateApp)
-	appRouter.DELETE("/apps/:id", impl.appRestHandler.DeleteApp)
-	appRouter.PUT("/apps/:id", impl.appRestHandler.RenameApp)
-	appRouter.GET("/apps", impl.appRestHandler.GetAllApp)
+	appRouter.POST("", impl.appRestHandler.CreateApp)
+	appRouter.DELETE(":id", impl.appRestHandler.DeleteApp)
+	appRouter.PUT(":id", impl.appRestHandler.RenameApp)
+	appRouter.GET("", impl.appRestHandler.GetAllApp)
+	appRouter.GET(":id/versions/:versionId", impl.appRestHandler.GetCurrentVersion)
 }
