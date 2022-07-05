@@ -25,12 +25,9 @@ func JWTAuth() gin.HandlerFunc {
 		accessToken, _ := c.Cookie("access_token")
 		refreshToken, _ := c.Cookie("refresh_token")
 
-		validAccessToken, _ := ValidateAccessToken(accessToken)
-		if validAccessToken {
-			userId, err := ExtractUserIdFromToken(accessToken)
-			if err != nil {
-				c.AbortWithStatus(http.StatusUnauthorized)
-			}
+		validAccessToken, validaAccessErr := ValidateAccessToken(accessToken)
+		userId, extractErr := ExtractUserIdFromToken(accessToken)
+		if validAccessToken && validaAccessErr == nil && extractErr == nil {
 			c.Set("userId", userId)
 		} else {
 			// if access token expires, validate refresh token
@@ -38,10 +35,6 @@ func JWTAuth() gin.HandlerFunc {
 			if err != nil || !validRefreshToken {
 				c.AbortWithStatus(http.StatusUnauthorized)
 			} else {
-				userId, err := ExtractUserIdFromToken(accessToken)
-				if err != nil {
-					c.AbortWithStatus(http.StatusUnauthorized)
-				}
 				c.Set("userId", userId)
 				newAccessToken, _ := CreateAccessToken(userId)
 				newRefreshToken, _ := CreateRefreshToken(newAccessToken)
@@ -49,7 +42,6 @@ func JWTAuth() gin.HandlerFunc {
 				c.SetCookie("refresh_token", newRefreshToken, 259200, "/", "localhost", false, true)
 			}
 		}
-
 		c.Next()
 	}
 }
