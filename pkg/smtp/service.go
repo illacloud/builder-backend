@@ -137,7 +137,6 @@ func SendMailUsingTLS(addr string, auth smtp.Auth, from string, to string, msg [
 	tos := strings.Split(to, ";")
 	for _, addr := range tos {
 		if err = c.Rcpt(addr); err != nil {
-			fmt.Print(err)
 			return err
 		}
 	}
