@@ -155,10 +155,17 @@ func (impl UserRestHandlerImpl) SignUp(c *gin.Context) {
 
 	// validate verification code
 	validCode, err := impl.userService.ValidateVerificationCode(payload.VerificationCode, payload.VerificationToken)
-	if !validCode || err != nil {
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
-			"errorMessage": errors.New("invalid verification code").Error(),
+			"errorMessage": "verification code expires",
+		})
+		return
+	}
+	if !validCode {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": "verification code error",
 		})
 		return
 	}
@@ -259,17 +266,10 @@ func (impl UserRestHandlerImpl) ForgetPassword(c *gin.Context) {
 
 	// fetch user by email
 	userDto, err := impl.userService.FindUserByEmail(payload.Email)
-	if err != nil {
+	if err != nil || userDto.UserId == uuid.Nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
-			"errorMessage": err.Error(),
-		})
-		return
-	}
-	if userDto.UserId == uuid.Nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": errors.New("no such user, please sign up").Error(),
+			"errorMessage": errors.New("no such user").Error(),
 		})
 		return
 	}
