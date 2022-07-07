@@ -9,3 +9,13 @@
 
 # vim
 *.swp
+
+# bin
+main
+*.exe
+
+# cert
+id_rsa
+id_rsa.pub
+*.pem
+
