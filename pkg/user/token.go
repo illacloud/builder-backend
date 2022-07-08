@@ -15,7 +15,6 @@
 package user
 
 import (
-	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -25,15 +24,27 @@ import (
 	"github.com/google/uuid"
 )
 
+type AuthClaims struct {
+	User   string `json:"user"`
+	Random string `json:"rnd"`
+	jwt.RegisteredClaims
+}
+
 func CreateAccessToken(id uuid.UUID) (string, error) {
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	vCode := fmt.Sprintf("%06v", rnd.Int31n(10000))
 
-	claims := jwt.MapClaims{}
-	claims["userId"] = id.String()
-	claims["rnd"] = vCode
-	claims["exp"] = time.Now().Add(time.Hour * 2).Unix()
+	claims := &AuthClaims{
+		User:   id.String(),
+		Random: vCode,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer: "ILLA",
+			ExpiresAt: &jwt.NumericDate{
+				Time: time.Now().Add(time.Hour * 24 * 7),
+			},
+		},
+	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
@@ -45,94 +56,29 @@ func CreateAccessToken(id uuid.UUID) (string, error) {
 	return accessToken, nil
 }
 
-func CreateRefreshToken(accessToken string) (string, error) {
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	vCode := fmt.Sprintf("%06v", rnd.Int31n(10000))
-
-	claims := jwt.MapClaims{}
-	claims["token"] = accessToken
-	claims["rnd"] = vCode
-	claims["exp"] = time.Now().Add(time.Hour * 24 * 3).Unix()
-
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	refreshTokenString, err := refreshToken.SignedString([]byte(os.Getenv("ILLA_SECRET_KEY")))
-	if err != nil {
-		return "", err
-	}
-
-	return refreshTokenString, err
-}
-
 func ValidateAccessToken(accessToken string) (bool, error) {
-	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
-		_, ok := token.Method.(*jwt.SigningMethodHMAC)
-		if !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-
-		return []byte(os.Getenv("ILLA_SECRET_KEY")), nil
-	})
+	_, err := ExtractUserIdFromToken(accessToken)
 	if err != nil {
 		return false, err
 	}
-
-	payload, ok := token.Claims.(jwt.MapClaims)
-	if !(ok && token.Valid) {
-		return false, err
-	}
-	userId := payload["userId"].(string)
-	if _, err := uuid.Parse(userId); err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
-func ValidateRefreshToken(refreshToken string) (bool, error) {
-	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
-		_, ok := token.Method.(*jwt.SigningMethodHMAC)
-		if !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-
-		return []byte(os.Getenv("ILLA_SECRET_KEY")), nil
-	})
-	if err != nil {
-		return false, err
-	}
-
-	payload, ok := token.Claims.(jwt.MapClaims)
-	if !(ok && token.Valid) {
-		return false, errors.New("invalid token")
-	}
-
-	_, ok = payload["token"].(string)
-	if !ok {
-		return false, errors.New("invalid token")
-	}
-
 	return true, nil
 }
 
 func ExtractUserIdFromToken(accessToken string) (uuid.UUID, error) {
-	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
-		_, ok := token.Method.(*jwt.SigningMethodHMAC)
-		if !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-
+	authClaims := &AuthClaims{}
+	token, err := jwt.ParseWithClaims(accessToken, authClaims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("ILLA_SECRET_KEY")), nil
 	})
 	if err != nil {
 		return uuid.Nil, err
 	}
 
-	payload, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
+	claims, ok := token.Claims.(*AuthClaims)
+	if !(ok && token.Valid) {
 		return uuid.Nil, err
 	}
-	userId := payload["userId"].(string)
+
+	userId := claims.User
 	userID, err := uuid.Parse(userId)
 	if err != nil {
 		return uuid.Nil, err

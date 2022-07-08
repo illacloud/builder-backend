@@ -86,7 +86,7 @@ func (s *SMTPServer) NewVerificationCode(email string) (string, error) {
 
 	codeClaims := jwt.MapClaims{}
 	codeClaims["id"] = vCode
-	codeClaims["exp"] = time.Now().Add(60 * time.Second).Unix()
+	codeClaims["exp"] = time.Now().Add(5 * time.Minute).Unix()
 	codeClaims["iat"] = time.Now().Unix()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, codeClaims)
 	codeToken, err := token.SignedString([]byte(s.Secret))

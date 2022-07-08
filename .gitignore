@@ -9,3 +9,6 @@
 
 # vim
 *.swp
+
+# docker
+dockerfile
