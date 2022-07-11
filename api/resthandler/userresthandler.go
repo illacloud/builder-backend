@@ -29,8 +29,9 @@ import (
 	"go.uber.org/zap"
 )
 
-type Email struct {
+type VerificationRequest struct {
 	Email string `json:"email" validate:"required"`
+	Usage string `json:"usage" validate:"oneof=signup forgetpwd"`
 }
 
 type Username struct {
@@ -50,7 +51,7 @@ type SignUpRequest struct {
 	Username          string `json:"username" validate:"required"`
 	Email             string `json:"email" validate:"required"`
 	Password          string `json:"password" validate:"required"`
-	Language          string `json:"language" validate:"required"`
+	Language          string `json:"language" validate:"oneof=zh-cn en-us"`
 	IsSubscribed      bool   `json:"isSubscribed"`
 	VerificationCode  string `json:"verificationCode" validate:"required"`
 	VerificationToken string `json:"verificationToken" validate:"required"`
@@ -92,7 +93,7 @@ func NewUserRestHandlerImpl(logger *zap.SugaredLogger, userService user.UserServ
 }
 
 func (impl UserRestHandlerImpl) GetVerificationCode(c *gin.Context) {
-	var payload Email
+	var payload VerificationRequest
 	if err := json.NewDecoder(c.Request.Body).Decode(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
@@ -111,7 +112,7 @@ func (impl UserRestHandlerImpl) GetVerificationCode(c *gin.Context) {
 		return
 	}
 
-	vToken, err := impl.userService.GenerateVerificationCode(payload.Email)
+	vToken, err := impl.userService.GenerateVerificationCode(payload.Email, payload.Usage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"errorCode":    500,
@@ -155,18 +156,11 @@ func (impl UserRestHandlerImpl) SignUp(c *gin.Context) {
 	}
 
 	// validate verification code
-	validCode, err := impl.userService.ValidateVerificationCode(payload.VerificationCode, payload.VerificationToken)
-	if err != nil {
+	validCode, err := impl.userService.ValidateVerificationCode(payload.VerificationCode, payload.VerificationToken, "signup")
+	if err != nil || !validCode {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
-			"errorMessage": "verification code expires",
-		})
-		return
-	}
-	if !validCode {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "verification code error",
+			"errorMessage": err.Error(),
 		})
 		return
 	}
@@ -220,7 +214,7 @@ func (impl UserRestHandlerImpl) SignIn(c *gin.Context) {
 	if err != nil || userDto.UserId == uuid.Nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
-			"errorMessage": errors.New("no such user").Error(),
+			"errorMessage": "invalid email or password",
 		})
 		return
 	}
@@ -230,7 +224,7 @@ func (impl UserRestHandlerImpl) SignIn(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
-			"errorMessage": errors.New("invalid password").Error(),
+			"errorMessage": "invalid email or password",
 		})
 		return
 	}
@@ -274,11 +268,11 @@ func (impl UserRestHandlerImpl) ForgetPassword(c *gin.Context) {
 	}
 
 	// validate verification code
-	validCode, err := impl.userService.ValidateVerificationCode(payload.VerificationCode, payload.VerificationToken)
+	validCode, err := impl.userService.ValidateVerificationCode(payload.VerificationCode, payload.VerificationToken, "forgetpwd")
 	if !validCode || err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
-			"errorMessage": errors.New("invalid verification code").Error(),
+			"errorMessage": err.Error(),
 		})
 		return
 	}
@@ -302,7 +296,7 @@ func (impl UserRestHandlerImpl) ForgetPassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "change password successfully",
+		"message": "reset password successfully",
 	})
 }
 
@@ -381,7 +375,7 @@ func (impl UserRestHandlerImpl) UpdatePassword(c *gin.Context) {
 	if err := json.NewDecoder(c.Request.Body).Decode(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
-			"errorMessage": err.Error(),
+			"errorMessage": "request body is invalid",
 		})
 		return
 	}
@@ -391,7 +385,7 @@ func (impl UserRestHandlerImpl) UpdatePassword(c *gin.Context) {
 	if err := validate.Struct(payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
-			"errorMessage": err.Error(),
+			"errorMessage": "request body is invalid",
 		})
 		return
 	}
@@ -434,7 +428,7 @@ func (impl UserRestHandlerImpl) UpdatePassword(c *gin.Context) {
 	if err := bcrypt.CompareHashAndPassword([]byte(userDto.Password), []byte(payload.CurrentPassword)); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
-			"errorMessage": err.Error(),
+			"errorMessage": errors.New("current password incorrect").Error(),
 		})
 		return
 	}
