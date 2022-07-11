@@ -32,7 +32,7 @@ type UserService interface {
 	GetUser(userId uuid.UUID) (*UserDto, error)
 	GenerateVerificationCode(email string) (string, error)
 	ValidateVerificationCode(vCode, vToken string) (bool, error)
-	GetToken(userId uuid.UUID) (string, string, error)
+	GetToken(userId uuid.UUID) (string, error)
 }
 
 type UserDto struct {
@@ -125,16 +125,12 @@ func (impl *UserServiceImpl) ValidateVerificationCode(vCode, vToken string) (boo
 	return impl.smtpServer.ValidateVerificationCode(vToken, vCode)
 }
 
-func (impl *UserServiceImpl) GetToken(userId uuid.UUID) (string, string, error) {
+func (impl *UserServiceImpl) GetToken(userId uuid.UUID) (string, error) {
 	accessToken, err := CreateAccessToken(userId)
 	if err != nil {
-		return "", "", nil
+		return "", nil
 	}
-	refreshToken, err := CreateRefreshToken(accessToken)
-	if err != nil {
-		return "", "", nil
-	}
-	return accessToken, refreshToken, nil
+	return accessToken, nil
 }
 
 func (impl *UserServiceImpl) GetUser(userId uuid.UUID) (*UserDto, error) {
@@ -146,6 +142,7 @@ func (impl *UserServiceImpl) GetUser(userId uuid.UUID) (*UserDto, error) {
 		UserId:       userRecord.ID,
 		Username:     userRecord.Username,
 		Email:        userRecord.Email,
+		Password:     userRecord.PasswordDigest,
 		Language:     userRecord.Language,
 		IsSubscribed: userRecord.IsSubscribed,
 		CreatedAt:    userRecord.CreatedAt,

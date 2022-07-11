@@ -69,7 +69,7 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 		})
 		return
 	}
-	userId, ok := userID.(string)
+	userId, ok := userID.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"errorCode":    401,
@@ -77,7 +77,7 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 		})
 		return
 	}
-	user, err := uuid.Parse(userId)
+	user, err := uuid.Parse(userId.String())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
@@ -139,7 +139,7 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 		})
 		return
 	}
-	userId, ok := userID.(string)
+	userId, ok := userID.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"errorCode":    401,
@@ -147,7 +147,7 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 		})
 		return
 	}
-	user, err := uuid.Parse(userId)
+	user, err := uuid.Parse(userId.String())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,

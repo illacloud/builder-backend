@@ -43,4 +43,5 @@ func (impl UserRouterImpl) InitUserRouter(userRouter *gin.RouterGroup) {
 	userRouter.PATCH("/password", impl.userRestHandler.UpdatePassword)
 	userRouter.PATCH("/username", impl.userRestHandler.UpdateUsername)
 	userRouter.PATCH("/language", impl.userRestHandler.UpdateLanguage)
+	userRouter.GET("", impl.userRestHandler.GetUserInfo)
 }

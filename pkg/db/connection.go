@@ -56,11 +56,7 @@ func NewDbConnection(cfg *Config, logger *zap.SugaredLogger) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	if err != nil {
-		logger.Errorw("error in connecting db ", "db", cfg, "err", err)
-		return nil, err
-	} else {
-		logger.Infow("connected with db", "db", cfg)
-	}
+	logger.Infow("connected with db", "db", cfg)
+
 	return db, err
 }

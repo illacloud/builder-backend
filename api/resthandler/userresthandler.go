@@ -76,6 +76,7 @@ type UserRestHandler interface {
 	UpdateUsername(c *gin.Context)
 	UpdatePassword(c *gin.Context)
 	UpdateLanguage(c *gin.Context)
+	GetUserInfo(c *gin.Context)
 }
 
 type UserRestHandlerImpl struct {
@@ -187,9 +188,8 @@ func (impl UserRestHandlerImpl) SignUp(c *gin.Context) {
 	}
 
 	// generate access token and refresh token
-	accessToken, refreshToken, _ := impl.userService.GetToken(userDto.UserId)
-	c.SetCookie("access_token", accessToken, 7200, "/", "localhost", false, true)
-	c.SetCookie("refresh_token", refreshToken, 259200, "/", "localhost", false, true)
+	accessToken, _ := impl.userService.GetToken(userDto.UserId)
+	c.Header("illa-token", accessToken)
 
 	c.JSON(http.StatusOK, userDto)
 }
@@ -236,9 +236,8 @@ func (impl UserRestHandlerImpl) SignIn(c *gin.Context) {
 	}
 
 	// generate access token and refresh token
-	accessToken, refreshToken, _ := impl.userService.GetToken(userDto.UserId)
-	c.SetCookie("access_token", accessToken, 7200, "/", "localhost", false, true)
-	c.SetCookie("refresh_token", refreshToken, 259200, "/", "localhost", false, true)
+	accessToken, _ := impl.userService.GetToken(userDto.UserId)
+	c.Header("illa-token", accessToken)
 
 	c.JSON(http.StatusOK, userDto)
 }
@@ -337,7 +336,7 @@ func (impl UserRestHandlerImpl) UpdateUsername(c *gin.Context) {
 		})
 		return
 	}
-	userId, ok := userID.(string)
+	userId, ok := userID.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"errorCode":    401,
@@ -345,7 +344,7 @@ func (impl UserRestHandlerImpl) UpdateUsername(c *gin.Context) {
 		})
 		return
 	}
-	id, err := uuid.Parse(userId)
+	id, err := uuid.Parse(userId.String())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"errorCode":    500,
@@ -363,7 +362,7 @@ func (impl UserRestHandlerImpl) UpdateUsername(c *gin.Context) {
 	}
 
 	// update user username
-	userDto.Language = payload.Username
+	userDto.Username = payload.Username
 	if _, err := impl.userService.UpdateUser(userDto); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"errorCode":    500,
@@ -406,7 +405,7 @@ func (impl UserRestHandlerImpl) UpdatePassword(c *gin.Context) {
 		})
 		return
 	}
-	userId, ok := userID.(string)
+	userId, ok := userID.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"errorCode":    401,
@@ -414,7 +413,7 @@ func (impl UserRestHandlerImpl) UpdatePassword(c *gin.Context) {
 		})
 		return
 	}
-	id, err := uuid.Parse(userId)
+	id, err := uuid.Parse(userId.String())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"errorCode":    500,
@@ -491,7 +490,7 @@ func (impl UserRestHandlerImpl) UpdateLanguage(c *gin.Context) {
 		})
 		return
 	}
-	userId, ok := userID.(string)
+	userId, ok := userID.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"errorCode":    401,
@@ -499,7 +498,7 @@ func (impl UserRestHandlerImpl) UpdateLanguage(c *gin.Context) {
 		})
 		return
 	}
-	id, err := uuid.Parse(userId)
+	id, err := uuid.Parse(userId.String())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"errorCode":    500,
@@ -526,5 +525,42 @@ func (impl UserRestHandlerImpl) UpdateLanguage(c *gin.Context) {
 		return
 	}
 
+	c.JSON(http.StatusOK, userDto)
+}
+
+func (impl UserRestHandlerImpl) GetUserInfo(c *gin.Context) {
+	// get user by id
+	userID, ok := c.Get("userId")
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"errorCode":    401,
+			"errorMessage": errors.New("unauthorized").Error(),
+		})
+		return
+	}
+	userId, ok := userID.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"errorCode":    401,
+			"errorMessage": errors.New("unauthorized").Error(),
+		})
+		return
+	}
+	id, err := uuid.Parse(userId.String())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
+	userDto, err := impl.userService.GetUser(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"errorCode":    500,
+			"errorMessage": err.Error(),
+		})
+		return
+	}
 	c.JSON(http.StatusOK, userDto)
 }

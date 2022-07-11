@@ -10,6 +10,9 @@
 # vim
 *.swp
 
+# docker
+dockerfile
+
 # bin
 main
 *.exe
