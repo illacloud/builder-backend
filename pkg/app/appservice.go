@@ -33,9 +33,8 @@ type AppService interface {
 }
 
 type AppServiceImpl struct {
-	logger               *zap.SugaredLogger
-	appRepository        repository.AppRepository
-	appVersionRepository repository.AppVersionRepository
+	logger        *zap.SugaredLogger
+	appRepository repository.AppRepository
 }
 
 type AppDto struct {
@@ -51,12 +50,10 @@ type AppDto struct {
 type AppVersionDto struct {
 }
 
-func NewAppServiceImpl(logger *zap.SugaredLogger, appRepository repository.AppRepository,
-	appVersionRepository repository.AppVersionRepository) *AppServiceImpl {
+func NewAppServiceImpl(logger *zap.SugaredLogger, appRepository repository.AppRepository) *AppServiceImpl {
 	return &AppServiceImpl{
-		logger:               logger,
-		appRepository:        appRepository,
-		appVersionRepository: appVersionRepository,
+		logger:        logger,
+		appRepository: appRepository,
 	}
 }
 
@@ -128,37 +125,5 @@ func (impl *AppServiceImpl) GetAppEditingVersion(appId uuid.UUID) (AppVersionDto
 }
 
 func (impl *AppServiceImpl) CreateAppVersion(userId, appId uuid.UUID) (uuid.UUID, error) {
-	versionId := uuid.New()
-	if err := impl.appVersionRepository.Create(&repository.Version{
-		ID:    versionId,
-		AppID: appId,
-		Name:  "v1",
-		Components: map[string]interface{}{
-			"rootDsl": map[string]interface{}{
-				"displayName":    "root",
-				"parentNode":     "",
-				"showName":       "root",
-				"childrenNode":   []map[string]interface{}{},
-				"type":           "DOT_PANEL",
-				"containerType":  "EDITOR_DOT_PANEL",
-				"verticalResize": true,
-				"h":              0,
-				"w":              0,
-				"x":              -1,
-				"y":              -1,
-			},
-		},
-		DependenciesState:     map[string]interface{}{},
-		ExecutionState:        map[string]interface{}{},
-		DragShadowState:       map[string]interface{}{},
-		DottedLineSquareState: map[string]interface{}{},
-		DisplaynameState:      map[string]interface{}{},
-		CreatedBy:             userId,
-		CreatedAt:             time.Now().UTC(),
-		UpdatedBy:             userId,
-		UpdatedAt:             time.Now().UTC(),
-	}); err != nil {
-		return uuid.Nil, err
-	}
-	return versionId, nil
+	return uuid.Nil, nil
 }
