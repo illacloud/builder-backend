@@ -19,8 +19,8 @@ import (
 
 	"github.com/illa-family/builder-backend/api/resthandler"
 	"github.com/illa-family/builder-backend/api/router"
+	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/pkg/user"
-	"github.com/illa-family/builder-backend/pkg/user/repository"
 )
 
 var UserWireSet = wire.NewSet(
