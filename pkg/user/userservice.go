@@ -17,8 +17,8 @@ package user
 import (
 	"time"
 
+	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/pkg/smtp"
-	"github.com/illa-family/builder-backend/pkg/user/repository"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/google/uuid"

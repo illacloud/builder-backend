@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/illa-family/builder-backend/api/resthandler"
 	"github.com/illa-family/builder-backend/api/router"
-	repository2 "github.com/illa-family/builder-backend/internal/repository"
+	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/internal/util"
 	"github.com/illa-family/builder-backend/pkg/action"
 	"github.com/illa-family/builder-backend/pkg/app"
@@ -18,7 +18,6 @@ import (
 	"github.com/illa-family/builder-backend/pkg/resource"
 	"github.com/illa-family/builder-backend/pkg/smtp"
 	"github.com/illa-family/builder-backend/pkg/user"
-	"github.com/illa-family/builder-backend/pkg/user/repository"
 )
 
 // Injectors from wire.go:
@@ -47,13 +46,12 @@ func Initialize() (*Server, error) {
 	userServiceImpl := user.NewUserServiceImpl(userRepositoryImpl, sugaredLogger, smtpServer)
 	userRestHandlerImpl := resthandler.NewUserRestHandlerImpl(sugaredLogger, userServiceImpl)
 	userRouterImpl := router.NewUserRouterImpl(userRestHandlerImpl)
-	appRepositoryImpl := repository2.NewAppRepositoryImpl(sugaredLogger, gormDB)
-	appVersionRepositoryImpl := repository2.NewAppVersionRepositoryImpl(sugaredLogger, gormDB)
-	appServiceImpl := app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, appVersionRepositoryImpl)
+	appRepositoryImpl := repository.NewAppRepositoryImpl(sugaredLogger, gormDB)
+	appServiceImpl := app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl)
 	appRestHandlerImpl := resthandler.NewAppRestHandlerImpl(sugaredLogger, appServiceImpl)
 	appRouterImpl := router.NewAppRouterImpl(appRestHandlerImpl)
-	actionRepositoryImpl := repository2.NewActionRepositoryImpl(sugaredLogger, gormDB)
-	resourceRepositoryImpl := repository2.NewResourceRepositoryImpl(sugaredLogger, gormDB)
+	actionRepositoryImpl := repository.NewActionRepositoryImpl(sugaredLogger, gormDB)
+	resourceRepositoryImpl := repository.NewResourceRepositoryImpl(sugaredLogger, gormDB)
 	actionServiceImpl := action.NewActionServiceImpl(sugaredLogger, actionRepositoryImpl, resourceRepositoryImpl)
 	actionRestHandlerImpl := resthandler.NewActionRestHandlerImpl(sugaredLogger, actionServiceImpl)
 	actionRouterImpl := router.NewActionRouterImpl(actionRestHandlerImpl)

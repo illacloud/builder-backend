@@ -26,8 +26,6 @@ import (
 var AppWireSet = wire.NewSet(
 	repository.NewAppRepositoryImpl,
 	wire.Bind(new(repository.AppRepository), new(*repository.AppRepositoryImpl)),
-	repository.NewAppVersionRepositoryImpl,
-	wire.Bind(new(repository.AppVersionRepository), new(*repository.AppVersionRepositoryImpl)),
 	app.NewAppServiceImpl,
 	wire.Bind(new(app.AppService), new(*app.AppServiceImpl)),
 	resthandler.NewAppRestHandlerImpl,
