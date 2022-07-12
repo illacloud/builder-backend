@@ -240,6 +240,7 @@ func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 }
 
 func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
+	c.Header("Timing-Allow-Origin", "*")
 	var act action.ActionDto
 	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -260,6 +261,7 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 }
 
 func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
+	c.Header("Timing-Allow-Origin", "*")
 	var act action.ActionDto
 	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
