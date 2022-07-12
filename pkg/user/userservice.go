@@ -30,8 +30,8 @@ type UserService interface {
 	UpdateUser(userDto *UserDto) (*UserDto, error)
 	FindUserByEmail(email string) (*UserDto, error)
 	GetUser(userId uuid.UUID) (*UserDto, error)
-	GenerateVerificationCode(email string) (string, error)
-	ValidateVerificationCode(vCode, vToken string) (bool, error)
+	GenerateVerificationCode(email, usage string) (string, error)
+	ValidateVerificationCode(vCode, vToken, usage string) (bool, error)
 	GetToken(userId uuid.UUID) (string, error)
 }
 
@@ -117,12 +117,12 @@ func (impl *UserServiceImpl) FindUserByEmail(email string) (*UserDto, error) {
 	return userDto, nil
 }
 
-func (impl *UserServiceImpl) GenerateVerificationCode(email string) (string, error) {
-	return impl.smtpServer.NewVerificationCode(email)
+func (impl *UserServiceImpl) GenerateVerificationCode(email, usage string) (string, error) {
+	return impl.smtpServer.NewVerificationCode(email, usage)
 }
 
-func (impl *UserServiceImpl) ValidateVerificationCode(vCode, vToken string) (bool, error) {
-	return impl.smtpServer.ValidateVerificationCode(vToken, vCode)
+func (impl *UserServiceImpl) ValidateVerificationCode(vCode, vToken, usage string) (bool, error) {
+	return impl.smtpServer.ValidateVerificationCode(vToken, vCode, usage)
 }
 
 func (impl *UserServiceImpl) GetToken(userId uuid.UUID) (string, error) {
