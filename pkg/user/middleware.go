@@ -29,11 +29,11 @@ func JWTAuth() gin.HandlerFunc {
 		} else {
 			token = accessToken[0]
 		}
-		userId, extractErr := ExtractUserIdFromToken(token)
+		userID, extractErr := ExtractUserIDFromToken(token)
 		validAccessToken, validaAccessErr := ValidateAccessToken(token)
 
 		if validAccessToken && validaAccessErr == nil && extractErr == nil {
-			c.Set("userId", userId)
+			c.Set("userID", userID)
 		} else {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}

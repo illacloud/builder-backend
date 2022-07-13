@@ -21,22 +21,21 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/google/uuid"
 )
 
 type AuthClaims struct {
-	User   string `json:"user"`
+	User   int    `json:"user"`
 	Random string `json:"rnd"`
 	jwt.RegisteredClaims
 }
 
-func CreateAccessToken(id uuid.UUID) (string, error) {
+func CreateAccessToken(id int) (string, error) {
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	vCode := fmt.Sprintf("%06v", rnd.Int31n(10000))
 
 	claims := &AuthClaims{
-		User:   id.String(),
+		User:   id,
 		Random: vCode,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer: "ILLA",
@@ -57,32 +56,28 @@ func CreateAccessToken(id uuid.UUID) (string, error) {
 }
 
 func ValidateAccessToken(accessToken string) (bool, error) {
-	_, err := ExtractUserIdFromToken(accessToken)
+	_, err := ExtractUserIDFromToken(accessToken)
 	if err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
-func ExtractUserIdFromToken(accessToken string) (uuid.UUID, error) {
+func ExtractUserIDFromToken(accessToken string) (int, error) {
 	authClaims := &AuthClaims{}
 	token, err := jwt.ParseWithClaims(accessToken, authClaims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("ILLA_SECRET_KEY")), nil
 	})
 	if err != nil {
-		return uuid.Nil, err
+		return 0, err
 	}
 
 	claims, ok := token.Claims.(*AuthClaims)
 	if !(ok && token.Valid) {
-		return uuid.Nil, err
+		return 0, err
 	}
 
-	userId := claims.User
-	userID, err := uuid.Parse(userId)
-	if err != nil {
-		return uuid.Nil, err
-	}
+	userID := claims.User
 
 	return userID, nil
 }

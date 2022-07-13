@@ -116,7 +116,7 @@ func (s *SMTPServer) NewVerificationCode(email, usage string) (string, error) {
 	return codeToken, nil
 }
 
-func (s *SMTPServer) ValidateVerificationCode(codeToken, vCode, usage string) (bool, error) {
+func (s *SMTPServer) ValidateVerificationCode(codeToken, vCode, email, usage string) (bool, error) {
 	vCodeClaims := &VCodeClaims{}
 	token, err := jwt.ParseWithClaims(codeToken, vCodeClaims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(s.Secret), nil
@@ -129,7 +129,7 @@ func (s *SMTPServer) ValidateVerificationCode(codeToken, vCode, usage string) (b
 	if !(ok && claims.Usage == usage) {
 		return false, errors.New("invalid verification token")
 	}
-	if !(claims.Code == vCode) {
+	if !(claims.Code == vCode && claims.Email == email) {
 		return false, errors.New("verification code wrong")
 	}
 	return true, nil

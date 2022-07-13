@@ -17,27 +17,26 @@ package repository
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type User struct {
-	ID             uuid.UUID `gorm:"column:id;type:uuid;default:uuid_generate_v4();primary_key;unique"`
-	Username       string    `gorm:"column:username;type:varchar"`
-	PasswordDigest string    `gorm:"column:password_digest;type:varchar"`
-	Email          string    `gorm:"column:email;type:varchar"`
-	Language       string    `gorm:"column:language;type:varchar"`
-	IsSubscribed   bool      `gorm:"column:is_subscribed;type:boolean"`
+	ID             int       `gorm:"column:id;type:bigserial;primary_key"`
+	Nickname       string    `gorm:"column:nickname;type:varchar;size:15;not null"`
+	PasswordDigest string    `gorm:"column:password_digest;type:varchar;size:60;not null"`
+	Email          string    `gorm:"column:email;type:varchar;size:255;not null"`
+	Language       int       `gorm:"column:language;type:smallint;not null"`
+	IsSubscribed   bool      `gorm:"column:is_subscribed;type:boolean;default:false;not null"`
 	CreatedAt      time.Time `gorm:"column:created_at;type:timestamp"`
 	UpdatedAt      time.Time `gorm:"column:updated_at;type:timestamp"`
 }
 
 type UserRepository interface {
-	CreateUser(user *User) error
+	CreateUser(user *User) (int, error)
 	UpdateUser(user *User) error
 	FetchUserByEmail(email string) (*User, error)
-	RetrieveById(userId uuid.UUID) (*User, error)
+	RetrieveByID(id int) (*User, error)
 }
 
 type UserRepositoryImpl struct {
@@ -49,16 +48,16 @@ func NewUserRepositoryImpl(db *gorm.DB, logger *zap.SugaredLogger) *UserReposito
 	return &UserRepositoryImpl{logger: logger, db: db}
 }
 
-func (impl *UserRepositoryImpl) CreateUser(user *User) error {
+func (impl *UserRepositoryImpl) CreateUser(user *User) (int, error) {
 	if err := impl.db.Create(user).Error; err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return user.ID, nil
 }
 
 func (impl *UserRepositoryImpl) UpdateUser(user *User) error {
 	if err := impl.db.Model(user).Updates(User{
-		Username:       user.Username,
+		Nickname:       user.Nickname,
 		PasswordDigest: user.PasswordDigest,
 		Language:       user.Language,
 		UpdatedAt:      user.UpdatedAt,
@@ -76,9 +75,9 @@ func (impl *UserRepositoryImpl) FetchUserByEmail(email string) (*User, error) {
 	return user, nil
 }
 
-func (impl *UserRepositoryImpl) RetrieveById(userId uuid.UUID) (*User, error) {
+func (impl *UserRepositoryImpl) RetrieveByID(id int) (*User, error) {
 	user := &User{}
-	if err := impl.db.First(user, userId).Error; err != nil {
+	if err := impl.db.First(user, id).Error; err != nil {
 		return &User{}, err
 	}
 	return user, nil
