@@ -27,11 +27,11 @@ import (
 )
 
 type KVStateService interface {
-	CreateKVState(versionId uuid.UUID, kvstate KVStateDto) (KVStateDto, error)
-	DeleteKVState(kvstateID uuid.UUID) error
-	UpdateKVState(versionId uuid.UUID, kvstate KVStateDto) (KVStateDto, error)
-	GetKVState(kvstateID uuid.UUID) (KVStateDto, error)
-	FindKVStatesByVersion(versionId uuid.UUID) ([]KVStateDto, error)
+	CreateKVState(version int, kvstate KVStateDto) (KVStateDto, error)
+	DeleteKVState(kvstateID int) error
+	UpdateKVState(version int, kvstate KVStateDto) (KVStateDto, error)
+	GetKVStateByID(kvstateID int) (KVStateDto, error)
+	FindKVStatesByVersion(version int) ([]KVStateDto, error)
 	RunKVState(kvstate KVStateDto) (interface{}, error)
 	ReleaseKVStateByApp(app *app.AppDto) error
 }
@@ -50,22 +50,22 @@ type KVStateDto struct {
 }
 
 type KVStateServiceImpl struct {
-	logger             *zap.SugaredLogger
-	kvstateRepository  repository.KVStateRepository
-	resourceRepository repository.ResourceRepository
+	logger            *zap.SugaredLogger
+	kvstateRepository repository.KVStateRepository
+	kvstateRepository repository.kvstateRepository
 }
 
 func NewKVStateServiceImpl(logger *zap.SugaredLogger, kvstateRepository repository.KVStateRepository,
-	resourceRepository repository.ResourceRepository) *KVStateServiceImpl {
+	kvstateRepository repository.kvstateRepository) *KVStateServiceImpl {
 	return &KVStateServiceImpl{
-		logger:             logger,
-		kvstateRepository:  kvstateRepository,
-		resourceRepository: resourceRepository,
+		logger:            logger,
+		kvstateRepository: kvstateRepository,
+		kvstateRepository: kvstateRepository,
 	}
 }
 
-func (impl *KVStateServiceImpl) CreateKVState(versionId uuid.UUID, kvstate KVStateDto) (KVStateDto, error) {
-	// TODO: validate the versionId
+func (impl *KVStateServiceImpl) CreateKVState(version int, kvstate KVStateDto) (KVStateDto, error) {
+	// TODO: validate the version
 	validate := validator.New()
 	if err := validate.Struct(kvstate); err != nil {
 		return KVStateDto{}, err
@@ -96,7 +96,7 @@ func (impl *KVStateServiceImpl) DeleteKVState(kvstateID int) error {
 	return nil
 }
 
-func (impl *KVStateServiceImpl) UpdateKVState(versionId uuid.UUID, kvstate KVStateDto) (KVStateDto, error) {
+func (impl *KVStateServiceImpl) UpdateKVState(version int, kvstate KVStateDto) (KVStateDto, error) {
 	validate := validator.New()
 	if err := validate.Struct(kvstate); err != nil {
 		return KVStateDto{}, err
@@ -119,7 +119,7 @@ func (impl *KVStateServiceImpl) UpdateKVState(versionId uuid.UUID, kvstate KVSta
 	return kvstate, nil
 }
 
-func (impl *KVStateServiceImpl) GetKVState(kvstateID int) (KVStateDto, error) {
+func (impl *KVStateServiceImpl) GetKVStateByID(kvstateID int) (KVStateDto, error) {
 	res, err := impl.kvstateRepository.RetrieveById(kvstateID)
 	if err != nil {
 		return KVStateDto{}, err
@@ -139,8 +139,8 @@ func (impl *KVStateServiceImpl) GetKVState(kvstateID int) (KVStateDto, error) {
 	return resDto, nil
 }
 
-func (impl *KVStateServiceImpl) FindKVStatesByVersion(versionId uuid.UUID) ([]KVStateDto, error) {
-	res, err := impl.kvstateRepository.RetrieveKVStatesByVersion(versionId)
+func (impl *KVStateServiceImpl) FindKVStatesByVersion(version int) ([]KVStateDto, error) {
+	res, err := impl.kvstateRepository.RetrieveKVStatesByVersion(version)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (impl *KVStateServiceImpl) FindKVStatesByVersion(versionId uuid.UUID) ([]KV
 func (impl *KVStateServiceImpl) RunKVState(kvstate KVStateDto) (interface{}, error) {
 	var kvstateFactory *Factory
 	if kvstate.ResourceId != uuid.Nil {
-		rsc, err := impl.resourceRepository.RetrieveById(kvstate.ResourceId)
+		rsc, err := impl.kvstateRepository.RetrieveById(kvstate.ResourceId)
 		if err != nil {
 			return nil, err
 		}
@@ -193,4 +193,24 @@ func (impl *KVStateServiceImpl) RunKVState(kvstate KVStateDto) (interface{}, err
 		return nil, err
 	}
 	return res, nil
+}
+
+// @todo: should this method be in a transaction?
+func (impl *KVStateServiceImpl) ReleaseKVStateByApp(app *app.AppDto) error {
+	// get edit version K-V state from database
+	kvstates, err := impl.kvstateRepository.RetrieveAllTypeKVStatesByApp(app.ID, repository.APP_EDIT_VERSION)
+	if err != nil {
+		return err
+	}
+	// set version as minaline version
+	for serial, _ := range kvstates {
+		kvstates[serial].Version = app.MainlineVersion
+	}
+	// and put them to the database as duplicate
+	for _, kvstate := range kvstates {
+		if err := impl.kvstateRepository.Create(kvstate); err != nil {
+			return err
+		}
+	}
+	return nil
 }

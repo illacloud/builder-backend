@@ -115,3 +115,11 @@ func (impl *KVStateRepositoryImpl) RetrieveKVStatesByApp(apprefid int, statetype
 	}
 	return kvstates, nil
 }
+
+func (impl *KVStateRepositoryImpl) RetrieveAllTypeKVStatesByApp(apprefid int, version int) ([]*KVState, error) {
+	var kvstates []*KVState
+	if err := impl.db.Where("app_ref_id = ? AND version = ?", apprefid, version).Find(&kvstates).Error; err != nil {
+		return nil, err
+	}
+	return kvstates, nil
+}

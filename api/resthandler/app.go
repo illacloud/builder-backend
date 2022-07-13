@@ -131,5 +131,10 @@ func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
 }
 
 func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
+	// GetAppByID
+	// BumpAppVersion
+	// ReleaseKVStateByApp
+	// ReleaseTreeStateByApp
+	// UpdateApp
 	c.JSON(http.StatusOK, "pass")
 }

@@ -21,6 +21,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const APP_EDIT_VERSION = 0 // the editable version app ID always be 0
+
 type App struct {
 	ID              int       `json:"id" 				gorm:"column:id;type:uuid;default:uuid_generate_v4();primary_key;unique"`
 	Name            string    `json:"name" 				gorm:"column:name;type:varchar"`

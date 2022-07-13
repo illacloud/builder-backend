@@ -199,3 +199,23 @@ func (impl *TreeStateServiceImpl) RunTreeState(treestate TreeStateDto) (interfac
 	}
 	return res, nil
 }
+
+// @todo: should this method be in a transaction?
+func (impl *TreeStateServiceImpl) ReleaseTreeStateByApp(app *app.AppDto) error {
+	// get edit version K-V state from database
+	treestates, err := impl.treestateRepository.RetrieveAllTypeTreeStatesByApp(app.ID, repository.APP_EDIT_VERSION)
+	if err != nil {
+		return err
+	}
+	// set version as minaline version
+	for serial, _ := range treestates {
+		treestates[serial].Version = app.MainlineVersion
+	}
+	// and put them to the database as duplicate
+	for _, treestate := range treestates {
+		if err := impl.treestateRepository.Create(treestate); err != nil {
+			return err
+		}
+	}
+	return nil
+}

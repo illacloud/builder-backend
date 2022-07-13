@@ -119,3 +119,11 @@ func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByApp(apprefid int, state
 	}
 	return treestates, nil
 }
+
+func (impl *TreeStateRepositoryImpl) RetrieveAllTypeTreeStatesByApp(apprefid int, version int) ([]*TreeState, error) {
+	var treestates []*TreeState
+	if err := impl.db.Where("app_ref_id = ? AND version = ?", apprefid, version).Find(&treestates).Error; err != nil {
+		return nil, err
+	}
+	return treestates, nil
+}

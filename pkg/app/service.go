@@ -25,10 +25,11 @@ import (
 
 type AppService interface {
 	CreateApp(app AppDto) (AppDto, error)
-	DeleteApp(appID int) error
 	UpdateApp(app AppDto) (AppDto, error)
+	DeleteApp(appID int) error
 	GetAllApp() ([]AppDto, error)
-	GetAppEditingVersion(appID int) (AppVersionDto, error)
+	GetAppByID(appID int) (AppDto, error)
+	BumpAppVersion(app AppDto)
 }
 
 type AppServiceImpl struct {
@@ -100,53 +101,23 @@ func (impl *AppServiceImpl) UpdateApp(app AppDto) (AppDto, error) {
 }
 
 func (impl *AppServiceImpl) DeleteApp(appID int) error {
-	return nil
+	return impl.appRepository.Deleta(appID)
 }
 
 func (impl *AppServiceImpl) GetAllApp() ([]AppDto, error) {
-	return nil, nil
+	return impl.appRepository.RetrieveAll()
 }
 
-func (impl *AppServiceImpl) GetAppByID() ([]AppDto, error) {
-	return nil, nil
-}
-
-func (impl *AppServiceImpl) GetAppEditingVersion(appID int) (AppVersionDto, error) {
-	return AppVersionDto{}, nil
-}
-
-func (impl *AppServiceImpl) ReleaseApp(appID int) (AppDto, error) {
-	// bump mainline version id & update release version
-	appDto := AppDto{}
-	// read app by id
-	res, err := impl.appRepository.RetrieveAppByID(appID)
+func (impl *AppServiceImpl) GetAppByID(appID int) (AppDto, error) {
+	appDto, err := impl.appRepository.RetrieveAppByID(appID)
 	if err != nil {
 		return AppDto{}, err
 	}
-	// append to appDto
-	appDto.ID = res.ID
-	appDto.Name = res.Name
-	appDto.MainlineVersion = res.MainlineVersion + 1 // bump mainline version
-	appDto.ReleaseVersion = appDto.MainlineVersion   // release with mainline version
-	appDto.CreatedBy = res.CreatedBy
-	appDto.CreatedAt = res.CreatedAt
-	appDto.UpdatedBy = res.UpdatedBy
-	appDto.UpdatedAt = res.UpdatedAt
-	// execute release state process
-	ReleaseKVStateByApp(appDto)
-	ReleaseTreeStateByApp(appDto)
-	// save app
-	if err := impl.appRepository.Update(&repository.App{
-		ID:              appDto.ID,
-		Name:            appDto.Name,
-		ReleaseVersion:  appDto.ReleaseVersion,
-		MainlineVersion: appDto.MainlineVersion,
-		CreatedAt:       appDto.CreatedAt,
-		CreatedBy:       appDto.CreatedBy,
-		UpdatedAt:       appDto.UpdatedAt,
-		UpdatedBy:       appDto.UpdatedBy,
-	}); err != nil {
-		return AppDto{}, err
-	}
-	return AppDto{}, nil
+	return appDto, nil
+}
+
+// for release
+func (impl *AppServiceImpl) BumpAppVersion(appDto *AppDto) {
+	appDto.MainlineVersion += 1                    // bump mainline version
+	appDto.ReleaseVersion = appDto.MainlineVersion // release with mainline version
 }
