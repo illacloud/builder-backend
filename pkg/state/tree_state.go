@@ -20,17 +20,18 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofrs/uuid"
+	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/pkg/connector"
 	"go.uber.org/zap"
 )
 
 type TreeStateService interface {
-	CreateTreeState(versionId uuid.UUID, streestate TreeStateDto) (TreeStateDto, error)
-	DeleteTreeState(streestateId uuid.UUID) error
-	UpdateTreeState(versionId uuid.UUID, streestate TreeStateDto) (TreeStateDto, error)
-	GetTreeState(streestateID uuid.UUID) (TreeStateDto, error)
+	CreateTreeState(versionId uuid.UUID, treestate TreeStateDto) (TreeStateDto, error)
+	DeleteTreeState(treestateId uuid.UUID) error
+	UpdateTreeState(versionId uuid.UUID, treestate TreeStateDto) (TreeStateDto, error)
+	GetTreeState(treestateID uuid.UUID) (TreeStateDto, error)
 	FindTreeStatesByVersion(versionId uuid.UUID) ([]TreeStateDto, error)
-	RunTreeState(streestate TreeStateDto) (interface{}, error)
+	RunTreeState(treestate TreeStateDto) (interface{}, error)
 }
 
 type TreeStateDto struct {
@@ -40,6 +41,7 @@ type TreeStateDto struct {
 	ChildrenNodeRefIDs int       `json:"children_node_ref_ids"`
 	AppRefID           int       `json:"app_ref_id"`
 	Version            int       `json:"version"`
+	Name               string    `json:"name"`
 	Content            string    `json:"content"`
 	CreatedAt          time.Time `json:"created_at"`
 	CreatedBy          int       `json:"created_by"`
@@ -48,96 +50,100 @@ type TreeStateDto struct {
 }
 
 type TreeStateServiceImpl struct {
-	logger               *zap.SugaredLogger
-	streestateRepository repository.TreeStateRepository
-	resourceRepository   repository.ResourceRepository
+	logger              *zap.SugaredLogger
+	treestateRepository repository.TreeStateRepository
+	resourceRepository  repository.ResourceRepository
 }
 
-func NewTreeStateServiceImpl(logger *zap.SugaredLogger, streestateRepository repository.TreeStateRepository,
+func NewTreeStateServiceImpl(logger *zap.SugaredLogger, treestateRepository repository.TreeStateRepository,
 	resourceRepository repository.ResourceRepository) *TreeStateServiceImpl {
 	return &TreeStateServiceImpl{
-		logger:               logger,
-		streestateRepository: streestateRepository,
-		resourceRepository:   resourceRepository,
+		logger:              logger,
+		treestateRepository: treestateRepository,
+		resourceRepository:  resourceRepository,
 	}
 }
 
-func (impl *TreeStateServiceImpl) CreateTreeState(versionId uuid.UUID, streestate TreeStateDto) (TreeStateDto, error) {
+func (impl *TreeStateServiceImpl) CreateTreeState(treestate TreeStateDto) (TreeStateDto, error) {
 	// TODO: validate the versionId
 	validate := validator.New()
-	if err := validate.Struct(streestate); err != nil {
+	if err := validate.Struct(treestate); err != nil {
 		return TreeStateDto{}, err
 	}
-	streestate.CreatedAt = time.Now().UTC()
-	streestate.UpdatedAt = time.Now().UTC()
-	if err := impl.streestateRepository.Create(&repository.TreeState{
-		ID:                streestate.TreeStateId,
-		VersionID:         versionId,
-		ResourceID:        streestate.ResourceId,
-		Name:              streestate.DisplayName,
-		Type:              streestate.TreeStateType,
-		TreeStateTemplate: streestate.TreeStateTemplate,
-		CreatedBy:         streestate.CreatedBy,
-		CreatedAt:         streestate.CreatedAt,
-		UpdatedBy:         streestate.UpdatedBy,
-		UpdatedAt:         streestate.UpdatedAt,
+	treestate.CreatedAt = time.Now().UTC()
+	treestate.UpdatedAt = time.Now().UTC()
+	if err := impl.treestateRepository.Create(&repository.TreeState{
+		StateType:          treestate.StateType,
+		ParentNodeRefID:    treestate.ParentNodeRefID,
+		ChildrenNodeRefIDs: treestate.ChildrenNodeRefIDs,
+		AppRefID:           treestate.AppRefID,
+		Version:            treestate.Version,
+		Name:               treestate.Name,
+		Content:            treestate.Content,
+		CreatedAt:          treestate.CreatedAt,
+		CreatedBy:          treestate.CreatedBy,
+		UpdatedAt:          treestate.UpdatedAt,
+		UpdatedBy:          treestate.UpdatedBy,
 	}); err != nil {
 		return TreeStateDto{}, err
 	}
-	return streestate, nil
+	return treestate, nil
 }
 
-func (impl *TreeStateServiceImpl) DeleteTreeState(streestateId uuid.UUID) error {
-	if err := impl.streestateRepository.Delete(streestateId); err != nil {
+func (impl *TreeStateServiceImpl) DeleteTreeState(treestateID int) error {
+	if err := impl.treestateRepository.Delete(treestateID); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (impl *TreeStateServiceImpl) UpdateTreeState(versionId uuid.UUID, streestate TreeStateDto) (TreeStateDto, error) {
+func (impl *TreeStateServiceImpl) UpdateTreeState(treestate TreeStateDto) (TreeStateDto, error) {
 	validate := validator.New()
-	if err := validate.Struct(streestate); err != nil {
+	if err := validate.Struct(treestate); err != nil {
 		return TreeStateDto{}, err
 	}
-	streestate.UpdatedAt = time.Now().UTC()
-	if err := impl.streestateRepository.Update(&repository.TreeState{
-		ID:                streestate.TreeStateId,
-		VersionID:         versionId,
-		ResourceID:        streestate.ResourceId,
-		Name:              streestate.DisplayName,
-		Type:              streestate.TreeStateType,
-		TreeStateTemplate: streestate.TreeStateTemplate,
-		CreatedBy:         streestate.CreatedBy,
-		CreatedAt:         streestate.CreatedAt,
-		UpdatedBy:         streestate.UpdatedBy,
-		UpdatedAt:         streestate.UpdatedAt,
+	treestate.UpdatedAt = time.Now().UTC()
+	if err := impl.treestateRepository.Update(&repository.TreeState{
+		ID:                 treestate.ID,
+		StateType:          treestate.StateType,
+		ParentNodeRefID:    treestate.ParentNodeRefID,
+		ChildrenNodeRefIDs: treestate.ChildrenNodeRefIDs,
+		AppRefID:           treestate.AppRefID,
+		Version:            treestate.Version,
+		Name:               treestate.Name,
+		Content:            treestate.Content,
+		UpdatedAt:          treestate.UpdatedAt,
+		UpdatedBy:          treestate.UpdatedBy,
 	}); err != nil {
 		return TreeStateDto{}, err
 	}
-	return streestate, nil
+	return treestate, nil
 }
 
-func (impl *TreeStateServiceImpl) GetTreeState(streestateId uuid.UUID) (TreeStateDto, error) {
-	res, err := impl.streestateRepository.RetrieveById(streestateId)
+func (impl *TreeStateServiceImpl) GetTreeState(treestateID int) (TreeStateDto, error) {
+	res, err := impl.treestateRepository.RetrieveById(treestateID)
 	if err != nil {
 		return TreeStateDto{}, err
 	}
 	resDto := TreeStateDto{
-		TreeStateId:       res.ID,
-		ResourceId:        res.ResourceID,
-		DisplayName:       res.Name,
-		TreeStateType:     res.Type,
-		TreeStateTemplate: res.TreeStateTemplate,
-		CreatedBy:         res.CreatedBy,
-		CreatedAt:         res.CreatedAt,
-		UpdatedBy:         res.UpdatedBy,
-		UpdatedAt:         res.UpdatedAt,
+		ID:                 res.ID,
+		StateType:          res.StateType,
+		ParentNodeRefID:    res.ParentNodeRefID,
+		ChildrenNodeRefIDs: res.ChildrenNodeRefIDs,
+		AppRefID:           res.AppRefID,
+		Version:            res.Version,
+		Name:               res.Name,
+		Content:            res.Content,
+		CreatedAt:          res.CreatedAt,
+		CreatedBy:          res.CreatedBy,
+		UpdatedAt:          res.UpdatedAt,
+		UpdatedBy:          res.UpdatedBy,
 	}
 	return resDto, nil
 }
 
 func (impl *TreeStateServiceImpl) FindTreeStatesByVersion(versionId uuid.UUID) ([]TreeStateDto, error) {
-	res, err := impl.streestateRepository.RetrieveTreeStatesByVersion(versionId)
+	res, err := impl.treestateRepository.RetrieveTreeStatesByVersion(versionId)
 	if err != nil {
 		return nil, err
 	}
@@ -158,10 +164,10 @@ func (impl *TreeStateServiceImpl) FindTreeStatesByVersion(versionId uuid.UUID) (
 	return resDtoSlice, nil
 }
 
-func (impl *TreeStateServiceImpl) RunTreeState(streestate TreeStateDto) (interface{}, error) {
-	var streestateFactory *Factory
-	if streestate.ResourceId != uuid.Nil {
-		rsc, err := impl.resourceRepository.RetrieveById(streestate.ResourceId)
+func (impl *TreeStateServiceImpl) RunTreeState(treestate TreeStateDto) (interface{}, error) {
+	var treestateFactory *Factory
+	if treestate.ResourceId != uuid.Nil {
+		rsc, err := impl.resourceRepository.RetrieveById(treestate.ResourceId)
 		if err != nil {
 			return nil, err
 		}
@@ -169,23 +175,23 @@ func (impl *TreeStateServiceImpl) RunTreeState(streestate TreeStateDto) (interfa
 			Type:    rsc.Kind,
 			Options: rsc.Options,
 		}
-		streestateFactory = &Factory{
-			Type:     streestate.TreeStateType,
-			Template: streestate.TreeStateTemplate,
+		treestateFactory = &Factory{
+			Type:     treestate.TreeStateType,
+			Template: treestate.TreeStateTemplate,
 			Resource: resourceConn,
 		}
 	} else {
-		streestateFactory = &Factory{
-			Type:     streestate.TreeStateType,
-			Template: streestate.TreeStateTemplate,
+		treestateFactory = &Factory{
+			Type:     treestate.TreeStateType,
+			Template: treestate.TreeStateTemplate,
 			Resource: nil,
 		}
 	}
-	streestateAssemblyline := streestateFactory.Build()
-	if streestateAssemblyline == nil {
+	treestateAssemblyline := treestateFactory.Build()
+	if treestateAssemblyline == nil {
 		return nil, errors.New("invalid TreeStateType:: unsupported type")
 	}
-	res, err := streestateAssemblyline.Run()
+	res, err := treestateAssemblyline.Run()
 	if err != nil {
 		return nil, err
 	}

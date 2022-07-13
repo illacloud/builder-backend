@@ -20,13 +20,14 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofrs/uuid"
+	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/pkg/connector"
 	"go.uber.org/zap"
 )
 
 type KVStateService interface {
 	CreateKVState(versionId uuid.UUID, kvstate KVStateDto) (KVStateDto, error)
-	DeleteKVState(kvstateId uuid.UUID) error
+	DeleteKVState(kvstateID uuid.UUID) error
 	UpdateKVState(versionId uuid.UUID, kvstate KVStateDto) (KVStateDto, error)
 	GetKVState(kvstateID uuid.UUID) (KVStateDto, error)
 	FindKVStatesByVersion(versionId uuid.UUID) ([]KVStateDto, error)
@@ -70,24 +71,24 @@ func (impl *KVStateServiceImpl) CreateKVState(versionId uuid.UUID, kvstate KVSta
 	kvstate.CreatedAt = time.Now().UTC()
 	kvstate.UpdatedAt = time.Now().UTC()
 	if err := impl.kvstateRepository.Create(&repository.KVState{
-		ID:              kvstate.KVStateId,
-		VersionID:       versionId,
-		ResourceID:      kvstate.ResourceId,
-		Name:            kvstate.DisplayName,
-		Type:            kvstate.KVStateType,
-		KVStateTemplate: kvstate.KVStateTemplate,
-		CreatedBy:       kvstate.CreatedBy,
-		CreatedAt:       kvstate.CreatedAt,
-		UpdatedBy:       kvstate.UpdatedBy,
-		UpdatedAt:       kvstate.UpdatedAt,
+		ID:        kvstate.ID,
+		StateType: kvstate.StateType,
+		AppRefID:  kvstate.AppRefID,
+		Version:   kvstate.Version,
+		Key:       kvstate.Key,
+		Value:     kvstate.Value,
+		CreatedAt: kvstate.CreatedAt,
+		CreatedBy: kvstate.CreatedBy,
+		UpdatedAt: kvstate.UpdatedAt,
+		UpdatedBy: kvstate.UpdatedBy,
 	}); err != nil {
 		return KVStateDto{}, err
 	}
 	return kvstate, nil
 }
 
-func (impl *KVStateServiceImpl) DeleteKVState(kvstateId uuid.UUID) error {
-	if err := impl.kvstateRepository.Delete(kvstateId); err != nil {
+func (impl *KVStateServiceImpl) DeleteKVState(kvstateID int) error {
+	if err := impl.kvstateRepository.Delete(kvstateID); err != nil {
 		return err
 	}
 	return nil
@@ -100,37 +101,38 @@ func (impl *KVStateServiceImpl) UpdateKVState(versionId uuid.UUID, kvstate KVSta
 	}
 	kvstate.UpdatedAt = time.Now().UTC()
 	if err := impl.kvstateRepository.Update(&repository.KVState{
-		ID:              kvstate.KVStateId,
-		VersionID:       versionId,
-		ResourceID:      kvstate.ResourceId,
-		Name:            kvstate.DisplayName,
-		Type:            kvstate.KVStateType,
-		KVStateTemplate: kvstate.KVStateTemplate,
-		CreatedBy:       kvstate.CreatedBy,
-		CreatedAt:       kvstate.CreatedAt,
-		UpdatedBy:       kvstate.UpdatedBy,
-		UpdatedAt:       kvstate.UpdatedAt,
+		ID:        kvstate.ID,
+		StateType: kvstate.StateType,
+		AppRefID:  kvstate.AppRefID,
+		Version:   kvstate.Version,
+		Key:       kvstate.Key,
+		Value:     kvstate.Value,
+		CreatedAt: kvstate.CreatedAt,
+		CreatedBy: kvstate.CreatedBy,
+		UpdatedAt: kvstate.UpdatedAt,
+		UpdatedBy: kvstate.UpdatedBy,
 	}); err != nil {
 		return KVStateDto{}, err
 	}
 	return kvstate, nil
 }
 
-func (impl *KVStateServiceImpl) GetKVState(kvstateId uuid.UUID) (KVStateDto, error) {
-	res, err := impl.kvstateRepository.RetrieveById(kvstateId)
+func (impl *KVStateServiceImpl) GetKVState(kvstateID int) (KVStateDto, error) {
+	res, err := impl.kvstateRepository.RetrieveById(kvstateID)
 	if err != nil {
 		return KVStateDto{}, err
 	}
 	resDto := KVStateDto{
-		KVStateId:       res.ID,
-		ResourceId:      res.ResourceID,
-		DisplayName:     res.Name,
-		KVStateType:     res.Type,
-		KVStateTemplate: res.KVStateTemplate,
-		CreatedBy:       res.CreatedBy,
-		CreatedAt:       res.CreatedAt,
-		UpdatedBy:       res.UpdatedBy,
-		UpdatedAt:       res.UpdatedAt,
+		ID:        res.ID,
+		StateType: res.StateType,
+		AppRefID:  res.AppRefID,
+		Version:   res.Version,
+		Key:       res.Key,
+		Value:     res.Value,
+		CreatedAt: res.CreatedAt,
+		CreatedBy: res.CreatedBy,
+		UpdatedAt: res.UpdatedAt,
+		UpdatedBy: res.UpdatedBy,
 	}
 	return resDto, nil
 }
@@ -169,13 +171,13 @@ func (impl *KVStateServiceImpl) RunKVState(kvstate KVStateDto) (interface{}, err
 			Options: rsc.Options,
 		}
 		kvstateFactory = &Factory{
-			Type:     kvstate.KVStateType,
+			Type:     kvstate.StateType,
 			Template: kvstate.KVStateTemplate,
 			Resource: resourceConn,
 		}
 	} else {
 		kvstateFactory = &Factory{
-			Type:     kvstate.KVStateType,
+			Type:     kvstate.StateType,
 			Template: kvstate.KVStateTemplate,
 			Resource: nil,
 		}

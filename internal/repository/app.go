@@ -17,24 +17,24 @@ package repository
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type App struct {
-	ID             uuid.UUID `gorm:"column:id;type:uuid;default:uuid_generate_v4();primary_key;unique"`
-	Name           string    `gorm:"column:name;type:varchar"`
-	CurrentVersion uuid.UUID `gorm:"column:current_version;type:uuid"`
-	CreatedBy      uuid.UUID `gorm:"column:created_by;type:uuid"`
-	CreatedAt      time.Time `gorm:"column:created_at;type:timestamp"`
-	UpdatedBy      uuid.UUID `gorm:"column:updated_by;type:uuid"`
-	UpdatedAt      time.Time `gorm:"column:updated_at;type:timestamp"`
+	ID              int       `json:"id" 				gorm:"column:id;type:uuid;default:uuid_generate_v4();primary_key;unique"`
+	Name            string    `json:"name" 				gorm:"column:name;type:varchar"`
+	ReleaseVersion  int       `json:"release_version" 	gorm:"column:release_version;type:uuid"`
+	MainlineVersion int       `json:"mainline_version" 	gorm:"column:mainline_version;type:uuid"`
+	CreatedAt       time.Time `json:"created_at" 		gorm:"column:created_at;type:timestamp"`
+	CreatedBy       int       `json:"created_by" 		gorm:"column:created_by;type:uuid"`
+	UpdatedAt       time.Time `json:"updated_at" 		gorm:"column:updated_at;type:timestamp"`
+	UpdatedBy       int       `json:"updated_by" 		gorm:"column:updated_by;type:uuid"`
 }
 
 type AppRepository interface {
 	Create(app *App) error
-	Delete(appId uuid.UUID) error
+	Delete(appId int) error
 	Update(app *App) error
 	RetrieveAll() ([]*App, error)
 }
@@ -58,7 +58,7 @@ func (impl *AppRepositoryImpl) Create(app *App) error {
 	return nil
 }
 
-func (impl *AppRepositoryImpl) Delete(appId uuid.UUID) error {
+func (impl *AppRepositoryImpl) Delete(appId int) error {
 	if err := impl.db.Delete(&App{}, appId).Error; err != nil {
 		return err
 	}
@@ -67,10 +67,11 @@ func (impl *AppRepositoryImpl) Delete(appId uuid.UUID) error {
 
 func (impl *AppRepositoryImpl) Update(app *App) error {
 	if err := impl.db.Model(app).Updates(App{
-		Name:           app.Name,
-		CurrentVersion: app.CurrentVersion,
-		UpdatedBy:      app.UpdatedBy,
-		UpdatedAt:      app.UpdatedAt,
+		Name:            app.Name,
+		ReleaseVersion:  app.ReleaseVersion,
+		MainlineVersion: app.MainlineVersion,
+		UpdatedBy:       app.UpdatedBy,
+		UpdatedAt:       app.UpdatedAt,
 	}).Error; err != nil {
 		return err
 	}
