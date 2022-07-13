@@ -15,24 +15,21 @@
 package state
 
 import (
-	"errors"
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/gofrs/uuid"
 	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/pkg/app"
-	"github.com/illa-family/builder-backend/pkg/connector"
 	"go.uber.org/zap"
 )
 
 type KVStateService interface {
-	CreateKVState(version int, kvstate KVStateDto) (KVStateDto, error)
+	CreateKVState(kvstate KVStateDto) (KVStateDto, error)
 	DeleteKVState(kvstateID int) error
-	UpdateKVState(version int, kvstate KVStateDto) (KVStateDto, error)
+	UpdateKVState(kvstate KVStateDto) (KVStateDto, error)
 	GetKVStateByID(kvstateID int) (KVStateDto, error)
-	FindKVStatesByVersion(version int) ([]KVStateDto, error)
-	RunKVState(kvstate KVStateDto) (interface{}, error)
+	GetAllTypeKVStateByApp(app *app.AppDto, version int) ([]*KVStateDto, error)
+	GetKVStateByApp(app *app.AppDto, statetype int, version int) ([]*KVStateDto, error)
 	ReleaseKVStateByApp(app *app.AppDto) error
 }
 
@@ -51,20 +48,18 @@ type KVStateDto struct {
 
 type KVStateServiceImpl struct {
 	logger            *zap.SugaredLogger
-	kvstateRepository repository.KVStateRepository
 	kvstateRepository repository.kvstateRepository
 }
 
-func NewKVStateServiceImpl(logger *zap.SugaredLogger, kvstateRepository repository.KVStateRepository,
+func NewKVStateServiceImpl(logger *zap.SugaredLogger,
 	kvstateRepository repository.kvstateRepository) *KVStateServiceImpl {
 	return &KVStateServiceImpl{
 		logger:            logger,
 		kvstateRepository: kvstateRepository,
-		kvstateRepository: kvstateRepository,
 	}
 }
 
-func (impl *KVStateServiceImpl) CreateKVState(version int, kvstate KVStateDto) (KVStateDto, error) {
+func (impl *KVStateServiceImpl) CreateKVState(kvstate KVStateDto) (KVStateDto, error) {
 	// TODO: validate the version
 	validate := validator.New()
 	if err := validate.Struct(kvstate); err != nil {
@@ -96,7 +91,7 @@ func (impl *KVStateServiceImpl) DeleteKVState(kvstateID int) error {
 	return nil
 }
 
-func (impl *KVStateServiceImpl) UpdateKVState(version int, kvstate KVStateDto) (KVStateDto, error) {
+func (impl *KVStateServiceImpl) UpdateKVState(kvstate KVStateDto) (KVStateDto, error) {
 	validate := validator.New()
 	if err := validate.Struct(kvstate); err != nil {
 		return KVStateDto{}, err
@@ -139,60 +134,50 @@ func (impl *KVStateServiceImpl) GetKVStateByID(kvstateID int) (KVStateDto, error
 	return resDto, nil
 }
 
-func (impl *KVStateServiceImpl) FindKVStatesByVersion(version int) ([]KVStateDto, error) {
-	res, err := impl.kvstateRepository.RetrieveKVStatesByVersion(version)
+func (impl *KVStateServiceImpl) GetAllTypeKVStateByApp(app *app.AppDto, version int) ([]*KVStateDto, error) {
+	kvstates, err := impl.kvstateRepository.RetrieveAllTypeKVStatesByApp(app.ID, version)
 	if err != nil {
 		return nil, err
 	}
-	resDtoSlice := make([]KVStateDto, 0, len(res))
-	for _, value := range res {
-		resDtoSlice = append(resDtoSlice, KVStateDto{
-			KVStateId:       value.ID,
-			ResourceId:      value.ResourceID,
-			DisplayName:     value.Name,
-			KVStateType:     value.Type,
-			KVStateTemplate: value.KVStateTemplate,
-			CreatedBy:       value.CreatedBy,
-			CreatedAt:       value.CreatedAt,
-			UpdatedBy:       value.UpdatedBy,
-			UpdatedAt:       value.UpdatedAt,
+	kvstatesdto := make([]*KVStateDto, len(kvstates))
+	for _, kvstate := range kvstates {
+		kvstatesdto = append(kvstatesdto, &KVStateDto{
+			ID:        kvstate.ID,
+			StateType: kvstate.StateType,
+			AppRefID:  kvstate.AppRefID,
+			Version:   kvstate.Version,
+			Key:       kvstate.Key,
+			Value:     kvstate.Value,
+			CreatedAt: kvstate.CreatedAt,
+			CreatedBy: kvstate.CreatedBy,
+			UpdatedAt: kvstate.UpdatedAt,
+			UpdatedBy: kvstate.UpdatedBy,
 		})
 	}
-	return resDtoSlice, nil
+	return kvstatesdto, nil
 }
 
-func (impl *KVStateServiceImpl) RunKVState(kvstate KVStateDto) (interface{}, error) {
-	var kvstateFactory *Factory
-	if kvstate.ResourceId != uuid.Nil {
-		rsc, err := impl.kvstateRepository.RetrieveById(kvstate.ResourceId)
-		if err != nil {
-			return nil, err
-		}
-		resourceConn := &connector.Connector{
-			Type:    rsc.Kind,
-			Options: rsc.Options,
-		}
-		kvstateFactory = &Factory{
-			Type:     kvstate.StateType,
-			Template: kvstate.KVStateTemplate,
-			Resource: resourceConn,
-		}
-	} else {
-		kvstateFactory = &Factory{
-			Type:     kvstate.StateType,
-			Template: kvstate.KVStateTemplate,
-			Resource: nil,
-		}
-	}
-	kvstateAssemblyline := kvstateFactory.Build()
-	if kvstateAssemblyline == nil {
-		return nil, errors.New("invalid KVStateType:: unsupported type")
-	}
-	res, err := kvstateAssemblyline.Run()
+func (impl *KVStateServiceImpl) GetKVStateByApp(app *app.AppDto, statetype int, version int) ([]*KVStateDto, error) {
+	kvstates, err := impl.kvstateRepository.RetrieveKVStatesByApp(app.ID, statetype, version)
 	if err != nil {
 		return nil, err
 	}
-	return res, nil
+	kvstatesdto := make([]*KVStateDto, len(kvstates))
+	for _, kvstate := range kvstates {
+		kvstatesdto = append(kvstatesdto, &KVStateDto{
+			ID:        kvstate.ID,
+			StateType: kvstate.StateType,
+			AppRefID:  kvstate.AppRefID,
+			Version:   kvstate.Version,
+			Key:       kvstate.Key,
+			Value:     kvstate.Value,
+			CreatedAt: kvstate.CreatedAt,
+			CreatedBy: kvstate.CreatedBy,
+			UpdatedAt: kvstate.UpdatedAt,
+			UpdatedBy: kvstate.UpdatedBy,
+		})
+	}
+	return kvstatesdto, nil
 }
 
 // @todo: should this method be in a transaction?
