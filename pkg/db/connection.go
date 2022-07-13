@@ -25,7 +25,7 @@ import (
 
 type Config struct {
 	Addr     string `env:"ILLA_PG_ADDR" envDefault:"dev.illasoft.com"`
-	Port     string `env:"ILLA_PG_PORT" envDefault:"32660"`
+	Port     string `env:"ILLA_PG_PORT" envDefault:"30466"`
 	User     string `env:"ILLA_PG_USER" envDefault:"illa"`
 	Password string `env:"ILLA_PG_PASSWORD" envDefault:"illa2022"`
 	Database string `env:"ILLA_PG_DATABASE" envDefault:"illa"`
