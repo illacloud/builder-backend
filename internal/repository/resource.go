@@ -19,27 +19,26 @@ import (
 
 	"github.com/illa-family/builder-backend/pkg/db"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type Resource struct {
-	ID        uuid.UUID `gorm:"column:id;type:uuid;default:uuid_generate_v4();primary_key;unique"`
-	Name      string    `gorm:"column:name;type:varchar"`
-	Kind      string    `gorm:"column:kind;type:varchar"`
+	ID        int       `gorm:"column:id;type:bigserial;primary_key"`
+	Name      string    `gorm:"column:name;type:varchar;size:200;not null"`
+	Type      int       `gorm:"column:type;type:smallint;not null"`
 	Options   db.JSONB  `gorm:"column:options;type:jsonb"`
-	CreatedBy uuid.UUID `gorm:"column:created_by;type:uuid"`
-	CreatedAt time.Time `gorm:"column:created_at;type:timestamp"`
-	UpdatedBy uuid.UUID `gorm:"column:updated_by;type:uuid"`
-	UpdatedAt time.Time `gorm:"column:updated_at;type:timestamp"`
+	CreatedAt time.Time `gorm:"column:created_at;type:timestamp;not null"`
+	CreatedBy int       `gorm:"column:created_by;type:bigint;not null"`
+	UpdatedAt time.Time `gorm:"column:updated_at;type:timestamp;not null"`
+	UpdatedBy int       `gorm:"column:updated_by;type:bigint;not null"`
 }
 
 type ResourceRepository interface {
-	Create(resource *Resource) error
-	Delete(resourceId uuid.UUID) error
+	Create(resource *Resource) (int, error)
+	Delete(id int) error
 	Update(resource *Resource) error
-	RetrieveById(resourceId uuid.UUID) (*Resource, error)
+	RetrieveByID(id int) (*Resource, error)
 	RetrieveAll() ([]*Resource, error)
 }
 
@@ -55,15 +54,15 @@ func NewResourceRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *Resource
 	}
 }
 
-func (impl *ResourceRepositoryImpl) Create(resource *Resource) error {
+func (impl *ResourceRepositoryImpl) Create(resource *Resource) (int, error) {
 	if err := impl.db.Create(resource).Error; err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return resource.ID, nil
 }
 
-func (impl *ResourceRepositoryImpl) Delete(resourceId uuid.UUID) error {
-	if err := impl.db.Delete(&Resource{}, resourceId).Error; err != nil {
+func (impl *ResourceRepositoryImpl) Delete(id int) error {
+	if err := impl.db.Delete(&Resource{}, id).Error; err != nil {
 		return err
 	}
 	return nil
@@ -81,9 +80,9 @@ func (impl *ResourceRepositoryImpl) Update(resource *Resource) error {
 	return nil
 }
 
-func (impl *ResourceRepositoryImpl) RetrieveById(resourceId uuid.UUID) (*Resource, error) {
+func (impl *ResourceRepositoryImpl) RetrieveByID(id int) (*Resource, error) {
 	resource := &Resource{}
-	if err := impl.db.First(resource, resourceId).Error; err != nil {
+	if err := impl.db.First(resource, id).Error; err != nil {
 		return &Resource{}, err
 	}
 	return resource, nil

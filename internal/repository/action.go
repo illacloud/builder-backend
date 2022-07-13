@@ -19,30 +19,30 @@ import (
 
 	"github.com/illa-family/builder-backend/pkg/db"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type Action struct {
-	ID             uuid.UUID `gorm:"column:id;type:uuid;default:uuid_generate_v4();primary_key;unique"`
-	VersionID      uuid.UUID `gorm:"column:version_id;type:uuid"`
-	ResourceID     uuid.UUID `gorm:"column:resource_id;type:uuid"`
-	Name           string    `gorm:"column:name;type:varchar"`
-	Type           string    `gorm:"column:type;type:varchar"`
-	ActionTemplate db.JSONB  `gorm:"column:action_template;type:jsonb"`
-	CreatedBy      uuid.UUID `gorm:"column:created_by;type:uuid"`
-	CreatedAt      time.Time `gorm:"column:created_at;type:timestamp"`
-	UpdatedBy      uuid.UUID `gorm:"column:updated_by;type:uuid"`
-	UpdatedAt      time.Time `gorm:"column:updated_at;type:timestamp"`
+	ID        int       `gorm:"column:id;type:bigserial;primary_key"`
+	App       int       `gorm:"column:app_ref_id;type:bigint;not null"`
+	Version   int       `gorm:"column:version;type:bigint;not null"`
+	Resource  int       `gorm:"column:resource_ref_id;type:bigint;not null"`
+	Name      string    `gorm:"column:name;type:varchar;size:255;not null"`
+	Type      int       `gorm:"column:type;type:smallint;not null"`
+	Template  db.JSONB  `gorm:"column:template;type:jsonb"`
+	CreatedAt time.Time `gorm:"column:created_at;type:timestamp;not null"`
+	CreatedBy int       `gorm:"column:created_by;type:bigint;not null"`
+	UpdatedAt time.Time `gorm:"column:updated_at;type:timestamp;not null"`
+	UpdatedBy int       `gorm:"column:updated_by;type:bigint;not null"`
 }
 
 type ActionRepository interface {
-	Create(action *Action) error
-	Delete(actionId uuid.UUID) error
+	Create(action *Action) (int, error)
+	Delete(id int) error
 	Update(action *Action) error
-	RetrieveById(actionId uuid.UUID) (*Action, error)
-	RetrieveActionsByVersion(versionId uuid.UUID) ([]*Action, error)
+	RetrieveByID(id int) (*Action, error)
+	RetrieveActionsByAppVersion(app, version int) ([]*Action, error)
 }
 
 type ActionRepositoryImpl struct {
@@ -57,15 +57,15 @@ func NewActionRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *ActionRepo
 	}
 }
 
-func (impl *ActionRepositoryImpl) Create(action *Action) error {
+func (impl *ActionRepositoryImpl) Create(action *Action) (int, error) {
 	if err := impl.db.Create(action).Error; err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return action.ID, nil
 }
 
-func (impl *ActionRepositoryImpl) Delete(actionId uuid.UUID) error {
-	if err := impl.db.Delete(&Action{}, actionId).Error; err != nil {
+func (impl *ActionRepositoryImpl) Delete(id int) error {
+	if err := impl.db.Delete(&Action{}, id).Error; err != nil {
 		return err
 	}
 	return nil
@@ -73,29 +73,29 @@ func (impl *ActionRepositoryImpl) Delete(actionId uuid.UUID) error {
 
 func (impl *ActionRepositoryImpl) Update(action *Action) error {
 	if err := impl.db.Model(action).Updates(Action{
-		ResourceID:     action.ResourceID,
-		Type:           action.Type,
-		Name:           action.Name,
-		ActionTemplate: action.ActionTemplate,
-		UpdatedBy:      action.UpdatedBy,
-		UpdatedAt:      action.UpdatedAt,
+		Resource:  action.Resource,
+		Type:      action.Type,
+		Name:      action.Name,
+		Template:  action.Template,
+		UpdatedBy: action.UpdatedBy,
+		UpdatedAt: action.UpdatedAt,
 	}).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (impl *ActionRepositoryImpl) RetrieveById(actionId uuid.UUID) (*Action, error) {
+func (impl *ActionRepositoryImpl) RetrieveByID(id int) (*Action, error) {
 	action := &Action{}
-	if err := impl.db.First(action, actionId).Error; err != nil {
+	if err := impl.db.First(action, id).Error; err != nil {
 		return &Action{}, err
 	}
 	return action, nil
 }
 
-func (impl *ActionRepositoryImpl) RetrieveActionsByVersion(versionId uuid.UUID) ([]*Action, error) {
+func (impl *ActionRepositoryImpl) RetrieveActionsByAppVersion(app, version int) ([]*Action, error) {
 	var actions []*Action
-	if err := impl.db.Where("version_id = ?", versionId).Find(&actions).Error; err != nil {
+	if err := impl.db.Where("app_ref_id = ? AND version = ?", app, version).Find(&actions).Error; err != nil {
 		return nil, err
 	}
 	return actions, nil
