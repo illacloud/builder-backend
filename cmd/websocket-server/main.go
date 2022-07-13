@@ -41,17 +41,22 @@ func main() {
 
 	// listen and serve
 	r := mux.NewRouter()
+	// handle /status
 	r.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 	})
-	r.HandleFunc("/room/dashboard/{roomId}", func(w http.ResponseWriter, r *http.Request) {
-		roomId := mux.Vars(r)["roomId"]
-		log.Printf("[Connected] /room/dashboard/%s", roomId)
-		websocket.ServeWebsocket(dashboardHub, w, r, roomId)
+	// handle ws://{ip:port}/room/{instanceID}/dashboard
+	r.HandleFunc("/room/{instanceID}/dashboard", func(w http.ResponseWriter, r *http.Request) {
+		instanceID := mux.Vars(r)["instanceID"]
+		log.Printf("[Connected] /room/%s/dashboard", instanceID)
+		websocket.ServeWebsocket(dashboardHub, w, r, instanceID, websocket.DEAULT_ROOM_ID)
 	})
-	r.HandleFunc("/room/app/{roomId}", func(w http.ResponseWriter, r *http.Request) {
-		roomId := mux.Vars(r)["roomId"]
-		websocket.ServeWebsocket(appHub, w, r, roomId)
+	// handle ws://{ip:port}/room/{instanceID}/app/{roomID}
+	r.HandleFunc("/room/{instanceID}/app/{roomID}", func(w http.ResponseWriter, r *http.Request) {
+		instanceID := mux.Vars(r)["instanceID"]
+		roomID := mux.Vars(r)["roomId"]
+		log.Printf("[Connected] /room/%s/app/%s", instanceID, roomID)
+		websocket.ServeWebsocket(appHub, w, r, instanceID, roomID)
 	})
 	srv := &http.Server{
 		Handler:      r,

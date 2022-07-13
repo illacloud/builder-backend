@@ -37,6 +37,9 @@ const (
 	maxMessageSize = 512
 )
 
+const DEAULT_INSTANCE_ID = "SELF_HOST"
+const DEAULT_ROOM_ID = "0"
+
 var (
 	newline   = []byte{'\n'}
 	charSpace = []byte{' '}
@@ -57,7 +60,10 @@ type Client struct {
 	// Buffered channel of outbound messages.
 	Send chan []byte
 
-	// roomID
+	// instanceID, SELF_HOST by default
+	InstanceID string
+
+	// roomID, 0 by default
 	RoomID string
 }
 
@@ -161,13 +167,13 @@ func internalError(ws *websocket.Conn, msg string, err error) {
 }
 
 // ServeWebsocket handle websocket requests from the peer.
-func ServeWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request, roomID string) {
+func ServeWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request, instanceID string, roomID string) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	client := &Client{Hub: hub, Conn: conn, Send: make(chan []byte, 256), RoomID: roomID}
+	client := &Client{Hub: hub, Conn: conn, Send: make(chan []byte, 256), InstanceID: instanceID, RoomID: roomID}
 	client.Hub.Register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in
