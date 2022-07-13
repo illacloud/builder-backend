@@ -21,6 +21,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofrs/uuid"
 	"github.com/illa-family/builder-backend/internal/repository"
+	"github.com/illa-family/builder-backend/pkg/app"
 	"github.com/illa-family/builder-backend/pkg/connector"
 	"go.uber.org/zap"
 )
@@ -32,6 +33,7 @@ type KVStateService interface {
 	GetKVState(kvstateID uuid.UUID) (KVStateDto, error)
 	FindKVStatesByVersion(versionId uuid.UUID) ([]KVStateDto, error)
 	RunKVState(kvstate KVStateDto) (interface{}, error)
+	ReleaseKVStateByApp(app *app.AppDto) error
 }
 
 type KVStateDto struct {

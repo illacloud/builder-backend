@@ -21,6 +21,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofrs/uuid"
 	"github.com/illa-family/builder-backend/internal/repository"
+	"github.com/illa-family/builder-backend/pkg/app"
 	"github.com/illa-family/builder-backend/pkg/connector"
 	"go.uber.org/zap"
 )
@@ -32,6 +33,7 @@ type TreeStateService interface {
 	GetTreeState(treestateID uuid.UUID) (TreeStateDto, error)
 	FindTreeStatesByVersion(versionId uuid.UUID) ([]TreeStateDto, error)
 	RunTreeState(treestate TreeStateDto) (interface{}, error)
+	ReleaseTreeStateByApp(app *app.AppDto) error
 }
 
 type TreeStateDto struct {

@@ -43,6 +43,7 @@ func NewHub() *Hub {
 	}
 }
 
+// @todo: the client should check userID, make sure do not broadcast to self.
 func (hub *Hub) Run() {
 	for {
 		select {

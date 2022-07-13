@@ -34,9 +34,10 @@ type App struct {
 
 type AppRepository interface {
 	Create(app *App) error
-	Delete(appId int) error
+	Delete(appID int) error
 	Update(app *App) error
 	RetrieveAll() ([]*App, error)
+	RetrieveAppByID(appID int) (*App, error)
 }
 
 type AppRepositoryImpl struct {
@@ -58,8 +59,8 @@ func (impl *AppRepositoryImpl) Create(app *App) error {
 	return nil
 }
 
-func (impl *AppRepositoryImpl) Delete(appId int) error {
-	if err := impl.db.Delete(&App{}, appId).Error; err != nil {
+func (impl *AppRepositoryImpl) Delete(appID int) error {
+	if err := impl.db.Delete(&App{}, appID).Error; err != nil {
 		return err
 	}
 	return nil
@@ -84,4 +85,12 @@ func (impl *AppRepositoryImpl) RetrieveAll() ([]*App, error) {
 		return nil, err
 	}
 	return apps, nil
+}
+
+func (impl *AppRepositoryImpl) RetrieveAppByID(id int) (*App, error) {
+	var app *App
+	if err := impl.db.Where("id = ?", id).Find(&app).Error; err != nil {
+		return nil, err
+	}
+	return app, nil
 }

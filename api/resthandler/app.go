@@ -28,8 +28,9 @@ type AppRestHandler interface {
 	DeleteApp(c *gin.Context)
 	RenameApp(c *gin.Context)
 	GetAllApp(c *gin.Context)
-	GetCurrentVersion(c *gin.Context)
+	GetCurrentReleaseVersion(c *gin.Context)
 	DuplicateApp(c *gin.Context)
+	ReleaseApp(c *gin.Context)
 }
 
 type AppRestHandlerImpl struct {
@@ -126,5 +127,9 @@ func (impl AppRestHandlerImpl) GetCurrentVersion(c *gin.Context) {
 }
 
 func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
+	c.JSON(http.StatusOK, "pass")
+}
+
+func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	c.JSON(http.StatusOK, "pass")
 }
