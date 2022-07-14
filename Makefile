@@ -3,7 +3,7 @@
 all: build build-websocket-server
 
 build:
-	go build -o bin/illa-backend main.go
+	go build -o bin/illa-backend cmd/main.go cmd/wire_gen.go
 
 build-websocket-server:
 	go build -o bin/illa-websocker-server cmd/websocket-server/main.go
