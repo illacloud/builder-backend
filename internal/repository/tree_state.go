@@ -25,7 +25,7 @@ type TreeState struct {
 	ID                 int       `json:"id" 					gorm:"column:id;type:bigserial"`
 	StateType          int       `json:"state_type" 			gorm:"column:state_type;type:bigint"`
 	ParentNodeRefID    int       `json:"parent_node_ref_id" 	gorm:"column:parent_node_ref_id;type:bigint"`
-	ChildrenNodeRefIDs int       `json:"children_node_ref_ids"  gorm:"column:children_node_ref_ids;type:bigint"`
+	ChildrenNodeRefIDs []int     `json:"children_node_ref_ids"  gorm:"column:children_node_ref_ids;type:bigint"`
 	AppRefID           int       `json:"app_ref_id" 			gorm:"column:app_ref_id;type:bigint"`
 	Version            int       `json:"version" 				gorm:"column:version;type:bigint"`
 	Name               string    `json:"name" 					gorm:"column:name;type:text"`
@@ -42,11 +42,22 @@ type TreeStateRepository interface {
 	Update(treestate *TreeState) error
 	RetrieveById(treestateID int) (*TreeState, error)
 	RetrieveTreeStatesByVersion(versionID int) ([]*TreeState, error)
+	RetrieveTreeStatesByName(name string) ([]*TreeState, error)
+	RetrieveTreeStatesByApp(apprefid int, statetype int, version int) ([]*TreeState, error)
+	RetrieveAllTypeTreeStatesByApp(apprefid int, version int) ([]*TreeState, error)
 }
 
 type TreeStateRepositoryImpl struct {
 	logger *zap.SugaredLogger
 	db     *gorm.DB
+}
+
+func (treeState *TreeState) ExportContentAsComponentState() (*ComponentNode, error) {
+	cnode, err := NewComponentNodeFromJSON([]byte(treeState.Content))
+	if err != nil {
+		return nil, err
+	}
+	return cnode, nil
 }
 
 func NewTreeStateRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *TreeStateRepositoryImpl {

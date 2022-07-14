@@ -37,7 +37,7 @@ type TreeStateDto struct {
 	ID                 int       `json:"id"`
 	StateType          int       `json:"state_type"`
 	ParentNodeRefID    int       `json:"parent_node_ref_id"`
-	ChildrenNodeRefIDs int       `json:"children_node_ref_ids"`
+	ChildrenNodeRefIDs []int     `json:"children_node_ref_ids"`
 	AppRefID           int       `json:"app_ref_id"`
 	Version            int       `json:"version"`
 	Name               string    `json:"name"`
@@ -51,15 +51,12 @@ type TreeStateDto struct {
 type TreeStateServiceImpl struct {
 	logger              *zap.SugaredLogger
 	treestateRepository repository.TreeStateRepository
-	resourceRepository  repository.ResourceRepository
 }
 
-func NewTreeStateServiceImpl(logger *zap.SugaredLogger, treestateRepository repository.TreeStateRepository,
-	resourceRepository repository.ResourceRepository) *TreeStateServiceImpl {
+func NewTreeStateServiceImpl(logger *zap.SugaredLogger, treestateRepository repository.TreeStateRepository) *TreeStateServiceImpl {
 	return &TreeStateServiceImpl{
 		logger:              logger,
 		treestateRepository: treestateRepository,
-		resourceRepository:  resourceRepository,
 	}
 }
 
