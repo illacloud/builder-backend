@@ -36,7 +36,6 @@ type Server struct {
 	restRouter *router.RESTRouter
 	logger     *zap.SugaredLogger
 	cfg        *Config
-	// TODO: websocket gateway
 }
 
 func GetAppConfig() (*Config, error) {
