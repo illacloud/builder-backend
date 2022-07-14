@@ -40,6 +40,9 @@ type KVStateRepository interface {
 	Update(kvstate *KVState) error
 	RetrieveByID(kvstateID int) (*KVState, error)
 	RetrieveKVStatesByVersion(versionID int) ([]*KVState, error)
+	RetrieveKVStatesByKey(key string) ([]*KVState, error)
+	RetrieveKVStatesByApp(apprefid int, statetype int, version int) ([]*KVState, error)
+	RetrieveAllTypeKVStatesByApp(apprefid int, version int) ([]*KVState, error)
 }
 
 type KVStateRepositoryImpl struct {

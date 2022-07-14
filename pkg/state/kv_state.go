@@ -48,11 +48,11 @@ type KVStateDto struct {
 
 type KVStateServiceImpl struct {
 	logger            *zap.SugaredLogger
-	kvstateRepository repository.kvstateRepository
+	kvstateRepository repository.KVStateRepository
 }
 
 func NewKVStateServiceImpl(logger *zap.SugaredLogger,
-	kvstateRepository repository.kvstateRepository) *KVStateServiceImpl {
+	kvstateRepository repository.KVStateRepository) *KVStateServiceImpl {
 	return &KVStateServiceImpl{
 		logger:            logger,
 		kvstateRepository: kvstateRepository,

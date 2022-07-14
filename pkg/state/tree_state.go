@@ -51,15 +51,12 @@ type TreeStateDto struct {
 type TreeStateServiceImpl struct {
 	logger              *zap.SugaredLogger
 	treestateRepository repository.TreeStateRepository
-	resourceRepository  repository.ResourceRepository
 }
 
-func NewTreeStateServiceImpl(logger *zap.SugaredLogger, treestateRepository repository.TreeStateRepository,
-	resourceRepository repository.ResourceRepository) *TreeStateServiceImpl {
+func NewTreeStateServiceImpl(logger *zap.SugaredLogger, treestateRepository repository.TreeStateRepository) *TreeStateServiceImpl {
 	return &TreeStateServiceImpl{
 		logger:              logger,
 		treestateRepository: treestateRepository,
-		resourceRepository:  resourceRepository,
 	}
 }
 
