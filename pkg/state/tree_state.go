@@ -19,6 +19,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/illa-family/builder-backend/internal/repository"
+	"github.com/illa-family/builder-backend/internal/util"
 	"github.com/illa-family/builder-backend/pkg/app"
 	"go.uber.org/zap"
 )
@@ -206,4 +207,111 @@ func (impl *TreeStateServiceImpl) ReleaseTreeStateByApp(app *app.AppDto) error {
 		}
 	}
 	return nil
+}
+
+func (impl *TreeStateServiceImpl) MoveTreeStateNode(apprefid int, nowNode *TreeStateDto) error {
+	// prepare data
+	oldParentTreeState := &repository.TreeState{}
+	newParentTreeState := &repository.TreeState{}
+	nowTreeState := &repository.TreeState{}
+	var err error
+	// get nowTreeState by name
+	if nowTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, nowNode.StateType, nowNode.Name); err != nil {
+		return err
+	}
+	// get oldParentTreeState by id
+	if oldParentTreeState, err = impl.treestateRepository.RetrieveById(nowTreeState.ParentNodeRefID); err != nil {
+		return err
+	}
+	// get newParentTreeState by name
+	switch nowNode.StateType {
+	case repository.TREE_STATE_TYPE_COMPONENTS:
+		componentNode := &repository.ComponentNode{}
+		var err error
+		if componentNode, err = repository.NewComponentNodeFromJSON([]byte(nowTreeState.Content)); err != nil {
+			return err
+		}
+		if newParentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, nowNode.StateType, componentNode.ParentNode); err != nil {
+			return err
+		}
+	case repository.TREE_STATE_TYPE_DEPENDENCIES:
+		// @todo: finish this method
+		return err
+
+	case repository.TREE_STATE_TYPE_EXECUTION:
+		return err
+	}
+	// fill into database
+	// update nowTreeState
+	if err := impl.treestateRepository.Update(nowTreeState); err != nil {
+		return err
+	}
+
+	// add now TreeState id into new parent TreeState.ChildrenNodeRefIDs
+	newParentTreeState.ChildrenNodeRefIDs = append(newParentTreeState.ChildrenNodeRefIDs, nowTreeState.ID)
+
+	// update newParentTreeState
+	if err := impl.treestateRepository.Update(newParentTreeState); err != nil {
+		return err
+	}
+
+	// remove now TreeState id from old parent TreeState.ChildrenNodeRefIDs
+	oldParentTreeState.ChildrenNodeRefIDs = util.DeleteElement(oldParentTreeState.ChildrenNodeRefIDs, nowTreeState.ID)
+
+	// update oldParentTreeState
+	if err := impl.treestateRepository.Update(oldParentTreeState); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (impl *TreeStateServiceImpl) DeleteTreeStateNodeRecursive(apprefid int, nowNode *TreeStateDto) error {
+	// get nowTreeState by displayName from database
+	var err error
+	nowTreeState := &repository.TreeState{}
+	if nowTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, nowNode.StateType, nowNode.Name); err != nil {
+		return err
+	}
+	// get all sub nodes recursive
+	targetNodes := []*repository.TreeState{}
+	if targetNodes, err = RetrieveChildrenNodes(nowTreeState); err !=nil {
+		return err
+	}
+	// do not forget delete now node
+	targetNodes = append(targetNodes, nowTreeState) 
+	// delete them all 
+	// @todo: replace this Delete to a batch method
+	for _, node := range targetNodes {
+		if err = impl.treestateRepository.Delete(node.ID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (impl *TreeStateServiceImpl) RetrieveChildrenNodes(treeState *repository.TreeState) ([]*repository.TreeState, error) {
+	childrenNodes := []*repository.TreeState{}
+	// @todo: replace this RetrieveByID to a batch method
+	for _, id := range treeState.ChildrenNodeRefIDs {
+		var node *repository.TreeState
+		var err error
+		if node, err = impl.treestateRepository.RetrieveByID(id); err != nil {
+			return nil, err
+		}
+		subChildrenNodes := []*repository.TreeState
+		if subChildrenNodes, err = impl.RetrieveChildrenNodes(node); err != nil {
+			return nil, err
+		}
+		childrenNodes = append(childrenNodes, subChildrenNodes...)
+	}
+	return childrenNodes
+}
+
+func (impl *TreeStateServiceImpl) CreateTreeStateNodeRecursive(apprefid int, nowNode *TreeStateDto) error {
+	// get parentNode
+	// fill nowNode.ParentNodeRefID
+	// insert nowNode and get id
+	// fill nowNode id into parentNode.ChildrenNodeRefIDs
+	// save parentNode
+	// move to nowNode.ChildrenNode
 }
