@@ -21,6 +21,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const TREE_STATE_SUMMIT_ID = 0
+
 type TreeState struct {
 	ID                 int       `json:"id" 					gorm:"column:id;type:bigserial"`
 	StateType          int       `json:"state_type" 			gorm:"column:state_type;type:bigint"`

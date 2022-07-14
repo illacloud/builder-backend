@@ -61,6 +61,23 @@ func NewTreeStateServiceImpl(logger *zap.SugaredLogger, treestateRepository repo
 	}
 }
 
+func (impl *TreeStateServiceImpl) NewTreeStateByComponentState(apprefid int, cnode *ComponentNode) (*TreeStateDto, error) {
+	var cnodeserilized []byte 
+	var err error 
+	if cnodeserilized, err = cnode.SerializationForDatabase(); err != nil {
+		return nil, err
+	}
+
+	treestatedto := &TreeStateDto{
+		StateType: repository.TREE_STATE_TYPE_COMPONENTS,
+		AppRefID: apprefid,
+		Version: repository.APP_EDIT_VERSION,
+		Name: cnode.displayName,
+		Content: string(cnodeserilized),
+	}
+	return treestatedto, nil
+}
+
 func (impl *TreeStateServiceImpl) CreateTreeState(treestate TreeStateDto) (TreeStateDto, error) {
 	// TODO: validate the versionId
 	validate := validator.New()
@@ -307,11 +324,51 @@ func (impl *TreeStateServiceImpl) RetrieveChildrenNodes(treeState *repository.Tr
 	return childrenNodes
 }
 
-func (impl *TreeStateServiceImpl) CreateTreeStateNodeRecursive(apprefid int, nowNode *TreeStateDto) error {
+func (impl *TreeStateServiceImpl) CreateComponentTree(apprefid int, parentNodeID int, componentNodeTree *repository.ComponentNode) error {
+	// convert ComponentNode to TreeState
+	nowNode := &TreeStateDto{}
+	var err error
+	if nowNode, err = impl.NewTreeStateByComponentState(apprefid, componentNodeTree); err != nil {
+		return err
+	}
 	// get parentNode
+	parentTreeState := &repository.TreeState{}
+	isSummitNode := true
+	if parentNodeID != 0 {
+		isSummitNode = false
+		if parentTreeState, err = impl.treestateRepository.RetrieveByID(parentNodeID); err != nil {
+			return err
+		}
+	} else if componentNodeTree.ParentNode != "" {
+		isSummitNode = false
+		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(nowNode.AppRefID, nowNode.StateType, nowNode.Name); err != nil {
+			return err
+		}
+	}
+	// no parentNode, nowNode is tree summit 
+	if isSummitNode {
+		nowNode.ParentNodeRefID = repository.TREE_STATE_SUMMIT_ID
+	} else {
 	// fill nowNode.ParentNodeRefID
+		nowNode.ParentNodeRefID = parentTreeState.ID
+	}
 	// insert nowNode and get id
+	if err = tmpl.CreateTreeState(nowNode); err != nil {
+		return err
+	}
 	// fill nowNode id into parentNode.ChildrenNodeRefIDs
-	// save parentNode
-	// move to nowNode.ChildrenNode
+	if !isSummitNode {
+		parentTreeState.ChildrenNodeRefIDs = append(parentTreeState.ChildrenNodeRefIDs, nowNode.ID)
+		// save parentNode
+		if err = tmpl.treestateRepository.Update(parentTreeState); err != nil {
+			return err
+		}
+	}
+	// create nowNode.ChildrenNode
+	for _, childrenComponentNode := componentNodeTree.ChildrenNode {
+		if err := CreateComponentTree(apprefid, nowNode.ID, childrenComponentNode); err != nil {
+			return err
+		}
+	}
+	return nil
 }
