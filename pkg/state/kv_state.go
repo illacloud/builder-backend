@@ -115,7 +115,7 @@ func (impl *KVStateServiceImpl) UpdateKVState(kvstate KVStateDto) (KVStateDto, e
 }
 
 func (impl *KVStateServiceImpl) GetKVStateByID(kvstateID int) (KVStateDto, error) {
-	res, err := impl.kvstateRepository.RetrieveById(kvstateID)
+	res, err := impl.kvstateRepository.RetrieveByID(kvstateID)
 	if err != nil {
 		return KVStateDto{}, err
 	}
