@@ -41,7 +41,7 @@ func (impl UserRouterImpl) InitAuthRouter(authRouter *gin.RouterGroup) {
 
 func (impl UserRouterImpl) InitUserRouter(userRouter *gin.RouterGroup) {
 	userRouter.PATCH("/password", impl.userRestHandler.UpdatePassword)
-	userRouter.PATCH("/username", impl.userRestHandler.UpdateUsername) // TODO: change URL to nickname
+	userRouter.PATCH("/nickname", impl.userRestHandler.UpdateUsername)
 	userRouter.PATCH("/language", impl.userRestHandler.UpdateLanguage)
 	userRouter.GET("", impl.userRestHandler.GetUserInfo)
 }
