@@ -82,7 +82,7 @@ func main() {
 	// handle ws://{ip:port}/room/{instanceID}/app/{roomID}
 	r.HandleFunc("/room/{instanceID}/app/{roomID}", func(w http.ResponseWriter, r *http.Request) {
 		instanceID := mux.Vars(r)["instanceID"]
-		roomID, _ := strconv.Atoi(mux.Vars(r)["roomId"])
+		roomID, _ := strconv.Atoi(mux.Vars(r)["roomID"])
 		log.Printf("[Connected] /room/%s/app/%d", instanceID, roomID)
 		websocket.ServeWebsocket(appHub, w, r, instanceID, roomID)
 	})

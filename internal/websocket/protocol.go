@@ -54,9 +54,21 @@ const TARGET_RESOURCE = 7           // only for broadcast
 const ERROR_CODE_OK = 0
 const ERROR_CODE_FAILED = 1
 const ERROR_CODE_NEED_ENTER = 2
-const ERROR_CODE_PONG = 3
-const ERROR_CODE_LOGGEDIN = 4
-const ERROR_CODE_LOGIN_FAILED = 5
+const ERROR_CODE_BROADCAST = 3
+const ERROR_CODE_PONG = 4
+const ERROR_CODE_LOGGEDIN = 5
+const ERROR_CODE_LOGIN_FAILED = 6
+const ERROR_CREATE_STATE_OK = 7
+const ERROR_CREATE_STATE_FAILED = 8
+const ERROR_DELETE_STATE_OK = 9
+const ERROR_DELETE_STATE_FAILED = 10
+const ERROR_UPDATE_STATE_OK = 11
+const ERROR_UPDATE_STATE_FAILED = 12
+const ERROR_MOVE_STATE_OK = 13
+const ERROR_MOVE_STATE_FAILED = 14
+
+// for broadcast rewrite
+const BROADCAST_TYPE_SUFFIX = "/remote"
 
 type Broadcast struct {
 	Type    string `json:"type"`
@@ -84,6 +96,10 @@ func NewMessage(clientID uuid.UUID, roomID int, rawMessage []byte) (*Message, er
 	return &message, nil
 }
 
+func (m *Message) RewriteBroadcast() {
+	m.Broadcast.Type = m.Broadcast.Type + BROADCAST_TYPE_SUFFIX
+}
+
 type Feedback struct {
 	ErrorCode    int         `json:"errorCode"`
 	ErrorMessage string      `json:"errorMessage"`
@@ -93,8 +109,4 @@ type Feedback struct {
 
 func (feed *Feedback) Serialization() ([]byte, error) {
 	return json.Marshal(feed)
-}
-
-type PayloadAuthToken struct {
-	AuthToken string `json:"authToken"`
 }

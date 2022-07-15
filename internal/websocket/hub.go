@@ -98,8 +98,10 @@ func SignalFilter(hub *Hub, message *Message) error {
 	case SIGNAL_CREATE_STATE:
 		return SignalCreateState(hub, message)
 	case SIGNAL_DELETE_STATE:
+		return SignalDeleteState(hub, message)
 	case SIGNAL_UPDATE_STATE:
 	case SIGNAL_MOVE_STATE:
+		return SignalMoveState(hub, message)
 	case SIGNAL_CREATE_OR_UPDATE:
 	case SIGNAL_ONLY_BROADCAST:
 	default:
@@ -177,6 +179,7 @@ func SignalLeave(hub *Hub, message *Message) error {
 func SignalCreateState(hub *Hub, message *Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
+	message.RewriteBroadcast()
 	// target switch
 	switch message.Target {
 	case TARGET_NOTNING:
@@ -184,17 +187,25 @@ func SignalCreateState(hub *Hub, message *Message) error {
 	case TARGET_COMPONENTS:
 		// build component tree from json
 		apprefid := currentClient.RoomID
+		fmt.Printf("[DUMP] apprefid: %v \n", apprefid)
 		summitnodeid := repository.TREE_STATE_SUMMIT_ID
-		fmt.Printf("[DUMP] message.Payload: %v \n", message.Payload)
+		fmt.Printf("[DUMP] message: %v \n", message)
 		for _, v := range message.Payload {
 			var componenttree *repository.ComponentNode
 			componenttree = repository.ConstructComponentNodeByMap(v)
 			fmt.Printf("%v\n", componenttree)
 			if err := hub.TreeStateServiceImpl.CreateComponentTree(apprefid, summitnodeid, componenttree); err != nil {
+				FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
 				return err
 			}
 		}
-		// feedback
+
+		// feedback currentClient
+		FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_OK)
+
+		// feedback otherClient
+		BroadcastToOtherClients(hub, message, currentClient)
+
 		return nil
 	case TARGET_DEPENDENCIES:
 	case TARGET_DRAG_SHADOW:
@@ -209,14 +220,87 @@ func SignalCreateState(hub *Hub, message *Message) error {
 }
 
 func SignalDeleteState(hub *Hub, message *Message) error {
+	fmt.Printf("[DUMP] message: %v \n", message)
+
+	// deserialize message
+	currentClient := hub.Clients[message.ClientID]
+	message.RewriteBroadcast()
+	// target switch
+	switch message.Target {
+	case TARGET_NOTNING:
+		return nil
+	case TARGET_COMPONENTS:
+		apprefid := currentClient.RoomID
+		for _, v := range message.Payload {
+			var nowNode state.TreeStateDto
+			nowNode.ConstructByMap(v) // set Name
+			nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
+			fmt.Printf("[DUMP] nowNode: %v\n", nowNode)
+			if err := hub.TreeStateServiceImpl.DeleteTreeStateNodeRecursive(apprefid, &nowNode); err != nil {
+				FeedbackCurrentClient(message, currentClient, ERROR_DELETE_STATE_FAILED)
+				return err
+			}
+		}
+
+		// feedback currentClient
+		FeedbackCurrentClient(message, currentClient, ERROR_DELETE_STATE_OK)
+
+		// feedback otherClient
+		BroadcastToOtherClients(hub, message, currentClient)
+
+	case TARGET_DEPENDENCIES:
+	case TARGET_DRAG_SHADOW:
+	case TARGET_DOTTED_LINE_SQUARE:
+	case TARGET_DISPLAY_NAME:
+	case TARGET_APPS:
+	case TARGET_RESOURCE:
+	}
 	return nil
 }
+
 func SignalUpdateState(hub *Hub, message *Message) error {
 	return nil
 }
+
 func SignalMoveState(hub *Hub, message *Message) error {
+	fmt.Printf("[DUMP] message: %v \n", message)
+
+	// deserialize message
+	currentClient := hub.Clients[message.ClientID]
+	message.RewriteBroadcast()
+	// target switch
+	switch message.Target {
+	case TARGET_NOTNING:
+		return nil
+	case TARGET_COMPONENTS:
+		apprefid := currentClient.RoomID
+		for _, v := range message.Payload {
+			var nowNode state.TreeStateDto
+			nowNode.ConstructByMap(v) // set Name
+			nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
+			fmt.Printf("[DUMP] nowNode: %v\n", nowNode)
+			if err := hub.TreeStateServiceImpl.MoveTreeStateNode(apprefid, &nowNode); err != nil {
+				FeedbackCurrentClient(message, currentClient, ERROR_MOVE_STATE_FAILED)
+				return err
+			}
+		}
+
+		// feedback currentClient
+		FeedbackCurrentClient(message, currentClient, ERROR_MOVE_STATE_OK)
+
+		// feedback otherClient
+		BroadcastToOtherClients(hub, message, currentClient)
+
+	case TARGET_DEPENDENCIES:
+	case TARGET_DRAG_SHADOW:
+	case TARGET_DOTTED_LINE_SQUARE:
+	case TARGET_DISPLAY_NAME:
+	case TARGET_APPS:
+	case TARGET_RESOURCE:
+	}
 	return nil
 }
+
 func SignalCreateOrUpdateupdate(hub *Hub, message *Message) error {
 	return nil
 }
@@ -259,4 +343,34 @@ func FeedbackLogInFailed(client *Client) {
 		return
 	}
 	client.Send <- feedbyte
+}
+
+func FeedbackCurrentClient(message *Message, currentClient *Client, errorCode int) {
+	feedCurrentClient := Feedback{
+		ErrorCode:    errorCode,
+		ErrorMessage: "",
+		Broadcast:    message.Broadcast,
+		Data:         nil,
+	}
+	feedbyte, _ := feedCurrentClient.Serialization()
+	currentClient.Send <- feedbyte
+}
+
+func BroadcastToOtherClients(hub *Hub, message *Message, currentClient *Client) {
+	feedOtherClient := Feedback{
+		ErrorCode:    ERROR_CODE_BROADCAST,
+		ErrorMessage: "",
+		Broadcast:    message.Broadcast,
+		Data:         nil,
+	}
+	feedbyte, _ := feedOtherClient.Serialization()
+	for clientid, client := range hub.Clients {
+		if clientid == currentClient.ID {
+			continue
+		}
+		if client.RoomID != currentClient.RoomID {
+			continue
+		}
+		client.Send <- feedbyte
+	}
 }
