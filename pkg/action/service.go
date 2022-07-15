@@ -164,8 +164,8 @@ func (impl *ActionServiceImpl) FindActionsByAppVersion(app, version int) ([]Acti
 
 func (impl *ActionServiceImpl) RunAction(action ActionDto) (interface{}, error) {
 	var actionFactory *Factory
-	if action.ID != 0 {
-		rsc, err := impl.resourceRepository.RetrieveByID(action.ID)
+	if action.Resource != 0 {
+		rsc, err := impl.resourceRepository.RetrieveByID(action.Resource)
 		if err != nil {
 			return nil, err
 		}

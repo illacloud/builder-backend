@@ -24,10 +24,10 @@ import (
 	"go.uber.org/zap"
 )
 
-var language_array = []string{"", "en-us", "zh-cn"}
+var language_array = []string{"", "en-US", "zh-CN"}
 var language_map = map[string]int{
-	"en-us": 1,
-	"zh-cn": 2,
+	"en-US": 1,
+	"zh-CN": 2,
 }
 
 type UserService interface {
