@@ -24,6 +24,10 @@ import (
 )
 
 var AppWireSet = wire.NewSet(
+	repository.NewKVStateRepositoryImpl,
+	wire.Bind(new(repository.KVStateRepository), new(*repository.KVStateRepositoryImpl)),
+	repository.NewTreeStateRepositoryImpl,
+	wire.Bind(new(repository.TreeStateRepository), new(*repository.TreeStateRepositoryImpl)),
 	repository.NewAppRepositoryImpl,
 	wire.Bind(new(repository.AppRepository), new(*repository.AppRepositoryImpl)),
 	app.NewAppServiceImpl,
