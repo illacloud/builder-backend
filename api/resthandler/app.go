@@ -290,7 +290,7 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 		return
 	}
 	// Call `app service` to release app
-	editor, err := impl.appService.ReleaseApp(id)
+	version, err := impl.appService.ReleaseApp(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"errorCode":    500,
@@ -298,5 +298,7 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, editor)
+	c.JSON(http.StatusOK, gin.H{
+		"version": version,
+	})
 }

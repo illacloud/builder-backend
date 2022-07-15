@@ -31,7 +31,7 @@ type AppService interface {
 	DeleteApp(appID int) error
 	GetAllApps() ([]AppDto, error)
 	DuplicateApp(appID, userID int, name string) (AppDto, error)
-	ReleaseApp(appID int) (Editor, error)
+	ReleaseApp(appID int) (int, error)
 	GetMegaData(appID, version int) (Editor, error)
 }
 
@@ -59,13 +59,13 @@ type AppDto struct {
 }
 
 type Editor struct {
-	AppInfo               AppDto                   `json:"appInfo"`
-	Actions               []Action                 `json:"actions"`
-	Components            map[string]ComponentNode `json:"components"`
-	DependenciesState     map[string][]string      `json:"dependenciesState"`
-	DragShadowState       map[string]interface{}   `json:"dragShadowState"`
-	DottedLineSquareState map[string]interface{}   `json:"dottedLineSquareState"`
-	DisplayNameState      []string                 `json:"displayNameState"`
+	AppInfo               AppDto                    `json:"appInfo"`
+	Actions               []Action                  `json:"actions"`
+	Components            map[string]*ComponentNode `json:"components"`
+	DependenciesState     map[string][]string       `json:"dependenciesState"`
+	DragShadowState       map[string]interface{}    `json:"dragShadowState"`
+	DottedLineSquareState map[string]interface{}    `json:"dottedLineSquareState"`
+	DisplayNameState      []string                  `json:"displayNameState"`
 }
 
 type Action struct {
@@ -373,10 +373,10 @@ func (impl *AppServiceImpl) copyActions(appA, appB, user int) error {
 	return nil
 }
 
-func (impl *AppServiceImpl) ReleaseApp(appID int) (Editor, error) {
+func (impl *AppServiceImpl) ReleaseApp(appID int) (int, error) {
 	app, err := impl.appRepository.RetrieveAppByID(appID)
 	if err != nil {
-		return Editor{}, nil
+		return -1, nil
 	}
 	app.MainlineVersion += 1
 	app.ReleaseVersion = app.MainlineVersion
@@ -384,14 +384,10 @@ func (impl *AppServiceImpl) ReleaseApp(appID int) (Editor, error) {
 	_ = impl.releaseKVStateByApp(AppDto{ID: appID, MainlineVersion: app.MainlineVersion})
 	_ = impl.releaseActionsByApp(AppDto{ID: appID, MainlineVersion: app.MainlineVersion})
 	if err := impl.appRepository.Update(app); err != nil {
-		return Editor{}, nil
+		return -1, nil
 	}
 
-	editor, err := impl.fetchEditor(appID, app.ReleaseVersion)
-	if err != err {
-		return Editor{}, nil
-	}
-	return editor, nil
+	return app.ReleaseVersion, nil
 }
 
 func (impl *AppServiceImpl) releaseTreeStateByApp(app AppDto) error {
@@ -511,7 +507,7 @@ func (impl *AppServiceImpl) formatActions(appID, version int) ([]Action, error) 
 	return resSlice, nil
 }
 
-func (impl *AppServiceImpl) formatComponents(appID, version int) (map[string]ComponentNode, error) {
+func (impl *AppServiceImpl) formatComponents(appID, version int) (map[string]*ComponentNode, error) {
 	res, err := impl.treestateRepository.RetrieveTreeStatesByApp(appID, repository.TREE_STATE_TYPE_COMPONENTS, version)
 	if err != nil {
 		return nil, err
@@ -522,12 +518,12 @@ func (impl *AppServiceImpl) formatComponents(appID, version int) (map[string]Com
 	}
 
 	tempMap := map[int]*repository.TreeState{}
-	for serial, component := range res {
-		tempMap[serial] = component
+	for _, component := range res {
+		tempMap[component.ID] = component
 	}
 	resNode, _ := buildComponentTree(res[0], tempMap, nil)
-	resMap := map[string]ComponentNode{}
-	resMap["rootDsl"] = *resNode
+	resMap := map[string]*ComponentNode{}
+	resMap["rootDsl"] = resNode
 
 	return resMap, nil
 }
@@ -539,6 +535,11 @@ func (impl *AppServiceImpl) formatDependenciesState(appID, version int) (map[str
 	}
 
 	resMap := map[string][]string{}
+
+	if len(res) == 1 {
+		return resMap, nil
+	}
+
 	for _, dependency := range res {
 		var revMsg []string
 		json.Unmarshal([]byte(dependency.Value), &revMsg)
