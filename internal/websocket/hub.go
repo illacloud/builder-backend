@@ -100,6 +100,7 @@ func SignalFilter(hub *Hub, message *Message) error {
 	case SIGNAL_DELETE_STATE:
 		return SignalDeleteState(hub, message)
 	case SIGNAL_UPDATE_STATE:
+		return SignalUpdateState(hub, message)
 	case SIGNAL_MOVE_STATE:
 		return SignalMoveState(hub, message)
 	case SIGNAL_CREATE_OR_UPDATE:
@@ -259,6 +260,40 @@ func SignalDeleteState(hub *Hub, message *Message) error {
 }
 
 func SignalUpdateState(hub *Hub, message *Message) error {
+	fmt.Printf("[DUMP] message: %v \n", message)
+
+	// deserialize message
+	currentClient := hub.Clients[message.ClientID]
+	message.RewriteBroadcast()
+	// target switch
+	switch message.Target {
+	case TARGET_NOTNING:
+		return nil
+	case TARGET_COMPONENTS:
+		apprefid := currentClient.RoomID
+		for _, v := range message.Payload {
+			var nowNode state.TreeStateDto
+			nowNode.ConstructByMap(v) // set Name
+			nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
+			fmt.Printf("[DUMP] nowNode: %v\n", nowNode)
+			if err := hub.TreeStateServiceImpl.UpdateTreeStateNode(apprefid, &nowNode); err != nil {
+				FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+				return err
+			}
+		}
+
+		// feedback currentClient
+		FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_OK)
+
+		// feedback otherClient
+		BroadcastToOtherClients(hub, message, currentClient)
+	case TARGET_DEPENDENCIES:
+	case TARGET_DRAG_SHADOW:
+	case TARGET_DOTTED_LINE_SQUARE:
+	case TARGET_DISPLAY_NAME:
+	case TARGET_APPS:
+	case TARGET_RESOURCE:
+	}
 	return nil
 }
 

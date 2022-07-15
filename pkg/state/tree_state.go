@@ -43,6 +43,7 @@ type TreeStateDto struct {
 	AppRefID           int       `json:"app_ref_id"`
 	Version            int       `json:"version"`
 	Name               string    `json:"name"`
+	ParentNode         string    `json:"parentNode"`
 	Content            string    `json:"content"`
 	CreatedAt          time.Time `json:"created_at"`
 	CreatedBy          int       `json:"created_by"`
@@ -65,6 +66,8 @@ func (tsd *TreeStateDto) ConstructByMap(data interface{}) {
 		switch k {
 		case "displayName":
 			tsd.Name, _ = v.(string)
+		case "parentNode":
+			tsd.ParentNode, _ = v.(string)
 		}
 	}
 }
@@ -265,6 +268,21 @@ func (impl *TreeStateServiceImpl) ReleaseTreeStateByApp(app *app.AppDto) error {
 	return nil
 }
 
+func (impl *TreeStateServiceImpl) UpdateTreeStateNode(apprefid int, nowNode *TreeStateDto) error {
+	// get id by displayName
+	nowTreeState := &repository.TreeState{}
+	var err error
+	if nowTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, nowNode.StateType, nowNode.Name); err != nil {
+		return err
+	}
+	// replace data
+	nowNode.ID = nowTreeState.ID
+	if _, err = impl.UpdateTreeState(*nowNode); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (impl *TreeStateServiceImpl) MoveTreeStateNode(apprefid int, nowNode *TreeStateDto) error {
 	// prepare data
 	oldParentTreeState := &repository.TreeState{}
@@ -285,12 +303,7 @@ func (impl *TreeStateServiceImpl) MoveTreeStateNode(apprefid int, nowNode *TreeS
 	// get newParentTreeState by name
 	switch nowNode.StateType {
 	case repository.TREE_STATE_TYPE_COMPONENTS:
-		componentNode := &repository.ComponentNode{}
-		var err error
-		if componentNode, err = repository.NewComponentNodeFromJSON([]byte(nowTreeState.Content)); err != nil {
-			return err
-		}
-		if newParentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, nowNode.StateType, componentNode.ParentNode); err != nil {
+		if newParentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, nowNode.StateType, nowNode.ParentNode); err != nil {
 			return err
 		}
 	case repository.TREE_STATE_TYPE_DEPENDENCIES:
@@ -304,6 +317,7 @@ func (impl *TreeStateServiceImpl) MoveTreeStateNode(apprefid int, nowNode *TreeS
 
 	// fill into database
 	// update nowTreeState
+	nowTreeState.ParentNodeRefID = newParentTreeState.ID
 	if err := impl.treestateRepository.Update(nowTreeState); err != nil {
 		return err
 	}
