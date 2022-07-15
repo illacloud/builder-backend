@@ -35,7 +35,7 @@ type App struct {
 }
 
 type AppRepository interface {
-	Create(app *App) error
+	Create(app *App) (int, error)
 	Delete(appID int) error
 	Update(app *App) error
 	RetrieveAll() ([]*App, error)
@@ -54,11 +54,11 @@ func NewAppRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *AppRepository
 	}
 }
 
-func (impl *AppRepositoryImpl) Create(app *App) error {
+func (impl *AppRepositoryImpl) Create(app *App) (int, error) {
 	if err := impl.db.Create(app).Error; err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return app.ID, nil
 }
 
 func (impl *AppRepositoryImpl) Delete(appID int) error {

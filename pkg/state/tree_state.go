@@ -17,16 +17,17 @@ package state
 import (
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/pkg/app"
+
+	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 )
 
 type TreeStateService interface {
-	CreateTreeState(versionId int, treestate TreeStateDto) (TreeStateDto, error)
+	CreateTreeState(treestate TreeStateDto) (TreeStateDto, error)
 	DeleteTreeState(treestateId int) error
-	UpdateTreeState(versionId int, treestate TreeStateDto) (TreeStateDto, error)
+	UpdateTreeState(treestate TreeStateDto) (TreeStateDto, error)
 	GetTreeStateByID(treestateID int) (TreeStateDto, error)
 	GetAllTypeTreeStateByApp(app *app.AppDto, version int) ([]*TreeStateDto, error)
 	GetTreeStateByApp(app *app.AppDto, statetype int, version int) ([]*TreeStateDto, error)
@@ -195,7 +196,7 @@ func (impl *TreeStateServiceImpl) ReleaseTreeStateByApp(app *app.AppDto) error {
 	if err != nil {
 		return err
 	}
-	// set version as minaline version
+	// set version as mainline version
 	for serial, _ := range treestates {
 		treestates[serial].Version = app.MainlineVersion
 	}

@@ -40,11 +40,12 @@ type TreeStateRepository interface {
 	Create(treestate *TreeState) error
 	Delete(treestateID int) error
 	Update(treestate *TreeState) error
-	RetrieveById(treestateID int) (*TreeState, error)
+	RetrieveByID(treestateID int) (*TreeState, error)
 	RetrieveTreeStatesByVersion(versionID int) ([]*TreeState, error)
 	RetrieveTreeStatesByName(name string) ([]*TreeState, error)
 	RetrieveTreeStatesByApp(apprefid int, statetype int, version int) ([]*TreeState, error)
 	RetrieveAllTypeTreeStatesByApp(apprefid int, version int) ([]*TreeState, error)
+	DeleteAllTypeTreeStatesByApp(apprefid int) error
 }
 
 type TreeStateRepositoryImpl struct {
@@ -137,4 +138,11 @@ func (impl *TreeStateRepositoryImpl) RetrieveAllTypeTreeStatesByApp(apprefid int
 		return nil, err
 	}
 	return treestates, nil
+}
+
+func (impl *TreeStateRepositoryImpl) DeleteAllTypeTreeStatesByApp(apprefid int) error {
+	if err := impl.db.Where("app_ref_id = ?", apprefid).Delete(&TreeState{}).Error; err != nil {
+		return err
+	}
+	return nil
 }

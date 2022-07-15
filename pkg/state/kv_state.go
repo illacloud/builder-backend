@@ -187,7 +187,7 @@ func (impl *KVStateServiceImpl) ReleaseKVStateByApp(app *app.AppDto) error {
 	if err != nil {
 		return err
 	}
-	// set version as minaline version
+	// set version as mainline version
 	for serial, _ := range kvstates {
 		kvstates[serial].Version = app.MainlineVersion
 	}
