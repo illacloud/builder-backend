@@ -21,6 +21,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const TREE_STATE_SUMMIT_ID = 0
+
 type TreeState struct {
 	ID                 int       `json:"id" 					gorm:"column:id;type:bigserial"`
 	StateType          int       `json:"state_type" 			gorm:"column:state_type;type:bigint"`
@@ -44,6 +46,7 @@ type TreeStateRepository interface {
 	RetrieveTreeStatesByVersion(versionID int) ([]*TreeState, error)
 	RetrieveTreeStatesByName(name string) ([]*TreeState, error)
 	RetrieveTreeStatesByApp(apprefid int, statetype int, version int) ([]*TreeState, error)
+	RetrieveEditVersionByAppAndName(apprefid int, statetype int, name string) (*TreeState, error)
 	RetrieveAllTypeTreeStatesByApp(apprefid int, version int) ([]*TreeState, error)
 	DeleteAllTypeTreeStatesByApp(apprefid int) error
 }
@@ -118,7 +121,7 @@ func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByVersion(version int) ([
 
 func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByName(name string) ([]*TreeState, error) {
 	var treestates []*TreeState
-	if err := impl.db.Where("key = ?", name).Find(&treestates).Error; err != nil {
+	if err := impl.db.Where("name = ?", name).Find(&treestates).Error; err != nil {
 		return nil, err
 	}
 	return treestates, nil
@@ -130,6 +133,14 @@ func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByApp(apprefid int, state
 		return nil, err
 	}
 	return treestates, nil
+}
+
+func (impl *TreeStateRepositoryImpl) RetrieveEditVersionByAppAndName(apprefid int, statetype int, name string) (*TreeState, error) {
+	var treestate *TreeState
+	if err := impl.db.Where("app_ref_id = ? AND state_type = ? AND version = ? AND name = ?", apprefid, statetype, APP_EDIT_VERSION, name).First(&treestate).Error; err != nil {
+		return nil, err
+	}
+	return treestate, nil
 }
 
 func (impl *TreeStateRepositoryImpl) RetrieveAllTypeTreeStatesByApp(apprefid int, version int) ([]*TreeState, error) {
