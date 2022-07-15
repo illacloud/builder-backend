@@ -19,23 +19,51 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/illa-family/builder-backend/internal/repository"
+	"github.com/illa-family/builder-backend/internal/util"
+	"github.com/illa-family/builder-backend/pkg/db"
+	"github.com/illa-family/builder-backend/pkg/state"
+
 	"github.com/illa-family/builder-backend/internal/websocket"
 )
 
 // websocket client hub
 var dashboardHub *websocket.Hub
 var appHub *websocket.Hub
+var treestateServiceImpl *state.TreeStateServiceImpl
+
+func initEnv() error {
+	sugaredLogger := util.NewSugardLogger()
+	dbConfig, err := db.GetConfig()
+	if err != nil {
+		return err
+	}
+	gormDB, err := db.NewDbConnection(dbConfig, sugaredLogger)
+	if err != nil {
+		return err
+	}
+	// init repo
+	treestateRepositoryImpl := repository.NewTreeStateRepositoryImpl(sugaredLogger, gormDB)
+	// init service
+	treestateServiceImpl = state.NewTreeStateServiceImpl(sugaredLogger, treestateRepositoryImpl)
+	return nil
+}
 
 func main() {
 	addr := flag.String("addr", "127.0.0.1:8080", "websocket server serve address")
 	flag.Parse()
 
+	// init
+	initEnv()
+
 	// start websocket hub
 	dashboardHub = websocket.NewHub()
 	appHub = websocket.NewHub()
+	appHub.TreeStateServiceImpl = treestateServiceImpl
 	go dashboardHub.Run()
 	go appHub.Run()
 
@@ -54,8 +82,8 @@ func main() {
 	// handle ws://{ip:port}/room/{instanceID}/app/{roomID}
 	r.HandleFunc("/room/{instanceID}/app/{roomID}", func(w http.ResponseWriter, r *http.Request) {
 		instanceID := mux.Vars(r)["instanceID"]
-		roomID := mux.Vars(r)["roomId"]
-		log.Printf("[Connected] /room/%s/app/%s", instanceID, roomID)
+		roomID, _ := strconv.Atoi(mux.Vars(r)["roomId"])
+		log.Printf("[Connected] /room/%s/app/%d", instanceID, roomID)
 		websocket.ServeWebsocket(appHub, w, r, instanceID, roomID)
 	})
 	srv := &http.Server{

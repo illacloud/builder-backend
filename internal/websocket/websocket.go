@@ -16,11 +16,13 @@ package websocket
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
+	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -34,11 +36,11 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed from peer.
-	maxMessageSize = 512
+	maxMessageSize = 102400 // 100 KiB
 )
 
 const DEAULT_INSTANCE_ID = "SELF_HOST"
-const DEAULT_ROOM_ID = "0"
+const DEAULT_ROOM_ID = 0
 
 var (
 	newline   = []byte{'\n'}
@@ -46,12 +48,18 @@ var (
 )
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	ReadBufferSize:  102400,
+	WriteBufferSize: 102400,
 }
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
+	ID uuid.UUID
+
+	MappedUserID int
+
+	IsLoggedIn bool
+
 	Hub *Hub
 
 	// The websocket connection.
@@ -64,11 +72,7 @@ type Client struct {
 	InstanceID string
 
 	// roomID, 0 by default
-	RoomID string
-}
-
-func (c *Client) IsLogin() {
-
+	RoomID int
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -94,9 +98,12 @@ func (c *Client) readPump() {
 		}
 		// format message
 		message = bytes.TrimSpace(bytes.Replace(message, newline, charSpace, -1))
-		msg := NewMessage(c.RoomID, message)
+		fmt.Printf("[dump] %v\n", message)
+		msg, _ := NewMessage(c.ID, c.RoomID, message)
 		// send to hub and process
-		c.Hub.OnMessage <- msg
+		if msg != nil {
+			c.Hub.OnMessage <- msg
+		}
 	}
 }
 
@@ -167,13 +174,13 @@ func internalError(ws *websocket.Conn, msg string, err error) {
 }
 
 // ServeWebsocket handle websocket requests from the peer.
-func ServeWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request, instanceID string, roomID string) {
+func ServeWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request, instanceID string, roomID int) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	client := &Client{Hub: hub, Conn: conn, Send: make(chan []byte, 256), InstanceID: instanceID, RoomID: roomID}
+	client := &Client{ID: uuid.Must(uuid.NewV4(), nil), MappedUserID: 0, IsLoggedIn: false, Hub: hub, Conn: conn, Send: make(chan []byte, 256), InstanceID: instanceID, RoomID: roomID}
 	client.Hub.Register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in

@@ -14,7 +14,11 @@
 
 package websocket
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	uuid "github.com/satori/go.uuid"
+)
 
 // message protocol from client in json:
 //
@@ -24,6 +28,7 @@ import "encoding/json"
 //     "payload":string
 // }
 
+// for message
 const SIGNAL_PING = 0
 const SIGNAL_ENTER = 1
 const SIGNAL_LEAVE = 2
@@ -45,24 +50,51 @@ const TARGET_DISPLAY_NAME = 5       // DisplayNameState
 const TARGET_APPS = 6               // only for broadcast
 const TARGET_RESOURCE = 7           // only for broadcast
 
+// for feedback
+const ERROR_CODE_OK = 0
+const ERROR_CODE_FAILED = 1
+const ERROR_CODE_NEED_ENTER = 2
+const ERROR_CODE_PONG = 3
+const ERROR_CODE_LOGGEDIN = 4
+const ERROR_CODE_LOGIN_FAILED = 5
+
 type Broadcast struct {
 	Type    string `json:"type"`
 	Payload string `json:"payload"`
 }
 
-type Protocol struct {
-	Signal    int                    `json:"signal"`
-	Option    int                    `json:"option"`
-	Target    int                    `json:"target"`
-	Payload   map[string]interface{} `json:"payload"`
-	Broadcast *Broadcast             `json:"broadcast"`
+type Message struct {
+	ClientID  uuid.UUID     `json:"clientID"`
+	Signal    int           `json:"signal"`
+	RoomID    int           `json:"roomID"` // also as APP ID
+	Option    int           `json:"option"`
+	Target    int           `json:"target"`
+	Payload   []interface{} `json:"payload"`
+	Broadcast *Broadcast    `json:"broadcast"`
 }
 
-func NewProtocol(roomID string, rawProtocol []byte) (*Protocol, error) {
+func NewMessage(clientID uuid.UUID, roomID int, rawMessage []byte) (*Message, error) {
 	// init Action
-	var protocol Protocol
-	if err := json.Unmarshal(rawProtocol, &protocol); err != nil {
+	var message Message
+	if err := json.Unmarshal(rawMessage, &message); err != nil {
 		return nil, err
 	}
-	return &protocol, nil
+	message.ClientID = clientID
+	message.RoomID = roomID
+	return &message, nil
+}
+
+type Feedback struct {
+	ErrorCode    int         `json:"errorCode"`
+	ErrorMessage string      `json:"errorMessage"`
+	Broadcast    *Broadcast  `json:"broadcast"`
+	Data         interface{} `json:"data"`
+}
+
+func (feed *Feedback) Serialization() ([]byte, error) {
+	return json.Marshal(feed)
+}
+
+type PayloadAuthToken struct {
+	AuthToken string `json:"authToken"`
 }
