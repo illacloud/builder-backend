@@ -31,7 +31,7 @@ type AppService interface {
 	DeleteApp(appID int) error
 	GetAllApps() ([]AppDto, error)
 	DuplicateApp(appID, userID int, name string) (AppDto, error)
-	ReleaseApp(appID int) error
+	ReleaseApp(appID int) (Editor, error)
 	GetMegaData(appID, version int) (Editor, error)
 }
 
@@ -373,10 +373,10 @@ func (impl *AppServiceImpl) copyActions(appA, appB, user int) error {
 	return nil
 }
 
-func (impl *AppServiceImpl) ReleaseApp(appID int) error {
+func (impl *AppServiceImpl) ReleaseApp(appID int) (Editor, error) {
 	app, err := impl.appRepository.RetrieveAppByID(appID)
 	if err != nil {
-		return err
+		return Editor{}, nil
 	}
 	app.MainlineVersion += 1
 	app.ReleaseVersion = app.MainlineVersion
@@ -384,9 +384,14 @@ func (impl *AppServiceImpl) ReleaseApp(appID int) error {
 	_ = impl.releaseKVStateByApp(AppDto{ID: appID, MainlineVersion: app.MainlineVersion})
 	_ = impl.releaseActionsByApp(AppDto{ID: appID, MainlineVersion: app.MainlineVersion})
 	if err := impl.appRepository.Update(app); err != nil {
-		return err
+		return Editor{}, nil
 	}
-	return nil
+
+	editor, err := impl.fetchEditor(appID, app.ReleaseVersion)
+	if err != err {
+		return Editor{}, nil
+	}
+	return editor, nil
 }
 
 func (impl *AppServiceImpl) releaseTreeStateByApp(app AppDto) error {
