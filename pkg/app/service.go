@@ -15,6 +15,7 @@
 package app
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -29,7 +30,7 @@ type AppService interface {
 	FetchAppByID(appID int) (AppDto, error)
 	DeleteApp(appID int) error
 	GetAllApps() ([]AppDto, error)
-	DuplicateApp(appID, userID int) (AppDto, error)
+	DuplicateApp(appID, userID int, name string) (AppDto, error)
 	ReleaseApp(appID int) error
 	GetMegaData(appID, version int) (Editor, error)
 }
@@ -58,19 +59,13 @@ type AppDto struct {
 }
 
 type Editor struct {
-	AppInfo               AppDto            `json:"appInfo"`
-	Actions               []Action          `json:"actions"`
-	Components            map[string]string `json:"components"`
-	DependenciesState     map[string]string `json:"dependenciesState"`
-	ExecutionState        ExecutionState    `json:"executionState"`
-	DragShadowState       map[string]string `json:"dragShadowState"`
-	DottedLineSquareState map[string]string `json:"dottedLineSquareState"`
-	DisplayNameState      []string          `json:"displayNameState"`
-}
-
-type ExecutionState struct {
-	Result string `json:"result"`
-	Error  string `json:"error"`
+	AppInfo               AppDto                   `json:"appInfo"`
+	Actions               []Action                 `json:"actions"`
+	Components            map[string]ComponentNode `json:"components"`
+	DependenciesState     map[string][]string      `json:"dependenciesState"`
+	DragShadowState       map[string]interface{}   `json:"dragShadowState"`
+	DottedLineSquareState map[string]interface{}   `json:"dottedLineSquareState"`
+	DisplayNameState      []string                 `json:"displayNameState"`
 }
 
 type Action struct {
@@ -129,73 +124,44 @@ func (impl *AppServiceImpl) CreateApp(app AppDto) (AppDto, error) {
 
 func (impl *AppServiceImpl) initialAllTypeTreeStates(appID, user int) error {
 	// create `root` component
-	errC := impl.treestateRepository.Create(&repository.TreeState{
+	if err := impl.treestateRepository.Create(&repository.TreeState{
 		StateType:          repository.TREE_STATE_TYPE_COMPONENTS,
 		ParentNodeRefID:    0,
 		ChildrenNodeRefIDs: []int{},
 		AppRefID:           appID,
 		Version:            repository.APP_EDIT_VERSION,
 		Name:               "rootDsl",
-		Content:            "",
+		Content:            initialComponet,
 		CreatedAt:          time.Now().UTC(),
 		CreatedBy:          user,
 		UpdatedAt:          time.Now().UTC(),
 		UpdatedBy:          user,
-	})
-	// create dependencies state
-	errD := impl.treestateRepository.Create(&repository.TreeState{
-		StateType:          repository.TREE_STATE_TYPE_DEPENDENCIES,
-		ParentNodeRefID:    0,
-		ChildrenNodeRefIDs: []int{},
-		AppRefID:           appID,
-		Version:            repository.APP_EDIT_VERSION,
-		Name:               "rootDsl",
-		Content:            "",
-		CreatedAt:          time.Now().UTC(),
-		CreatedBy:          user,
-		UpdatedAt:          time.Now().UTC(),
-		UpdatedBy:          user})
-	// create execution state
-	errE1 := impl.treestateRepository.Create(&repository.TreeState{
-		StateType:          repository.TREE_STATE_TYPE_EXECUTION,
-		ParentNodeRefID:    0,
-		ChildrenNodeRefIDs: []int{},
-		AppRefID:           appID,
-		Version:            repository.APP_EDIT_VERSION,
-		Name:               "result",
-		Content:            "",
-		CreatedAt:          time.Now().UTC(),
-		CreatedBy:          user,
-		UpdatedAt:          time.Now().UTC(),
-		UpdatedBy:          user,
-	})
-	errE2 := impl.treestateRepository.Create(&repository.TreeState{
-		StateType:          repository.TREE_STATE_TYPE_EXECUTION,
-		ParentNodeRefID:    0,
-		ChildrenNodeRefIDs: []int{},
-		AppRefID:           appID,
-		Version:            repository.APP_EDIT_VERSION,
-		Name:               "error",
-		Content:            "",
-		CreatedAt:          time.Now().UTC(),
-		CreatedBy:          user,
-		UpdatedAt:          time.Now().UTC(),
-		UpdatedBy:          user,
-	})
-	if errE1 != nil || errE2 != nil || errD != nil || errC != nil {
+	}); err != nil {
 		return errors.New("initial tree state failed")
 	}
 	return nil
 }
 
 func (impl *AppServiceImpl) initialAllTypeKVStates(appID, user int) error {
-	// create drag shadow state
+	// create dependencies state
 	errS := impl.kvstateRepository.Create(&repository.KVState{
+		StateType: repository.KV_STATE_TYPE_DEPENDENCIES,
+		AppRefID:  appID,
+		Version:   repository.APP_EDIT_VERSION,
+		Key:       "rootDsl",
+		Value:     "{}",
+		CreatedAt: time.Now().UTC(),
+		CreatedBy: user,
+		UpdatedAt: time.Now().UTC(),
+		UpdatedBy: user,
+	})
+	// create drag shadow state
+	errA := impl.kvstateRepository.Create(&repository.KVState{
 		StateType: repository.KV_STATE_TYPE_DRAG_SHADOW,
 		AppRefID:  appID,
 		Version:   repository.APP_EDIT_VERSION,
 		Key:       "rootDsl",
-		Value:     "",
+		Value:     "{}",
 		CreatedAt: time.Now().UTC(),
 		CreatedBy: user,
 		UpdatedAt: time.Now().UTC(),
@@ -207,7 +173,7 @@ func (impl *AppServiceImpl) initialAllTypeKVStates(appID, user int) error {
 		AppRefID:  appID,
 		Version:   repository.APP_EDIT_VERSION,
 		Key:       "rootDsl",
-		Value:     "",
+		Value:     "{}",
 		CreatedAt: time.Now().UTC(),
 		CreatedBy: user,
 		UpdatedAt: time.Now().UTC(),
@@ -219,13 +185,13 @@ func (impl *AppServiceImpl) initialAllTypeKVStates(appID, user int) error {
 		AppRefID:  appID,
 		Version:   repository.APP_EDIT_VERSION,
 		Key:       "displayName",
-		Value:     "",
+		Value:     "[]",
 		CreatedAt: time.Now().UTC(),
 		CreatedBy: user,
 		UpdatedAt: time.Now().UTC(),
 		UpdatedBy: user,
 	})
-	if errS != nil || errL != nil || errD != nil {
+	if errA != nil || errS != nil || errL != nil || errD != nil {
 		return errors.New("initial tree state failed")
 	}
 	return nil
@@ -291,7 +257,7 @@ func (impl *AppServiceImpl) GetAllApps() ([]AppDto, error) {
 	return resDtoSlice, nil
 }
 
-func (impl *AppServiceImpl) DuplicateApp(appID, userID int) (AppDto, error) {
+func (impl *AppServiceImpl) DuplicateApp(appID, userID int, name string) (AppDto, error) {
 	appA, err := impl.appRepository.RetrieveAppByID(appID)
 	if err != nil {
 		return AppDto{}, err
@@ -303,7 +269,7 @@ func (impl *AppServiceImpl) DuplicateApp(appID, userID int) (AppDto, error) {
 	appA.CreatedBy = userID
 	appA.UpdatedBy = userID
 	id, err := impl.appRepository.Create(&repository.App{
-		Name:            appA.Name,
+		Name:            name,
 		ReleaseVersion:  appA.ReleaseVersion,
 		MainlineVersion: appA.MainlineVersion,
 		CreatedBy:       appA.CreatedBy,
@@ -317,7 +283,7 @@ func (impl *AppServiceImpl) DuplicateApp(appID, userID int) (AppDto, error) {
 	userRecord, _ := impl.userRepository.RetrieveByID(userID)
 	appB := AppDto{
 		ID:              id,
-		Name:            appA.Name,
+		Name:            name,
 		ReleaseVersion:  appA.ReleaseVersion,
 		MainlineVersion: appA.MainlineVersion,
 		CreatedBy:       appA.CreatedBy,
@@ -431,6 +397,7 @@ func (impl *AppServiceImpl) releaseTreeStateByApp(app AppDto) error {
 	}
 	// set version as mainline version
 	for serial, _ := range treestates {
+		treestates[serial].ID = 0
 		treestates[serial].Version = app.MainlineVersion
 	}
 	// and put them to the database as duplicate
@@ -450,6 +417,7 @@ func (impl *AppServiceImpl) releaseKVStateByApp(app AppDto) error {
 	}
 	// set version as mainline version
 	for serial, _ := range kvstates {
+		kvstates[serial].ID = 0
 		kvstates[serial].Version = app.MainlineVersion
 	}
 	// and put them to the database as duplicate
@@ -469,6 +437,7 @@ func (impl *AppServiceImpl) releaseActionsByApp(app AppDto) error {
 	}
 	// set version as mainline version
 	for serial, _ := range actions {
+		actions[serial].ID = 0
 		actions[serial].Version = app.MainlineVersion
 	}
 	// and put them to the database as duplicate
@@ -507,7 +476,6 @@ func (impl *AppServiceImpl) fetchEditor(appID int, version int) (Editor, error) 
 	res.Actions, _ = impl.formatActions(appID, version)
 	res.Components, _ = impl.formatComponents(appID, version)
 	res.DependenciesState, _ = impl.formatDependenciesState(appID, version)
-	res.ExecutionState, _ = impl.formatExecutionState(appID, version)
 	res.DragShadowState, _ = impl.formatDragShadowState(appID, version)
 	res.DottedLineSquareState, _ = impl.formatDottedLineSquareState(appID, version)
 	res.DisplayNameState, _ = impl.formatDisplayNameState(appID, version)
@@ -538,76 +506,80 @@ func (impl *AppServiceImpl) formatActions(appID, version int) ([]Action, error) 
 	return resSlice, nil
 }
 
-func (impl *AppServiceImpl) formatComponents(appID, version int) (map[string]string, error) {
+func (impl *AppServiceImpl) formatComponents(appID, version int) (map[string]ComponentNode, error) {
 	res, err := impl.treestateRepository.RetrieveTreeStatesByApp(appID, repository.TREE_STATE_TYPE_COMPONENTS, version)
 	if err != nil {
 		return nil, err
 	}
 
-	resMap := map[string]string{}
-	for _, component := range res {
-		resMap[component.Name] = component.Content
+	if len(res) == 0 {
+		return nil, errors.New("no component")
 	}
+
+	tempMap := map[int]*repository.TreeState{}
+	for serial, component := range res {
+		tempMap[serial] = component
+	}
+	resNode, _ := buildComponentTree(res[0], tempMap, nil)
+	resMap := map[string]ComponentNode{}
+	resMap["rootDsl"] = *resNode
 
 	return resMap, nil
 }
 
-func (impl *AppServiceImpl) formatDependenciesState(appID, version int) (map[string]string, error) {
-	res, err := impl.treestateRepository.RetrieveTreeStatesByApp(appID, repository.TREE_STATE_TYPE_DEPENDENCIES, version)
+func (impl *AppServiceImpl) formatDependenciesState(appID, version int) (map[string][]string, error) {
+	res, err := impl.kvstateRepository.RetrieveKVStatesByApp(appID, repository.KV_STATE_TYPE_DEPENDENCIES, version)
 	if err != nil {
 		return nil, err
 	}
 
-	resMap := map[string]string{}
+	resMap := map[string][]string{}
 	for _, dependency := range res {
-		resMap[dependency.Name] = dependency.Content
+		var revMsg []string
+		json.Unmarshal([]byte(dependency.Value), &revMsg)
+		resMap[dependency.Key] = revMsg // value convert to []string
 	}
 
 	return resMap, nil
 }
 
-func (impl *AppServiceImpl) formatExecutionState(appID, version int) (ExecutionState, error) {
-	res, err := impl.treestateRepository.RetrieveTreeStatesByApp(appID, repository.TREE_STATE_TYPE_EXECUTION, version)
-	if err != nil {
-		return ExecutionState{}, err
-	}
-
-	resE := ExecutionState{}
-	for _, item := range res {
-		if item.Name == "result" {
-			resE.Result = item.Content
-		}
-		if item.Name == "error" {
-			resE.Error = item.Content
-		}
-	}
-
-	return resE, nil
-}
-
-func (impl *AppServiceImpl) formatDragShadowState(appID, version int) (map[string]string, error) {
+func (impl *AppServiceImpl) formatDragShadowState(appID, version int) (map[string]interface{}, error) {
 	res, err := impl.kvstateRepository.RetrieveKVStatesByApp(appID, repository.KV_STATE_TYPE_DRAG_SHADOW, version)
 	if err != nil {
 		return nil, err
 	}
 
-	resMap := map[string]string{}
+	resMap := map[string]interface{}{}
+
+	if len(res) == 1 {
+		return resMap, nil
+	}
+
 	for _, shadow := range res {
-		resMap[shadow.Key] = shadow.Value
+		var revMsg map[string]interface{}
+		json.Unmarshal([]byte(shadow.Value), &revMsg)
+		resMap[shadow.Key] = revMsg
 	}
 
 	return resMap, nil
 }
 
-func (impl *AppServiceImpl) formatDottedLineSquareState(appID, version int) (map[string]string, error) {
+func (impl *AppServiceImpl) formatDottedLineSquareState(appID, version int) (map[string]interface{}, error) {
 	res, err := impl.kvstateRepository.RetrieveKVStatesByApp(appID, repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE, version)
 	if err != nil {
 		return nil, err
 	}
 
-	resMap := map[string]string{}
-	for _, shadow := range res {
-		resMap[shadow.Key] = shadow.Value
+	resMap := map[string]interface{}{}
+
+	if len(res) == 1 {
+		return resMap, nil
+	}
+
+	for _, line := range res {
+		var revMsg map[string]interface{}
+		json.Unmarshal([]byte(line.Value), &revMsg)
+		resMap[line.Key] = line.Value
 	}
 
 	return resMap, nil
@@ -619,9 +591,12 @@ func (impl *AppServiceImpl) formatDisplayNameState(appID, version int) ([]string
 		return nil, err
 	}
 
-	resSlice := make([]string, 0, 0)
-	for _, displayName := range res {
-		resSlice = append(resSlice, displayName.Value)
+	resSlice := make([]string, 0, len(res))
+
+	if len(res) == 1 {
+		var revMsg []string
+		json.Unmarshal([]byte(res[0].Value), &revMsg)
+		resSlice = revMsg
 	}
 
 	return resSlice, nil

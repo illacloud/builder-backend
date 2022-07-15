@@ -25,7 +25,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type RenameRequest struct {
+type AppRequest struct {
 	Name string `json:"appName" validate:"required"`
 }
 
@@ -133,7 +133,7 @@ func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
 	}
 
 	// Parse request body
-	var payload RenameRequest
+	var payload AppRequest
 	if err := json.NewDecoder(c.Request.Body).Decode(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
@@ -247,8 +247,28 @@ func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
 		})
 		return
 	}
+	// Parse request body
+	var payload AppRequest
+	if err := json.NewDecoder(c.Request.Body).Decode(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": "parse request body error: " + err.Error(),
+		})
+		return
+	}
+
+	// Validate request body
+	validate := validator.New()
+	if err := validate.Struct(payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": "parse request body error: " + err.Error(),
+		})
+		return
+	}
+
 	// Call `app service` to duplicate app
-	res, err := impl.appService.DuplicateApp(id, user)
+	res, err := impl.appService.DuplicateApp(id, user, payload.Name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"errorCode":    500,

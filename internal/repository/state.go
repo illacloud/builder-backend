@@ -16,8 +16,7 @@ package repository
 
 // define StateType
 const TREE_STATE_TYPE_COMPONENTS = 1       // ComponentsState
-const TREE_STATE_TYPE_DEPENDENCIES = 2     // DependenciesState
-const TREE_STATE_TYPE_EXECUTION = 3        // ExecutionState
-const KV_STATE_TYPE_DRAG_SHADOW = 4        // DragShadowState
-const KV_STATE_TYPE_DOTTED_LINE_SQUARE = 5 // DottedLineSquareState
-const KV_STATE_TYPE_DISPLAY_NAME = 6       // DisplayNameState
+const KV_STATE_TYPE_DEPENDENCIES = 2       // DependenciesState
+const KV_STATE_TYPE_DRAG_SHADOW = 3        // DragShadowState
+const KV_STATE_TYPE_DOTTED_LINE_SQUARE = 4 // DottedLineSquareState
+const KV_STATE_TYPE_DISPLAY_NAME = 5       // DisplayNameState
