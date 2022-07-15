@@ -297,5 +297,7 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, "pass")
+	c.JSON(http.StatusOK, gin.H{
+		"message": "release app success",
+	})
 }
