@@ -53,6 +53,11 @@ func Initialize() (*Server, error) {
 	appServiceImpl := app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, userRepositoryImpl, kvStateRepositoryImpl, treeStateRepositoryImpl, actionRepositoryImpl)
 	appRestHandlerImpl := resthandler.NewAppRestHandlerImpl(sugaredLogger, appServiceImpl)
 	appRouterImpl := router.NewAppRouterImpl(appRestHandlerImpl)
+	// room
+	roomServiceImpl := room.NewRoomServiceImpl(sugaredLogger, roomRepositoryImpl, userRepositoryImpl, kvStateRepositoryImpl, treeStateRepositoryImpl, actionRepositoryImpl)
+	roomRestHandlerImpl := resthandler.NewRoomRestHandlerImpl(sugaredLogger, roomServiceImpl)
+	roomRouterImpl := router.NewRoomRouterImpl(roomRestHandlerImpl)
+	// resource
 	resourceRepositoryImpl := repository.NewResourceRepositoryImpl(sugaredLogger, gormDB)
 	actionServiceImpl := action.NewActionServiceImpl(sugaredLogger, actionRepositoryImpl, resourceRepositoryImpl)
 	actionRestHandlerImpl := resthandler.NewActionRestHandlerImpl(sugaredLogger, actionServiceImpl)
@@ -60,7 +65,7 @@ func Initialize() (*Server, error) {
 	resourceServiceImpl := resource.NewResourceServiceImpl(sugaredLogger, resourceRepositoryImpl)
 	resourceRestHandlerImpl := resthandler.NewResourceRestHandlerImpl(sugaredLogger, resourceServiceImpl)
 	resourceRouterImpl := router.NewResourceRouterImpl(resourceRestHandlerImpl)
-	restRouter := router.NewRESTRouter(sugaredLogger, userRouterImpl, appRouterImpl, actionRouterImpl, resourceRouterImpl)
+	restRouter := router.NewRESTRouter(sugaredLogger, userRouterImpl, appRouterImpl, roomRouterImpl, actionRouterImpl, resourceRouterImpl)
 	server := NewServer(config, engine, restRouter, sugaredLogger)
 	return server, nil
 }
