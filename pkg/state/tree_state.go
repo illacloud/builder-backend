@@ -147,7 +147,8 @@ func (impl *TreeStateServiceImpl) UpdateTreeState(treestate TreeStateDto) (TreeS
 	if err != nil {
 		return TreeStateDto{}, err
 	}
-	if err := impl.treestateRepository.Update(&repository.TreeState{
+	fmt.Printf("[DUMP] treestate: %v\n", treestate.Content)
+	treeStateRepo := &repository.TreeState{
 		ID:                 treestate.ID,
 		StateType:          treestate.StateType,
 		ParentNodeRefID:    treestate.ParentNodeRefID,
@@ -158,7 +159,9 @@ func (impl *TreeStateServiceImpl) UpdateTreeState(treestate TreeStateDto) (TreeS
 		Content:            treestate.Content,
 		UpdatedAt:          treestate.UpdatedAt,
 		UpdatedBy:          treestate.UpdatedBy,
-	}); err != nil {
+	}
+	fmt.Printf("[DUMP] treeStateRepo:%v\n", treeStateRepo)
+	if err := impl.treestateRepository.Update(treeStateRepo); err != nil {
 		return TreeStateDto{}, err
 	}
 	return treestate, nil
@@ -275,6 +278,7 @@ func (impl *TreeStateServiceImpl) UpdateTreeStateNode(apprefid int, nowNode *Tre
 	if nowTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, nowNode.StateType, nowNode.Name); err != nil {
 		return err
 	}
+	fmt.Printf("[DUMP] nowTreeState: %v\n", nowTreeState)
 	// replace data
 	nowNode.ID = nowTreeState.ID
 	if _, err = impl.UpdateTreeState(*nowNode); err != nil {

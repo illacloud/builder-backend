@@ -17,6 +17,8 @@ package repository
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"reflect"
 	"strconv"
 )
 
@@ -30,13 +32,13 @@ type ComponentNode struct {
 	Type           string                 `json:"type"`
 	ContainerType  map[string]interface{} `json:"containerType"`
 	VerticalResize bool                   `json:"verticalResize"`
-	H              int                    `json:"h"`
-	W              int                    `json:"w"`
-	MinH           int                    `json:"minH"`
-	MinW           int                    `json:"minW"`
-	X              int                    `json:"x"`
-	Y              int                    `json:"y"`
-	Z              int                    `json:"z"`
+	H              float64                `json:"h"`
+	W              float64                `json:"w"`
+	MinH           float64                `json:"minH"`
+	MinW           float64                `json:"minW"`
+	X              float64                `json:"x"`
+	Y              float64                `json:"y"`
+	Z              float64                `json:"z"`
 	Props          map[string]interface{} `json:"props"`
 	PanelConfig    map[string]interface{} `json:"panelConfig"`
 }
@@ -53,9 +55,12 @@ func ConstructComponentNodeByMap(data interface{}) *ComponentNode {
 	var cnode ComponentNode
 	var udata map[string]interface{}
 	var ok bool
+	fmt.Printf("[DUMP] data reflect.TypeOf: %v\n", reflect.TypeOf(data))
+
 	if udata, ok = data.(map[string]interface{}); !ok {
 		return nil
 	}
+	fmt.Printf("[DUMP] udata: %v\n", udata)
 	for k, v := range udata {
 		switch k {
 		case "displayName":
@@ -80,19 +85,22 @@ func ConstructComponentNodeByMap(data interface{}) *ComponentNode {
 		case "verticalResize":
 			cnode.VerticalResize, _ = v.(bool)
 		case "h":
-			cnode.H, _ = v.(int)
+			fmt.Printf("[DUMP] data.v reflect.TypeOf: %v\n", reflect.TypeOf(v))
+			fmt.Printf("[DUMP] data.v: %v\n", v)
+
+			cnode.H, _ = v.(float64)
 		case "w":
-			cnode.W, _ = v.(int)
+			cnode.W, _ = v.(float64)
 		case "minH":
-			cnode.MinH, _ = v.(int)
+			cnode.MinH, _ = v.(float64)
 		case "minW":
-			cnode.MinW, _ = v.(int)
+			cnode.MinW, _ = v.(float64)
 		case "x":
-			cnode.X, _ = v.(int)
+			cnode.X, _ = v.(float64)
 		case "y":
-			cnode.Y, _ = v.(int)
+			cnode.Y, _ = v.(float64)
 		case "z":
-			cnode.Z, _ = v.(int)
+			cnode.Z, _ = v.(float64)
 		case "props":
 			cnode.Props, _ = v.(map[string]interface{})
 		case "panelConfig":

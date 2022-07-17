@@ -272,10 +272,21 @@ func SignalUpdateState(hub *Hub, message *Message) error {
 	case TARGET_COMPONENTS:
 		apprefid := currentClient.RoomID
 		for _, v := range message.Payload {
+			// construct update data
 			var nowNode state.TreeStateDto
+			componentNode := repository.ConstructComponentNodeByMap(v)
+			fmt.Printf("[DUMP] componentNode: %v\n", componentNode)
+
+			serializedComponent, err := componentNode.SerializationForDatabase()
+			if err != nil {
+				return err
+			}
+			fmt.Printf("[DUMP] serializedComponent: %v\n", serializedComponent)
+			nowNode.Content = string(serializedComponent)
 			nowNode.ConstructByMap(v) // set Name
 			nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
 			fmt.Printf("[DUMP] nowNode: %v\n", nowNode)
+			// update
 			if err := hub.TreeStateServiceImpl.UpdateTreeStateNode(apprefid, &nowNode); err != nil {
 				FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
 				return err
