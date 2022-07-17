@@ -63,9 +63,8 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 		return
 	}
 
-	app, errA := strconv.Atoi(c.Param("app"))
-	version, errV := strconv.Atoi(c.Param("version"))
-	if errA != nil || errV != nil {
+	app, err := strconv.Atoi(c.Param("app"))
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": "parse url error",
@@ -82,7 +81,7 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 	}
 
 	act.App = app
-	act.Version = version
+	act.Version = 0
 	act.CreatedAt = time.Now().UTC()
 	act.CreatedBy = user
 	act.UpdatedAt = time.Now().UTC()
@@ -111,9 +110,8 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	}
 
 	app, errA := strconv.Atoi(c.Param("app"))
-	version, errV := strconv.Atoi(c.Param("version"))
 	id, errAc := strconv.Atoi(c.Param("action"))
-	if errA != nil || errV != nil || errAc != nil {
+	if errA != nil || errAc != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": "parse url error",
@@ -132,7 +130,7 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	act.ID = id
 	act.UpdatedBy = user
 	act.App = app
-	act.Version = version
+	act.Version = 0
 	act.UpdatedAt = time.Now().UTC()
 	act.UpdatedBy = user
 	res, err := impl.actionService.UpdateAction(act)
@@ -189,15 +187,14 @@ func (impl ActionRestHandlerImpl) GetAction(c *gin.Context) {
 
 func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 	app, errA := strconv.Atoi(c.Param("app"))
-	version, errV := strconv.Atoi(c.Param("version"))
-	if errA != nil || errV != nil {
+	if errA != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": "parse url error",
 		})
 		return
 	}
-	res, err := impl.actionService.FindActionsByAppVersion(app, version)
+	res, err := impl.actionService.FindActionsByAppVersion(app, 0)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"errorCode":    500,
@@ -220,9 +217,27 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 	}
 	res, err := impl.actionService.RunAction(act)
 	if err != nil {
+		if strings.HasPrefix(err.Error(), "Error 1064:") {
+			lineNumber, _ := strconv.Atoi(err.Error()[len(err.Error())-1:])
+			message := ""
+			regexp, _ := regexp.Compile(`to use`)
+			match := regexp.FindStringIndex(err.Error())
+			if len(match) == 2 {
+				message = err.Error()[match[1]:]
+			}
+			c.JSON(http.StatusBadRequest, gin.H{
+				"errorCode":    400,
+				"errorMessage": errors.New("SQL syntax error").Error(),
+				"errorData": map[string]interface{}{
+					"lineNumber": lineNumber,
+					"message":    "SQL syntax error" + message,
+				},
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"errorCode":    500,
-			"errorMessage": "preview action error: " + err.Error(),
+			"errorMessage": "run action error: " + err.Error(),
 		})
 		return
 	}

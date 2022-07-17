@@ -43,6 +43,7 @@ type KVStateRepository interface {
 	RetrieveKVStatesByKey(key string) ([]*KVState, error)
 	RetrieveKVStatesByApp(apprefid int, statetype int, version int) ([]*KVState, error)
 	RetrieveAllTypeKVStatesByApp(apprefid int, version int) ([]*KVState, error)
+	DeleteAllTypeKVStatesByApp(apprefid int) error
 }
 
 type KVStateRepositoryImpl struct {
@@ -125,4 +126,11 @@ func (impl *KVStateRepositoryImpl) RetrieveAllTypeKVStatesByApp(apprefid int, ve
 		return nil, err
 	}
 	return kvstates, nil
+}
+
+func (impl *KVStateRepositoryImpl) DeleteAllTypeKVStatesByApp(apprefid int) error {
+	if err := impl.db.Where("app_ref_id = ?", apprefid).Delete(&KVState{}).Error; err != nil {
+		return err
+	}
+	return nil
 }

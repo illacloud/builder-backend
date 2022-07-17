@@ -43,6 +43,7 @@ type ActionRepository interface {
 	Update(action *Action) error
 	RetrieveByID(id int) (*Action, error)
 	RetrieveActionsByAppVersion(app, version int) ([]*Action, error)
+	DeleteActionsByApp(appID int) error
 }
 
 type ActionRepositoryImpl struct {
@@ -99,4 +100,11 @@ func (impl *ActionRepositoryImpl) RetrieveActionsByAppVersion(app, version int) 
 		return nil, err
 	}
 	return actions, nil
+}
+
+func (impl *ActionRepositoryImpl) DeleteActionsByApp(appID int) error {
+	if err := impl.db.Where("app_ref_id = ?", appID).Delete(&Action{}).Error; err != nil {
+		return err
+	}
+	return nil
 }
