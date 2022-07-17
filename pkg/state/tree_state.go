@@ -287,6 +287,16 @@ func (impl *TreeStateServiceImpl) UpdateTreeStateNode(apprefid int, nowNode *Tre
 	return nil
 }
 
+func (impl *TreeStateServiceImpl) IsTreeStateNodeExists(apprefid int, nowNode *TreeStateDto) bool {
+	// get id by displayName
+	var err error
+	if _, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, nowNode.StateType, nowNode.Name); err != nil {
+		// not exists
+		return false
+	}
+	return true
+}
+
 func (impl *TreeStateServiceImpl) MoveTreeStateNode(apprefid int, nowNode *TreeStateDto) error {
 	// prepare data
 	oldParentTreeState := &repository.TreeState{}

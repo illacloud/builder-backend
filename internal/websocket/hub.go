@@ -104,7 +104,9 @@ func SignalFilter(hub *Hub, message *Message) error {
 	case SIGNAL_MOVE_STATE:
 		return SignalMoveState(hub, message)
 	case SIGNAL_CREATE_OR_UPDATE:
+		return SignalCreateOrUpdateupdate(hub, message)
 	case SIGNAL_ONLY_BROADCAST:
+		return SignalOnlyBroadcast(hub, message)
 	default:
 		return nil
 
@@ -348,9 +350,80 @@ func SignalMoveState(hub *Hub, message *Message) error {
 }
 
 func SignalCreateOrUpdateupdate(hub *Hub, message *Message) error {
+	fmt.Printf("[DUMP] message: %v \n", message)
+
+	// deserialize message
+	currentClient := hub.Clients[message.ClientID]
+	message.RewriteBroadcast()
+	// target switch
+	switch message.Target {
+	case TARGET_NOTNING:
+		return nil
+	case TARGET_COMPONENTS:
+		apprefid := currentClient.RoomID
+		for _, v := range message.Payload {
+			// check if state already in database
+			var nowNode state.TreeStateDto
+			nowNode.ConstructByMap(v) // set Name
+			nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
+			isStateExists := hub.TreeStateServiceImpl.IsTreeStateNodeExists(apprefid, &nowNode)
+			if !isStateExists {
+				// create
+				summitnodeid := repository.TREE_STATE_SUMMIT_ID
+				var componenttree *repository.ComponentNode
+				componenttree = repository.ConstructComponentNodeByMap(v)
+				fmt.Printf("%v\n", componenttree)
+				if err := hub.TreeStateServiceImpl.CreateComponentTree(apprefid, summitnodeid, componenttree); err != nil {
+					FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+					return err
+				}
+			} else {
+				// update
+				// construct update data
+				var nowNode state.TreeStateDto
+				componentNode := repository.ConstructComponentNodeByMap(v)
+				fmt.Printf("[DUMP] componentNode: %v\n", componentNode)
+
+				serializedComponent, err := componentNode.SerializationForDatabase()
+				if err != nil {
+					return err
+				}
+				fmt.Printf("[DUMP] serializedComponent: %v\n", serializedComponent)
+				nowNode.Content = string(serializedComponent)
+				nowNode.ConstructByMap(v) // set Name
+				nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
+				fmt.Printf("[DUMP] nowNode: %v\n", nowNode)
+				// update
+				if err := hub.TreeStateServiceImpl.UpdateTreeStateNode(apprefid, &nowNode); err != nil {
+					FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+					return err
+				}
+			}
+
+		}
+
+		// feedback currentClient
+		FeedbackCurrentClient(message, currentClient, ERROR_CREATE_OR_UPDATE_STATE_OK)
+
+		// feedback otherClient
+		BroadcastToOtherClients(hub, message, currentClient)
+	case TARGET_DEPENDENCIES:
+	case TARGET_DRAG_SHADOW:
+	case TARGET_DOTTED_LINE_SQUARE:
+	case TARGET_DISPLAY_NAME:
+	case TARGET_APPS:
+	case TARGET_RESOURCE:
+	}
 	return nil
 }
+
 func SignalOnlyBroadcast(hub *Hub, message *Message) error {
+	// deserialize message
+	currentClient := hub.Clients[message.ClientID]
+	message.RewriteBroadcast()
+
+	// feedback otherClient
+	BroadcastToOtherClients(hub, message, currentClient)
 	return nil
 }
 
