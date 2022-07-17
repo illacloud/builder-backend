@@ -32,7 +32,7 @@ func NewRoomRouterImpl(RoomRestHandler resthandler.RoomRestHandler) *RoomRouterI
 	return &RoomRouterImpl{RoomRestHandler: RoomRestHandler}
 }
 
-func (impl RoomRouterImpl) InitRoomRouter(appRouter *gin.RouterGroup) {
-	appRouter.GET("/api/v1/room/:instanceid/dashboard", impl.RoomRestHandler.GetDashboardRoomConn)
-	appRouter.GET("/api/v1/room/:instanceid/app/:roomid", impl.RoomRestHandler.GetAppRoomConn)
+func (impl RoomRouterImpl) InitRoomRouter(roomRouter *gin.RouterGroup) {
+	roomRouter.GET("/api/v1/room/:instanceid/dashboard", impl.RoomRestHandler.GetDashboardRoomConn)
+	roomRouter.GET("/api/v1/room/:instanceid/app/:roomid", impl.RoomRestHandler.GetAppRoomConn)
 }
