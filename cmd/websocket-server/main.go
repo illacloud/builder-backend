@@ -25,7 +25,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/internal/util"
+	"github.com/illa-family/builder-backend/pkg/app"
 	"github.com/illa-family/builder-backend/pkg/db"
+	"github.com/illa-family/builder-backend/pkg/resource"
 	"github.com/illa-family/builder-backend/pkg/state"
 
 	"github.com/illa-family/builder-backend/internal/websocket"
@@ -35,6 +37,9 @@ import (
 var dashboardHub *websocket.Hub
 var appHub *websocket.Hub
 var treestateServiceImpl *state.TreeStateServiceImpl
+var kvstateServiceImpl *state.KVStateServiceImpl
+var appServiceImpl *app.AppServiceImpl
+var resourceServiceImpl *resource.ResourceServiceImpl
 
 func initEnv() error {
 	sugaredLogger := util.NewSugardLogger()
@@ -48,8 +53,16 @@ func initEnv() error {
 	}
 	// init repo
 	treestateRepositoryImpl := repository.NewTreeStateRepositoryImpl(sugaredLogger, gormDB)
+	kvstateRepositoryImpl := repository.NewKVStateRepositoryImpl(sugaredLogger, gormDB)
+	appRepositoryImpl := repository.NewAppRepositoryImpl(sugaredLogger, gormDB)
+	resourceRepositoryImpl := repository.NewResourceRepositoryImpl(sugaredLogger, gormDB)
+	userRepositoryImpl := repository.NewUserRepositoryImpl(gormDB, sugaredLogger)
+	actionRepositoryImpl := repository.NewActionRepositoryImpl(sugaredLogger, gormDB)
 	// init service
 	treestateServiceImpl = state.NewTreeStateServiceImpl(sugaredLogger, treestateRepositoryImpl)
+	kvstateServiceImpl = state.NewKVStateServiceImpl(sugaredLogger, kvstateRepositoryImpl)
+	appServiceImpl = app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, userRepositoryImpl, kvstateRepositoryImpl, treestateRepositoryImpl, actionRepositoryImpl)
+	resourceServiceImpl = resource.NewResourceServiceImpl(sugaredLogger, resourceRepositoryImpl)
 	return nil
 }
 
@@ -64,6 +77,9 @@ func main() {
 	dashboardHub = websocket.NewHub()
 	appHub = websocket.NewHub()
 	appHub.TreeStateServiceImpl = treestateServiceImpl
+	appHub.KVStateServiceImpl = kvstateServiceImpl
+	appHub.AppServiceImpl = appServiceImpl
+	appHub.ResourceServiceImpl = resourceServiceImpl
 	go dashboardHub.Run()
 	go appHub.Run()
 

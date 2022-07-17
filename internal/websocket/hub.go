@@ -19,6 +19,8 @@ import (
 	"fmt"
 
 	"github.com/illa-family/builder-backend/internal/repository"
+	"github.com/illa-family/builder-backend/pkg/app"
+	"github.com/illa-family/builder-backend/pkg/resource"
 	"github.com/illa-family/builder-backend/pkg/state"
 	"github.com/illa-family/builder-backend/pkg/user"
 	uuid "github.com/satori/go.uuid"
@@ -44,6 +46,9 @@ type Hub struct {
 
 	// impl
 	TreeStateServiceImpl *state.TreeStateServiceImpl
+	KVStateServiceImpl   *state.KVStateServiceImpl
+	AppServiceImpl       *app.AppServiceImpl
+	ResourceServiceImpl  *resource.ResourceServiceImpl
 }
 
 func NewHub() *Hub {
@@ -104,7 +109,7 @@ func SignalFilter(hub *Hub, message *Message) error {
 	case SIGNAL_MOVE_STATE:
 		return SignalMoveState(hub, message)
 	case SIGNAL_CREATE_OR_UPDATE:
-		return SignalCreateOrUpdateupdate(hub, message)
+		return SignalCreateOrUpdate(hub, message)
 	case SIGNAL_ONLY_BROADCAST:
 		return SignalOnlyBroadcast(hub, message)
 	default:
@@ -182,6 +187,8 @@ func SignalLeave(hub *Hub, message *Message) error {
 func SignalCreateState(hub *Hub, message *Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
+	stateType := repository.STATE_TYPE_INVALIED
+	apprefid := currentClient.RoomID
 	message.RewriteBroadcast()
 	// target switch
 	switch message.Target {
@@ -189,7 +196,6 @@ func SignalCreateState(hub *Hub, message *Message) error {
 		return nil
 	case TARGET_COMPONENTS:
 		// build component tree from json
-		apprefid := currentClient.RoomID
 		fmt.Printf("[DUMP] apprefid: %v \n", apprefid)
 		summitnodeid := repository.TREE_STATE_SUMMIT_ID
 		fmt.Printf("[DUMP] message: %v \n", message)
@@ -202,23 +208,61 @@ func SignalCreateState(hub *Hub, message *Message) error {
 				return err
 			}
 		}
-
-		// feedback currentClient
-		FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_OK)
-
-		// feedback otherClient
-		BroadcastToOtherClients(hub, message, currentClient)
-
-		return nil
 	case TARGET_DEPENDENCIES:
+		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
+		fallthrough
 	case TARGET_DRAG_SHADOW:
+		stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
+		fallthrough
 	case TARGET_DOTTED_LINE_SQUARE:
+		stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
+		fallthrough
 	case TARGET_DISPLAY_NAME:
+		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
+		// create k-v state
+		fmt.Printf("[DUMP] apprefid: %v \n", apprefid)
+		fmt.Printf("[DUMP] message: %v \n", message)
+		for _, v := range message.Payload {
+			// fill KVStateDto
+			var kvstatedto state.KVStateDto
+			kvstatedto.ConstructByMap(v)
+			kvstatedto.StateType = stateType
+
+			if _, err := hub.KVStateServiceImpl.CreateKVState(kvstatedto); err != nil {
+				FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+				return err
+			}
+		}
 	case TARGET_APPS:
+		for _, v := range message.Payload {
+			// fill AppsDto
+			var appd app.AppDto
+			appd.ConstructByMap(v)
+
+			if _, err := hub.AppServiceImpl.CreateApp(appd); err != nil {
+				FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+				return err
+			}
+		}
+
 	case TARGET_RESOURCE:
+		// create resource
+		for _, v := range message.Payload {
+			// fill ResourceDto
+			var resourced resource.ResourceDto
+			resourced.ConstructByMap(v)
+
+			if _, err := hub.ResourceServiceImpl.CreateResource(resourced); err != nil {
+				FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+				return err
+			}
+		}
 	}
-	// feedback current client
-	// broadcast to all room client
+	// feedback currentClient
+	FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_OK)
+
+	// feedback otherClient
+	BroadcastToOtherClients(hub, message, currentClient)
 	return nil
 }
 
@@ -227,37 +271,83 @@ func SignalDeleteState(hub *Hub, message *Message) error {
 
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
+	stateType := repository.STATE_TYPE_INVALIED
+	apprefid := currentClient.RoomID
+
 	message.RewriteBroadcast()
+
 	// target switch
 	switch message.Target {
 	case TARGET_NOTNING:
 		return nil
 	case TARGET_COMPONENTS:
-		apprefid := currentClient.RoomID
 		for _, v := range message.Payload {
 			var nowNode state.TreeStateDto
 			nowNode.ConstructByMap(v) // set Name
 			nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
 			fmt.Printf("[DUMP] nowNode: %v\n", nowNode)
+
 			if err := hub.TreeStateServiceImpl.DeleteTreeStateNodeRecursive(apprefid, &nowNode); err != nil {
 				FeedbackCurrentClient(message, currentClient, ERROR_DELETE_STATE_FAILED)
 				return err
 			}
 		}
 
-		// feedback currentClient
-		FeedbackCurrentClient(message, currentClient, ERROR_DELETE_STATE_OK)
-
-		// feedback otherClient
-		BroadcastToOtherClients(hub, message, currentClient)
-
 	case TARGET_DEPENDENCIES:
+		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
+		fallthrough
 	case TARGET_DRAG_SHADOW:
+		stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
+		fallthrough
 	case TARGET_DOTTED_LINE_SQUARE:
+		stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
+		fallthrough
 	case TARGET_DISPLAY_NAME:
+		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
+		// delete k-v state
+		for _, v := range message.Payload {
+			// fill KVStateDto
+			var kvstatedto state.KVStateDto
+			kvstatedto.ConstructByMap(v)
+			kvstatedto.StateType = stateType
+			fmt.Printf("[DUMP] kvstatedto: %v\n", kvstatedto)
+
+			if err := hub.KVStateServiceImpl.DeleteKVStateByKey(apprefid, &kvstatedto); err != nil {
+				FeedbackCurrentClient(message, currentClient, ERROR_DELETE_STATE_FAILED)
+				return err
+			}
+		}
+
 	case TARGET_APPS:
+		// @todo: should delete all resource and states?
+		for _, v := range message.Payload {
+			// fill AppsDto
+			var appd app.AppDto
+			appd.ConstructByMap(v)
+
+			if err := hub.AppServiceImpl.DeleteApp(appd.ID); err != nil {
+				FeedbackCurrentClient(message, currentClient, ERROR_DELETE_STATE_FAILED)
+				return err
+			}
+		}
+
 	case TARGET_RESOURCE:
+		for _, v := range message.Payload {
+			// fill ResourceDto
+			var resourced resource.ResourceDto
+			resourced.ConstructByMap(v)
+
+			if err := hub.ResourceServiceImpl.DeleteResource(resourced.ID); err != nil {
+				FeedbackCurrentClient(message, currentClient, ERROR_DELETE_STATE_FAILED)
+				return err
+			}
+		}
 	}
+
+	// feedback currentClient
+	FeedbackCurrentClient(message, currentClient, ERROR_DELETE_STATE_OK)
+	// feedback otherClient
+	BroadcastToOtherClients(hub, message, currentClient)
 	return nil
 }
 
@@ -266,14 +356,16 @@ func SignalUpdateState(hub *Hub, message *Message) error {
 
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
+	stateType := repository.STATE_TYPE_INVALIED
+	apprefid := currentClient.RoomID
 	message.RewriteBroadcast()
 	// target switch
 	switch message.Target {
 	case TARGET_NOTNING:
 		return nil
 	case TARGET_COMPONENTS:
-		apprefid := currentClient.RoomID
 		for _, v := range message.Payload {
+			// update
 			// construct update data
 			var nowNode state.TreeStateDto
 			componentNode := repository.ConstructComponentNodeByMap(v)
@@ -301,12 +393,59 @@ func SignalUpdateState(hub *Hub, message *Message) error {
 		// feedback otherClient
 		BroadcastToOtherClients(hub, message, currentClient)
 	case TARGET_DEPENDENCIES:
+		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
+		fallthrough
 	case TARGET_DRAG_SHADOW:
+		stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
+		fallthrough
 	case TARGET_DOTTED_LINE_SQUARE:
+		stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
+		fallthrough
 	case TARGET_DISPLAY_NAME:
+		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
+		for _, v := range message.Payload {
+			// fill KVStateDto
+			var kvstatedto state.KVStateDto
+			kvstatedto.ConstructByMap(v)
+			kvstatedto.StateType = stateType
+			fmt.Printf("[DUMP] kvstatedto: %v\n", kvstatedto)
+			// update
+			if err := hub.KVStateServiceImpl.UpdateKVStateByKey(apprefid, &kvstatedto); err != nil {
+				FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+				return err
+			}
+		}
+
 	case TARGET_APPS:
+		for _, v := range message.Payload {
+			// fill AppsDto
+			var appd app.AppDto
+			appd.ConstructByMap(v)
+			// update
+			if _, err := hub.AppServiceImpl.UpdateApp(appd); err != nil {
+				FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+				return err
+			}
+		}
 	case TARGET_RESOURCE:
+		for _, v := range message.Payload {
+			// fill ResourceDto
+			var resourced resource.ResourceDto
+			resourced.ConstructByMap(v)
+			// update
+			if _, err := hub.ResourceServiceImpl.UpdateResource(resourced); err != nil {
+				FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+				return err
+			}
+		}
 	}
+
+	// feedback currentClient
+	FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_OK)
+
+	// feedback otherClient
+	BroadcastToOtherClients(hub, message, currentClient)
+
 	return nil
 }
 
@@ -340,27 +479,35 @@ func SignalMoveState(hub *Hub, message *Message) error {
 		BroadcastToOtherClients(hub, message, currentClient)
 
 	case TARGET_DEPENDENCIES:
+		fallthrough
 	case TARGET_DRAG_SHADOW:
+		fallthrough
 	case TARGET_DOTTED_LINE_SQUARE:
+		fallthrough
 	case TARGET_DISPLAY_NAME:
+		FeedbackCurrentClient(message, currentClient, ERROR_CAN_NOT_MOVE_KVSTATE)
+		return nil
 	case TARGET_APPS:
 	case TARGET_RESOURCE:
+		// can not move k-v state
 	}
 	return nil
 }
 
-func SignalCreateOrUpdateupdate(hub *Hub, message *Message) error {
+func SignalCreateOrUpdate(hub *Hub, message *Message) error {
 	fmt.Printf("[DUMP] message: %v \n", message)
 
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
+	stateType := repository.STATE_TYPE_INVALIED
+	apprefid := currentClient.RoomID
 	message.RewriteBroadcast()
 	// target switch
 	switch message.Target {
 	case TARGET_NOTNING:
 		return nil
 	case TARGET_COMPONENTS:
-		apprefid := currentClient.RoomID
+
 		for _, v := range message.Payload {
 			// check if state already in database
 			var nowNode state.TreeStateDto
@@ -402,18 +549,82 @@ func SignalCreateOrUpdateupdate(hub *Hub, message *Message) error {
 
 		}
 
-		// feedback currentClient
-		FeedbackCurrentClient(message, currentClient, ERROR_CREATE_OR_UPDATE_STATE_OK)
-
-		// feedback otherClient
-		BroadcastToOtherClients(hub, message, currentClient)
 	case TARGET_DEPENDENCIES:
+		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
+		fallthrough
 	case TARGET_DRAG_SHADOW:
+		stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
+		fallthrough
 	case TARGET_DOTTED_LINE_SQUARE:
+		stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
+		fallthrough
 	case TARGET_DISPLAY_NAME:
+		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
+		for _, v := range message.Payload {
+			// fill KVStateDto
+			var kvstatedto state.KVStateDto
+			kvstatedto.ConstructByMap(v)
+			kvstatedto.StateType = stateType
+			fmt.Printf("[DUMP] kvstatedto: %v\n", kvstatedto)
+
+			isStateExists := hub.KVStateServiceImpl.IsKVStateNodeExists(apprefid, &kvstatedto)
+			if !isStateExists {
+				if _, err := hub.KVStateServiceImpl.CreateKVState(kvstatedto); err != nil {
+					FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+					return err
+				}
+			} else {
+				// update
+				if err := hub.KVStateServiceImpl.UpdateKVStateByKey(apprefid, &kvstatedto); err != nil {
+					FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+					return err
+				}
+			}
+
+		}
+
 	case TARGET_APPS:
+		for _, v := range message.Payload {
+			// fill AppsDto
+			var appd app.AppDto
+			appd.ConstructByMap(v)
+			if appd.ID == 0 {
+				if _, err := hub.AppServiceImpl.CreateApp(appd); err != nil {
+					FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+					return err
+				}
+			} else {
+				if _, err := hub.AppServiceImpl.UpdateApp(appd); err != nil {
+					FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+					return err
+				}
+			}
+		}
+
 	case TARGET_RESOURCE:
+		for _, v := range message.Payload {
+			// fill ResourceDto
+			var resourced resource.ResourceDto
+			resourced.ConstructByMap(v)
+			if resourced.ID == 0 {
+				if _, err := hub.ResourceServiceImpl.CreateResource(resourced); err != nil {
+					FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+					return err
+				}
+			} else {
+				if _, err := hub.ResourceServiceImpl.UpdateResource(resourced); err != nil {
+					FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+					return err
+				}
+			}
+		}
 	}
+
+	// feedback currentClient
+	FeedbackCurrentClient(message, currentClient, ERROR_CREATE_OR_UPDATE_STATE_OK)
+
+	// feedback otherClient
+	BroadcastToOtherClients(hub, message, currentClient)
 	return nil
 }
 

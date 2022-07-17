@@ -15,6 +15,8 @@
 package state
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -49,6 +51,19 @@ type KVStateDto struct {
 type KVStateServiceImpl struct {
 	logger            *zap.SugaredLogger
 	kvstateRepository repository.KVStateRepository
+}
+
+func (kvsd *KVStateDto) ConstructByMap(data interface{}) {
+	fmt.Printf("[D-1] data %v\n", data)
+	udata, ok := data.(map[string]interface{})
+	if !ok {
+		return
+	}
+	for k, v := range udata {
+		kvsd.Key = k
+		jsonbyte, _ := json.Marshal(v)
+		kvsd.Value = string(jsonbyte)
+	}
 }
 
 func NewKVStateServiceImpl(logger *zap.SugaredLogger,
@@ -180,6 +195,16 @@ func (impl *KVStateServiceImpl) GetKVStateByApp(app *app.AppDto, statetype int, 
 	return kvstatesdto, nil
 }
 
+func (impl *KVStateServiceImpl) IsKVStateNodeExists(apprefid int, kvstatedto *KVStateDto) bool {
+	// get id by key
+	var err error
+	if _, err = impl.kvstateRepository.RetrieveEditVersionByAppAndName(apprefid, kvstatedto.StateType, kvstatedto.Key); err != nil {
+		// not exists
+		return false
+	}
+	return true
+}
+
 // @todo: should this method be in a transaction?
 func (impl *KVStateServiceImpl) ReleaseKVStateByApp(app *app.AppDto) error {
 	// get edit version K-V state from database
@@ -196,6 +221,36 @@ func (impl *KVStateServiceImpl) ReleaseKVStateByApp(app *app.AppDto) error {
 		if err := impl.kvstateRepository.Create(kvstate); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (impl *KVStateServiceImpl) DeleteKVStateByKey(apprefid int, kvstatedto *KVStateDto) error {
+	// get kvstate from database by kvstate.Key
+	kvstate, err := impl.kvstateRepository.RetrieveEditVersionByAppAndName(apprefid, kvstatedto.StateType, kvstatedto.Key)
+	if err != nil {
+		return err
+	}
+	kvstateid := kvstate.ID
+
+	// delete by id
+	if err := impl.kvstateRepository.Delete(kvstateid); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (impl *KVStateServiceImpl) UpdateKVStateByKey(apprefid int, kvstatedto *KVStateDto) error {
+	// get kvstate from database by kvstate.Key
+	kvstate, err := impl.kvstateRepository.RetrieveEditVersionByAppAndName(apprefid, kvstatedto.StateType, kvstatedto.Key)
+	if err != nil {
+		return err
+	}
+	kvstatedto.ID = kvstate.ID
+
+	// delete by id
+	if _, err := impl.UpdateKVState(*kvstatedto); err != nil {
+		return err
 	}
 	return nil
 }

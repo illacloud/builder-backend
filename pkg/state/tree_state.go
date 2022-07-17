@@ -298,6 +298,7 @@ func (impl *TreeStateServiceImpl) IsTreeStateNodeExists(apprefid int, nowNode *T
 	return true
 }
 
+// @todo: add tree ref circle checker.
 func (impl *TreeStateServiceImpl) MoveTreeStateNode(apprefid int, nowNode *TreeStateDto) error {
 	// prepare data
 	oldParentTreeState := &repository.TreeState{}
@@ -321,12 +322,8 @@ func (impl *TreeStateServiceImpl) MoveTreeStateNode(apprefid int, nowNode *TreeS
 		if newParentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, nowNode.StateType, nowNode.ParentNode); err != nil {
 			return err
 		}
-	case repository.TREE_STATE_TYPE_DEPENDENCIES:
-		// @todo: finish this method
-		return err
-
-	case repository.TREE_STATE_TYPE_EXECUTION:
-		return err
+	default:
+		return nil
 	}
 	fmt.Printf("[DUMP] newParentTreeState: %v\n", newParentTreeState)
 

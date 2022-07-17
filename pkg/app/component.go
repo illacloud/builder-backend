@@ -70,7 +70,12 @@ func buildComponentTree(treeState *repository.TreeState, treeStateMap map[int]*r
 	if cnode, err = newComponentNodeFromJSON([]byte(treeState.Content)); err != nil {
 		return nil, err
 	}
-	for _, id := range treeState.ChildrenNodeRefIDs {
+	var treestateIDs []int
+	treestateIDs, err = treeState.ExportChildrenNodeRefIDs()
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range treestateIDs {
 		subcnode := &ComponentNode{}
 		var err error
 		// check if children nodes is exists

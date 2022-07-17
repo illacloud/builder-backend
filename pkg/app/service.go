@@ -17,6 +17,7 @@ package app
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/illa-family/builder-backend/internal/repository"
@@ -56,6 +57,23 @@ type AppDto struct {
 	UpdatedBy       int       `json:"-"`
 	UpdatedAt       time.Time `json:"updatedAt"`
 	ModifiedBy      string    `json:"updatedBy"`
+}
+
+func (appd *AppDto) ConstructByMap(data interface{}) {
+	fmt.Printf("[D-1] data %v\n", data)
+	udata, ok := data.(map[string]interface{})
+	if !ok {
+		return
+	}
+	for k, v := range udata {
+		switch k {
+		case "id":
+			idf, _ := v.(float64)
+			appd.ID = int(idf)
+		case "name":
+			appd.Name, _ = v.(string)
+		}
+	}
 }
 
 type Editor struct {
@@ -127,7 +145,7 @@ func (impl *AppServiceImpl) initialAllTypeTreeStates(appID, user int) error {
 	if err := impl.treestateRepository.Create(&repository.TreeState{
 		StateType:          repository.TREE_STATE_TYPE_COMPONENTS,
 		ParentNodeRefID:    0,
-		ChildrenNodeRefIDs: []int{},
+		ChildrenNodeRefIDs: "",
 		AppRefID:           appID,
 		Version:            repository.APP_EDIT_VERSION,
 		Name:               "rootDsl",
