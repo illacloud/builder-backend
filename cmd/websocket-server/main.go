@@ -76,6 +76,7 @@ func main() {
 	// start websocket hub
 	dashboardHub = websocket.NewHub()
 	appHub = websocket.NewHub()
+
 	appHub.TreeStateServiceImpl = treestateServiceImpl
 	appHub.KVStateServiceImpl = kvstateServiceImpl
 	appHub.AppServiceImpl = appServiceImpl

@@ -430,12 +430,12 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(apprefid int, parentNodeID
 	// get parentNode
 	parentTreeState := &repository.TreeState{}
 	isSummitNode := true
-	if parentNodeID != 0 { // parentNode is in database
+	if parentNodeID != 0 || nowNode.ParentNode == repository.TREE_STATE_SUMMIT_NAME { // parentNode is in database
 		isSummitNode = false
 		if parentTreeState, err = impl.treestateRepository.RetrieveByID(parentNodeID); err != nil {
 			return err
 		}
-	} else if componentNodeTree.ParentNode != "" { // or parentNode is exist
+	} else if componentNodeTree.ParentNode != "" && componentNodeTree.ParentNode != repository.TREE_STATE_SUMMIT_NAME { // or parentNode is exist
 		isSummitNode = false
 		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(nowNode.AppRefID, nowNode.StateType, componentNodeTree.ParentNode); err != nil {
 			return err

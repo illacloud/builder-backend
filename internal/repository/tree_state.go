@@ -25,6 +25,7 @@ import (
 )
 
 const TREE_STATE_SUMMIT_ID = 0
+const TREE_STATE_SUMMIT_NAME = "root"
 
 type TreeState struct {
 	ID                 int       `json:"id" 							 gorm:"column:id;type:bigserial"`

@@ -175,7 +175,21 @@ func internalError(ws *websocket.Conn, msg string, err error) {
 
 // ServeWebsocket handle websocket requests from the peer.
 func ServeWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request, instanceID string, roomID int) {
+	// @todo: this CheckOrigin method for debug only, remove it for release.
+	var upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin:     func(r *http.Request) bool { return true },
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("Not a web socket connection: %s \n", err)
+		return
+	}
+
 	if err != nil {
 		log.Println(err)
 		return
