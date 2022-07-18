@@ -36,6 +36,7 @@ func Initialize() (*Server, error) {
 		wireset.ResourceWireSet,
 		wireset.AppWireSet,
 		wireset.ActionWireSet,
+		wireset.RoomWireSet,
 		wireset.UserWireSet,
 		router.NewRESTRouter,
 		GetAppConfig,

@@ -21,7 +21,7 @@ import (
 )
 
 type RoomRouter interface {
-	InitRoomRouter(actionRouter *gin.RouterGroup)
+	InitRoomRouter(roomRouter *gin.RouterGroup)
 }
 
 type RoomRouterImpl struct {

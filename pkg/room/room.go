@@ -32,6 +32,12 @@ type RoomServiceImpl struct {
 	logger *zap.SugaredLogger
 }
 
+func NewRoomServiceImpl(logger *zap.SugaredLogger) *RoomServiceImpl {
+	return &RoomServiceImpl{
+		logger: logger,
+	}
+}
+
 type WSURLResponse struct {
 	WSURL string `json:"WSUrl"`
 }
