@@ -192,9 +192,9 @@ func SignalCreateState(hub *Hub, message *Message) error {
 	message.RewriteBroadcast()
 	// target switch
 	switch message.Target {
-	case TARGET_COMPONENTS:
 	case TARGET_NOTNING:
 		return nil
+	case TARGET_COMPONENTS:
 		// build component tree from json
 		fmt.Printf("[DUMP] apprefid: %v \n", apprefid)
 		summitnodeid := repository.TREE_STATE_SUMMIT_ID
@@ -216,9 +216,6 @@ func SignalCreateState(hub *Hub, message *Message) error {
 		fallthrough
 	case TARGET_DOTTED_LINE_SQUARE:
 		stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
-		fallthrough
-	case TARGET_DISPLAY_NAME:
-		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
 		// create k-v state
 		fmt.Printf("[DUMP] apprefid: %v \n", apprefid)
 		fmt.Printf("[DUMP] message: %v \n", message)
@@ -228,6 +225,29 @@ func SignalCreateState(hub *Hub, message *Message) error {
 			kvstatedto.ConstructByMap(v)
 			kvstatedto.StateType = stateType
 
+			if _, err := hub.KVStateServiceImpl.CreateKVState(kvstatedto); err != nil {
+				FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+				return err
+			}
+		}
+	case TARGET_DISPLAY_NAME:
+		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
+		// create k-v state
+		fmt.Printf("[DUMP] apprefid: %v \n", apprefid)
+		fmt.Printf("[DUMP] message: %v \n", message)
+		for _, v := range message.Payload {
+			// resolve payload
+			dns, err := repository.ConstructDisplayNameStateByMap(v)
+			if err != nil {
+				return err
+			}
+			// init state
+			var kvstatedto state.KVStateDto
+			if err := kvstatedto.ConstructByDisplayNameState(dns); err != nil {
+				return err
+			}
+			kvstatedto.StateType = stateType
+			// create state
 			if _, err := hub.KVStateServiceImpl.CreateKVState(kvstatedto); err != nil {
 				FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
 				return err
