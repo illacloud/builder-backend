@@ -192,9 +192,9 @@ func SignalCreateState(hub *Hub, message *Message) error {
 	message.RewriteBroadcast()
 	// target switch
 	switch message.Target {
+	case TARGET_COMPONENTS:
 	case TARGET_NOTNING:
 		return nil
-	case TARGET_COMPONENTS:
 		// build component tree from json
 		fmt.Printf("[DUMP] apprefid: %v \n", apprefid)
 		summitnodeid := repository.TREE_STATE_SUMMIT_ID
@@ -234,29 +234,9 @@ func SignalCreateState(hub *Hub, message *Message) error {
 			}
 		}
 	case TARGET_APPS:
-		for _, v := range message.Payload {
-			// fill AppsDto
-			var appd app.AppDto
-			appd.ConstructByMap(v)
-
-			if _, err := hub.AppServiceImpl.CreateApp(appd); err != nil {
-				FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
-				return err
-			}
-		}
-
+		// serve on HTTP API, this signal only for broadcast
 	case TARGET_RESOURCE:
-		// create resource
-		for _, v := range message.Payload {
-			// fill ResourceDto
-			var resourced resource.ResourceDto
-			resourced.ConstructByMap(v)
-
-			if _, err := hub.ResourceServiceImpl.CreateResource(resourced); err != nil {
-				FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
-				return err
-			}
-		}
+		// serve on HTTP API, this signal only for broadcast
 	}
 	// feedback currentClient
 	FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_OK)
@@ -319,29 +299,9 @@ func SignalDeleteState(hub *Hub, message *Message) error {
 		}
 
 	case TARGET_APPS:
-		// @todo: should delete all resource and states?
-		for _, v := range message.Payload {
-			// fill AppsDto
-			var appd app.AppDto
-			appd.ConstructByMap(v)
-
-			if err := hub.AppServiceImpl.DeleteApp(appd.ID); err != nil {
-				FeedbackCurrentClient(message, currentClient, ERROR_DELETE_STATE_FAILED)
-				return err
-			}
-		}
-
+		// serve on HTTP API, this signal only for broadcast
 	case TARGET_RESOURCE:
-		for _, v := range message.Payload {
-			// fill ResourceDto
-			var resourced resource.ResourceDto
-			resourced.ConstructByMap(v)
-
-			if err := hub.ResourceServiceImpl.DeleteResource(resourced.ID); err != nil {
-				FeedbackCurrentClient(message, currentClient, ERROR_DELETE_STATE_FAILED)
-				return err
-			}
-		}
+		// serve on HTTP API, this signal only for broadcast
 	}
 
 	// feedback currentClient
@@ -417,27 +377,9 @@ func SignalUpdateState(hub *Hub, message *Message) error {
 		}
 
 	case TARGET_APPS:
-		for _, v := range message.Payload {
-			// fill AppsDto
-			var appd app.AppDto
-			appd.ConstructByMap(v)
-			// update
-			if _, err := hub.AppServiceImpl.UpdateApp(appd); err != nil {
-				FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
-				return err
-			}
-		}
+		// serve on HTTP API, this signal only for broadcast
 	case TARGET_RESOURCE:
-		for _, v := range message.Payload {
-			// fill ResourceDto
-			var resourced resource.ResourceDto
-			resourced.ConstructByMap(v)
-			// update
-			if _, err := hub.ResourceServiceImpl.UpdateResource(resourced); err != nil {
-				FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
-				return err
-			}
-		}
+		// serve on HTTP API, this signal only for broadcast
 	}
 
 	// feedback currentClient
@@ -488,8 +430,9 @@ func SignalMoveState(hub *Hub, message *Message) error {
 		FeedbackCurrentClient(message, currentClient, ERROR_CAN_NOT_MOVE_KVSTATE)
 		return nil
 	case TARGET_APPS:
+		// serve on HTTP API, this signal only for broadcast
 	case TARGET_RESOURCE:
-		// can not move k-v state
+		// serve on HTTP API, this signal only for broadcast
 	}
 	return nil
 }
@@ -584,40 +527,9 @@ func SignalCreateOrUpdate(hub *Hub, message *Message) error {
 		}
 
 	case TARGET_APPS:
-		for _, v := range message.Payload {
-			// fill AppsDto
-			var appd app.AppDto
-			appd.ConstructByMap(v)
-			if appd.ID == 0 {
-				if _, err := hub.AppServiceImpl.CreateApp(appd); err != nil {
-					FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
-					return err
-				}
-			} else {
-				if _, err := hub.AppServiceImpl.UpdateApp(appd); err != nil {
-					FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
-					return err
-				}
-			}
-		}
-
+		// serve on HTTP API, this signal only for broadcast
 	case TARGET_RESOURCE:
-		for _, v := range message.Payload {
-			// fill ResourceDto
-			var resourced resource.ResourceDto
-			resourced.ConstructByMap(v)
-			if resourced.ID == 0 {
-				if _, err := hub.ResourceServiceImpl.CreateResource(resourced); err != nil {
-					FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
-					return err
-				}
-			} else {
-				if _, err := hub.ResourceServiceImpl.UpdateResource(resourced); err != nil {
-					FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
-					return err
-				}
-			}
-		}
+		// serve on HTTP API, this signal only for broadcast
 	}
 
 	// feedback currentClient
