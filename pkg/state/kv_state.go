@@ -16,7 +16,6 @@ package state
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -54,7 +53,6 @@ type KVStateServiceImpl struct {
 }
 
 func (kvsd *KVStateDto) ConstructByMap(data interface{}) {
-	fmt.Printf("[D-1] data %v\n", data)
 	udata, ok := data.(map[string]interface{})
 	if !ok {
 		return
@@ -64,6 +62,26 @@ func (kvsd *KVStateDto) ConstructByMap(data interface{}) {
 		jsonbyte, _ := json.Marshal(v)
 		kvsd.Value = string(jsonbyte)
 	}
+}
+
+func (kvsd *KVStateDto) ConstructByType(stateType int) {
+	kvsd.StateType = stateType
+}
+
+func (kvsd *KVStateDto) ConstructByApp(app *app.AppDto) {
+	kvsd.AppRefID = app.ID
+}
+
+func (kvsd *KVStateDto) ConstructWithEditVersion() {
+	kvsd.Version = repository.APP_EDIT_VERSION
+}
+
+func (kvsd *KVStateDto) ConstructByKey(key string) {
+	kvsd.Key = key
+}
+
+func (kvsd *KVStateDto) ConstructByValue(value string) {
+	kvsd.Value = value
 }
 
 func NewKVStateServiceImpl(logger *zap.SugaredLogger,

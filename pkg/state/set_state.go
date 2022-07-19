@@ -50,16 +50,12 @@ type SetStateServiceImpl struct {
 	setStateRepository repository.SetStateRepository
 }
 
-func (setsd *SetStateDto) ConstructByType(stateType int) {
-	setsd.StateType = stateType
-}
-
-func (setsd *SetStateDto) ConstructByDisplayName(dns string) {
-	setsd.Value = dns
-}
-
 func (setsd *SetStateDto) ConstructByDisplayNameForUpdate(dnsfu *repository.DisplayNameStateForUpdate) {
 	setsd.Value = dnsfu.Before
+}
+
+func (setsd *SetStateDto) ConstructByType(stateType int) {
+	setsd.StateType = stateType
 }
 
 func (setsd *SetStateDto) ConstructByApp(app *app.AppDto) {

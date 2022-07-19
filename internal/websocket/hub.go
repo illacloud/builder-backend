@@ -87,7 +87,7 @@ func (hub *Hub) Run() {
 			}
 		// handle client on message event
 		case message := <-hub.OnMessage:
-			SignalFilter(hub, message)
+			filter.SignalFilter(hub, message)
 		}
 
 	}
@@ -96,23 +96,23 @@ func (hub *Hub) Run() {
 func SignalFilter(hub *Hub, message *Message) error {
 	switch message.Signal {
 	case SIGNAL_PING:
-		return SignalPing(hub, message)
+		return filter.SignalPing(hub, message)
 	case SIGNAL_ENTER:
-		return SignalEnter(hub, message)
+		return filter.SignalEnter(hub, message)
 	case SIGNAL_LEAVE:
-		return SignalLeave(hub, message)
+		return filter.SignalLeave(hub, message)
 	case SIGNAL_CREATE_STATE:
-		return SignalCreateState(hub, message)
+		return filter.SignalCreateState(hub, message)
 	case SIGNAL_DELETE_STATE:
-		return SignalDeleteState(hub, message)
+		return filter.SignalDeleteState(hub, message)
 	case SIGNAL_UPDATE_STATE:
-		return SignalUpdateState(hub, message)
+		return filter.SignalUpdateState(hub, message)
 	case SIGNAL_MOVE_STATE:
-		return SignalMoveState(hub, message)
+		return filter.SignalMoveState(hub, message)
 	case SIGNAL_CREATE_OR_UPDATE:
-		return SignalCreateOrUpdate(hub, message)
+		return filter.SignalCreateOrUpdate(hub, message)
 	case SIGNAL_ONLY_BROADCAST:
-		return SignalOnlyBroadcast(hub, message)
+		return filter.SignalOnlyBroadcast(hub, message)
 	default:
 		return nil
 
@@ -124,36 +124,23 @@ func OptionFilter(hub *Hub, client *Client, message *Message) error {
 	return nil
 }
 
-func SignalPing(hub *Hub, message *Message) error {
-	feed := Feedback{
-		ErrorCode:    ERROR_CODE_PONG,
-		ErrorMessage: "",
-		Broadcast:    nil,
-		Data:         nil,
-	}
-	var feedbyte []byte
-	var err error
-	if feedbyte, err = feed.Serialization(); err != nil {
-		return err
-	}
-	// send feedback to client itself
-	currentClient := hub.Clients[message.ClientID]
-	currentClient.Send <- feedbyte
-	return nil
-}
+
 
 func SignalEnter(hub *Hub, message *Message) error {
 	// init
 	currentClient := hub.Clients[message.ClientID]
 	var ok bool
 	if len(message.Payload) == 0 {
+		errorMessage := errors.New("[websocket-server] websocket protocol syntax error.")
 		FeedbackLogInFailed(currentClient)
-		return errors.New("[websocket-server] websocket protocol syntax error.")
+		FeedbackCurrentClient(message, currentClient, ERROR_CODE_LOGIN_FAILED, errorMessage)
+		return errorMessage
 	}
 	var authToken map[string]interface{}
 	if authToken, ok = message.Payload[0].(map[string]interface{}); !ok {
-		FeedbackLogInFailed(currentClient)
-		return errors.New("[websocket-server] websocket protocol syntax error.")
+		errorMessage := errors.New("[websocket-server] websocket protocol syntax error.")
+		FeedbackCurrentClient(message, currentClient, ERROR_CODE_LOGIN_FAILED, errorMessage)
+		return errorMessage
 	}
 	token, _ := authToken["authToken"].(string)
 
@@ -164,17 +151,18 @@ func SignalEnter(hub *Hub, message *Message) error {
 	}
 	validAccessToken, validaAccessErr := user.ValidateAccessToken(token)
 	if validaAccessErr != nil {
-		FeedbackLogInFailed(currentClient)
+		FeedbackCurrentClient(message, currentClient, ERROR_CODE_LOGIN_FAILED, validaAccessErr)
 		return validaAccessErr
 	}
 	if !validAccessToken {
-		FeedbackLogInFailed(currentClient)
-		return errors.New("[websocket-server] access token invalied.")
+		errorMessage := errors.New("[websocket-server] access token invalied.")
+		FeedbackCurrentClient(message, currentClient, ERROR_CODE_LOGIN_FAILED, errorMessage)
+		return errorMessage
 	}
 	// assign logged in and mapped user id
 	currentClient.IsLoggedIn = true
 	currentClient.MappedUserID = userID
-	FeedbackLoggedIn(currentClient)
+	FeedbackCurrentClient(message, currentClient, ERROR_CODE_LOGGEDIN)
 	return nil
 
 }
@@ -189,7 +177,8 @@ func SignalCreateState(hub *Hub, message *Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
-	apprefid := currentClient.RoomID
+	var appDto app.AppDto
+	appDto.ConstructByID(currentClient.RoomID)
 	message.RewriteBroadcast()
 	// target switch
 	switch message.Target {
@@ -197,13 +186,13 @@ func SignalCreateState(hub *Hub, message *Message) error {
 		return nil
 	case TARGET_COMPONENTS:
 		// build component tree from json
-		fmt.Printf("[DUMP] apprefid: %v \n", apprefid)
+		
 		summitnodeid := repository.TREE_STATE_SUMMIT_ID
-		fmt.Printf("[DUMP] message: %v \n", message)
+		
 		for _, v := range message.Payload {
 			var componenttree *repository.ComponentNode
 			componenttree = repository.ConstructComponentNodeByMap(v)
-			fmt.Printf("%v\n", componenttree)
+			
 			if err := hub.TreeStateServiceImpl.CreateComponentTree(apprefid, summitnodeid, componenttree); err != nil {
 				FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
 				return err
@@ -218,8 +207,8 @@ func SignalCreateState(hub *Hub, message *Message) error {
 	case TARGET_DOTTED_LINE_SQUARE:
 		stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
 		// create k-v state
-		fmt.Printf("[DUMP] apprefid: %v \n", apprefid)
-		fmt.Printf("[DUMP] message: %v \n", message)
+		
+		
 		for _, v := range message.Payload {
 			// fill KVStateDto
 			var kvstatedto state.KVStateDto
@@ -234,8 +223,8 @@ func SignalCreateState(hub *Hub, message *Message) error {
 	case TARGET_DISPLAY_NAME:
 		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
 		// create set state
-		fmt.Printf("[DUMP] apprefid: %v \n", apprefid)
-		fmt.Printf("[DUMP] message: %v \n", message)
+		
+		
 		for _, v := range message.Payload {
 			// resolve payload
 			dns, err := repository.ConstructDisplayNameStateByPayload(v)
@@ -245,7 +234,7 @@ func SignalCreateState(hub *Hub, message *Message) error {
 			// save state
 			for _, displayName := range dns {
 				var setStateDto state.SetStateDto
-				setStateDto.ConstructByDisplayName(displayName)
+				setStateDto.ConstructByValue(displayName)
 				setStateDto.StateType = stateType
 				// create state
 				if _, err := hub.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
@@ -268,12 +257,13 @@ func SignalCreateState(hub *Hub, message *Message) error {
 }
 
 func SignalDeleteState(hub *Hub, message *Message) error {
-	fmt.Printf("[DUMP] message: %v \n", message)
+	
 
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
-	apprefid := currentClient.RoomID
+	var appDto app.AppDto
+	appDto.ConstructByID(currentClient.RoomID)
 
 	message.RewriteBroadcast()
 
@@ -286,7 +276,7 @@ func SignalDeleteState(hub *Hub, message *Message) error {
 			var nowNode state.TreeStateDto
 			nowNode.ConstructByMap(v) // set Name
 			nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
-			fmt.Printf("[DUMP] nowNode: %v\n", nowNode)
+			
 
 			if err := hub.TreeStateServiceImpl.DeleteTreeStateNodeRecursive(apprefid, &nowNode); err != nil {
 				FeedbackCurrentClient(message, currentClient, ERROR_DELETE_STATE_FAILED)
@@ -308,7 +298,7 @@ func SignalDeleteState(hub *Hub, message *Message) error {
 			var kvstatedto state.KVStateDto
 			kvstatedto.ConstructByMap(v)
 			kvstatedto.StateType = stateType
-			fmt.Printf("[DUMP] kvstatedto: %v\n", kvstatedto)
+			
 
 			if err := hub.KVStateServiceImpl.DeleteKVStateByKey(apprefid, &kvstatedto); err != nil {
 				FeedbackCurrentClient(message, currentClient, ERROR_DELETE_STATE_FAILED)
@@ -319,8 +309,8 @@ func SignalDeleteState(hub *Hub, message *Message) error {
 	case TARGET_DISPLAY_NAME:
 		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
 		// create dnsplayName state
-		fmt.Printf("[DUMP] apprefid: %v \n", apprefid)
-		fmt.Printf("[DUMP] message: %v \n", message)
+		
+		
 		for _, v := range message.Payload {
 			// resolve payload
 			dns, err := repository.ConstructDisplayNameStateByPayload(v)
@@ -331,7 +321,7 @@ func SignalDeleteState(hub *Hub, message *Message) error {
 			for _, displayName := range dns {
 				// init
 				var setStateDto state.SetStateDto
-				setStateDto.ConstructByDisplayName(displayName)
+				setStateDto.ConstructByValue(displayName)
 				setStateDto.StateType = stateType
 				setStateDto.AppRefID = apprefid
 				setStateDto.Version = repository.APP_EDIT_VERSION
@@ -356,12 +346,13 @@ func SignalDeleteState(hub *Hub, message *Message) error {
 }
 
 func SignalUpdateState(hub *Hub, message *Message) error {
-	fmt.Printf("[DUMP] message: %v \n", message)
+	
 
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
-	apprefid := currentClient.RoomID
+	var appDto app.AppDto
+	appDto.ConstructByID(currentClient.RoomID)
 	message.RewriteBroadcast()
 	// target switch
 	switch message.Target {
@@ -373,17 +364,17 @@ func SignalUpdateState(hub *Hub, message *Message) error {
 			// construct update data
 			var nowNode state.TreeStateDto
 			componentNode := repository.ConstructComponentNodeByMap(v)
-			fmt.Printf("[DUMP] componentNode: %v\n", componentNode)
+			
 
 			serializedComponent, err := componentNode.SerializationForDatabase()
 			if err != nil {
 				return err
 			}
-			fmt.Printf("[DUMP] serializedComponent: %v\n", serializedComponent)
+			
 			nowNode.Content = string(serializedComponent)
 			nowNode.ConstructByMap(v) // set Name
 			nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
-			fmt.Printf("[DUMP] nowNode: %v\n", nowNode)
+			
 			// update
 			if err := hub.TreeStateServiceImpl.UpdateTreeStateNode(apprefid, &nowNode); err != nil {
 				FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
@@ -410,7 +401,7 @@ func SignalUpdateState(hub *Hub, message *Message) error {
 			var kvstatedto state.KVStateDto
 			kvstatedto.ConstructByMap(v)
 			kvstatedto.StateType = stateType
-			fmt.Printf("[DUMP] kvstatedto: %v\n", kvstatedto)
+			
 			// update
 			if err := hub.KVStateServiceImpl.UpdateKVStateByKey(apprefid, &kvstatedto); err != nil {
 				FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
@@ -455,10 +446,12 @@ func SignalUpdateState(hub *Hub, message *Message) error {
 }
 
 func SignalMoveState(hub *Hub, message *Message) error {
-	fmt.Printf("[DUMP] message: %v \n", message)
+	
 
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
+	var appDto app.AppDto
+	appDto.ConstructByID(currentClient.RoomID)
 	message.RewriteBroadcast()
 	// target switch
 	switch message.Target {
@@ -470,7 +463,7 @@ func SignalMoveState(hub *Hub, message *Message) error {
 			var nowNode state.TreeStateDto
 			nowNode.ConstructByMap(v) // set Name
 			nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
-			fmt.Printf("[DUMP] nowNode: %v\n", nowNode)
+			
 			if err := hub.TreeStateServiceImpl.MoveTreeStateNode(apprefid, &nowNode); err != nil {
 				FeedbackCurrentClient(message, currentClient, ERROR_MOVE_STATE_FAILED)
 				return err
@@ -502,7 +495,7 @@ func SignalMoveState(hub *Hub, message *Message) error {
 }
 
 func SignalCreateOrUpdate(hub *Hub, message *Message) error {
-	fmt.Printf("[DUMP] message: %v \n", message)
+	
 
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
@@ -527,7 +520,7 @@ func SignalCreateOrUpdate(hub *Hub, message *Message) error {
 				summitnodeid := repository.TREE_STATE_SUMMIT_ID
 				var componenttree *repository.ComponentNode
 				componenttree = repository.ConstructComponentNodeByMap(v)
-				fmt.Printf("%v\n", componenttree)
+				
 				if err := hub.TreeStateServiceImpl.CreateComponentTree(apprefid, summitnodeid, componenttree); err != nil {
 					FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
 					return err
@@ -537,17 +530,17 @@ func SignalCreateOrUpdate(hub *Hub, message *Message) error {
 				// construct update data
 				var nowNode state.TreeStateDto
 				componentNode := repository.ConstructComponentNodeByMap(v)
-				fmt.Printf("[DUMP] componentNode: %v\n", componentNode)
+				
 
 				serializedComponent, err := componentNode.SerializationForDatabase()
 				if err != nil {
 					return err
 				}
-				fmt.Printf("[DUMP] serializedComponent: %v\n", serializedComponent)
+				
 				nowNode.Content = string(serializedComponent)
 				nowNode.ConstructByMap(v) // set Name
 				nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
-				fmt.Printf("[DUMP] nowNode: %v\n", nowNode)
+				
 				// update
 				if err := hub.TreeStateServiceImpl.UpdateTreeStateNode(apprefid, &nowNode); err != nil {
 					FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
@@ -569,7 +562,7 @@ func SignalCreateOrUpdate(hub *Hub, message *Message) error {
 			var kvstatedto state.KVStateDto
 			kvstatedto.ConstructByMap(v)
 			kvstatedto.StateType = stateType
-			fmt.Printf("[DUMP] kvstatedto: %v\n", kvstatedto)
+			
 
 			isStateExists := hub.KVStateServiceImpl.IsKVStateNodeExists(apprefid, &kvstatedto)
 			if !isStateExists {
@@ -600,7 +593,7 @@ func SignalCreateOrUpdate(hub *Hub, message *Message) error {
 				var setStateDto state.SetStateDto
 				var setStateDtoInDB *state.SetStateDto
 				var err error
-				setStateDto.ConstructByDisplayName(displayName)
+				setStateDto.ConstructByValue(displayName)
 				setStateDto.ConstructByType(stateType)
 				setStateDto.ConstructByApp(appDto)
 				setStateDto.ConstructWithEditVersion()
@@ -652,66 +645,4 @@ func SignalOnlyBroadcast(hub *Hub, message *Message) error {
 func KickClient(hub *Hub, client *Client) {
 	close(client.Send)
 	delete(hub.Clients, client.ID)
-}
-
-func FeedbackLoggedIn(client *Client) {
-	// send feedback
-	feed := Feedback{
-		ErrorCode:    ERROR_CODE_LOGGEDIN,
-		ErrorMessage: "",
-		Broadcast:    nil,
-		Data:         nil,
-	}
-	var feedbyte []byte
-	var err error
-	if feedbyte, err = feed.Serialization(); err != nil {
-		return
-	}
-	client.Send <- feedbyte
-}
-
-func FeedbackLogInFailed(client *Client) {
-	// send feedback
-	feed := Feedback{
-		ErrorCode:    ERROR_CODE_LOGIN_FAILED,
-		ErrorMessage: "",
-		Broadcast:    nil,
-		Data:         nil,
-	}
-	var feedbyte []byte
-	var err error
-	if feedbyte, err = feed.Serialization(); err != nil {
-		return
-	}
-	client.Send <- feedbyte
-}
-
-func FeedbackCurrentClient(message *Message, currentClient *Client, errorCode int) {
-	feedCurrentClient := Feedback{
-		ErrorCode:    errorCode,
-		ErrorMessage: "",
-		Broadcast:    message.Broadcast,
-		Data:         nil,
-	}
-	feedbyte, _ := feedCurrentClient.Serialization()
-	currentClient.Send <- feedbyte
-}
-
-func BroadcastToOtherClients(hub *Hub, message *Message, currentClient *Client) {
-	feedOtherClient := Feedback{
-		ErrorCode:    ERROR_CODE_BROADCAST,
-		ErrorMessage: "",
-		Broadcast:    message.Broadcast,
-		Data:         nil,
-	}
-	feedbyte, _ := feedOtherClient.Serialization()
-	for clientid, client := range hub.Clients {
-		if clientid == currentClient.ID {
-			continue
-		}
-		if client.RoomID != currentClient.RoomID {
-			continue
-		}
-		client.Send <- feedbyte
-	}
 }

@@ -103,14 +103,3 @@ func NewMessage(clientID uuid.UUID, roomID int, rawMessage []byte) (*Message, er
 func (m *Message) RewriteBroadcast() {
 	m.Broadcast.Type = m.Broadcast.Type + BROADCAST_TYPE_SUFFIX
 }
-
-type Feedback struct {
-	ErrorCode    int         `json:"errorCode"`
-	ErrorMessage string      `json:"errorMessage"`
-	Broadcast    *Broadcast  `json:"broadcast"`
-	Data         interface{} `json:"data"`
-}
-
-func (feed *Feedback) Serialization() ([]byte, error) {
-	return json.Marshal(feed)
-}

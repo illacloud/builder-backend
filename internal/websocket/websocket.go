@@ -16,7 +16,6 @@ package websocket
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -98,7 +97,6 @@ func (c *Client) readPump() {
 		}
 		// format message
 		message = bytes.TrimSpace(bytes.Replace(message, newline, charSpace, -1))
-		fmt.Printf("[dump] %v\n", message)
 		msg, _ := NewMessage(c.ID, c.RoomID, message)
 		// send to hub and process
 		if msg != nil {
