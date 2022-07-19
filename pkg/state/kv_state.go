@@ -66,16 +66,6 @@ func (kvsd *KVStateDto) ConstructByMap(data interface{}) {
 	}
 }
 
-func (kvsd *KVStateDto) ConstructByDisplayNameState(dns *repository.DisplayNameState) error {
-	dnss, err := dns.SerializationForDatabase()
-	if err != nil {
-		return err
-	}
-	kvsd.Key = repository.DISPLAY_NAME_STATE
-	kvsd.Value = string(dnss)
-	return nil
-}
-
 func NewKVStateServiceImpl(logger *zap.SugaredLogger,
 	kvstateRepository repository.KVStateRepository) *KVStateServiceImpl {
 	return &KVStateServiceImpl{

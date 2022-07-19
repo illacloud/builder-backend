@@ -15,28 +15,19 @@
 package repository
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 )
 
-const DISPLAY_NAME_STATE = "DisplayNameState"
+type DisplayNameState []string
 
-type DisplayName string
-
-type DisplayNameState []DisplayName
-
-func (dns *DisplayNameState) SerializationForDatabase() ([]byte, error) {
-	jsonbyte, err := json.Marshal(dns)
-	if err != nil {
-		return nil, err
-	}
-	return jsonbyte, nil
-
+type DisplayNameStateForUpdate struct {
+	Before string `json:"before"`
+	After  string `json:"after"`
 }
 
-func ConstructDisplayNameStateByMap(data interface{}) (*DisplayNameState, error) {
+func ConstructDisplayNameStateByPayload(data interface{}) (DisplayNameState, error) {
 	var udata []interface{}
 	var ok bool
 	var dns DisplayNameState
@@ -47,7 +38,28 @@ func ConstructDisplayNameStateByMap(data interface{}) (*DisplayNameState, error)
 	}
 	fmt.Printf("[DUMP] udata: %v\n", udata)
 	for _, v := range udata {
-		dns = append(dns, v.(DisplayName))
+		dns = append(dns, v.(string))
 	}
-	return &dns, nil
+	return dns, nil
+}
+
+func ConstructDisplayNameStateForUpdateByPayload(data interface{}) (*DisplayNameStateForUpdate, error) {
+	var udata map[string]interface{}
+	var ok bool
+	var dnsfu DisplayNameStateForUpdate
+	fmt.Printf("[DUMP] data reflect.TypeOf: %v\n", reflect.TypeOf(data))
+
+	if udata, ok = data.(map[string]interface{}); !ok {
+		return nil, errors.New("ConstructDisplayNameByMap() failed, please check payload syntax.")
+	}
+	fmt.Printf("[DUMP] udata: %v\n", udata)
+	for k, v := range udata {
+		switch k {
+		case "before":
+			dnsfu.Before = v.(string)
+		case "after":
+			dnsfu.After = v.(string)
+		}
+	}
+	return &dnsfu, nil
 }

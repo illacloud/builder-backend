@@ -47,6 +47,7 @@ type Hub struct {
 	// impl
 	TreeStateServiceImpl *state.TreeStateServiceImpl
 	KVStateServiceImpl   *state.KVStateServiceImpl
+	SetStateServiceImpl  *state.SetStateServiceImpl
 	AppServiceImpl       *app.AppServiceImpl
 	ResourceServiceImpl  *resource.ResourceServiceImpl
 }
@@ -232,25 +233,25 @@ func SignalCreateState(hub *Hub, message *Message) error {
 		}
 	case TARGET_DISPLAY_NAME:
 		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
-		// create k-v state
+		// create set state
 		fmt.Printf("[DUMP] apprefid: %v \n", apprefid)
 		fmt.Printf("[DUMP] message: %v \n", message)
 		for _, v := range message.Payload {
 			// resolve payload
-			dns, err := repository.ConstructDisplayNameStateByMap(v)
+			dns, err := repository.ConstructDisplayNameStateByPayload(v)
 			if err != nil {
 				return err
 			}
-			// init state
-			var kvstatedto state.KVStateDto
-			if err := kvstatedto.ConstructByDisplayNameState(dns); err != nil {
-				return err
-			}
-			kvstatedto.StateType = stateType
-			// create state
-			if _, err := hub.KVStateServiceImpl.CreateKVState(kvstatedto); err != nil {
-				FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
-				return err
+			// save state
+			for _, displayName := range dns {
+				var setStateDto state.SetStateDto
+				setStateDto.ConstructByDisplayName(displayName)
+				setStateDto.StateType = stateType
+				// create state
+				if _, err := hub.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
+					FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+					return err
+				}
 			}
 		}
 	case TARGET_APPS:
@@ -301,9 +302,6 @@ func SignalDeleteState(hub *Hub, message *Message) error {
 		fallthrough
 	case TARGET_DOTTED_LINE_SQUARE:
 		stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
-		fallthrough
-	case TARGET_DISPLAY_NAME:
-		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
 		// delete k-v state
 		for _, v := range message.Payload {
 			// fill KVStateDto
@@ -318,6 +316,32 @@ func SignalDeleteState(hub *Hub, message *Message) error {
 			}
 		}
 
+	case TARGET_DISPLAY_NAME:
+		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
+		// create dnsplayName state
+		fmt.Printf("[DUMP] apprefid: %v \n", apprefid)
+		fmt.Printf("[DUMP] message: %v \n", message)
+		for _, v := range message.Payload {
+			// resolve payload
+			dns, err := repository.ConstructDisplayNameStateByPayload(v)
+			if err != nil {
+				return err
+			}
+			// save state
+			for _, displayName := range dns {
+				// init
+				var setStateDto state.SetStateDto
+				setStateDto.ConstructByDisplayName(displayName)
+				setStateDto.StateType = stateType
+				setStateDto.AppRefID = apprefid
+				setStateDto.Version = repository.APP_EDIT_VERSION
+				// delete state
+				if err := hub.SetStateServiceImpl.DeleteSetStateByValue(&setStateDto); err != nil {
+					FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+					return err
+				}
+			}
+		}
 	case TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast
 	case TARGET_RESOURCE:
@@ -380,9 +404,7 @@ func SignalUpdateState(hub *Hub, message *Message) error {
 		fallthrough
 	case TARGET_DOTTED_LINE_SQUARE:
 		stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
-		fallthrough
-	case TARGET_DISPLAY_NAME:
-		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
+		// update K-V State
 		for _, v := range message.Payload {
 			// fill KVStateDto
 			var kvstatedto state.KVStateDto
@@ -395,7 +417,28 @@ func SignalUpdateState(hub *Hub, message *Message) error {
 				return err
 			}
 		}
-
+	case TARGET_DISPLAY_NAME:
+		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
+		for _, v := range message.Payload {
+			// resolve payload
+			dnsfu, err := repository.ConstructDisplayNameStateForUpdateByPayload(v)
+			if err != nil {
+				return err
+			}
+			// init state dto
+			var beforeSetStateDto state.SetStateDto
+			var afterSetStateDto state.SetStateDto
+			beforeSetStateDto.ConstructByDisplayNameForUpdate(dnsfu)
+			beforeSetStateDto.StateType = stateType
+			beforeSetStateDto.AppRefID = apprefid
+			beforeSetStateDto.Version = repository.APP_EDIT_VERSION
+			afterSetStateDto.ConstructByDisplayNameForUpdate(dnsfu)
+			// update state
+			if err := hub.SetStateServiceImpl.UpdateSetStateByValue(beforeSetStateDto, afterSetStateDto); err != nil {
+				FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+				return err
+			}
+		}
 	case TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast
 	case TARGET_RESOURCE:
@@ -445,9 +488,10 @@ func SignalMoveState(hub *Hub, message *Message) error {
 	case TARGET_DRAG_SHADOW:
 		fallthrough
 	case TARGET_DOTTED_LINE_SQUARE:
-		fallthrough
-	case TARGET_DISPLAY_NAME:
 		FeedbackCurrentClient(message, currentClient, ERROR_CAN_NOT_MOVE_KVSTATE)
+		return nil
+	case TARGET_DISPLAY_NAME:
+		FeedbackCurrentClient(message, currentClient, ERROR_CAN_NOT_MOVE_SETSTATE)
 		return nil
 	case TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast
@@ -463,14 +507,15 @@ func SignalCreateOrUpdate(hub *Hub, message *Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
-	apprefid := currentClient.RoomID
+	apprefid := 
+	var appDto app.AppDto
+	appDto.ConstructByID(currentClient.RoomID)
 	message.RewriteBroadcast()
 	// target switch
 	switch message.Target {
 	case TARGET_NOTNING:
 		return nil
 	case TARGET_COMPONENTS:
-
 		for _, v := range message.Payload {
 			// check if state already in database
 			var nowNode state.TreeStateDto
@@ -511,7 +556,6 @@ func SignalCreateOrUpdate(hub *Hub, message *Message) error {
 			}
 
 		}
-
 	case TARGET_DEPENDENCIES:
 		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
 		fallthrough
@@ -520,9 +564,6 @@ func SignalCreateOrUpdate(hub *Hub, message *Message) error {
 		fallthrough
 	case TARGET_DOTTED_LINE_SQUARE:
 		stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
-		fallthrough
-	case TARGET_DISPLAY_NAME:
-		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
 		for _, v := range message.Payload {
 			// fill KVStateDto
 			var kvstatedto state.KVStateDto
@@ -545,7 +586,45 @@ func SignalCreateOrUpdate(hub *Hub, message *Message) error {
 			}
 
 		}
-
+	case TARGET_DISPLAY_NAME:
+		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
+		for _, v := range message.Payload {
+			// resolve payload
+			dns, err := repository.ConstructDisplayNameStateByPayload(v)
+			if err != nil {
+				return err
+			}
+			// create or update state
+			for _, displayName := range dns {
+				// checkout
+				var setStateDto state.SetStateDto
+				var setStateDtoInDB *state.SetStateDto
+				var err error
+				setStateDto.ConstructByDisplayName(displayName)
+				setStateDto.ConstructByType(stateType)
+				setStateDto.ConstructByApp(appDto)
+				setStateDto.ConstructWithEditVersion()
+				// lookup state
+				if setStateDtoInDB, err = hub.SetStateServiceImpl.GetByValue(setStateDto); err != nil {
+					FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+					return err
+				}
+				if setStateDtoInDB == nil {
+					// create
+					if _, err = hu.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
+						FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+						return err
+					}
+				} else {
+					// update
+					setStateDtoInDB.ConstructByValue(setStateDto.Value)
+					if _, err = hu.SetStateServiceImpl.UpdateSetState(setStateDtoInDB); err != nil {
+						FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+						return err
+					}
+				}
+			}
+		}
 	case TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast
 	case TARGET_RESOURCE:

@@ -76,6 +76,10 @@ func (appd *AppDto) ConstructByMap(data interface{}) {
 	}
 }
 
+func (appd *AppDto) ConstructByID(id int) {
+	appd.ID = id
+}
+
 type Editor struct {
 	AppInfo               AppDto                    `json:"appInfo"`
 	Actions               []Action                  `json:"actions"`

@@ -38,6 +38,7 @@ var dashboardHub *websocket.Hub
 var appHub *websocket.Hub
 var treestateServiceImpl *state.TreeStateServiceImpl
 var kvstateServiceImpl *state.KVStateServiceImpl
+var setstateServiceImpl *state.SetStateServiceImpl
 var appServiceImpl *app.AppServiceImpl
 var resourceServiceImpl *resource.ResourceServiceImpl
 
@@ -54,6 +55,7 @@ func initEnv() error {
 	// init repo
 	treestateRepositoryImpl := repository.NewTreeStateRepositoryImpl(sugaredLogger, gormDB)
 	kvstateRepositoryImpl := repository.NewKVStateRepositoryImpl(sugaredLogger, gormDB)
+	setstateRepositoryImpl := repository.NewSetStateRepositoryImpl(sugaredLogger, gormDB)
 	appRepositoryImpl := repository.NewAppRepositoryImpl(sugaredLogger, gormDB)
 	resourceRepositoryImpl := repository.NewResourceRepositoryImpl(sugaredLogger, gormDB)
 	userRepositoryImpl := repository.NewUserRepositoryImpl(gormDB, sugaredLogger)
@@ -61,6 +63,7 @@ func initEnv() error {
 	// init service
 	treestateServiceImpl = state.NewTreeStateServiceImpl(sugaredLogger, treestateRepositoryImpl)
 	kvstateServiceImpl = state.NewKVStateServiceImpl(sugaredLogger, kvstateRepositoryImpl)
+	setstateServiceImpl = state.NewSetStateServiceImpl(sugaredLogger, setstateRepositoryImpl)
 	appServiceImpl = app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, userRepositoryImpl, kvstateRepositoryImpl, treestateRepositoryImpl, actionRepositoryImpl)
 	resourceServiceImpl = resource.NewResourceServiceImpl(sugaredLogger, resourceRepositoryImpl)
 	return nil
