@@ -17,10 +17,9 @@ package websocket
 import (
 	"bytes"
 	"log"
-	"net/http"
 	"time"
 
-	"github.com/gorilla/websocket"
+	gws "github.com/gorilla/websocket"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -39,14 +38,14 @@ const (
 )
 
 const DEAULT_INSTANCE_ID = "SELF_HOST"
-const DEAULT_ROOM_ID = 0
+const DEAULT_APP_ID = 0
 
 var (
 	newline   = []byte{'\n'}
 	charSpace = []byte{' '}
 )
 
-var upgrader = websocket.Upgrader{
+var upgrader = gws.Upgrader{
 	ReadBufferSize:  102400,
 	WriteBufferSize: 102400,
 }
@@ -62,7 +61,7 @@ type Client struct {
 	Hub *Hub
 
 	// The websocket connection.
-	Conn *websocket.Conn
+	Conn *gws.Conn
 
 	// Buffered channel of outbound messages.
 	Send chan []byte
@@ -70,8 +69,31 @@ type Client struct {
 	// instanceID, SELF_HOST by default
 	InstanceID string
 
-	// roomID, 0 by default
-	RoomID int
+	// appID, 0 by default
+	APPID int
+}
+
+func NewClient(hub *Hub, conn *websocket, instanceID string, appID int) *Client {
+	return &Client{
+		ID:           uuid.Must(uuid.NewV4(), nil),
+		MappedUserID: 0,
+		IsLoggedIn:   false,
+		Hub:          hub,
+		Conn:         conn,
+		Send:         make(chan []byte, 256),
+		InstanceID:   instanceID,
+		APPID:        appID}
+}
+
+func (c *Client) Feedback(message *Message, errorCode int, errorMessage error) {
+	feedCurrentClient := Feedback{
+		ErrorCode:    errorCode,
+		ErrorMessage: errorMessage.Error(),
+		Broadcast:    message.Broadcast,
+		Data:         nil,
+	}
+	feedbyte, _ := feedCurrentClient.Serialization()
+	c.Send <- feedbyte
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -90,14 +112,14 @@ func (c *Client) readPump() {
 	for {
 		_, message, err := c.Conn.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+			if gws.IsUnexpectedCloseError(err, gws.CloseGoingAway, gws.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
 			}
 			break
 		}
-		// format message
+		// on message, format
 		message = bytes.TrimSpace(bytes.Replace(message, newline, charSpace, -1))
-		msg, _ := NewMessage(c.ID, c.RoomID, message)
+		msg, _ := NewMessage(c.ID, c.APPID, message)
 		// send to hub and process
 		if msg != nil {
 			c.Hub.OnMessage <- msg
@@ -122,11 +144,11 @@ func (c *Client) writePump() {
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
-				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				c.Conn.WriteMessage(gws.CloseMessage, []byte{})
 				return
 			}
 
-			w, err := c.Conn.NextWriter(websocket.TextMessage)
+			w, err := c.Conn.NextWriter(gws.TextMessage)
 			if err != nil {
 				return
 			}
@@ -144,59 +166,24 @@ func (c *Client) writePump() {
 			}
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			if err := c.Conn.WriteMessage(gws.PingMessage, nil); err != nil {
 				return
 			}
 		}
 	}
 }
 
-func ping(ws *websocket.Conn, done chan struct{}) {
+func ping(ws *gws.Conn, done chan struct{}) {
 	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
-			if err := ws.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(writeWait)); err != nil {
+			if err := ws.WriteControl(gws.PingMessage, []byte{}, time.Now().Add(writeWait)); err != nil {
 				log.Println("ping:", err)
 			}
 		case <-done:
 			return
 		}
 	}
-}
-
-func internalError(ws *websocket.Conn, msg string, err error) {
-	log.Println(msg, err)
-	ws.WriteMessage(websocket.TextMessage, []byte("Internal server error."))
-}
-
-// ServeWebsocket handle websocket requests from the peer.
-func ServeWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request, instanceID string, roomID int) {
-	// @todo: this CheckOrigin method for debug only, remove it for release.
-	var upgrader = websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-		CheckOrigin:     func(r *http.Request) bool { return true },
-	}
-
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Printf("Not a web socket connection: %s \n", err)
-		return
-	}
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	client := &Client{ID: uuid.Must(uuid.NewV4(), nil), MappedUserID: 0, IsLoggedIn: false, Hub: hub, Conn: conn, Send: make(chan []byte, 256), InstanceID: instanceID, RoomID: roomID}
-	client.Hub.Register <- client
-
-	// Allow collection of memory referenced by the caller by doing all work in
-	// new goroutines.
-	go client.writePump()
-	go client.readPump()
 }

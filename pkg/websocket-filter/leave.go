@@ -1,11 +1,11 @@
 package filter
 
 import (
-	"github.com/illa-family/builder-backend/internal/websocket"
+	ws "github.com/illa-family/builder-backend/internal/websocket"
 )
 
-func SignalLeave(hub *websocket.Hub, message *websocket.Message) error {
+func SignalLeave(hub *ws.Hub, message *ws.Message) error {
 	currentClient := hub.Clients[message.ClientID]
-	websocket.KickClient(hub, currentClient)
+	ws.KickClient(hub, currentClient)
 	return nil
 }

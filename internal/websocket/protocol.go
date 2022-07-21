@@ -50,27 +50,6 @@ const TARGET_DISPLAY_NAME = 5       // DisplayNameState
 const TARGET_APPS = 6               // only for broadcast
 const TARGET_RESOURCE = 7           // only for broadcast
 
-// for feedback
-const ERROR_CODE_OK = 0
-const ERROR_CODE_FAILED = 1
-const ERROR_CODE_NEED_ENTER = 2
-const ERROR_CODE_BROADCAST = 0
-const ERROR_CODE_PONG = 3
-const ERROR_CODE_LOGGEDIN = 0
-const ERROR_CODE_LOGIN_FAILED = 4
-const ERROR_CREATE_STATE_OK = 0
-const ERROR_CREATE_STATE_FAILED = 5
-const ERROR_DELETE_STATE_OK = 0
-const ERROR_DELETE_STATE_FAILED = 6
-const ERROR_UPDATE_STATE_OK = 0
-const ERROR_UPDATE_STATE_FAILED = 7
-const ERROR_MOVE_STATE_OK = 0
-const ERROR_MOVE_STATE_FAILED = 8
-const ERROR_CREATE_OR_UPDATE_STATE_OK = 0
-const ERROR_CREATE_OR_UPDATE_STATE_FAILED = 9
-const ERROR_CAN_NOT_MOVE_KVSTATE = 10
-const ERROR_CAN_NOT_MOVE_SETSTATE = 11
-
 // for broadcast rewrite
 const BROADCAST_TYPE_SUFFIX = "/remote"
 
@@ -82,21 +61,21 @@ type Broadcast struct {
 type Message struct {
 	ClientID  uuid.UUID     `json:"clientID"`
 	Signal    int           `json:"signal"`
-	RoomID    int           `json:"roomID"` // also as APP ID
+	APPID     int           `json:"appID"` // also as APP ID
 	Option    int           `json:"option"`
 	Target    int           `json:"target"`
 	Payload   []interface{} `json:"payload"`
 	Broadcast *Broadcast    `json:"broadcast"`
 }
 
-func NewMessage(clientID uuid.UUID, roomID int, rawMessage []byte) (*Message, error) {
+func NewMessage(clientID uuid.UUID, appID int, rawMessage []byte) (*Message, error) {
 	// init Action
 	var message Message
 	if err := json.Unmarshal(rawMessage, &message); err != nil {
 		return nil, err
 	}
 	message.ClientID = clientID
-	message.RoomID = roomID
+	message.APPID = appID
 	return &message, nil
 }
 

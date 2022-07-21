@@ -1,15 +1,15 @@
 package filter
 
 import (
-	"github.com/illa-family/builder-backend/internal/websocket"
+	ws "github.com/illa-family/builder-backend/internal/websocket"
 )
 
-func SignalBroadcastOnly(hub *websocket.Hub, message *websocket.Message) error {
+func SignalBroadcastOnly(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	message.RewriteBroadcast()
 
 	// feedback otherClient
-	BroadcastToOtherClients(hub, message, currentClient)
+	ws.BroadcastToOtherClients(hub, message, currentClient)
 	return nil
 }

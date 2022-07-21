@@ -3,10 +3,10 @@
 package filter
 
 import (
-	"github.com/illa-family/builder-backend/internal/websocket"
+	ws "github.com/illa-family/builder-backend/internal/websocket"
 )
 
-func SignalCreateOrUpdateState(hub *websocket.Hub, message *websocket.Message) error {
+func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 	
 
 	// deserialize message
@@ -14,13 +14,13 @@ func SignalCreateOrUpdateState(hub *websocket.Hub, message *websocket.Message) e
 	stateType := repository.STATE_TYPE_INVALIED
 	apprefid := 
 	var appDto app.AppDto
-	appDto.ConstructByID(currentClient.RoomID)
+	appDto.ConstructByID(currentClient.APPID)
 	message.RewriteBroadcast()
 	// target switch
 	switch message.Target {
-	case TARGET_NOTNING:
+	case ws.TARGET_NOTNING:
 		return nil
-	case TARGET_COMPONENTS:
+	case ws.TARGET_COMPONENTS:
 		for _, v := range message.Payload {
 			// check if state already in database
 			var nowNode state.TreeStateDto
@@ -34,7 +34,7 @@ func SignalCreateOrUpdateState(hub *websocket.Hub, message *websocket.Message) e
 				componenttree = repository.ConstructComponentNodeByMap(v)
 				
 				if err := hub.TreeStateServiceImpl.CreateComponentTree(apprefid, summitnodeid, componenttree); err != nil {
-					FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+				ws.FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
 					return err
 				}
 			} else {
@@ -55,19 +55,19 @@ func SignalCreateOrUpdateState(hub *websocket.Hub, message *websocket.Message) e
 				
 				// update
 				if err := hub.TreeStateServiceImpl.UpdateTreeStateNode(apprefid, &nowNode); err != nil {
-					FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+				ws.FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
 					return err
 				}
 			}
 
 		}
-	case TARGET_DEPENDENCIES:
+	case ws.TARGET_DEPENDENCIES:
 		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
 		fallthrough
-	case TARGET_DRAG_SHADOW:
+	case ws.TARGET_DRAG_SHADOW:
 		stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
 		fallthrough
-	case TARGET_DOTTED_LINE_SQUARE:
+	case ws.TARGET_DOTTED_LINE_SQUARE:
 		stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
 		for _, v := range message.Payload {
 			// fill KVStateDto
@@ -79,19 +79,19 @@ func SignalCreateOrUpdateState(hub *websocket.Hub, message *websocket.Message) e
 			isStateExists := hub.KVStateServiceImpl.IsKVStateNodeExists(apprefid, &kvstatedto)
 			if !isStateExists {
 				if _, err := hub.KVStateServiceImpl.CreateKVState(kvstatedto); err != nil {
-					FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+				ws.FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
 					return err
 				}
 			} else {
 				// update
 				if err := hub.KVStateServiceImpl.UpdateKVStateByKey(apprefid, &kvstatedto); err != nil {
-					FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+				ws.FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
 					return err
 				}
 			}
 
 		}
-	case TARGET_DISPLAY_NAME:
+	case ws.TARGET_DISPLAY_NAME:
 		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
 		for _, v := range message.Payload {
 			// resolve payload
@@ -111,35 +111,35 @@ func SignalCreateOrUpdateState(hub *websocket.Hub, message *websocket.Message) e
 				setStateDto.ConstructWithEditVersion()
 				// lookup state
 				if setStateDtoInDB, err = hub.SetStateServiceImpl.GetByValue(setStateDto); err != nil {
-					FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+				ws.FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
 					return err
 				}
 				if setStateDtoInDB == nil {
 					// create
 					if _, err = hu.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
-						FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+					ws.FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
 						return err
 					}
 				} else {
 					// update
 					setStateDtoInDB.ConstructByValue(setStateDto.Value)
 					if _, err = hu.SetStateServiceImpl.UpdateSetState(setStateDtoInDB); err != nil {
-						FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+					ws.FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
 						return err
 					}
 				}
 			}
 		}
-	case TARGET_APPS:
+	case ws.TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast
-	case TARGET_RESOURCE:
+	case ws.TARGET_RESOURCE:
 		// serve on HTTP API, this signal only for broadcast
 	}
 
 	// feedback currentClient
-	FeedbackCurrentClient(message, currentClient, ERROR_CREATE_OR_UPDATE_STATE_OK)
+	ws.FeedbackCurrentClient(message, currentClient, ERROR_CREATE_OR_UPDATE_STATE_OK)
 
 	// feedback otherClient
-	BroadcastToOtherClients(hub, message, currentClient)
+	ws.BroadcastToOtherClients(hub, message, currentClient)
 	return nil
 }

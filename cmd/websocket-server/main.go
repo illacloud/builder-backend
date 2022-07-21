@@ -30,17 +30,17 @@ import (
 	"github.com/illa-family/builder-backend/pkg/resource"
 	"github.com/illa-family/builder-backend/pkg/state"
 
-	"github.com/illa-family/builder-backend/internal/websocket"
+	ws "github.com/illa-family/builder-backend/internal/websocket"
+	ws_server "github.com/illa-family/builder-backend/pkg/websocket-server"
 )
 
 // websocket client hub
-var dashboardHub *websocket.Hub
-var appHub *websocket.Hub
-var treestateServiceImpl *state.TreeStateServiceImpl
-var kvstateServiceImpl *state.KVStateServiceImpl
-var setstateServiceImpl *state.SetStateServiceImpl
-var appServiceImpl *app.AppServiceImpl
-var resourceServiceImpl *resource.ResourceServiceImpl
+
+var tssi *state.TreeStateServiceImpl
+var kvssi *state.KVStateServiceImpl
+var sssi *state.SetStateServiceImpl
+var asi *app.AppServiceImpl
+var rsi *resource.ResourceServiceImpl
 
 func initEnv() error {
 	sugaredLogger := util.NewSugardLogger()
@@ -61,11 +61,11 @@ func initEnv() error {
 	userRepositoryImpl := repository.NewUserRepositoryImpl(gormDB, sugaredLogger)
 	actionRepositoryImpl := repository.NewActionRepositoryImpl(sugaredLogger, gormDB)
 	// init service
-	treestateServiceImpl = state.NewTreeStateServiceImpl(sugaredLogger, treestateRepositoryImpl)
-	kvstateServiceImpl = state.NewKVStateServiceImpl(sugaredLogger, kvstateRepositoryImpl)
-	setstateServiceImpl = state.NewSetStateServiceImpl(sugaredLogger, setstateRepositoryImpl)
-	appServiceImpl = app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, userRepositoryImpl, kvstateRepositoryImpl, treestateRepositoryImpl, actionRepositoryImpl)
-	resourceServiceImpl = resource.NewResourceServiceImpl(sugaredLogger, resourceRepositoryImpl)
+	tssi = state.NewTreeStateServiceImpl(sugaredLogger, treestateRepositoryImpl)
+	kvssi = state.NewKVStateServiceImpl(sugaredLogger, kvstateRepositoryImpl)
+	sssi = state.NewSetStateServiceImpl(sugaredLogger, setstateRepositoryImpl)
+	asi = app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, userRepositoryImpl, kvstateRepositoryImpl, treestateRepositoryImpl, actionRepositoryImpl)
+	rsi = resource.NewResourceServiceImpl(sugaredLogger, resourceRepositoryImpl)
 	return nil
 }
 
@@ -75,17 +75,7 @@ func main() {
 
 	// init
 	initEnv()
-
-	// start websocket hub
-	dashboardHub = websocket.NewHub()
-	appHub = websocket.NewHub()
-
-	appHub.TreeStateServiceImpl = treestateServiceImpl
-	appHub.KVStateServiceImpl = kvstateServiceImpl
-	appHub.AppServiceImpl = appServiceImpl
-	appHub.ResourceServiceImpl = resourceServiceImpl
-	go dashboardHub.Run()
-	go appHub.Run()
+	ws_server.InitHub(asi, rsi, tssi, kvssi, sssi)
 
 	// listen and serve
 	r := mux.NewRouter()
@@ -97,14 +87,17 @@ func main() {
 	r.HandleFunc("/room/{instanceID}/dashboard", func(w http.ResponseWriter, r *http.Request) {
 		instanceID := mux.Vars(r)["instanceID"]
 		log.Printf("[Connected] /room/%s/dashboard", instanceID)
-		websocket.ServeWebsocket(dashboardHub, w, r, instanceID, websocket.DEAULT_ROOM_ID)
+		ws_server.ServeWebsocket(w, r, instanceID, ws.DEAULT_APP_ID)
 	})
-	// handle ws://{ip:port}/room/{instanceID}/app/{roomID}
-	r.HandleFunc("/room/{instanceID}/app/{roomID}", func(w http.ResponseWriter, r *http.Request) {
+	// handle ws://{ip:port}/room/{instanceID}/app/{appID}
+	r.HandleFunc("/room/{instanceID}/app/{appID}", func(w http.ResponseWriter, r *http.Request) {
 		instanceID := mux.Vars(r)["instanceID"]
-		roomID, _ := strconv.Atoi(mux.Vars(r)["roomID"])
-		log.Printf("[Connected] /room/%s/app/%d", instanceID, roomID)
-		websocket.ServeWebsocket(appHub, w, r, instanceID, roomID)
+		appID, err := strconv.Atoi(mux.Vars(r)["appID"])
+		if err != nil {
+			appID = ws.DEAULT_APP_ID
+		}
+		log.Printf("[Connected] /room/%s/app/%d", instanceID, appID)
+		ws_server.ServeWebsocket(w, r, instanceID, appID)
 	})
 	srv := &http.Server{
 		Handler:      r,

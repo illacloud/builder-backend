@@ -16,6 +16,27 @@ package websocket
 
 import "encoding/json"
 
+// for feedback
+const ERROR_CODE_OK = 0
+const ERROR_CODE_FAILED = 1
+const ERROR_CODE_NEED_ENTER = 2
+const ERROR_CODE_BROADCAST = 0
+const ERROR_CODE_PONG = 3
+const ERROR_CODE_LOGGEDIN = 0
+const ERROR_CODE_LOGIN_FAILED = 4
+const ERROR_CREATE_STATE_OK = 0
+const ERROR_CREATE_STATE_FAILED = 5
+const ERROR_DELETE_STATE_OK = 0
+const ERROR_DELETE_STATE_FAILED = 6
+const ERROR_UPDATE_STATE_OK = 0
+const ERROR_UPDATE_STATE_FAILED = 7
+const ERROR_MOVE_STATE_OK = 0
+const ERROR_MOVE_STATE_FAILED = 8
+const ERROR_CREATE_OR_UPDATE_STATE_OK = 0
+const ERROR_CREATE_OR_UPDATE_STATE_FAILED = 9
+const ERROR_CAN_NOT_MOVE_KVSTATE = 10
+const ERROR_CAN_NOT_MOVE_SETSTATE = 11
+
 type Feedback struct {
 	ErrorCode    int         `json:"errorCode"`
 	ErrorMessage string      `json:"errorMessage"`
@@ -25,34 +46,4 @@ type Feedback struct {
 
 func (feed *Feedback) Serialization() ([]byte, error) {
 	return json.Marshal(feed)
-}
-
-func FeedbackCurrentClient(message *Message, currentClient *Client, errorCode int, errorMessage error) {
-	feedCurrentClient := Feedback{
-		ErrorCode:    errorCode,
-		ErrorMessage: errorMessage.Error(),
-		Broadcast:    message.Broadcast,
-		Data:         nil,
-	}
-	feedbyte, _ := feedCurrentClient.Serialization()
-	currentClient.Send <- feedbyte
-}
-
-func BroadcastToOtherClients(hub *Hub, message *Message, currentClient *Client) {
-	feedOtherClient := Feedback{
-		ErrorCode:    ERROR_CODE_BROADCAST,
-		ErrorMessage: "",
-		Broadcast:    message.Broadcast,
-		Data:         nil,
-	}
-	feedbyte, _ := feedOtherClient.Serialization()
-	for clientid, client := range hub.Clients {
-		if clientid == currentClient.ID {
-			continue
-		}
-		if client.RoomID != currentClient.RoomID {
-			continue
-		}
-		client.Send <- feedbyte
-	}
 }

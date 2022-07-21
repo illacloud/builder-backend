@@ -1,10 +1,10 @@
 package filter
 
 import (
-	"github.com/illa-family/builder-backend/internal/websocket"
+	ws "github.com/illa-family/builder-backend/internal/websocket"
 )
 
-func SignalPing(hub *websocket.Hub, message *websocket.Message) error {
-	websocket.FeedbackCurrentClient(message, currentClient, ERROR_CODE_PONG, nil)
+func SignalPing(hub *ws.Hub, message *ws.Message) error {
+	ws.FeedbackCurrentClient(message, currentClient, ERROR_CODE_PONG, nil)
 	return nil
 }
