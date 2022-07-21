@@ -64,13 +64,13 @@ type AppActivity struct {
 }
 
 type Editor struct {
-	AppInfo               AppDto                    `json:"appInfo"`
-	Actions               []Action                  `json:"actions"`
-	Components            map[string]*ComponentNode `json:"components"`
-	DependenciesState     map[string][]string       `json:"dependenciesState"`
-	DragShadowState       map[string]interface{}    `json:"dragShadowState"`
-	DottedLineSquareState map[string]interface{}    `json:"dottedLineSquareState"`
-	DisplayNameState      []string                  `json:"displayNameState"`
+	AppInfo               AppDto                 `json:"appInfo"`
+	Actions               []Action               `json:"actions"`
+	Components            *ComponentNode         `json:"components"`
+	DependenciesState     map[string][]string    `json:"dependenciesState"`
+	DragShadowState       map[string]interface{} `json:"dragShadowState"`
+	DottedLineSquareState map[string]interface{} `json:"dottedLineSquareState"`
+	DisplayNameState      []string               `json:"displayNameState"`
 }
 
 type Action struct {
@@ -525,7 +525,7 @@ func (impl *AppServiceImpl) formatActions(appID, version int) ([]Action, error) 
 	return resSlice, nil
 }
 
-func (impl *AppServiceImpl) formatComponents(appID, version int) (map[string]*ComponentNode, error) {
+func (impl *AppServiceImpl) formatComponents(appID, version int) (*ComponentNode, error) {
 	res, err := impl.treestateRepository.RetrieveTreeStatesByApp(appID, repository.TREE_STATE_TYPE_COMPONENTS, version)
 	if err != nil {
 		return nil, err
@@ -540,10 +540,8 @@ func (impl *AppServiceImpl) formatComponents(appID, version int) (map[string]*Co
 		tempMap[component.ID] = component
 	}
 	resNode, _ := buildComponentTree(res[0], tempMap, nil)
-	resMap := map[string]*ComponentNode{}
-	resMap["rootDsl"] = resNode
 
-	return resMap, nil
+	return resNode, nil
 }
 
 func (impl *AppServiceImpl) formatDependenciesState(appID, version int) (map[string][]string, error) {
