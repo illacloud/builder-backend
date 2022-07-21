@@ -10,6 +10,6 @@ func SignalBroadcastOnly(hub *ws.Hub, message *ws.Message) error {
 	message.RewriteBroadcast()
 
 	// feedback otherClient
-	ws.BroadcastToOtherClients(hub, message, currentClient)
+	hub.BroadcastToOtherClients(message, currentClient)
 	return nil
 }

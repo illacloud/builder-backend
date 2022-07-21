@@ -11,15 +11,15 @@ func SignalEnter(hub *ws.Hub, message *ws.Message) error {
 	currentClient := hub.Clients[message.ClientID]
 	var ok bool
 	if len(message.Payload) == 0 {
-		errorMessage := errors.New("[websocket-server] websocket protocol syntax error.")
-		ws.FeedbackCurrentClient(message, currentClient, ws.ERROR_CODE_LOGIN_FAILED, errorMessage)
-		return errorMessage
+		err := errors.New("[websocket-server] websocket protocol syntax error.")
+		currentClient.Feedback(message, ws.ERROR_CODE_LOGIN_FAILED, err)
+		return err
 	}
 	var authToken map[string]interface{}
 	if authToken, ok = message.Payload[0].(map[string]interface{}); !ok {
-		errorMessage := errors.New("[websocket-server] websocket protocol syntax error.")
-		ws.FeedbackCurrentClient(message, currentClient, ws.ERROR_CODE_LOGIN_FAILED, errorMessage)
-		return errorMessage
+		err := errors.New("[websocket-server] websocket protocol syntax error.")
+		currentClient.Feedback(message, ws.ERROR_CODE_LOGIN_FAILED, err)
+		return err
 	}
 	token, _ := authToken["authToken"].(string)
 
@@ -30,18 +30,18 @@ func SignalEnter(hub *ws.Hub, message *ws.Message) error {
 	}
 	validAccessToken, validaAccessErr := user.ValidateAccessToken(token)
 	if validaAccessErr != nil {
-		ws.FeedbackCurrentClient(message, currentClient, ws.ERROR_CODE_LOGIN_FAILED, validaAccessErr)
+		currentClient.Feedback(message, ws.ERROR_CODE_LOGIN_FAILED, validaAccessErr)
 		return validaAccessErr
 	}
 	if !validAccessToken {
-		errorMessage := errors.New("[websocket-server] access token invalied.")
-		ws.FeedbackCurrentClient(message, currentClient, ws.ERROR_CODE_LOGIN_FAILED, errorMessage)
-		return errorMessage
+		err := errors.New("[websocket-server] access token invalied.")
+		currentClient.Feedback(message, ws.ERROR_CODE_LOGIN_FAILED, err)
+		return err
 	}
 	// assign logged in and mapped user id
 	currentClient.IsLoggedIn = true
 	currentClient.MappedUserID = userID
-	ws.FeedbackCurrentClient(message, currentClient, ws.ERROR_CODE_LOGGEDIN)
+	currentClient.Feedback(message, ws.ERROR_CODE_LOGGEDIN)
 	return nil
 
 }

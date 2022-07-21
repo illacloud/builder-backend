@@ -34,16 +34,16 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 
 			// update
 			if err := hub.TreeStateServiceImpl.UpdateTreeStateNode(apprefid, &nowNode); err != nil {
-				ws.FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+				currentClient.Feedback(message, ERROR_UPDATE_STATE_FAILED, err)
 				return err
 			}
 		}
 
 		// feedback currentClient
-		ws.FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_OK)
+		currentClient.Feedback(message, ERROR_UPDATE_STATE_OK)
 
 		// feedback otherClient
-		ws.BroadcastToOtherClients(hub, message, currentClient)
+		hub.BroadcastToOtherClients(message, currentClient)
 	case ws.TARGET_DEPENDENCIES:
 		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
 		fallthrough
@@ -61,7 +61,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 
 			// update
 			if err := hub.KVStateServiceImpl.UpdateKVStateByKey(apprefid, &kvstatedto); err != nil {
-				ws.FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+				currentClient.Feedback(message, ERROR_UPDATE_STATE_FAILED, err)
 				return err
 			}
 		}
@@ -83,7 +83,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 			afterSetStateDto.ConstructByDisplayNameForUpdate(dnsfu)
 			// update state
 			if err := hub.SetStateServiceImpl.UpdateSetStateByValue(beforeSetStateDto, afterSetStateDto); err != nil {
-				ws.FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+				currentClient.Feedback(message, ERROR_CREATE_STATE_FAILED, err)
 				return err
 			}
 		}
@@ -94,10 +94,10 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 	}
 
 	// feedback currentClient
-	ws.FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_OK)
+	currentClient.Feedback(message, ERROR_UPDATE_STATE_OK, nil)
 
 	// feedback otherClient
-	ws.BroadcastToOtherClients(hub, message, currentClient)
+	hub.BroadcastToOtherClients(message, currentClient)
 
 	return nil
 }

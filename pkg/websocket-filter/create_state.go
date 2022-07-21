@@ -25,7 +25,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 			componenttree = repository.ConstructComponentNodeByMap(v)
 
 			if err := hub.TreeStateServiceImpl.CreateComponentTree(apprefid, summitnodeid, componenttree); err != nil {
-				ws.FeedbackCurrentClient(message, currentClient, ws.ERROR_CREATE_STATE_FAILED)
+				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 				return err
 			}
 		}
@@ -46,7 +46,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 			kvstatedto.StateType = stateType
 
 			if _, err := hub.KVStateServiceImpl.CreateKVState(kvstatedto); err != nil {
-				ws.FeedbackCurrentClient(message, currentClient, ws.ERROR_CREATE_STATE_FAILED)
+				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 				return err
 			}
 		}
@@ -67,7 +67,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 				setStateDto.StateType = stateType
 				// create state
 				if _, err := hub.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
-					ws.FeedbackCurrentClient(message, currentClient, ws.ERROR_CREATE_STATE_FAILED)
+					currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 					return err
 				}
 			}
@@ -78,9 +78,9 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 		// serve on HTTP API, this signal only for broadcast
 	}
 	// feedback currentClient
-	ws.FeedbackCurrentClient(message, currentClient, ws.ERROR_CREATE_STATE_OK)
+	currentClient.Feedback(message, ws.ERROR_CREATE_STATE_OK, nil)
 
 	// feedback otherClient
-	ws.BroadcastToOtherClients(hub, message, currentClient)
+	hub.BroadcastToOtherClients(message, currentClient)
 	return nil
 }

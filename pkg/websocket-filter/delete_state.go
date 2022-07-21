@@ -25,7 +25,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 			nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
 
 			if err := hub.TreeStateServiceImpl.DeleteTreeStateNodeRecursive(apprefid, &nowNode); err != nil {
-				ws.FeedbackCurrentClient(message, currentClient, ws.ERROR_DELETE_STATE_FAILED)
+				currentClient.Feedback(message, ws.ERROR_DELETE_STATE_FAILED, err)
 				return err
 			}
 		}
@@ -46,7 +46,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 			kvstatedto.StateType = stateType
 
 			if err := hub.KVStateServiceImpl.DeleteKVStateByKey(apprefid, &kvstatedto); err != nil {
-				ws.FeedbackCurrentClient(message, currentClient, ws.ERROR_DELETE_STATE_FAILED)
+				currentClient.Feedback(message, ws.ERROR_DELETE_STATE_FAILED, err)
 				return err
 			}
 		}
@@ -71,7 +71,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 				setStateDto.Version = repository.APP_EDIT_VERSION
 				// delete state
 				if err := hub.SetStateServiceImpl.DeleteSetStateByValue(&setStateDto); err != nil {
-					ws.FeedbackCurrentClient(message, currentClient, ws.ERROR_CREATE_STATE_FAILED)
+					currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 					return err
 				}
 			}
@@ -83,8 +83,8 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 	}
 
 	// feedback currentClient
-	ws.FeedbackCurrentClient(message, currentClient, ws.ERROR_DELETE_STATE_OK)
+	currentClient.Feedback(message, ws.ERROR_DELETE_STATE_OK, nil)
 	// feedback otherClient
-	ws.BroadcastToOtherClients(hub, message, currentClient)
+	hub.BroadcastToOtherClients(message, currentClient)
 	return nil
 }

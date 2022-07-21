@@ -5,6 +5,6 @@ import (
 )
 
 func SignalPing(hub *ws.Hub, message *ws.Message) error {
-	ws.FeedbackCurrentClient(message, currentClient, ERROR_CODE_PONG, nil)
+	currentClient.Feedback(message, ERROR_CODE_PONG, nil)
 	return nil
 }

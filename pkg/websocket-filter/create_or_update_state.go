@@ -34,7 +34,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 				componenttree = repository.ConstructComponentNodeByMap(v)
 				
 				if err := hub.TreeStateServiceImpl.CreateComponentTree(apprefid, summitnodeid, componenttree); err != nil {
-				ws.FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+				currentClient.Feedback(message, ERROR_CREATE_STATE_FAILED, err)
 					return err
 				}
 			} else {
@@ -55,7 +55,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 				
 				// update
 				if err := hub.TreeStateServiceImpl.UpdateTreeStateNode(apprefid, &nowNode); err != nil {
-				ws.FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+				currentClient.Feedback(message, ERROR_UPDATE_STATE_FAILED, err)
 					return err
 				}
 			}
@@ -79,13 +79,13 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 			isStateExists := hub.KVStateServiceImpl.IsKVStateNodeExists(apprefid, &kvstatedto)
 			if !isStateExists {
 				if _, err := hub.KVStateServiceImpl.CreateKVState(kvstatedto); err != nil {
-				ws.FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+				currentClient.Feedback(message, ERROR_CREATE_STATE_FAILED, err)
 					return err
 				}
 			} else {
 				// update
 				if err := hub.KVStateServiceImpl.UpdateKVStateByKey(apprefid, &kvstatedto); err != nil {
-				ws.FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+				currentClient.Feedback(message, ERROR_UPDATE_STATE_FAILED, err)
 					return err
 				}
 			}
@@ -111,20 +111,20 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 				setStateDto.ConstructWithEditVersion()
 				// lookup state
 				if setStateDtoInDB, err = hub.SetStateServiceImpl.GetByValue(setStateDto); err != nil {
-				ws.FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+				currentClient.Feedback(message, ERROR_CREATE_STATE_FAILED, err)
 					return err
 				}
 				if setStateDtoInDB == nil {
 					// create
 					if _, err = hu.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
-					ws.FeedbackCurrentClient(message, currentClient, ERROR_CREATE_STATE_FAILED)
+					currentClient.Feedback(message, ERROR_CREATE_STATE_FAILED, err)
 						return err
 					}
 				} else {
 					// update
 					setStateDtoInDB.ConstructByValue(setStateDto.Value)
 					if _, err = hu.SetStateServiceImpl.UpdateSetState(setStateDtoInDB); err != nil {
-					ws.FeedbackCurrentClient(message, currentClient, ERROR_UPDATE_STATE_FAILED)
+					currentClient.Feedback(message, ERROR_UPDATE_STATE_FAILED, err)
 						return err
 					}
 				}
@@ -137,9 +137,9 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 	}
 
 	// feedback currentClient
-	ws.FeedbackCurrentClient(message, currentClient, ERROR_CREATE_OR_UPDATE_STATE_OK)
+	currentClient.Feedback(message, ERROR_CREATE_OR_UPDATE_STATE_OK, nil)
 
 	// feedback otherClient
-	ws.BroadcastToOtherClients(hub, message, currentClient)
+	hub.BroadcastToOtherClients(message, currentClient)
 	return nil
 }

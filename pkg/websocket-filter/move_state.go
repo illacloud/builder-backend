@@ -1,6 +1,8 @@
 package filter
 
 import (
+	"errors"
+
 	ws "github.com/illa-family/builder-backend/internal/websocket"
 )
 
@@ -23,26 +25,28 @@ func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 			nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
 
 			if err := hub.TreeStateServiceImpl.MoveTreeStateNode(apprefid, &nowNode); err != nil {
-				ws.FeedbackCurrentClient(message, currentClient, ERROR_MOVE_STATE_FAILED)
+				currentClient.Feedback(message, ERROR_MOVE_STATE_FAILED, err)
 				return err
 			}
 		}
 
 		// feedback currentClient
-		ws.FeedbackCurrentClient(message, currentClient, ERROR_MOVE_STATE_OK)
+		currentClient.Feedback(message, ERROR_MOVE_STATE_OK, nil)
 
 		// feedback otherClient
-		ws.BroadcastToOtherClients(hub, message, currentClient)
+		hub.BroadcastToOtherClients(message, currentClient)
 
 	case ws.TARGET_DEPENDENCIES:
 		fallthrough
 	case ws.TARGET_DRAG_SHADOW:
 		fallthrough
 	case ws.TARGET_DOTTED_LINE_SQUARE:
-		ws.FeedbackCurrentClient(message, currentClient, ERROR_CAN_NOT_MOVE_KVSTATE)
+		err := errors.New("K-V State do not suppory move method.")
+		currentClient.Feedback(message, ERROR_CAN_NOT_MOVE_KVSTATE, err)
 		return nil
 	case ws.TARGET_DISPLAY_NAME:
-		ws.FeedbackCurrentClient(message, currentClient, ERROR_CAN_NOT_MOVE_SETSTATE)
+		err := errors.New("Set State do not suppory move method.")
+		currentClient.Feedback(message, ERROR_CAN_NOT_MOVE_SETSTATE, err)
 		return nil
 	case ws.TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast
