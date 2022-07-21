@@ -1,72 +1,94 @@
-
+// Copyright 2022 The ILLA Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package filter
 
 import (
+	"github.com/illa-family/builder-backend/internal/repository"
+
 	ws "github.com/illa-family/builder-backend/internal/websocket"
 )
 
 func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
-	
 
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
-	apprefid := 
 	var appDto app.AppDto
-	appDto.ConstructByID(currentClient.APPID)
+	appDto.ConstructByWebSocketClient(currentClient)
 	message.RewriteBroadcast()
+
 	// target switch
 	switch message.Target {
 	case ws.TARGET_NOTNING:
 		return nil
+
 	case ws.TARGET_COMPONENTS:
 		for _, v := range message.Payload {
+			// construct TreeState
+			var err error
+			var currentNode *state.TreeStateDto
+			var inDBTreeState *state.TreeStateDto
+			currentNode.ConstructByMap(v)                                        // set Name
+			currentNode.ConstructByApp(appDto)                                   // set AppRefID
+			currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS) // set StateType
+
 			// check if state already in database
-			var nowNode state.TreeStateDto
-			nowNode.ConstructByMap(v) // set Name
-			nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
-			isStateExists := hub.TreeStateServiceImpl.IsTreeStateNodeExists(apprefid, &nowNode)
-			if !isStateExists {
-				// create
-				summitnodeid := repository.TREE_STATE_SUMMIT_ID
-				var componenttree *repository.ComponentNode
-				componenttree = repository.ConstructComponentNodeByMap(v)
-				
-				if err := hub.TreeStateServiceImpl.CreateComponentTree(apprefid, summitnodeid, componenttree); err != nil {
-				currentClient.Feedback(message, ERROR_CREATE_STATE_FAILED, err)
+			inDBTreeState, err = hub.TreeStateServiceImpl.GetTreeStateByName(currentNode)
+			if err != nil {
+				currentClient.Feedback(message, ws.ERROR_CREATE_OR_UPDATE_STATE_FAILED, err)
+				return err
+			}
+			if inDBTreeState == nil {
+				// current node did not in database, create
+				summitNodeID := repository.TREE_STATE_SUMMIT_ID
+				var componentTree *repository.ComponentNode
+				componentTree = repository.ConstructComponentNodeByMap(v)
+
+				if err := hub.TreeStateServiceImpl.CreateComponentTree(apprefid, summitNodeID, componentTree); err != nil {
+					currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 					return err
 				}
 			} else {
-				// update
+				// hit, update it
 				// construct update data
-				var nowNode state.TreeStateDto
 				componentNode := repository.ConstructComponentNodeByMap(v)
-				
-
 				serializedComponent, err := componentNode.SerializationForDatabase()
 				if err != nil {
+					currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
 					return err
 				}
-				
-				nowNode.Content = string(serializedComponent)
-				nowNode.ConstructByMap(v) // set Name
-				nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
-				
+				currentNode.ConstructWithContent(serializedComponent)
+				currentNode.ConstructWithID(inDBTreeState.ID) // update by id
+
 				// update
-				if err := hub.TreeStateServiceImpl.UpdateTreeStateNode(apprefid, &nowNode); err != nil {
-				currentClient.Feedback(message, ERROR_UPDATE_STATE_FAILED, err)
+				if _, err := hub.TreeStateServiceImpl.UpdateTreeState(currentNode); err != nil {
+					currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
 					return err
 				}
 			}
 
 		}
+
 	case ws.TARGET_DEPENDENCIES:
 		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
 		fallthrough
+
 	case ws.TARGET_DRAG_SHADOW:
 		stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
 		fallthrough
+
 	case ws.TARGET_DOTTED_LINE_SQUARE:
 		stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
 		for _, v := range message.Payload {
@@ -74,23 +96,23 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 			var kvstatedto state.KVStateDto
 			kvstatedto.ConstructByMap(v)
 			kvstatedto.StateType = stateType
-			
 
 			isStateExists := hub.KVStateServiceImpl.IsKVStateNodeExists(apprefid, &kvstatedto)
 			if !isStateExists {
 				if _, err := hub.KVStateServiceImpl.CreateKVState(kvstatedto); err != nil {
-				currentClient.Feedback(message, ERROR_CREATE_STATE_FAILED, err)
+					currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 					return err
 				}
 			} else {
 				// update
 				if err := hub.KVStateServiceImpl.UpdateKVStateByKey(apprefid, &kvstatedto); err != nil {
-				currentClient.Feedback(message, ERROR_UPDATE_STATE_FAILED, err)
+					currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
 					return err
 				}
 			}
 
 		}
+
 	case ws.TARGET_DISPLAY_NAME:
 		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
 		for _, v := range message.Payload {
@@ -111,20 +133,20 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 				setStateDto.ConstructWithEditVersion()
 				// lookup state
 				if setStateDtoInDB, err = hub.SetStateServiceImpl.GetByValue(setStateDto); err != nil {
-				currentClient.Feedback(message, ERROR_CREATE_STATE_FAILED, err)
+					currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 					return err
 				}
 				if setStateDtoInDB == nil {
 					// create
 					if _, err = hu.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
-					currentClient.Feedback(message, ERROR_CREATE_STATE_FAILED, err)
+						currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 						return err
 					}
 				} else {
 					// update
 					setStateDtoInDB.ConstructByValue(setStateDto.Value)
 					if _, err = hu.SetStateServiceImpl.UpdateSetState(setStateDtoInDB); err != nil {
-					currentClient.Feedback(message, ERROR_UPDATE_STATE_FAILED, err)
+						currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
 						return err
 					}
 				}
@@ -137,7 +159,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 	}
 
 	// feedback currentClient
-	currentClient.Feedback(message, ERROR_CREATE_OR_UPDATE_STATE_OK, nil)
+	currentClient.Feedback(message, ws.ERROR_CREATE_OR_UPDATE_STATE_OK, nil)
 
 	// feedback otherClient
 	hub.BroadcastToOtherClients(message, currentClient)

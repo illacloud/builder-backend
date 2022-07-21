@@ -1,6 +1,21 @@
+// Copyright 2022 The ILLA Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package filter
 
 import (
+	"github.com/illa-family/builder-backend/internal/repository"
 	ws "github.com/illa-family/builder-backend/internal/websocket"
 )
 
@@ -8,6 +23,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
+	apprefid := currentClient.GetAPPID()
 	stateType := repository.STATE_TYPE_INVALIED
 	var appDto app.AppDto
 	appDto.ConstructByID(currentClient.APPID)
@@ -20,7 +36,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 		for _, v := range message.Payload {
 			// update
 			// construct update data
-			var nowNode state.TreeStateDto
+			var currentNode state.TreeStateDto
 			componentNode := repository.ConstructComponentNodeByMap(v)
 
 			serializedComponent, err := componentNode.SerializationForDatabase()
@@ -28,19 +44,19 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 				return err
 			}
 
-			nowNode.Content = string(serializedComponent)
-			nowNode.ConstructByMap(v) // set Name
-			nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
+			currentNode.Content = string(serializedComponent)
+			currentNode.ConstructByMap(v) // set Name
+			currentNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
 
 			// update
-			if err := hub.TreeStateServiceImpl.UpdateTreeStateNode(apprefid, &nowNode); err != nil {
-				currentClient.Feedback(message, ERROR_UPDATE_STATE_FAILED, err)
+			if err := hub.TreeStateServiceImpl.UpdateTreeStateNode(apprefid, &currentNode); err != nil {
+				currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
 				return err
 			}
 		}
 
 		// feedback currentClient
-		currentClient.Feedback(message, ERROR_UPDATE_STATE_OK)
+		currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_OK)
 
 		// feedback otherClient
 		hub.BroadcastToOtherClients(message, currentClient)
@@ -61,7 +77,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 
 			// update
 			if err := hub.KVStateServiceImpl.UpdateKVStateByKey(apprefid, &kvstatedto); err != nil {
-				currentClient.Feedback(message, ERROR_UPDATE_STATE_FAILED, err)
+				currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
 				return err
 			}
 		}
@@ -83,7 +99,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 			afterSetStateDto.ConstructByDisplayNameForUpdate(dnsfu)
 			// update state
 			if err := hub.SetStateServiceImpl.UpdateSetStateByValue(beforeSetStateDto, afterSetStateDto); err != nil {
-				currentClient.Feedback(message, ERROR_CREATE_STATE_FAILED, err)
+				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 				return err
 			}
 		}
@@ -94,7 +110,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 	}
 
 	// feedback currentClient
-	currentClient.Feedback(message, ERROR_UPDATE_STATE_OK, nil)
+	currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_OK, nil)
 
 	// feedback otherClient
 	hub.BroadcastToOtherClients(message, currentClient)

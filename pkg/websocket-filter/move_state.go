@@ -1,8 +1,23 @@
+// Copyright 2022 The ILLA Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package filter
 
 import (
 	"errors"
 
+	"github.com/illa-family/builder-backend/internal/repository"
 	ws "github.com/illa-family/builder-backend/internal/websocket"
 )
 
@@ -10,6 +25,7 @@ func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
+	apprefid := currentClient.GetAPPID()
 	var appDto app.AppDto
 	appDto.ConstructByID(currentClient.APPID)
 	message.RewriteBroadcast()
@@ -20,18 +36,18 @@ func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 	case ws.TARGET_COMPONENTS:
 		apprefid := currentClient.APPID
 		for _, v := range message.Payload {
-			var nowNode state.TreeStateDto
-			nowNode.ConstructByMap(v) // set Name
-			nowNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
+			var currentNode state.TreeStateDto
+			currentNode.ConstructByMap(v) // set Name
+			currentNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
 
-			if err := hub.TreeStateServiceImpl.MoveTreeStateNode(apprefid, &nowNode); err != nil {
-				currentClient.Feedback(message, ERROR_MOVE_STATE_FAILED, err)
+			if err := hub.TreeStateServiceImpl.MoveTreeStateNode(apprefid, &currentNode); err != nil {
+				currentClient.Feedback(message, ws.ERROR_MOVE_STATE_FAILED, err)
 				return err
 			}
 		}
 
 		// feedback currentClient
-		currentClient.Feedback(message, ERROR_MOVE_STATE_OK, nil)
+		currentClient.Feedback(message, ws.ERROR_MOVE_STATE_OK, nil)
 
 		// feedback otherClient
 		hub.BroadcastToOtherClients(message, currentClient)
@@ -42,11 +58,11 @@ func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 		fallthrough
 	case ws.TARGET_DOTTED_LINE_SQUARE:
 		err := errors.New("K-V State do not suppory move method.")
-		currentClient.Feedback(message, ERROR_CAN_NOT_MOVE_KVSTATE, err)
+		currentClient.Feedback(message, ws.ERROR_CAN_NOT_MOVE_KVSTATE, err)
 		return nil
 	case ws.TARGET_DISPLAY_NAME:
 		err := errors.New("Set State do not suppory move method.")
-		currentClient.Feedback(message, ERROR_CAN_NOT_MOVE_SETSTATE, err)
+		currentClient.Feedback(message, ws.ERROR_CAN_NOT_MOVE_SETSTATE, err)
 		return nil
 	case ws.TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast

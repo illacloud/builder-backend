@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/illa-family/builder-backend/internal/repository"
+	ws "github.com/illa-family/builder-backend/internal/websocket"
 
 	"go.uber.org/zap"
 )
@@ -76,8 +77,8 @@ func (appd *AppDto) ConstructByMap(data interface{}) {
 	}
 }
 
-func (appd *AppDto) ConstructByID(id int) {
-	appd.ID = id
+func (appd *AppDto) ConstructByWebSocketClient(c *ws.Client) {
+	appd.ID = c.APPID
 }
 
 type Editor struct {

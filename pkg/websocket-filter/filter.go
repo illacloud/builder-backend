@@ -1,3 +1,17 @@
+// Copyright 2022 The ILLA Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package filter
 
 import (
@@ -29,7 +43,7 @@ func (hub *ws.Hub) Run() {
 			}
 		// handle client on message event
 		case message := <-hub.OnMessage:
-			filter.SignalFilter(hub, message)
+			SignalFilter(hub, message)
 		}
 
 	}
@@ -38,23 +52,23 @@ func (hub *ws.Hub) Run() {
 func SignalFilter(hub *ws.Hub, message *ws.Message) error {
 	switch message.Signal {
 	case SIGNAL_PING:
-		return filter.SignalPing(hub, message)
+		return SignalPing(hub, message)
 	case SIGNAL_ENTER:
-		return filter.SignalEnter(hub, message)
+		return SignalEnter(hub, message)
 	case SIGNAL_LEAVE:
-		return filter.SignalLeave(hub, message)
+		return SignalLeave(hub, message)
 	case SIGNAL_CREATE_STATE:
-		return filter.SignalCreateState(hub, message)
+		return SignalCreateState(hub, message)
 	case SIGNAL_DELETE_STATE:
-		return filter.SignalDeleteState(hub, message)
+		return SignalDeleteState(hub, message)
 	case SIGNAL_UPDATE_STATE:
-		return filter.SignalUpdateState(hub, message)
+		return SignalUpdateState(hub, message)
 	case SIGNAL_MOVE_STATE:
-		return filter.SignalMoveState(hub, message)
+		return SignalMoveState(hub, message)
 	case SIGNAL_CREATE_OR_UPDATE:
-		return filter.SignalCreateOrUpdate(hub, message)
+		return SignalCreateOrUpdate(hub, message)
 	case SIGNAL_ONLY_BROADCAST:
-		return filter.SignalOnlyBroadcast(hub, message)
+		return SignalOnlyBroadcast(hub, message)
 	default:
 		return nil
 

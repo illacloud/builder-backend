@@ -73,6 +73,10 @@ type Client struct {
 	APPID int
 }
 
+func (c *Client) GetAPPID() int {
+	return c.APPID
+}
+
 func NewClient(hub *Hub, conn *websocket, instanceID string, appID int) *Client {
 	return &Client{
 		ID:           uuid.Must(uuid.NewV4(), nil),
