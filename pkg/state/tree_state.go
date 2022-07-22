@@ -99,7 +99,7 @@ func NewTreeStateServiceImpl(logger *zap.SugaredLogger, treestateRepository repo
 	}
 }
 
-func (impl *TreeStateServiceImpl) NewTreeStateByComponentState(apprefid int, cnode *repository.ComponentNode) (*TreeStateDto, error) {
+func (impl *TreeStateServiceImpl) NewTreeStateByComponentState(appDto *app.AppDto, cnode *repository.ComponentNode) (*TreeStateDto, error) {
 	var cnodeserilized []byte
 	var err error
 	if cnodeserilized, err = cnode.SerializationForDatabase(); err != nil {
@@ -108,7 +108,7 @@ func (impl *TreeStateServiceImpl) NewTreeStateByComponentState(apprefid int, cno
 
 	treestatedto := &TreeStateDto{
 		StateType: repository.TREE_STATE_TYPE_COMPONENTS,
-		AppRefID:  apprefid,
+		AppRefID:  app.ID,
 		Version:   repository.APP_EDIT_VERSION,
 		Name:      cnode.DisplayName,
 		Content:   string(cnodeserilized),
@@ -303,14 +303,14 @@ func (impl *TreeStateServiceImpl) GetTreeStateByName(currentNode *TreeStateDto) 
 }
 
 // @todo: add tree ref circle checker.
-func (impl *TreeStateServiceImpl) MoveTreeStateNode(apprefid int, currentNode *TreeStateDto) error {
+func (impl *TreeStateServiceImpl) MoveTreeStateNode(currentNode *TreeStateDto) error {
 	// prepare data
 	oldParentTreeState := &repository.TreeState{}
 	newParentTreeState := &repository.TreeState{}
 	nowTreeState := &repository.TreeState{}
 	var err error
 	// get nowTreeState by name
-	if nowTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, currentNode.StateType, currentNode.Name); err != nil {
+	if nowTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, currentNode.Name); err != nil {
 		return err
 	}
 
@@ -322,7 +322,7 @@ func (impl *TreeStateServiceImpl) MoveTreeStateNode(apprefid int, currentNode *T
 	// get newParentTreeState by name
 	switch currentNode.StateType {
 	case repository.TREE_STATE_TYPE_COMPONENTS:
-		if newParentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, currentNode.StateType, currentNode.ParentNode); err != nil {
+		if newParentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, currentNode.ParentNode); err != nil {
 			return err
 		}
 	default:
@@ -354,11 +354,11 @@ func (impl *TreeStateServiceImpl) MoveTreeStateNode(apprefid int, currentNode *T
 	return nil
 }
 
-func (impl *TreeStateServiceImpl) DeleteTreeStateNodeRecursive(apprefid int, currentNode *TreeStateDto) error {
+func (impl *TreeStateServiceImpl) DeleteTreeStateNodeRecursive(currentNode *TreeStateDto) error {
 	// get nowTreeState by displayName from database
 	var err error
 	nowTreeState := &repository.TreeState{}
-	if nowTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, currentNode.StateType, currentNode.Name); err != nil {
+	if nowTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, currentNode.Name); err != nil {
 		return err
 	}
 	// unlink parentNode
@@ -416,12 +416,16 @@ func (impl *TreeStateServiceImpl) retrieveChildrenNodes(treeState *repository.Tr
 	return nil
 }
 
-func (impl *TreeStateServiceImpl) CreateComponentTree(apprefid int, parentNodeID int, componentNodeTree *repository.ComponentNode) error {
+func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parentNodeID int, componentNodeTree *repository.ComponentNode) error {
+	// summit node
+	if parentNodeID == 0 {
+		parentNodeID = TREE_STATE_SUMMIT_ID
+	}
 
 	// convert ComponentNode to TreeState
 	currentNode := &TreeStateDto{}
 	var err error
-	if currentNode, err = impl.NewTreeStateByComponentState(apprefid, componentNodeTree); err != nil {
+	if currentNode, err = impl.NewTreeStateByComponentState(appDto, componentNodeTree); err != nil {
 		return err
 	}
 
@@ -468,7 +472,7 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(apprefid int, parentNodeID
 	// create currentNode.ChildrenNode
 
 	for _, childrenComponentNode := range componentNodeTree.ChildrenNode {
-		if err := impl.CreateComponentTree(apprefid, currentNode.ID, childrenComponentNode); err != nil {
+		if err := impl.CreateComponentTree(appDto, currentNode.ID, childrenComponentNode); err != nil {
 			return err
 		}
 	}

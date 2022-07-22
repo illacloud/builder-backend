@@ -36,7 +36,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 
 	case ws.TARGET_COMPONENTS:
 		for _, v := range message.Payload {
-			// construct TreeState
+			// construct TreeStateDto
 			var err error
 			var currentNode *state.TreeStateDto
 			var inDBTreeState *state.TreeStateDto
@@ -51,12 +51,11 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 				return err
 			}
 			if inDBTreeState == nil {
-				// current node did not in database, create
-				summitNodeID := repository.TREE_STATE_SUMMIT_ID
+				// current state did not in database, create
 				var componentTree *repository.ComponentNode
 				componentTree = repository.ConstructComponentNodeByMap(v)
 
-				if err := hub.TreeStateServiceImpl.CreateComponentTree(apprefid, summitNodeID, componentTree); err != nil {
+				if err := hub.TreeStateServiceImpl.CreateComponentTree(appDto, 0, componentTree); err != nil {
 					currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 					return err
 				}
@@ -78,7 +77,6 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 					return err
 				}
 			}
-
 		}
 
 	case ws.TARGET_DEPENDENCIES:
@@ -92,20 +90,29 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 	case ws.TARGET_DOTTED_LINE_SQUARE:
 		stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
 		for _, v := range message.Payload {
-			// fill KVStateDto
-			var kvstatedto state.KVStateDto
-			kvstatedto.ConstructByMap(v)
-			kvstatedto.StateType = stateType
+			// construct KVStateDto
+			var err error
+			var kvStateDto *state.KVStateDto
+			var inDBkvStateDto *state.KVStateDto
+			kvStateDto.ConstructByMap(v)
+			kvStateDto.ConstructByApp(appDto)
+			kvStateDto.ConstructWithType(stateType)
 
-			isStateExists := hub.KVStateServiceImpl.IsKVStateNodeExists(apprefid, &kvstatedto)
-			if !isStateExists {
-				if _, err := hub.KVStateServiceImpl.CreateKVState(kvstatedto); err != nil {
+			inDBkvStateDto, err = hub.KVStateServiceImpl.GetKVStatesByKey(kvStateDto)
+			if err != nil {
+				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
+				return err
+			}
+			if inDBkvStateDto == nil {
+				// current state did not in database, create
+				if _, err := hub.KVStateServiceImpl.CreateKVState(kvStateDto); err != nil {
 					currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 					return err
 				}
 			} else {
-				// update
-				if err := hub.KVStateServiceImpl.UpdateKVStateByKey(apprefid, &kvstatedto); err != nil {
+				// hit, update it
+				kvStateDto.ConstructWithID(inDBkvStateDto.ID)
+				if err := hub.KVStateServiceImpl.UpdateKVStateByID(kvStateDto); err != nil {
 					currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
 					return err
 				}
@@ -117,18 +124,18 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
 		for _, v := range message.Payload {
 			// resolve payload
-			dns, err := repository.ConstructDisplayNameStateByPayload(v)
+			displayNameState, err := repository.ResolveDisplayNameStateByPayload(v)
 			if err != nil {
 				return err
 			}
 			// create or update state
-			for _, displayName := range dns {
+			for _, displayName := range displayNameState {
 				// checkout
 				var setStateDto state.SetStateDto
 				var setStateDtoInDB *state.SetStateDto
 				var err error
-				setStateDto.ConstructByValue(displayName)
-				setStateDto.ConstructByType(stateType)
+				setStateDto.ConstructWithValue(displayName)
+				setStateDto.ConstructWithType(stateType)
 				setStateDto.ConstructByApp(appDto)
 				setStateDto.ConstructWithEditVersion()
 				// lookup state
@@ -144,7 +151,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 					}
 				} else {
 					// update
-					setStateDtoInDB.ConstructByValue(setStateDto.Value)
+					setStateDtoInDB.ConstructWithValue(setStateDto.Value)
 					if _, err = hu.SetStateServiceImpl.UpdateSetState(setStateDtoInDB); err != nil {
 						currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
 						return err

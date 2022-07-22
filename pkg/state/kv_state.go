@@ -64,7 +64,11 @@ func (kvsd *KVStateDto) ConstructByMap(data interface{}) {
 	}
 }
 
-func (kvsd *KVStateDto) ConstructByType(stateType int) {
+func (kvsd *KVStateDto) ConstructWithID(id int) {
+	kvsd.ID = id
+}
+
+func (kvsd *KVStateDto) ConstructWithType(stateType int) {
 	kvsd.StateType = stateType
 }
 
@@ -76,11 +80,11 @@ func (kvsd *KVStateDto) ConstructWithEditVersion() {
 	kvsd.Version = repository.APP_EDIT_VERSION
 }
 
-func (kvsd *KVStateDto) ConstructByKey(key string) {
+func (kvsd *KVStateDto) ConstructWithKey(key string) {
 	kvsd.Key = key
 }
 
-func (kvsd *KVStateDto) ConstructByValue(value string) {
+func (kvsd *KVStateDto) ConstructWithValue(value string) {
 	kvsd.Value = value
 }
 
@@ -213,20 +217,20 @@ func (impl *KVStateServiceImpl) GetKVStateByApp(app *app.AppDto, statetype int, 
 	return kvstatesdto, nil
 }
 
-func (impl *KVStateServiceImpl) IsKVStateNodeExists(apprefid int, kvstatedto *KVStateDto) bool {
+func (impl *KVStateServiceImpl) GetKVStatesByKey(app *app.AppDto, kvStateDto *KVStateDto) (*KVStateDto, error) {
 	// get id by key
 	var err error
-	if _, err = impl.kvstateRepository.RetrieveEditVersionByAppAndName(apprefid, kvstatedto.StateType, kvstatedto.Key); err != nil {
+	if inDBKVStateDto, err = impl.kvstateRepository.RetrieveEditVersionByAppAndKey(app.ID, kvStateDto.StateType, kvStateDto.Key); err != nil {
 		// not exists
-		return false
+		return nil, err
 	}
-	return true
+	return inDBKVStateDto, nil
 }
 
 // @todo: should this method be in a transaction?
-func (impl *KVStateServiceImpl) ReleaseKVStateByApp(app *app.AppDto) error {
+func (impl *KVStateServiceImpl) ReleaseKVStateByApp(appDto *app.AppDto) error {
 	// get edit version K-V state from database
-	kvstates, err := impl.kvstateRepository.RetrieveAllTypeKVStatesByApp(app.ID, repository.APP_EDIT_VERSION)
+	kvstates, err := impl.kvstateRepository.RetrieveAllTypeKVStatesByApp(appDto.ID, repository.APP_EDIT_VERSION)
 	if err != nil {
 		return err
 	}
@@ -243,9 +247,9 @@ func (impl *KVStateServiceImpl) ReleaseKVStateByApp(app *app.AppDto) error {
 	return nil
 }
 
-func (impl *KVStateServiceImpl) DeleteKVStateByKey(apprefid int, kvstatedto *KVStateDto) error {
+func (impl *KVStateServiceImpl) DeleteKVStateByKey(kvStateDto *KVStateDto) error {
 	// get kvstate from database by kvstate.Key
-	kvstate, err := impl.kvstateRepository.RetrieveEditVersionByAppAndName(apprefid, kvstatedto.StateType, kvstatedto.Key)
+	kvstate, err := impl.kvstateRepository.RetrieveEditVersionByAppAndKey(kvStateDto.AppRefID, kvStateDto.StateType, kvStateDto.Key)
 	if err != nil {
 		return err
 	}
@@ -258,16 +262,24 @@ func (impl *KVStateServiceImpl) DeleteKVStateByKey(apprefid int, kvstatedto *KVS
 	return nil
 }
 
-func (impl *KVStateServiceImpl) UpdateKVStateByKey(apprefid int, kvstatedto *KVStateDto) error {
+func (impl *KVStateServiceImpl) UpdateKVStateByID(kvStateDto *KVStateDto) error {
+	// update by id
+	if _, err := impl.UpdateKVState(*kvStateDto); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (impl *KVStateServiceImpl) UpdateKVStateByKey(appDto *app.AppDto, kvStateDto *KVStateDto) error {
 	// get kvstate from database by kvstate.Key
-	kvstate, err := impl.kvstateRepository.RetrieveEditVersionByAppAndName(apprefid, kvstatedto.StateType, kvstatedto.Key)
+	kvstate, err := impl.kvstateRepository.RetrieveEditVersionByAppAndKey(appDto.ID, kvStateDto.StateType, kvStateDto.Key)
 	if err != nil {
 		return err
 	}
-	kvstatedto.ID = kvstate.ID
+	kvStateDto.ID = kvstate.ID
 
-	// delete by id
-	if _, err := impl.UpdateKVState(*kvstatedto); err != nil {
+	// update by id
+	if _, err := impl.UpdateKVState(*kvStateDto); err != nil {
 		return err
 	}
 	return nil

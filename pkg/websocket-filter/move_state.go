@@ -25,10 +25,11 @@ func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
-	apprefid := currentClient.GetAPPID()
+	stateType := repository.STATE_TYPE_INVALIED
 	var appDto app.AppDto
-	appDto.ConstructByID(currentClient.APPID)
+	appDto.ConstructByWebSocketClient(currentClient)
 	message.RewriteBroadcast()
+
 	// target switch
 	switch message.Target {
 	case ws.TARGET_NOTNING:
@@ -36,21 +37,16 @@ func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 	case ws.TARGET_COMPONENTS:
 		apprefid := currentClient.APPID
 		for _, v := range message.Payload {
-			var currentNode state.TreeStateDto
+			var currentNode *state.TreeStateDto
 			currentNode.ConstructByMap(v) // set Name
-			currentNode.StateType = repository.TREE_STATE_TYPE_COMPONENTS
+			currentNode.ConstructByApp(appDto)
+			currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS)
 
-			if err := hub.TreeStateServiceImpl.MoveTreeStateNode(apprefid, &currentNode); err != nil {
+			if err := hub.TreeStateServiceImpl.MoveTreeStateNode(currentNode); err != nil {
 				currentClient.Feedback(message, ws.ERROR_MOVE_STATE_FAILED, err)
 				return err
 			}
 		}
-
-		// feedback currentClient
-		currentClient.Feedback(message, ws.ERROR_MOVE_STATE_OK, nil)
-
-		// feedback otherClient
-		hub.BroadcastToOtherClients(message, currentClient)
 
 	case ws.TARGET_DEPENDENCIES:
 		fallthrough
@@ -69,5 +65,12 @@ func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 	case ws.TARGET_RESOURCE:
 		// serve on HTTP API, this signal only for broadcast
 	}
+
+	// feedback currentClient
+	currentClient.Feedback(message, ws.ERROR_MOVE_STATE_OK, nil)
+
+	// feedback otherClient
+	hub.BroadcastToOtherClients(message, currentClient)
+
 	return nil
 }

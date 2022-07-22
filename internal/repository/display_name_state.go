@@ -27,7 +27,7 @@ type DisplayNameStateForUpdate struct {
 	After  string `json:"after"`
 }
 
-func ConstructDisplayNameStateByPayload(data interface{}) (DisplayNameState, error) {
+func ResolveDisplayNameStateByPayload(data interface{}) (DisplayNameState, error) {
 	var udata []interface{}
 	var ok bool
 	var dns DisplayNameState

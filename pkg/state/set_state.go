@@ -50,11 +50,11 @@ type SetStateServiceImpl struct {
 	setStateRepository repository.SetStateRepository
 }
 
-func (setsd *SetStateDto) ConstructByDisplayNameForUpdate(dnsfu *repository.DisplayNameStateForUpdate) {
+func (setsd *SetStateDto) ConstructWithDisplayNameForUpdate(dnsfu *repository.DisplayNameStateForUpdate) {
 	setsd.Value = dnsfu.Before
 }
 
-func (setsd *SetStateDto) ConstructByType(stateType int) {
+func (setsd *SetStateDto) ConstructWithType(stateType int) {
 	setsd.StateType = stateType
 }
 
@@ -66,7 +66,7 @@ func (setsd *SetStateDto) ConstructWithEditVersion() {
 	setsd.Version = repository.APP_EDIT_VERSION
 }
 
-func (setsd *SetStateDto) ConstructByValue(value string) {
+func (setsd *SetStateDto) ConstructWithValue(value string) {
 	setsd.Value = value
 }
 

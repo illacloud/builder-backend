@@ -121,7 +121,7 @@ func (impl *KVStateRepositoryImpl) RetrieveKVStatesByApp(apprefid int, statetype
 	return kvstates, nil
 }
 
-func (impl *KVStateRepositoryImpl) RetrieveEditVersionByAppAndName(apprefid int, statetype int, key string) (*KVState, error) {
+func (impl *KVStateRepositoryImpl) RetrieveEditVersionByAppAndKey(apprefid int, statetype int, key string) (*KVState, error) {
 	var kvstate *KVState
 	if err := impl.db.Where("app_ref_id = ? AND state_type = ? AND version = ? AND key = ?", apprefid, statetype, APP_EDIT_VERSION, key).First(&kvstate).Error; err != nil {
 		return nil, err
