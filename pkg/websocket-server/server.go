@@ -33,7 +33,7 @@ func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, instanc
 	// init dashbroad websocket hub
 
 	// @todo: this CheckOrigin method for debug only, remove it for release.
-	var upgrader = gws.Upgrader{
+	upgrader := gws.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 		CheckOrigin:     func(r *http.Request) bool { return true },

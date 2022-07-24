@@ -26,7 +26,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 	stateType := repository.STATE_TYPE_INVALIED
 	apprefid := currentClient.GetAPPID()
 	var appDto app.AppDto
-	appDto.ConstructByWebSocketClient(currentClient)
+	appDto.ConstructByID(currentClient.APPID)
 	message.RewriteBroadcast()
 
 	// target switch

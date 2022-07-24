@@ -108,7 +108,7 @@ func (impl *TreeStateServiceImpl) NewTreeStateByComponentState(appDto *app.AppDt
 
 	treestatedto := &TreeStateDto{
 		StateType: repository.TREE_STATE_TYPE_COMPONENTS,
-		AppRefID:  app.ID,
+		AppRefID:  appDto.ID,
 		Version:   repository.APP_EDIT_VERSION,
 		Name:      cnode.DisplayName,
 		Content:   string(cnodeserilized),
@@ -291,10 +291,10 @@ func (impl *TreeStateServiceImpl) ReleaseTreeStateByApp(app *app.AppDto) error {
 	return nil
 }
 
-func (impl *TreeStateServiceImpl) GetTreeStateByName(currentNode *TreeStateDto) (*TreeState, error) {
+func (impl *TreeStateServiceImpl) GetTreeStateByName(currentNode *TreeStateDto) (*repository.TreeState, error) {
 	// get id by displayName
 	var err error
-	var treeState *TreeState
+	var treeState *repository.TreeState
 	if treeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, currentNode.Name); err != nil {
 		// not exists
 		return nil, err
@@ -406,7 +406,6 @@ func (impl *TreeStateServiceImpl) retrieveChildrenNodes(treeState *repository.Tr
 		if node, err = impl.treestateRepository.RetrieveByID(id); err != nil {
 			return err
 		}
-		var subChildrenNodes []*repository.TreeState
 		if err := impl.retrieveChildrenNodes(node, childrenNodes); err != nil {
 			return err
 		}
@@ -419,7 +418,7 @@ func (impl *TreeStateServiceImpl) retrieveChildrenNodes(treeState *repository.Tr
 func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parentNodeID int, componentNodeTree *repository.ComponentNode) error {
 	// summit node
 	if parentNodeID == 0 {
-		parentNodeID = TREE_STATE_SUMMIT_ID
+		parentNodeID = repository.TREE_STATE_SUMMIT_ID
 	}
 
 	// convert ComponentNode to TreeState

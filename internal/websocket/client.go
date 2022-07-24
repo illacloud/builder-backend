@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package websocket
+package ws
 
 import (
 	"bytes"
 	"log"
 	"time"
 
-	gws "github.com/gorilla/websocket"
+	"github.com/gorilla/websocket"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -45,7 +45,7 @@ var (
 	charSpace = []byte{' '}
 )
 
-var upgrader = gws.Upgrader{
+var upgrader = websocket.Upgrader{
 	ReadBufferSize:  102400,
 	WriteBufferSize: 102400,
 }
@@ -61,7 +61,7 @@ type Client struct {
 	Hub *Hub
 
 	// The websocket connection.
-	Conn *gws.Conn
+	Conn *websocket.Conn
 
 	// Buffered channel of outbound messages.
 	Send chan []byte
@@ -77,7 +77,7 @@ func (c *Client) GetAPPID() int {
 	return c.APPID
 }
 
-func NewClient(hub *Hub, conn *websocket, instanceID string, appID int) *Client {
+func NewClient(hub *Hub, conn *websocket.Conn, instanceID string, appID int) *Client {
 	return &Client{
 		ID:           uuid.Must(uuid.NewV4(), nil),
 		MappedUserID: 0,
@@ -116,7 +116,7 @@ func (c *Client) readPump() {
 	for {
 		_, message, err := c.Conn.ReadMessage()
 		if err != nil {
-			if gws.IsUnexpectedCloseError(err, gws.CloseGoingAway, gws.CloseAbnormalClosure) {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
 			}
 			break
@@ -148,11 +148,11 @@ func (c *Client) writePump() {
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
-				c.Conn.WriteMessage(gws.CloseMessage, []byte{})
+				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
-			w, err := c.Conn.NextWriter(gws.TextMessage)
+			w, err := c.Conn.NextWriter(websocket.TextMessage)
 			if err != nil {
 				return
 			}
@@ -170,20 +170,20 @@ func (c *Client) writePump() {
 			}
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := c.Conn.WriteMessage(gws.PingMessage, nil); err != nil {
+			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
 		}
 	}
 }
 
-func ping(ws *gws.Conn, done chan struct{}) {
+func ping(ws *websocket.Conn, done chan struct{}) {
 	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
-			if err := ws.WriteControl(gws.PingMessage, []byte{}, time.Now().Add(writeWait)); err != nil {
+			if err := ws.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(writeWait)); err != nil {
 				log.Println("ping:", err)
 			}
 		case <-done:

@@ -190,20 +190,27 @@ func (impl *SetStateServiceImpl) GetSetStateByID(setStateID int) (SetStateDto, e
 }
 
 func (impl *SetStateServiceImpl) GetByValue(setStateDto SetStateDto) (SetStateDto, error) {
-	setState, err := impl.setStateRepository.RetrieveByValue(setStateDto)
+	setState := &repository.SetState{
+		StateType: setStateDto.StateType,
+		AppRefID:  setStateDto.AppRefID,
+		Version:   setStateDto.Version,
+		Value:     setStateDto.Value,
+	}
+
+	setStateRet, err := impl.setStateRepository.RetrieveByValue(setState)
 	if err != nil {
 		return SetStateDto{}, err
 	}
 	ret := SetStateDto{
-		ID:        setState.ID,
-		StateType: setState.StateType,
-		AppRefID:  setState.AppRefID,
-		Version:   setState.Version,
-		Value:     setState.Value,
-		CreatedAt: setState.CreatedAt,
-		CreatedBy: setState.CreatedBy,
-		UpdatedAt: setState.UpdatedAt,
-		UpdatedBy: setState.UpdatedBy,
+		ID:        setStateRet.ID,
+		StateType: setStateRet.StateType,
+		AppRefID:  setStateRet.AppRefID,
+		Version:   setStateRet.Version,
+		Value:     setStateRet.Value,
+		CreatedAt: setStateRet.CreatedAt,
+		CreatedBy: setStateRet.CreatedBy,
+		UpdatedAt: setStateRet.UpdatedAt,
+		UpdatedBy: setStateRet.UpdatedBy,
 	}
 	return ret, nil
 }

@@ -42,6 +42,7 @@ type SetStateRepository interface {
 	RetrieveByID(setStateID int) (*SetState, error)
 	RetrieveSetStatesByVersion(versionID int) ([]*SetState, error)
 	RetrieveSetStatesByValue(key string) ([]*SetState, error)
+	RetrieveByValue(setState *SetState) (*SetState, error)
 	RetrieveSetStatesByApp(apprefid int, statetype int, version int) ([]*SetState, error)
 }
 

@@ -27,7 +27,7 @@ func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
 	var appDto app.AppDto
-	appDto.ConstructByWebSocketClient(currentClient)
+	appDto.ConstructByID(currentClient.APPID)
 	message.RewriteBroadcast()
 
 	// target switch

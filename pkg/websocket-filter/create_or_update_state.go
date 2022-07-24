@@ -26,7 +26,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
 	var appDto app.AppDto
-	appDto.ConstructByWebSocketClient(currentClient)
+	appDto.ConstructByID(currentClient.APPID)
 	message.RewriteBroadcast()
 
 	// target switch
@@ -98,7 +98,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 			kvStateDto.ConstructByApp(appDto)
 			kvStateDto.ConstructWithType(stateType)
 
-			inDBkvStateDto, err = hub.KVStateServiceImpl.GetKVStatesByKey(kvStateDto)
+			inDBkvStateDto, err = hub.KVStateServiceImpl.GetKVStateByKey(kvStateDto)
 			if err != nil {
 				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 				return err

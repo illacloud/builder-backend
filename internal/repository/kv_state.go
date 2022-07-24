@@ -42,7 +42,7 @@ type KVStateRepository interface {
 	RetrieveKVStatesByVersion(versionID int) ([]*KVState, error)
 	RetrieveKVStatesByKey(key string) ([]*KVState, error)
 	RetrieveKVStatesByApp(apprefid int, statetype int, version int) ([]*KVState, error)
-	RetrieveEditVersionByAppAndName(apprefid int, statetype int, key string) (*KVState, error)
+	RetrieveEditVersionByAppAndKey(apprefid int, statetype int, key string) (*KVState, error)
 	RetrieveAllTypeKVStatesByApp(apprefid int, version int) ([]*KVState, error)
 	DeleteAllTypeKVStatesByApp(apprefid int) error
 }
