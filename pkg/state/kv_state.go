@@ -16,6 +16,7 @@ package state
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -57,16 +58,22 @@ type KVStateServiceImpl struct {
 	kvStateRepository repository.KVStateRepository
 }
 
-func (kvsd *KVStateDto) ConstructByMap(data interface{}) {
+func (kvsd *KVStateDto) ConstructByMap(data interface{}) error {
 	udata, ok := data.(map[string]interface{})
 	if !ok {
-		return
+		err := errors.New("KVStateDto ConstructByMap failed, please check your input.")
+		return err
 	}
-	for k, v := range udata {
-		kvsd.Key = k
-		jsonbyte, _ := json.Marshal(v)
-		kvsd.Value = string(jsonbyte)
+	displayName, mapok := udata["displayName"].(string)
+	if !mapok {
+		err := errors.New("KVStateDto ConstructByMap failed, can not find displayName field.")
+		return err
 	}
+	// fild
+	kvsd.Key = displayName
+	jsonbyte, _ := json.Marshal(udata)
+	kvsd.Value = string(jsonbyte)
+	return nil
 }
 
 func (kvsd *KVStateDto) ConstructByKvState(kvState *repository.KVState) {
