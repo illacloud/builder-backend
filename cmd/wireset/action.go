@@ -15,21 +15,21 @@
 package wireset
 
 import (
-    "github.com/illa-family/builder-backend/api/resthandler"
-    "github.com/illa-family/builder-backend/api/router"
-    "github.com/illa-family/builder-backend/internal/repository"
-    "github.com/illa-family/builder-backend/pkg/action"
+	"github.com/illa-family/builder-backend/api/resthandler"
+	"github.com/illa-family/builder-backend/api/router"
+	"github.com/illa-family/builder-backend/internal/repository"
+	"github.com/illa-family/builder-backend/pkg/action"
 
-    "github.com/google/wire"
+	"github.com/google/wire"
 )
 
 var ActionWireSet = wire.NewSet(
-    repository.NewActionRepositoryImpl,
-    wire.Bind(new(repository.ActionRepository), new(*repository.ActionRepositoryImpl)),
-    action.NewActionServiceImpl,
-    wire.Bind(new(action.ActionService), new(*action.ActionServiceImpl)),
-    resthandler.NewActionRestHandlerImpl,
-    wire.Bind(new(resthandler.ActionRestHandler), new(*resthandler.ActionRestHandlerImpl)),
-    router.NewActionRouterImpl,
-    wire.Bind(new(router.ActionRouter), new(*router.ActionRouterImpl)),
+	repository.NewActionRepositoryImpl,
+	wire.Bind(new(repository.ActionRepository), new(*repository.ActionRepositoryImpl)),
+	action.NewActionServiceImpl,
+	wire.Bind(new(action.ActionService), new(*action.ActionServiceImpl)),
+	resthandler.NewActionRestHandlerImpl,
+	wire.Bind(new(resthandler.ActionRestHandler), new(*resthandler.ActionRestHandlerImpl)),
+	router.NewActionRouterImpl,
+	wire.Bind(new(router.ActionRouter), new(*router.ActionRouterImpl)),
 )

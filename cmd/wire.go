@@ -18,29 +18,29 @@
 package main
 
 import (
-    "github.com/illa-family/builder-backend/api/router"
-    "github.com/illa-family/builder-backend/cmd/wireset"
-    "github.com/illa-family/builder-backend/internal/util"
-    "github.com/illa-family/builder-backend/pkg/db"
-    "github.com/illa-family/builder-backend/pkg/smtp"
+	"github.com/illa-family/builder-backend/api/router"
+	"github.com/illa-family/builder-backend/cmd/wireset"
+	"github.com/illa-family/builder-backend/internal/util"
+	"github.com/illa-family/builder-backend/pkg/db"
+	"github.com/illa-family/builder-backend/pkg/smtp"
 
-    "github.com/gin-gonic/gin"
-    "github.com/google/wire"
+	"github.com/gin-gonic/gin"
+	"github.com/google/wire"
 )
 
 func Initialize() (*Server, error) {
-    wire.Build(
-        db.DbWireSet,
-        smtp.SMTPWireSet,
-        util.NewSugardLogger,
-        wireset.ResourceWireSet,
-        wireset.AppWireSet,
-        wireset.ActionWireSet,
-        wireset.UserWireSet,
-        router.NewRESTRouter,
-        GetAppConfig,
-        gin.New,
-        NewServer,
-    )
-    return &Server{}, nil
+	wire.Build(
+		db.DbWireSet,
+		smtp.SMTPWireSet,
+		util.NewSugardLogger,
+		wireset.ResourceWireSet,
+		wireset.AppWireSet,
+		wireset.ActionWireSet,
+		wireset.UserWireSet,
+		router.NewRESTRouter,
+		GetAppConfig,
+		gin.New,
+		NewServer,
+	)
+	return &Server{}, nil
 }

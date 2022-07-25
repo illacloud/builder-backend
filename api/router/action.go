@@ -15,29 +15,29 @@
 package router
 
 import (
-    "github.com/illa-family/builder-backend/api/resthandler"
+	"github.com/illa-family/builder-backend/api/resthandler"
 
-    "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 )
 
 type ActionRouter interface {
-    InitActionRouter(actionRouter *gin.RouterGroup)
+	InitActionRouter(actionRouter *gin.RouterGroup)
 }
 
 type ActionRouterImpl struct {
-    actionRestHandler resthandler.ActionRestHandler
+	actionRestHandler resthandler.ActionRestHandler
 }
 
 func NewActionRouterImpl(actionRestHandler resthandler.ActionRestHandler) *ActionRouterImpl {
-    return &ActionRouterImpl{actionRestHandler: actionRestHandler}
+	return &ActionRouterImpl{actionRestHandler: actionRestHandler}
 }
 
 func (impl ActionRouterImpl) InitActionRouter(actionRouter *gin.RouterGroup) {
-    actionRouter.GET("/actions", impl.actionRestHandler.FindActions)
-    actionRouter.POST("/actions", impl.actionRestHandler.CreateAction)
-    actionRouter.GET("/actions/:action", impl.actionRestHandler.GetAction)
-    actionRouter.PUT("/actions/:action", impl.actionRestHandler.UpdateAction)
-    actionRouter.DELETE("/actions/:action", impl.actionRestHandler.DeleteAction)
-    actionRouter.POST("/actions/preview", impl.actionRestHandler.PreviewAction)
-    actionRouter.POST("/actions/:action/run", impl.actionRestHandler.RunAction)
+	actionRouter.GET("/actions", impl.actionRestHandler.FindActions)
+	actionRouter.POST("/actions", impl.actionRestHandler.CreateAction)
+	actionRouter.GET("/actions/:action", impl.actionRestHandler.GetAction)
+	actionRouter.PUT("/actions/:action", impl.actionRestHandler.UpdateAction)
+	actionRouter.DELETE("/actions/:action", impl.actionRestHandler.DeleteAction)
+	actionRouter.POST("/actions/preview", impl.actionRestHandler.PreviewAction)
+	actionRouter.POST("/actions/:action/run", impl.actionRestHandler.RunAction)
 }

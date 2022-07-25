@@ -15,21 +15,21 @@
 package wireset
 
 import (
-    "github.com/google/wire"
+	"github.com/google/wire"
 
-    "github.com/illa-family/builder-backend/api/resthandler"
-    "github.com/illa-family/builder-backend/api/router"
-    "github.com/illa-family/builder-backend/internal/repository"
-    "github.com/illa-family/builder-backend/pkg/user"
+	"github.com/illa-family/builder-backend/api/resthandler"
+	"github.com/illa-family/builder-backend/api/router"
+	"github.com/illa-family/builder-backend/internal/repository"
+	"github.com/illa-family/builder-backend/pkg/user"
 )
 
 var UserWireSet = wire.NewSet(
-    repository.NewUserRepositoryImpl,
-    wire.Bind(new(repository.UserRepository), new(*repository.UserRepositoryImpl)),
-    user.NewUserServiceImpl,
-    wire.Bind(new(user.UserService), new(*user.UserServiceImpl)),
-    resthandler.NewUserRestHandlerImpl,
-    wire.Bind(new(resthandler.UserRestHandler), new(*resthandler.UserRestHandlerImpl)),
-    router.NewUserRouterImpl,
-    wire.Bind(new(router.UserRouter), new(*router.UserRouterImpl)),
+	repository.NewUserRepositoryImpl,
+	wire.Bind(new(repository.UserRepository), new(*repository.UserRepositoryImpl)),
+	user.NewUserServiceImpl,
+	wire.Bind(new(user.UserService), new(*user.UserServiceImpl)),
+	resthandler.NewUserRestHandlerImpl,
+	wire.Bind(new(resthandler.UserRestHandler), new(*resthandler.UserRestHandlerImpl)),
+	router.NewUserRouterImpl,
+	wire.Bind(new(router.UserRouter), new(*router.UserRouterImpl)),
 )

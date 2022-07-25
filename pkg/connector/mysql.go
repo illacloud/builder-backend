@@ -15,81 +15,81 @@
 package connector
 
 import (
-    "database/sql"
-    "fmt"
+	"database/sql"
+	"fmt"
 
-    _ "github.com/go-sql-driver/mysql"
-    "github.com/mitchellh/mapstructure"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/mitchellh/mapstructure"
 )
 
 type MySQLConnection struct {
-    Kind    string
-    Options MySQLOption
+	Kind    string
+	Options MySQLOption
 }
 
 type MySQLOption struct {
-    Host             string
-    Port             string
-    DatabaseName     string
-    DatabaseUsername string
-    DatabasePassword string
-    SSL              bool
-    SSH              bool
-    AdvancedOptions  AdvancedOptions
+	Host             string
+	Port             string
+	DatabaseName     string
+	DatabaseUsername string
+	DatabasePassword string
+	SSL              bool
+	SSH              bool
+	AdvancedOptions  AdvancedOptions
 }
 
 type AdvancedOptions struct {
-    SSHHost       string
-    SSHPort       string
-    SSHUsername   string
-    SSHPassword   string
-    SSHPrivateKey map[string]interface{}
-    SSHPassphrase string
-    ServerCert    map[string]interface{}
-    ClientKey     map[string]interface{}
-    ClientCert    map[string]interface{}
+	SSHHost       string
+	SSHPort       string
+	SSHUsername   string
+	SSHPassword   string
+	SSHPrivateKey map[string]interface{}
+	SSHPassphrase string
+	ServerCert    map[string]interface{}
+	ClientKey     map[string]interface{}
+	ClientCert    map[string]interface{}
 }
 
 func (m *MySQLConnection) Format(connector *Connector) error {
-    if err := mapstructure.Decode(connector.Options, &m.Options); err != nil {
-        return err
-    }
-    return nil
+	if err := mapstructure.Decode(connector.Options, &m.Options); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (m *MySQLConnection) Connection() (*sql.DB, error) {
-    var db *sql.DB
-    var err error
-    if m.Options.SSH {
-        db, err = m.ConnectionViaSSH()
-    } else if m.Options.SSL {
-        db, err = m.ConnectionViaSSL()
-    } else {
-        db, err = m.ConnectionPure()
-    }
-    return db, err
+	var db *sql.DB
+	var err error
+	if m.Options.SSH {
+		db, err = m.ConnectionViaSSH()
+	} else if m.Options.SSL {
+		db, err = m.ConnectionViaSSL()
+	} else {
+		db, err = m.ConnectionPure()
+	}
+	return db, err
 }
 
 func (m *MySQLConnection) ConnectionViaSSH() (*sql.DB, error) {
-    // TODO: to complete code
-    return nil, nil
+	// TODO: to complete code
+	return nil, nil
 }
 
 func (m *MySQLConnection) ConnectionViaSSL() (*sql.DB, error) {
-    // TODO: to complete code
-    return nil, nil
+	// TODO: to complete code
+	return nil, nil
 }
 
 func (m *MySQLConnection) ConnectionPure() (*sql.DB, error) {
-    dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.Options.DatabaseUsername, m.Options.DatabasePassword,
-        m.Options.Host, m.Options.Port, m.Options.DatabaseName)
-    db, err := sql.Open("mysql", dsn+"?timeout=5s")
-    if err != nil {
-        return nil, err
-    }
-    err = db.Ping()
-    if err != nil {
-        return nil, err
-    }
-    return db, nil
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.Options.DatabaseUsername, m.Options.DatabasePassword,
+		m.Options.Host, m.Options.Port, m.Options.DatabaseName)
+	db, err := sql.Open("mysql", dsn+"?timeout=5s")
+	if err != nil {
+		return nil, err
+	}
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
 }

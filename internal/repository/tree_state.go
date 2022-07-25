@@ -15,145 +15,145 @@
 package repository
 
 import (
-    "time"
+	"time"
 
-    "go.uber.org/zap"
-    "gorm.io/gorm"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 const TREE_STATE_SUMMIT_ID = 0
 
 type TreeState struct {
-    ID                 int       `json:"id" 					gorm:"column:id;type:bigserial"`
-    StateType          int       `json:"state_type" 			gorm:"column:state_type;type:bigint"`
-    ParentNodeRefID    int       `json:"parent_node_ref_id" 	gorm:"column:parent_node_ref_id;type:bigint"`
-    ChildrenNodeRefIDs []int     `json:"children_node_ref_ids"  gorm:"column:children_node_ref_ids;type:bigint"`
-    AppRefID           int       `json:"app_ref_id" 			gorm:"column:app_ref_id;type:bigint"`
-    Version            int       `json:"version" 				gorm:"column:version;type:bigint"`
-    Name               string    `json:"name" 					gorm:"column:name;type:text"`
-    Content            string    `json:"content"    			gorm:"column:content;type:jsonb"`
-    CreatedAt          time.Time `json:"created_at" 			gorm:"column:created_at;type:timestamp"`
-    CreatedBy          int       `json:"created_by" 			gorm:"column:created_by;type:bigint"`
-    UpdatedAt          time.Time `json:"updated_at" 			gorm:"column:updated_at;type:timestamp"`
-    UpdatedBy          int       `json:"updated_by" 			gorm:"column:updated_by;type:bigint"`
+	ID                 int       `json:"id" 					gorm:"column:id;type:bigserial"`
+	StateType          int       `json:"state_type" 			gorm:"column:state_type;type:bigint"`
+	ParentNodeRefID    int       `json:"parent_node_ref_id" 	gorm:"column:parent_node_ref_id;type:bigint"`
+	ChildrenNodeRefIDs []int     `json:"children_node_ref_ids"  gorm:"column:children_node_ref_ids;type:bigint"`
+	AppRefID           int       `json:"app_ref_id" 			gorm:"column:app_ref_id;type:bigint"`
+	Version            int       `json:"version" 				gorm:"column:version;type:bigint"`
+	Name               string    `json:"name" 					gorm:"column:name;type:text"`
+	Content            string    `json:"content"    			gorm:"column:content;type:jsonb"`
+	CreatedAt          time.Time `json:"created_at" 			gorm:"column:created_at;type:timestamp"`
+	CreatedBy          int       `json:"created_by" 			gorm:"column:created_by;type:bigint"`
+	UpdatedAt          time.Time `json:"updated_at" 			gorm:"column:updated_at;type:timestamp"`
+	UpdatedBy          int       `json:"updated_by" 			gorm:"column:updated_by;type:bigint"`
 }
 
 type TreeStateRepository interface {
-    Create(treestate *TreeState) error
-    Delete(treestateID int) error
-    Update(treestate *TreeState) error
-    RetrieveByID(treestateID int) (*TreeState, error)
-    RetrieveTreeStatesByVersion(versionID int) ([]*TreeState, error)
-    RetrieveTreeStatesByName(name string) ([]*TreeState, error)
-    RetrieveTreeStatesByApp(apprefid int, statetype int, version int) ([]*TreeState, error)
-    RetrieveEditVersionByAppAndName(apprefid int, statetype int, name string) (*TreeState, error)
-    RetrieveAllTypeTreeStatesByApp(apprefid int, version int) ([]*TreeState, error)
-    DeleteAllTypeTreeStatesByApp(apprefid int) error
+	Create(treestate *TreeState) error
+	Delete(treestateID int) error
+	Update(treestate *TreeState) error
+	RetrieveByID(treestateID int) (*TreeState, error)
+	RetrieveTreeStatesByVersion(versionID int) ([]*TreeState, error)
+	RetrieveTreeStatesByName(name string) ([]*TreeState, error)
+	RetrieveTreeStatesByApp(apprefid int, statetype int, version int) ([]*TreeState, error)
+	RetrieveEditVersionByAppAndName(apprefid int, statetype int, name string) (*TreeState, error)
+	RetrieveAllTypeTreeStatesByApp(apprefid int, version int) ([]*TreeState, error)
+	DeleteAllTypeTreeStatesByApp(apprefid int) error
 }
 
 type TreeStateRepositoryImpl struct {
-    logger *zap.SugaredLogger
-    db     *gorm.DB
+	logger *zap.SugaredLogger
+	db     *gorm.DB
 }
 
 func (treeState *TreeState) ExportContentAsComponentState() (*ComponentNode, error) {
-    cnode, err := NewComponentNodeFromJSON([]byte(treeState.Content))
-    if err != nil {
-        return nil, err
-    }
-    return cnode, nil
+	cnode, err := NewComponentNodeFromJSON([]byte(treeState.Content))
+	if err != nil {
+		return nil, err
+	}
+	return cnode, nil
 }
 
 func NewTreeStateRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *TreeStateRepositoryImpl {
-    return &TreeStateRepositoryImpl{
-        logger: logger,
-        db:     db,
-    }
+	return &TreeStateRepositoryImpl{
+		logger: logger,
+		db:     db,
+	}
 }
 
 func (impl *TreeStateRepositoryImpl) Create(treestate *TreeState) error {
-    if err := impl.db.Create(treestate).Error; err != nil {
-        return err
-    }
-    return nil
+	if err := impl.db.Create(treestate).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (impl *TreeStateRepositoryImpl) Delete(treestateID int) error {
-    if err := impl.db.Delete(&TreeState{}, treestateID).Error; err != nil {
-        return err
-    }
-    return nil
+	if err := impl.db.Delete(&TreeState{}, treestateID).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (impl *TreeStateRepositoryImpl) Update(treestate *TreeState) error {
-    if err := impl.db.Model(treestate).Updates(TreeState{
-        ID:                 treestate.ID,
-        StateType:          treestate.StateType,
-        ParentNodeRefID:    treestate.ParentNodeRefID,
-        ChildrenNodeRefIDs: treestate.ChildrenNodeRefIDs,
-        AppRefID:           treestate.AppRefID,
-        Version:            treestate.Version,
-        Name:               treestate.Name,
-        Content:            treestate.Content,
-        UpdatedAt:          treestate.UpdatedAt,
-        UpdatedBy:          treestate.UpdatedBy,
-    }).Error; err != nil {
-        return err
-    }
-    return nil
+	if err := impl.db.Model(treestate).Updates(TreeState{
+		ID:                 treestate.ID,
+		StateType:          treestate.StateType,
+		ParentNodeRefID:    treestate.ParentNodeRefID,
+		ChildrenNodeRefIDs: treestate.ChildrenNodeRefIDs,
+		AppRefID:           treestate.AppRefID,
+		Version:            treestate.Version,
+		Name:               treestate.Name,
+		Content:            treestate.Content,
+		UpdatedAt:          treestate.UpdatedAt,
+		UpdatedBy:          treestate.UpdatedBy,
+	}).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (impl *TreeStateRepositoryImpl) RetrieveByID(treestateID int) (*TreeState, error) {
-    treestate := &TreeState{}
-    if err := impl.db.First(treestate, treestateID).Error; err != nil {
-        return &TreeState{}, err
-    }
-    return treestate, nil
+	treestate := &TreeState{}
+	if err := impl.db.First(treestate, treestateID).Error; err != nil {
+		return &TreeState{}, err
+	}
+	return treestate, nil
 }
 
 func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByVersion(version int) ([]*TreeState, error) {
-    var treestates []*TreeState
-    if err := impl.db.Where("version = ?", version).Find(&treestates).Error; err != nil {
-        return nil, err
-    }
-    return treestates, nil
+	var treestates []*TreeState
+	if err := impl.db.Where("version = ?", version).Find(&treestates).Error; err != nil {
+		return nil, err
+	}
+	return treestates, nil
 }
 
 func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByName(name string) ([]*TreeState, error) {
-    var treestates []*TreeState
-    if err := impl.db.Where("name = ?", name).Find(&treestates).Error; err != nil {
-        return nil, err
-    }
-    return treestates, nil
+	var treestates []*TreeState
+	if err := impl.db.Where("name = ?", name).Find(&treestates).Error; err != nil {
+		return nil, err
+	}
+	return treestates, nil
 }
 
 func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByApp(apprefid int, statetype int, version int) ([]*TreeState, error) {
-    var treestates []*TreeState
-    if err := impl.db.Where("app_ref_id = ? AND state_type = ? AND version = ?", apprefid, statetype, version).Find(&treestates).Error; err != nil {
-        return nil, err
-    }
-    return treestates, nil
+	var treestates []*TreeState
+	if err := impl.db.Where("app_ref_id = ? AND state_type = ? AND version = ?", apprefid, statetype, version).Find(&treestates).Error; err != nil {
+		return nil, err
+	}
+	return treestates, nil
 }
 
 func (impl *TreeStateRepositoryImpl) RetrieveEditVersionByAppAndName(apprefid int, statetype int, name string) (*TreeState, error) {
-    var treestate *TreeState
-    if err := impl.db.Where("app_ref_id = ? AND state_type = ? AND version = ? AND name = ?", apprefid, statetype, APP_EDIT_VERSION, name).First(&treestate).Error; err != nil {
-        return nil, err
-    }
-    return treestate, nil
+	var treestate *TreeState
+	if err := impl.db.Where("app_ref_id = ? AND state_type = ? AND version = ? AND name = ?", apprefid, statetype, APP_EDIT_VERSION, name).First(&treestate).Error; err != nil {
+		return nil, err
+	}
+	return treestate, nil
 }
 
 func (impl *TreeStateRepositoryImpl) RetrieveAllTypeTreeStatesByApp(apprefid int, version int) ([]*TreeState, error) {
-    var treestates []*TreeState
-    if err := impl.db.Where("app_ref_id = ? AND version = ?", apprefid, version).Find(&treestates).Error; err != nil {
-        return nil, err
-    }
-    return treestates, nil
+	var treestates []*TreeState
+	if err := impl.db.Where("app_ref_id = ? AND version = ?", apprefid, version).Find(&treestates).Error; err != nil {
+		return nil, err
+	}
+	return treestates, nil
 }
 
 func (impl *TreeStateRepositoryImpl) DeleteAllTypeTreeStatesByApp(apprefid int) error {
-    if err := impl.db.Where("app_ref_id = ?", apprefid).Delete(&TreeState{}).Error; err != nil {
-        return err
-    }
-    return nil
+	if err := impl.db.Where("app_ref_id = ?", apprefid).Delete(&TreeState{}).Error; err != nil {
+		return err
+	}
+	return nil
 }

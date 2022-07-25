@@ -46,23 +46,23 @@ const TARGET_APPS = 6               // only for broadcast
 const TARGET_RESOURCE = 7           // only for broadcast
 
 type Broadcast struct {
-    Type    string `json:"type"`
-    Payload string `json:"payload"`
+	Type    string `json:"type"`
+	Payload string `json:"payload"`
 }
 
 type Protocol struct {
-    Signal    int                    `json:"signal"`
-    Option    int                    `json:"option"`
-    Target    int                    `json:"target"`
-    Payload   map[string]interface{} `json:"payload"`
-    Broadcast *Broadcast             `json:"broadcast"`
+	Signal    int                    `json:"signal"`
+	Option    int                    `json:"option"`
+	Target    int                    `json:"target"`
+	Payload   map[string]interface{} `json:"payload"`
+	Broadcast *Broadcast             `json:"broadcast"`
 }
 
 func NewProtocol(roomID string, rawProtocol []byte) (*Protocol, error) {
-    // init Action
-    var protocol Protocol
-    if err := json.Unmarshal(rawProtocol, &protocol); err != nil {
-        return nil, err
-    }
-    return &protocol, nil
+	// init Action
+	var protocol Protocol
+	if err := json.Unmarshal(rawProtocol, &protocol); err != nil {
+		return nil, err
+	}
+	return &protocol, nil
 }

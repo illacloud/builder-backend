@@ -15,57 +15,57 @@
 package main
 
 import (
-    "os"
+	"os"
 
-    "github.com/illa-family/builder-backend/api/router"
-    "github.com/illa-family/builder-backend/pkg/cors"
+	"github.com/illa-family/builder-backend/api/router"
+	"github.com/illa-family/builder-backend/pkg/cors"
 
-    "github.com/caarlos0/env"
-    "github.com/gin-gonic/gin"
-    "go.uber.org/zap"
+	"github.com/caarlos0/env"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type Config struct {
-    ILLA_SERVER_HOST string `env:"ILLA_SERVER_HOST" envDefault:"0.0.0.0"`
-    ILLA_SERVER_PORT string `env:"ILLA_SERVER_PORT" envDefault:"8999"`
-    ILLA_SERVER_MODE string `env:"ILLA_SERVER_MODE" envDefault:"debug"`
+	ILLA_SERVER_HOST string `env:"ILLA_SERVER_HOST" envDefault:"0.0.0.0"`
+	ILLA_SERVER_PORT string `env:"ILLA_SERVER_PORT" envDefault:"8999"`
+	ILLA_SERVER_MODE string `env:"ILLA_SERVER_MODE" envDefault:"debug"`
 }
 
 type Server struct {
-    engine     *gin.Engine
-    restRouter *router.RESTRouter
-    logger     *zap.SugaredLogger
-    cfg        *Config
+	engine     *gin.Engine
+	restRouter *router.RESTRouter
+	logger     *zap.SugaredLogger
+	cfg        *Config
 }
 
 func GetAppConfig() (*Config, error) {
-    cfg := &Config{}
-    err := env.Parse(cfg)
-    if err != nil {
-        return nil, err
-    }
-    return cfg, nil
+	cfg := &Config{}
+	err := env.Parse(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return cfg, nil
 }
 
 func NewServer(cfg *Config, engine *gin.Engine, restRouter *router.RESTRouter, logger *zap.SugaredLogger) *Server {
-    return &Server{
-        engine:     engine,
-        cfg:        cfg,
-        restRouter: restRouter,
-        logger:     logger,
-    }
+	return &Server{
+		engine:     engine,
+		cfg:        cfg,
+		restRouter: restRouter,
+		logger:     logger,
+	}
 }
 
 func (server *Server) Start() {
-    server.logger.Infow("Starting server")
+	server.logger.Infow("Starting server")
 
-    gin.SetMode(server.cfg.ILLA_SERVER_MODE)
-    server.engine.Use(cors.Cors())
-    server.restRouter.InitRouter(server.engine.Group("/api"))
+	gin.SetMode(server.cfg.ILLA_SERVER_MODE)
+	server.engine.Use(cors.Cors())
+	server.restRouter.InitRouter(server.engine.Group("/api"))
 
-    err := server.engine.Run(server.cfg.ILLA_SERVER_HOST + ":" + server.cfg.ILLA_SERVER_PORT)
-    if err != nil {
-        server.logger.Errorw("Error in startup", "err", err)
-        os.Exit(2)
-    }
+	err := server.engine.Run(server.cfg.ILLA_SERVER_HOST + ":" + server.cfg.ILLA_SERVER_PORT)
+	if err != nil {
+		server.logger.Errorw("Error in startup", "err", err)
+		os.Exit(2)
+	}
 }

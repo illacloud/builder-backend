@@ -15,87 +15,87 @@
 package repository
 
 import (
-    "encoding/json"
-    "testing"
+	"encoding/json"
+	"testing"
 
-    "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBuildComponentTree(t *testing.T) {
-    serilizationResult := `{"displayName":"cnode1","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode2","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode4","parentNode":"cnode2","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode5","parentNode":"cnode4","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null},{"displayName":"cnode3","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
-    // init component node
-    cnode1 := ComponentNode{
-        DisplayName: "cnode1",
-    }
-    cnode1str, _ := json.Marshal(cnode1)
-    cnode2 := ComponentNode{
-        DisplayName: "cnode2",
-    }
-    cnode2str, _ := json.Marshal(cnode2)
-    cnode3 := ComponentNode{
-        DisplayName: "cnode3",
-    }
-    cnode3str, _ := json.Marshal(cnode3)
-    cnode4 := ComponentNode{
-        DisplayName: "cnode4",
-    }
-    cnode4str, _ := json.Marshal(cnode4)
-    cnode5 := ComponentNode{
-        DisplayName: "cnode5",
-    }
-    cnode5str, _ := json.Marshal(cnode5)
+	serilizationResult := `{"displayName":"cnode1","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode2","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode4","parentNode":"cnode2","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode5","parentNode":"cnode4","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null},{"displayName":"cnode3","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
+	// init component node
+	cnode1 := ComponentNode{
+		DisplayName: "cnode1",
+	}
+	cnode1str, _ := json.Marshal(cnode1)
+	cnode2 := ComponentNode{
+		DisplayName: "cnode2",
+	}
+	cnode2str, _ := json.Marshal(cnode2)
+	cnode3 := ComponentNode{
+		DisplayName: "cnode3",
+	}
+	cnode3str, _ := json.Marshal(cnode3)
+	cnode4 := ComponentNode{
+		DisplayName: "cnode4",
+	}
+	cnode4str, _ := json.Marshal(cnode4)
+	cnode5 := ComponentNode{
+		DisplayName: "cnode5",
+	}
+	cnode5str, _ := json.Marshal(cnode5)
 
-    // init tree state data
-    treeState1 := TreeState{
-        ID:                 1,
-        StateType:          TREE_STATE_TYPE_COMPONENTS,
-        ParentNodeRefID:    0,
-        ChildrenNodeRefIDs: []int{2, 3},
-        Content:            string(cnode1str),
-    }
-    treeState2 := TreeState{
-        ID:                 2,
-        StateType:          TREE_STATE_TYPE_COMPONENTS,
-        ParentNodeRefID:    0,
-        ChildrenNodeRefIDs: []int{4},
-        Content:            string(cnode2str),
-    }
-    treeState3 := TreeState{
-        ID:                 3,
-        StateType:          TREE_STATE_TYPE_COMPONENTS,
-        ParentNodeRefID:    0,
-        ChildrenNodeRefIDs: []int{},
-        Content:            string(cnode3str),
-    }
-    treeState4 := TreeState{
-        ID:                 4,
-        StateType:          TREE_STATE_TYPE_COMPONENTS,
-        ParentNodeRefID:    0,
-        ChildrenNodeRefIDs: []int{5},
-        Content:            string(cnode4str),
-    }
-    treeState5 := TreeState{
-        ID:                 5,
-        StateType:          TREE_STATE_TYPE_COMPONENTS,
-        ParentNodeRefID:    0,
-        ChildrenNodeRefIDs: []int{},
-        Content:            string(cnode5str),
-    }
+	// init tree state data
+	treeState1 := TreeState{
+		ID:                 1,
+		StateType:          TREE_STATE_TYPE_COMPONENTS,
+		ParentNodeRefID:    0,
+		ChildrenNodeRefIDs: []int{2, 3},
+		Content:            string(cnode1str),
+	}
+	treeState2 := TreeState{
+		ID:                 2,
+		StateType:          TREE_STATE_TYPE_COMPONENTS,
+		ParentNodeRefID:    0,
+		ChildrenNodeRefIDs: []int{4},
+		Content:            string(cnode2str),
+	}
+	treeState3 := TreeState{
+		ID:                 3,
+		StateType:          TREE_STATE_TYPE_COMPONENTS,
+		ParentNodeRefID:    0,
+		ChildrenNodeRefIDs: []int{},
+		Content:            string(cnode3str),
+	}
+	treeState4 := TreeState{
+		ID:                 4,
+		StateType:          TREE_STATE_TYPE_COMPONENTS,
+		ParentNodeRefID:    0,
+		ChildrenNodeRefIDs: []int{5},
+		Content:            string(cnode4str),
+	}
+	treeState5 := TreeState{
+		ID:                 5,
+		StateType:          TREE_STATE_TYPE_COMPONENTS,
+		ParentNodeRefID:    0,
+		ChildrenNodeRefIDs: []int{},
+		Content:            string(cnode5str),
+	}
 
-    treeStateMap := map[int]*TreeState{1: &treeState1, 2: &treeState2, 3: &treeState3, 4: &treeState4, 5: &treeState5}
-    cnodefin := &ComponentNode{}
-    var err error
-    cnodefin, err = BuildComponentTree(&treeState1, treeStateMap, nil)
-    assert.Nil(t, err)
-    // export
-    var b []byte
-    b, err = cnodefin.Serialization()
-    assert.Nil(t, err)
-    assert.Equal(t, serilizationResult, string(b), "the serlization result should be equal")
+	treeStateMap := map[int]*TreeState{1: &treeState1, 2: &treeState2, 3: &treeState3, 4: &treeState4, 5: &treeState5}
+	cnodefin := &ComponentNode{}
+	var err error
+	cnodefin, err = BuildComponentTree(&treeState1, treeStateMap, nil)
+	assert.Nil(t, err)
+	// export
+	var b []byte
+	b, err = cnodefin.Serialization()
+	assert.Nil(t, err)
+	assert.Equal(t, serilizationResult, string(b), "the serlization result should be equal")
 }
 
 func TestNewComponentNodeFromJSON(t *testing.T) {
-    serilizationData := `{"displayName":"cnode1","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode2","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode4","parentNode":"cnode2","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode5","parentNode":"cnode4","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null},{"displayName":"cnode3","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
-    _, err := NewComponentNodeFromJSON([]byte(serilizationData))
-    assert.Nil(t, err)
+	serilizationData := `{"displayName":"cnode1","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode2","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode4","parentNode":"cnode2","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode5","parentNode":"cnode4","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null},{"displayName":"cnode3","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
+	_, err := NewComponentNodeFromJSON([]byte(serilizationData))
+	assert.Nil(t, err)
 }

@@ -17,10 +17,10 @@ package main
 import "log"
 
 func main() {
-    server, err := Initialize()
-    if err != nil {
-        log.Panic(err)
-    }
-    // TODO: gracefulStop
-    server.Start()
+	server, err := Initialize()
+	if err != nil {
+		log.Panic(err)
+	}
+	// TODO: gracefulStop
+	server.Start()
 }
