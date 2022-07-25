@@ -29,6 +29,7 @@ type KVStateService interface {
 	DeleteKVState(kvstateID int) error
 	UpdateKVState(kvstate KVStateDto) (KVStateDto, error)
 	GetKVStateByID(kvstateID int) (KVStateDto, error)
+	GetKVStateByKey(kvStateDto *KVStateDto) (*KVStateDto, error)
 	GetAllTypeKVStateByApp(app *app.AppDto, version int) ([]*KVStateDto, error)
 	GetKVStateByApp(app *app.AppDto, statetype int, version int) ([]*KVStateDto, error)
 	ReleaseKVStateByApp(app *app.AppDto) error
@@ -108,11 +109,11 @@ func NewKVStateServiceImpl(logger *zap.SugaredLogger,
 	}
 }
 
-func (impl *KVStateServiceImpl) CreateKVState(kvstate KVStateDto) (KVStateDto, error) {
+func (impl *KVStateServiceImpl) CreateKVState(kvstate *KVStateDto) (*KVStateDto, error) {
 	// TODO: validate the version
 	validate := validator.New()
 	if err := validate.Struct(kvstate); err != nil {
-		return KVStateDto{}, err
+		return nil, err
 	}
 	kvstate.CreatedAt = time.Now().UTC()
 	kvstate.UpdatedAt = time.Now().UTC()
@@ -128,7 +129,7 @@ func (impl *KVStateServiceImpl) CreateKVState(kvstate KVStateDto) (KVStateDto, e
 		UpdatedAt: kvstate.UpdatedAt,
 		UpdatedBy: kvstate.UpdatedBy,
 	}); err != nil {
-		return KVStateDto{}, err
+		return nil, err
 	}
 	return kvstate, nil
 }
@@ -229,11 +230,11 @@ func (impl *KVStateServiceImpl) GetKVStateByApp(app *app.AppDto, statetype int, 
 	return kvstatesdto, nil
 }
 
-func (impl *KVStateServiceImpl) GetKVStatesByKey(app *app.AppDto, kvStateDto *KVStateDto) (*KVStateDto, error) {
+func (impl *KVStateServiceImpl) GetKVStateByKey(kvStateDto *KVStateDto) (*KVStateDto, error) {
 	// get id by key
 	var err error
 	var inDBKVState *repository.KVState
-	if inDBKVState, err = impl.kvStateRepository.RetrieveEditVersionByAppAndKey(app.ID, kvStateDto.StateType, kvStateDto.Key); err != nil {
+	if inDBKVState, err = impl.kvStateRepository.RetrieveEditVersionByAppAndKey(kvStateDto.AppRefID, kvStateDto.StateType, kvStateDto.Key); err != nil {
 		// not exists
 		return nil, err
 	}
@@ -285,9 +286,9 @@ func (impl *KVStateServiceImpl) UpdateKVStateByID(kvStateDto *KVStateDto) error 
 	return nil
 }
 
-func (impl *KVStateServiceImpl) UpdateKVStateByKey(appDto *app.AppDto, kvStateDto *KVStateDto) error {
+func (impl *KVStateServiceImpl) UpdateKVStateByKey(kvStateDto *KVStateDto) error {
 	// get kvstate from database by kvstate.Key
-	kvstate, err := impl.kvStateRepository.RetrieveEditVersionByAppAndKey(appDto.ID, kvStateDto.StateType, kvStateDto.Key)
+	kvstate, err := impl.kvStateRepository.RetrieveEditVersionByAppAndKey(kvStateDto.AppRefID, kvStateDto.StateType, kvStateDto.Key)
 	if err != nil {
 		return err
 	}

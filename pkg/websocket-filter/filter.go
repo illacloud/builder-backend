@@ -19,7 +19,7 @@ import (
 )
 
 // @todo: the client should check userID, make sure do not broadcast to self.
-func (hub *ws.Hub) Run() {
+func Run(hub *ws.Hub) {
 	for {
 		select {
 		// handle register event
@@ -51,24 +51,24 @@ func (hub *ws.Hub) Run() {
 
 func SignalFilter(hub *ws.Hub, message *ws.Message) error {
 	switch message.Signal {
-	case SIGNAL_PING:
+	case ws.SIGNAL_PING:
 		return SignalPing(hub, message)
-	case SIGNAL_ENTER:
+	case ws.SIGNAL_ENTER:
 		return SignalEnter(hub, message)
-	case SIGNAL_LEAVE:
+	case ws.SIGNAL_LEAVE:
 		return SignalLeave(hub, message)
-	case SIGNAL_CREATE_STATE:
+	case ws.SIGNAL_CREATE_STATE:
 		return SignalCreateState(hub, message)
-	case SIGNAL_DELETE_STATE:
+	case ws.SIGNAL_DELETE_STATE:
 		return SignalDeleteState(hub, message)
-	case SIGNAL_UPDATE_STATE:
+	case ws.SIGNAL_UPDATE_STATE:
 		return SignalUpdateState(hub, message)
-	case SIGNAL_MOVE_STATE:
+	case ws.SIGNAL_MOVE_STATE:
 		return SignalMoveState(hub, message)
-	case SIGNAL_CREATE_OR_UPDATE:
-		return SignalCreateOrUpdate(hub, message)
-	case SIGNAL_ONLY_BROADCAST:
-		return SignalOnlyBroadcast(hub, message)
+	case ws.SIGNAL_CREATE_OR_UPDATE:
+		return SignalCreateOrUpdateState(hub, message)
+	case ws.SIGNAL_ONLY_BROADCAST:
+		return SignalBroadcastOnly(hub, message)
 	default:
 		return nil
 
@@ -78,9 +78,4 @@ func SignalFilter(hub *ws.Hub, message *ws.Message) error {
 
 func OptionFilter(hub *ws.Hub, client *ws.Client, message *ws.Message) error {
 	return nil
-}
-
-func KickClient(hub *ws.Hub, client *ws.Client) {
-	close(client.Send)
-	delete(hub.Clients, client.ID)
 }

@@ -95,3 +95,8 @@ func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client)
 		client.Send <- feedbyte
 	}
 }
+
+func KickClient(hub *Hub, client *Client) {
+	close(client.Send)
+	delete(hub.Clients, client.ID)
+}

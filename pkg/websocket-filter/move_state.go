@@ -19,15 +19,16 @@ import (
 
 	"github.com/illa-family/builder-backend/internal/repository"
 	ws "github.com/illa-family/builder-backend/internal/websocket"
+	"github.com/illa-family/builder-backend/pkg/app"
+	"github.com/illa-family/builder-backend/pkg/state"
 )
 
 func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
-	stateType := repository.STATE_TYPE_INVALIED
-	var appDto app.AppDto
-	appDto.ConstructByID(currentClient.APPID)
+	var appDto *app.AppDto
+	appDto.ConstructWithID(currentClient.APPID)
 	message.RewriteBroadcast()
 
 	// target switch
@@ -35,7 +36,6 @@ func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 	case ws.TARGET_NOTNING:
 		return nil
 	case ws.TARGET_COMPONENTS:
-		apprefid := currentClient.APPID
 		for _, v := range message.Payload {
 			var currentNode *state.TreeStateDto
 			currentNode.ConstructByMap(v) // set Name
@@ -53,11 +53,11 @@ func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 	case ws.TARGET_DRAG_SHADOW:
 		fallthrough
 	case ws.TARGET_DOTTED_LINE_SQUARE:
-		err := errors.New("K-V State do not suppory move method.")
+		err := errors.New("K-V State do not support move method.")
 		currentClient.Feedback(message, ws.ERROR_CAN_NOT_MOVE_KVSTATE, err)
 		return nil
 	case ws.TARGET_DISPLAY_NAME:
-		err := errors.New("Set State do not suppory move method.")
+		err := errors.New("Set State do not support move method.")
 		currentClient.Feedback(message, ws.ERROR_CAN_NOT_MOVE_SETSTATE, err)
 		return nil
 	case ws.TARGET_APPS:

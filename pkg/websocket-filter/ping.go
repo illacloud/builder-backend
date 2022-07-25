@@ -19,6 +19,7 @@ import (
 )
 
 func SignalPing(hub *ws.Hub, message *ws.Message) error {
+	currentClient := hub.Clients[message.ClientID]
 	currentClient.Feedback(message, ws.ERROR_CODE_PONG, nil)
 	return nil
 }

@@ -17,6 +17,8 @@ package filter
 import (
 	"github.com/illa-family/builder-backend/internal/repository"
 	ws "github.com/illa-family/builder-backend/internal/websocket"
+	"github.com/illa-family/builder-backend/pkg/app"
+	"github.com/illa-family/builder-backend/pkg/state"
 )
 
 func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
@@ -24,8 +26,8 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
-	var appDto app.AppDto
-	appDto.ConstructByID(currentClient.APPID)
+	var appDto *app.AppDto
+	appDto.ConstructWithID(currentClient.APPID)
 	message.RewriteBroadcast()
 
 	// target switch
@@ -36,7 +38,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 		for _, v := range message.Payload {
 			// update
 			// construct update data
-			var currentNode state.TreeStateDto
+			var currentNode *state.TreeStateDto
 			componentNode := repository.ConstructComponentNodeByMap(v)
 			serializedComponent, err := componentNode.SerializationForDatabase()
 			if err != nil {
@@ -48,7 +50,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 			currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS)
 
 			// update
-			if err := hub.TreeStateServiceImpl.UpdateTreeStateNode(currentNode); err != nil {
+			if _, err := hub.TreeStateServiceImpl.UpdateTreeState(currentNode); err != nil {
 				currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
 				return err
 			}
@@ -90,11 +92,11 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 			// init state dto
 			var beforeSetStateDto *state.SetStateDto
 			var afterSetStateDto *state.SetStateDto
-			beforeSetStateDto.ConstructByDisplayNameForUpdate(dnsfu)
+			beforeSetStateDto.ConstructWithDisplayNameForUpdate(dnsfu)
 			beforeSetStateDto.ConstructWithType(stateType)
 			beforeSetStateDto.ConstructByApp(appDto)
-			beforeSetStateDto.ConstructWithEditVersion(repository.APP_EDIT_VERSION)
-			afterSetStateDto.ConstructByDisplayNameForUpdate(dnsfu)
+			beforeSetStateDto.ConstructWithEditVersion()
+			afterSetStateDto.ConstructWithDisplayNameForUpdate(dnsfu)
 			// update state
 			if err := hub.SetStateServiceImpl.UpdateSetStateByValue(beforeSetStateDto, afterSetStateDto); err != nil {
 				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)

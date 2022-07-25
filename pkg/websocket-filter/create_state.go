@@ -16,6 +16,8 @@ package filter
 
 import (
 	"github.com/illa-family/builder-backend/internal/repository"
+	"github.com/illa-family/builder-backend/pkg/app"
+	"github.com/illa-family/builder-backend/pkg/state"
 
 	ws "github.com/illa-family/builder-backend/internal/websocket"
 )
@@ -24,9 +26,8 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
-	apprefid := currentClient.GetAPPID()
-	var appDto app.AppDto
-	appDto.ConstructByID(currentClient.APPID)
+	var appDto *app.AppDto
+	appDto.ConstructWithID(currentClient.APPID)
 	message.RewriteBroadcast()
 
 	// target switch
@@ -38,7 +39,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 		for _, v := range message.Payload {
 			componentTree := repository.ConstructComponentNodeByMap(v)
 			if err := hub.TreeStateServiceImpl.CreateComponentTree(appDto, 0, componentTree); err != nil {
-				currentClient.Feedback(message, ws.ws.ERROR_CREATE_STATE_FAILED, err)
+				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 				return err
 			}
 		}
@@ -61,7 +62,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 			kvStateDto.ConstructWithType(stateType)
 
 			if _, err := hub.KVStateServiceImpl.CreateKVState(kvStateDto); err != nil {
-				currentClient.Feedback(message, ws.ws.ERROR_CREATE_STATE_FAILED, err)
+				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 				return err
 			}
 		}
@@ -71,18 +72,18 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 		// create set state
 		for _, v := range message.Payload {
 			// resolve payload
-			displayNameState, err := repository.ConstructDisplayNameStateByPayload(v)
+			displayNameState, err := repository.ResolveDisplayNameStateByPayload(v)
 			if err != nil {
 				return err
 			}
 			// save state
 			for _, displayName := range displayNameState {
-				var setStateDto state.SetStateDto
-				setStateDto.ConstructByValue(displayName)
+				var setStateDto *state.SetStateDto
+				setStateDto.ConstructWithValue(displayName)
 				setStateDto.ConstructWithType(stateType)
 				// create state
 				if _, err := hub.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
-					currentClient.Feedback(message, ws.ws.ERROR_CREATE_STATE_FAILED, err)
+					currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 					return err
 				}
 			}
@@ -95,7 +96,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 	}
 
 	// feedback currentClient
-	currentClient.Feedback(message, ws.ws.ERROR_CREATE_STATE_OK, nil)
+	currentClient.Feedback(message, ws.ERROR_CREATE_STATE_OK, nil)
 
 	// feedback otherClient
 	hub.BroadcastToOtherClients(message, currentClient)

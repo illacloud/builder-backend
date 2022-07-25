@@ -72,6 +72,27 @@ func (tsd *TreeStateDto) ConstructByMap(data interface{}) {
 	}
 }
 
+func (tsd *TreeStateDto) ConstructByTreeState(treeState *repository.TreeState) error {
+	cids, err := treeState.ExportChildrenNodeRefIDs()
+	if err != nil {
+		return err
+	}
+	tsd.ID = treeState.ID
+	tsd.StateType = treeState.StateType
+	tsd.ParentNodeRefID = treeState.ParentNodeRefID
+	tsd.ChildrenNodeRefIDs = cids
+	tsd.AppRefID = treeState.AppRefID
+	tsd.Version = treeState.Version
+	tsd.Name = treeState.Name
+	tsd.ParentNode = ""
+	tsd.Content = treeState.Content
+	tsd.CreatedAt = treeState.CreatedAt
+	tsd.CreatedBy = treeState.CreatedBy
+	tsd.UpdatedBy = treeState.UpdatedBy
+	tsd.UpdatedAt = treeState.UpdatedAt
+	return nil
+}
+
 func (tsd *TreeStateDto) ConstructWithID(id int) {
 	tsd.ID = id
 }
@@ -157,15 +178,15 @@ func (impl *TreeStateServiceImpl) DeleteTreeState(treestateID int) error {
 	return nil
 }
 
-func (impl *TreeStateServiceImpl) UpdateTreeState(treestate TreeStateDto) (TreeStateDto, error) {
+func (impl *TreeStateServiceImpl) UpdateTreeState(treestate *TreeStateDto) (*TreeStateDto, error) {
 	validate := validator.New()
 	if err := validate.Struct(treestate); err != nil {
-		return TreeStateDto{}, err
+		return nil, err
 	}
 	treestate.UpdatedAt = time.Now().UTC()
 	treestateIDsJSON, err := json.Marshal(treestate.ChildrenNodeRefIDs)
 	if err != nil {
-		return TreeStateDto{}, err
+		return nil, err
 	}
 
 	treeStateRepo := &repository.TreeState{
@@ -182,7 +203,7 @@ func (impl *TreeStateServiceImpl) UpdateTreeState(treestate TreeStateDto) (TreeS
 	}
 
 	if err := impl.treestateRepository.Update(treeStateRepo); err != nil {
-		return TreeStateDto{}, err
+		return nil, err
 	}
 	return treestate, nil
 }
@@ -291,15 +312,17 @@ func (impl *TreeStateServiceImpl) ReleaseTreeStateByApp(app *app.AppDto) error {
 	return nil
 }
 
-func (impl *TreeStateServiceImpl) GetTreeStateByName(currentNode *TreeStateDto) (*repository.TreeState, error) {
+func (impl *TreeStateServiceImpl) GetTreeStateByName(currentNode *TreeStateDto) (*TreeStateDto, error) {
 	// get id by displayName
 	var err error
-	var treeState *repository.TreeState
-	if treeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, currentNode.Name); err != nil {
+	var inDBTreeState *repository.TreeState
+	if inDBTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, currentNode.Name); err != nil {
 		// not exists
 		return nil, err
 	}
-	return treeState, nil
+	var inDBTreeStateDto *TreeStateDto
+	inDBTreeStateDto.ConstructByTreeState(inDBTreeState)
+	return inDBTreeStateDto, nil
 }
 
 // @todo: add tree ref circle checker.

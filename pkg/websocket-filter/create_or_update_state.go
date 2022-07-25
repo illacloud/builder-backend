@@ -16,6 +16,8 @@ package filter
 
 import (
 	"github.com/illa-family/builder-backend/internal/repository"
+	"github.com/illa-family/builder-backend/pkg/app"
+	"github.com/illa-family/builder-backend/pkg/state"
 
 	ws "github.com/illa-family/builder-backend/internal/websocket"
 )
@@ -25,8 +27,8 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
-	var appDto app.AppDto
-	appDto.ConstructByID(currentClient.APPID)
+	var appDto *app.AppDto
+	appDto.ConstructWithID(currentClient.APPID)
 	message.RewriteBroadcast()
 
 	// target switch
@@ -131,7 +133,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 			// create or update state
 			for _, displayName := range displayNameState {
 				// checkout
-				var setStateDto state.SetStateDto
+				var setStateDto *state.SetStateDto
 				var setStateDtoInDB *state.SetStateDto
 				var err error
 				setStateDto.ConstructWithValue(displayName)
@@ -145,14 +147,14 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 				}
 				if setStateDtoInDB == nil {
 					// create
-					if _, err = hu.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
+					if _, err = hub.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
 						currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 						return err
 					}
 				} else {
 					// update
 					setStateDtoInDB.ConstructWithValue(setStateDto.Value)
-					if _, err = hu.SetStateServiceImpl.UpdateSetState(setStateDtoInDB); err != nil {
+					if _, err = hub.SetStateServiceImpl.UpdateSetState(setStateDtoInDB); err != nil {
 						currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
 						return err
 					}

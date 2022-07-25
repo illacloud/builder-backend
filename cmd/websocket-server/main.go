@@ -29,9 +29,10 @@ import (
 	"github.com/illa-family/builder-backend/pkg/db"
 	"github.com/illa-family/builder-backend/pkg/resource"
 	"github.com/illa-family/builder-backend/pkg/state"
+	filter "github.com/illa-family/builder-backend/pkg/websocket-filter"
 
+	gws "github.com/gorilla/websocket"
 	ws "github.com/illa-family/builder-backend/internal/websocket"
-	ws_server "github.com/illa-family/builder-backend/pkg/websocket-server"
 )
 
 // websocket client hub
@@ -69,13 +70,62 @@ func initEnv() error {
 	return nil
 }
 
+var dashboardHub *ws.Hub
+var appHub *ws.Hub
+
+func InitHub(asi *app.AppServiceImpl, rsi *resource.ResourceServiceImpl, tssi *state.TreeStateServiceImpl, kvssi *state.KVStateServiceImpl, sssi *state.SetStateServiceImpl) {
+	dashboardHub = ws.NewHub()
+	dashboardHub.SetAppServiceImpl(asi)
+	go filter.Run(dashboardHub)
+
+	// init APP websocket hub
+	appHub = ws.NewHub()
+	appHub.SetResourceServiceImpl(rsi)
+	appHub.SetTreeStateServiceImpl(tssi)
+	appHub.SetKVStateServiceImpl(kvssi)
+	appHub.SetSetStateServiceImpl(sssi)
+	go filter.Run(appHub)
+}
+
+// ServeWebsocket handle websocket requests from the peer.
+func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, instanceID string, appID int) {
+	// init dashbroad websocket hub
+
+	// @todo: this CheckOrigin method for debug only, remove it for release.
+	upgrader := gws.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin:     func(r *http.Request) bool { return true },
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("Not a web socket connection: %s \n", err)
+		return
+	}
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	client := ws.NewClient(hub, conn, instanceID, appID)
+	client.Hub.Register <- client
+
+	// Allow collection of memory referenced by the caller by doing all work in
+	// new goroutines.
+	go client.WritePump()
+	go client.ReadPump()
+}
+
 func main() {
 	addr := flag.String("addr", "127.0.0.1:8080", "websocket server serve address")
 	flag.Parse()
 
 	// init
 	initEnv()
-	ws_server.InitHub(asi, rsi, tssi, kvssi, sssi)
+	InitHub(asi, rsi, tssi, kvssi, sssi)
 
 	// listen and serve
 	r := mux.NewRouter()
@@ -87,7 +137,7 @@ func main() {
 	r.HandleFunc("/room/{instanceID}/dashboard", func(w http.ResponseWriter, r *http.Request) {
 		instanceID := mux.Vars(r)["instanceID"]
 		log.Printf("[Connected] /room/%s/dashboard", instanceID)
-		ws_server.ServeWebsocket(w, r, instanceID, ws.DEAULT_APP_ID)
+		ServeWebsocket(dashboardHub, w, r, instanceID, ws.DEAULT_APP_ID)
 	})
 	// handle ws://{ip:port}/room/{instanceID}/app/{appID}
 	r.HandleFunc("/room/{instanceID}/app/{appID}", func(w http.ResponseWriter, r *http.Request) {
@@ -97,7 +147,7 @@ func main() {
 			appID = ws.DEAULT_APP_ID
 		}
 		log.Printf("[Connected] /room/%s/app/%d", instanceID, appID)
-		ws_server.ServeWebsocket(w, r, instanceID, appID)
+		ServeWebsocket(appHub, w, r, instanceID, appID)
 	})
 	srv := &http.Server{
 		Handler:      r,

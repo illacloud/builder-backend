@@ -40,8 +40,7 @@ type SetStateRepository interface {
 	Update(setState *SetState) error
 	UpdateByValue(beforeSetState *SetState, afterSetState *SetState) error
 	RetrieveByID(setStateID int) (*SetState, error)
-	RetrieveSetStatesByVersion(versionID int) ([]*SetState, error)
-	RetrieveSetStatesByValue(key string) ([]*SetState, error)
+	RetrieveSetStatesByVersion(version int) ([]*SetState, error)
 	RetrieveByValue(setState *SetState) (*SetState, error)
 	RetrieveSetStatesByApp(apprefid int, statetype int, version int) ([]*SetState, error)
 }

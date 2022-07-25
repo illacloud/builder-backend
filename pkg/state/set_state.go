@@ -24,13 +24,13 @@ import (
 )
 
 type SetStateService interface {
-	CreateSetState(setState SetStateDto) (SetStateDto, error)
+	CreateSetState(setState *SetStateDto) (*SetStateDto, error)
 	DeleteSetState(setStateID int) error
-	UpdateSetState(setState SetStateDto) (SetStateDto, error)
+	DeleteSetStateByValue(setStateDto *SetStateDto) error
+	UpdateSetState(setState *SetStateDto) (*SetStateDto, error)
+	UpdateSetStateByValue(beforeSetStateDto *SetStateDto, afterSetStateDto *SetStateDto) error
 	GetSetStateByID(setStateID int) (SetStateDto, error)
-	GetAllTypeSetStateByApp(app *app.AppDto, version int) ([]*SetStateDto, error)
-	GetSetStateByApp(app *app.AppDto, statetype int, version int) ([]*SetStateDto, error)
-	ReleaseSetStateByApp(app *app.AppDto) error
+	GetByValue(setStateDto *SetStateDto) (*SetStateDto, error)
 }
 
 type SetStateDto struct {
@@ -48,6 +48,18 @@ type SetStateDto struct {
 type SetStateServiceImpl struct {
 	logger             *zap.SugaredLogger
 	setStateRepository repository.SetStateRepository
+}
+
+func (setsd *SetStateDto) ConstructBySetState(setState *repository.SetState) {
+	setsd.ID = setState.ID
+	setsd.StateType = setState.StateType
+	setsd.AppRefID = setState.AppRefID
+	setsd.Version = setState.Version
+	setsd.Value = setState.Value
+	setsd.CreatedAt = setState.CreatedAt
+	setsd.CreatedBy = setState.CreatedBy
+	setsd.UpdatedAt = setState.UpdatedAt
+	setsd.UpdatedBy = setState.UpdatedBy
 }
 
 func (setsd *SetStateDto) ConstructWithDisplayNameForUpdate(dnsfu *repository.DisplayNameStateForUpdate) {
@@ -78,11 +90,11 @@ func NewSetStateServiceImpl(logger *zap.SugaredLogger,
 	}
 }
 
-func (impl *SetStateServiceImpl) CreateSetState(setState SetStateDto) (SetStateDto, error) {
+func (impl *SetStateServiceImpl) CreateSetState(setState *SetStateDto) (*SetStateDto, error) {
 	// TODO: validate the version
 	validate := validator.New()
 	if err := validate.Struct(setState); err != nil {
-		return SetStateDto{}, err
+		return nil, err
 	}
 	setState.CreatedAt = time.Now().UTC()
 	setState.UpdatedAt = time.Now().UTC()
@@ -97,7 +109,7 @@ func (impl *SetStateServiceImpl) CreateSetState(setState SetStateDto) (SetStateD
 		UpdatedAt: setState.UpdatedAt,
 		UpdatedBy: setState.UpdatedBy,
 	}); err != nil {
-		return SetStateDto{}, err
+		return nil, err
 	}
 	return setState, nil
 }
@@ -122,10 +134,10 @@ func (impl *SetStateServiceImpl) DeleteSetStateByValue(setStateDto *SetStateDto)
 	return nil
 }
 
-func (impl *SetStateServiceImpl) UpdateSetState(setState SetStateDto) (SetStateDto, error) {
+func (impl *SetStateServiceImpl) UpdateSetState(setState *SetStateDto) (*SetStateDto, error) {
 	validate := validator.New()
 	if err := validate.Struct(setState); err != nil {
-		return SetStateDto{}, err
+		return nil, err
 	}
 	setState.UpdatedAt = time.Now().UTC()
 	if err := impl.setStateRepository.Update(&repository.SetState{
@@ -139,12 +151,12 @@ func (impl *SetStateServiceImpl) UpdateSetState(setState SetStateDto) (SetStateD
 		UpdatedAt: setState.UpdatedAt,
 		UpdatedBy: setState.UpdatedBy,
 	}); err != nil {
-		return SetStateDto{}, err
+		return nil, err
 	}
 	return setState, nil
 }
 
-func (impl *SetStateServiceImpl) UpdateSetStateByValue(beforeSetStateDto SetStateDto, afterSetStateDto SetStateDto) error {
+func (impl *SetStateServiceImpl) UpdateSetStateByValue(beforeSetStateDto *SetStateDto, afterSetStateDto *SetStateDto) error {
 	validate := validator.New()
 	if err := validate.Struct(beforeSetStateDto); err != nil {
 		return err
@@ -189,7 +201,7 @@ func (impl *SetStateServiceImpl) GetSetStateByID(setStateID int) (SetStateDto, e
 	return ret, nil
 }
 
-func (impl *SetStateServiceImpl) GetByValue(setStateDto SetStateDto) (SetStateDto, error) {
+func (impl *SetStateServiceImpl) GetByValue(setStateDto *SetStateDto) (*SetStateDto, error) {
 	setState := &repository.SetState{
 		StateType: setStateDto.StateType,
 		AppRefID:  setStateDto.AppRefID,
@@ -197,20 +209,11 @@ func (impl *SetStateServiceImpl) GetByValue(setStateDto SetStateDto) (SetStateDt
 		Value:     setStateDto.Value,
 	}
 
-	setStateRet, err := impl.setStateRepository.RetrieveByValue(setState)
+	inDBSetState, err := impl.setStateRepository.RetrieveByValue(setState)
 	if err != nil {
-		return SetStateDto{}, err
+		return nil, err
 	}
-	ret := SetStateDto{
-		ID:        setStateRet.ID,
-		StateType: setStateRet.StateType,
-		AppRefID:  setStateRet.AppRefID,
-		Version:   setStateRet.Version,
-		Value:     setStateRet.Value,
-		CreatedAt: setStateRet.CreatedAt,
-		CreatedBy: setStateRet.CreatedBy,
-		UpdatedAt: setStateRet.UpdatedAt,
-		UpdatedBy: setStateRet.UpdatedBy,
-	}
-	return ret, nil
+	var inDBSetStateDto *SetStateDto
+	inDBSetStateDto.ConstructBySetState(inDBSetState)
+	return inDBSetStateDto, nil
 }

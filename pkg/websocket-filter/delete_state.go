@@ -16,6 +16,8 @@ package filter
 
 import (
 	"github.com/illa-family/builder-backend/internal/repository"
+	"github.com/illa-family/builder-backend/pkg/app"
+	"github.com/illa-family/builder-backend/pkg/state"
 
 	ws "github.com/illa-family/builder-backend/internal/websocket"
 )
@@ -25,8 +27,8 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
-	var appDto app.AppDto
-	appDto.ConstructByID(currentClient.APPID)
+	var appDto *app.AppDto
+	appDto.ConstructWithID(currentClient.APPID)
 	message.RewriteBroadcast()
 
 	// target switch
@@ -41,7 +43,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 			currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS)
 
 			if err := hub.TreeStateServiceImpl.DeleteTreeStateNodeRecursive(currentNode); err != nil {
-				currentClient.Feedback(message, ws.ws.ERROR_DELETE_STATE_FAILED, err)
+				currentClient.Feedback(message, ws.ERROR_DELETE_STATE_FAILED, err)
 				return err
 			}
 		}
@@ -63,7 +65,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 			kvStateDto.ConstructWithType(stateType)
 
 			if err := hub.KVStateServiceImpl.DeleteKVStateByKey(kvStateDto); err != nil {
-				currentClient.Feedback(message, ws.ws.ERROR_DELETE_STATE_FAILED, err)
+				currentClient.Feedback(message, ws.ERROR_DELETE_STATE_FAILED, err)
 				return err
 			}
 		}
@@ -74,7 +76,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 
 		for _, v := range message.Payload {
 			// resolve payload
-			dns, err := repository.ConstructDisplayNameStateByPayload(v)
+			dns, err := repository.ResolveDisplayNameStateByPayload(v)
 			if err != nil {
 				return err
 			}
@@ -88,7 +90,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 				setStateDto.ConstructWithEditVersion()
 				// delete state
 				if err := hub.SetStateServiceImpl.DeleteSetStateByValue(setStateDto); err != nil {
-					currentClient.Feedback(message, ws.ws.ERROR_CREATE_STATE_FAILED, err)
+					currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 					return err
 				}
 			}
@@ -100,7 +102,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 	}
 
 	// feedback currentClient
-	currentClient.Feedback(message, ws.ws.ERROR_DELETE_STATE_OK, nil)
+	currentClient.Feedback(message, ws.ERROR_DELETE_STATE_OK, nil)
 
 	// feedback otherClient
 	hub.BroadcastToOtherClients(message, currentClient)
