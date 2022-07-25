@@ -45,6 +45,10 @@ type SetStateDto struct {
 	UpdatedBy int       `json:"updated_by"`
 }
 
+func NewSetStateDto() *SetStateDto {
+	return &SetStateDto{}
+}
+
 type SetStateServiceImpl struct {
 	logger             *zap.SugaredLogger
 	setStateRepository repository.SetStateRepository

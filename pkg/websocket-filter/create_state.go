@@ -26,7 +26,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
-	var appDto *app.AppDto
+	appDto := app.NewAppDto()
 	appDto.ConstructWithID(currentClient.APPID)
 	message.RewriteBroadcast()
 
@@ -45,19 +45,24 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 		}
 
 	case ws.TARGET_DEPENDENCIES:
-		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
 		fallthrough
 
 	case ws.TARGET_DRAG_SHADOW:
-		stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
 		fallthrough
 
 	case ws.TARGET_DOTTED_LINE_SQUARE:
-		stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
+		// fill type
+		if message.Target == ws.TARGET_DEPENDENCIES {
+			stateType = repository.KV_STATE_TYPE_DEPENDENCIES
+		} else if message.Target == ws.TARGET_DRAG_SHADOW {
+			stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
+		} else {
+			stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
+		}
 		// create k-v state
 		for _, v := range message.Payload {
 			// fill KVStateDto
-			var kvStateDto *state.KVStateDto
+			kvStateDto := state.NewKVStateDto()
 			kvStateDto.ConstructByMap(v)
 			kvStateDto.ConstructWithType(stateType)
 
@@ -68,7 +73,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 		}
 
 	case ws.TARGET_DISPLAY_NAME:
-		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
+		stateType = repository.SET_STATE_TYPE_DISPLAY_NAME
 		// create set state
 		for _, v := range message.Payload {
 			// resolve payload
@@ -78,7 +83,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 			}
 			// save state
 			for _, displayName := range displayNameState {
-				var setStateDto *state.SetStateDto
+				setStateDto := state.NewSetStateDto()
 				setStateDto.ConstructWithValue(displayName)
 				setStateDto.ConstructWithType(stateType)
 				// create state

@@ -47,6 +47,11 @@ type KVStateDto struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	UpdatedBy int       `json:"updated_by"`
 }
+
+func NewKVStateDto() *KVStateDto {
+	return &KVStateDto{}
+}
+
 type KVStateServiceImpl struct {
 	logger            *zap.SugaredLogger
 	kvStateRepository repository.KVStateRepository

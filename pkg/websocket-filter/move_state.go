@@ -27,7 +27,7 @@ func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
-	var appDto *app.AppDto
+	appDto := app.NewAppDto()
 	appDto.ConstructWithID(currentClient.APPID)
 	message.RewriteBroadcast()
 
@@ -37,7 +37,7 @@ func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 		return nil
 	case ws.TARGET_COMPONENTS:
 		for _, v := range message.Payload {
-			var currentNode *state.TreeStateDto
+			currentNode := state.NewTreeStateDto()
 			currentNode.ConstructByMap(v) // set Name
 			currentNode.ConstructByApp(appDto)
 			currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS)

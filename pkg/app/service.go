@@ -59,6 +59,10 @@ type AppDto struct {
 	ModifiedBy      string    `json:"updatedBy"`
 }
 
+func NewAppDto() *AppDto {
+	return &AppDto{}
+}
+
 func (appd *AppDto) ConstructByMap(data interface{}) {
 	fmt.Printf("[D-1] data %v\n", data)
 	udata, ok := data.(map[string]interface{})
@@ -77,6 +81,8 @@ func (appd *AppDto) ConstructByMap(data interface{}) {
 }
 
 func (appd *AppDto) ConstructWithID(id int) {
+	fmt.Printf("[DUMP] appd:%v\n", appd)
+	fmt.Printf("[DUMP] id:%v\n", id)
 	appd.ID = id
 }
 
@@ -203,7 +209,7 @@ func (impl *AppServiceImpl) initialAllTypeKVStates(appID, user int) error {
 	})
 	// create displayName state
 	errD := impl.kvstateRepository.Create(&repository.KVState{
-		StateType: repository.KV_STATE_TYPE_DISPLAY_NAME,
+		StateType: repository.SET_STATE_TYPE_DISPLAY_NAME,
 		AppRefID:  appID,
 		Version:   repository.APP_EDIT_VERSION,
 		Key:       "displayName",
@@ -614,7 +620,7 @@ func (impl *AppServiceImpl) formatDottedLineSquareState(appID, version int) (map
 }
 
 func (impl *AppServiceImpl) formatDisplayNameState(appID, version int) ([]string, error) {
-	res, err := impl.kvstateRepository.RetrieveKVStatesByApp(appID, repository.KV_STATE_TYPE_DISPLAY_NAME, version)
+	res, err := impl.kvstateRepository.RetrieveKVStatesByApp(appID, repository.SET_STATE_TYPE_DISPLAY_NAME, version)
 	if err != nil {
 		return nil, err
 	}

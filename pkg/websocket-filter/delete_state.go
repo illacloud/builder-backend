@@ -27,7 +27,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
-	var appDto *app.AppDto
+	appDto := app.NewAppDto()
 	appDto.ConstructWithID(currentClient.APPID)
 	message.RewriteBroadcast()
 
@@ -37,7 +37,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 		return nil
 	case ws.TARGET_COMPONENTS:
 		for _, v := range message.Payload {
-			var currentNode *state.TreeStateDto
+			currentNode := state.NewTreeStateDto()
 			currentNode.ConstructByMap(v)      // set Name
 			currentNode.ConstructByApp(appDto) // set AppRefID
 			currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS)
@@ -49,17 +49,24 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 		}
 
 	case ws.TARGET_DEPENDENCIES:
-		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
 		fallthrough
+
 	case ws.TARGET_DRAG_SHADOW:
-		stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
 		fallthrough
+
 	case ws.TARGET_DOTTED_LINE_SQUARE:
-		stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
+		// fill type
+		if message.Target == ws.TARGET_DEPENDENCIES {
+			stateType = repository.KV_STATE_TYPE_DEPENDENCIES
+		} else if message.Target == ws.TARGET_DRAG_SHADOW {
+			stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
+		} else {
+			stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
+		}
 		// delete k-v state
 		for _, v := range message.Payload {
 			// fill KVStateDto
-			var kvStateDto *state.KVStateDto
+			kvStateDto := state.NewKVStateDto()
 			kvStateDto.ConstructByMap(v)
 			kvStateDto.ConstructByApp(appDto) // set AppRefID
 			kvStateDto.ConstructWithType(stateType)
@@ -71,7 +78,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 		}
 
 	case ws.TARGET_DISPLAY_NAME:
-		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
+		stateType = repository.SET_STATE_TYPE_DISPLAY_NAME
 		// create dnsplayName state
 
 		for _, v := range message.Payload {
@@ -83,7 +90,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 			// save state
 			for _, displayName := range dns {
 				// init
-				var setStateDto *state.SetStateDto
+				setStateDto := state.NewSetStateDto()
 				setStateDto.ConstructWithValue(displayName)
 				setStateDto.ConstructWithType(stateType)
 				setStateDto.ConstructByApp(appDto)

@@ -27,7 +27,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
-	var appDto *app.AppDto
+	appDto := app.NewAppDto()
 	appDto.ConstructWithID(currentClient.APPID)
 	message.RewriteBroadcast()
 
@@ -39,20 +39,15 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 	case ws.TARGET_COMPONENTS:
 		for _, v := range message.Payload {
 			// construct TreeStateDto
-			var err error
-			var currentNode *state.TreeStateDto
-			var inDBTreeState *state.TreeStateDto
+			currentNode := state.NewTreeStateDto()
+			var inDBTreeStateDto *state.TreeStateDto
 			currentNode.ConstructByMap(v)                                        // set Name
 			currentNode.ConstructByApp(appDto)                                   // set AppRefID
 			currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS) // set StateType
 
 			// check if state already in database
-			inDBTreeState, err = hub.TreeStateServiceImpl.GetTreeStateByName(currentNode)
-			if err != nil {
-				currentClient.Feedback(message, ws.ERROR_CREATE_OR_UPDATE_STATE_FAILED, err)
-				return err
-			}
-			if inDBTreeState == nil {
+			inDBTreeStateDto, _ = hub.TreeStateServiceImpl.GetTreeStateByName(currentNode)
+			if inDBTreeStateDto == nil {
 				// current state did not in database, create
 				var componentTree *repository.ComponentNode
 				componentTree = repository.ConstructComponentNodeByMap(v)
@@ -71,10 +66,8 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 					return err
 				}
 				currentNode.ConstructWithContent(serializedComponent)
-				currentNode.ConstructWithID(inDBTreeState.ID) // update by id
-
-				// update
-				if _, err := hub.TreeStateServiceImpl.UpdateTreeState(currentNode); err != nil {
+				inDBTreeStateDto.ConstructWithNewStateContent(currentNode)
+				if _, err := hub.TreeStateServiceImpl.UpdateTreeState(inDBTreeStateDto); err != nil {
 					currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
 					return err
 				}
@@ -82,19 +75,26 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 		}
 
 	case ws.TARGET_DEPENDENCIES:
-		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
 		fallthrough
 
 	case ws.TARGET_DRAG_SHADOW:
-		stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
+		// create by displayName
 		fallthrough
 
 	case ws.TARGET_DOTTED_LINE_SQUARE:
-		stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
+		// fill type
+		if message.Target == ws.TARGET_DEPENDENCIES {
+			stateType = repository.KV_STATE_TYPE_DEPENDENCIES
+		} else if message.Target == ws.TARGET_DRAG_SHADOW {
+			stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
+		} else {
+			stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
+		}
+		// resolve
 		for _, v := range message.Payload {
 			// construct KVStateDto
 			var err error
-			var kvStateDto *state.KVStateDto
+			kvStateDto := state.NewKVStateDto()
 			var inDBkvStateDto *state.KVStateDto
 			kvStateDto.ConstructByMap(v)
 			kvStateDto.ConstructByApp(appDto)
@@ -123,7 +123,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 		}
 
 	case ws.TARGET_DISPLAY_NAME:
-		stateType = repository.KV_STATE_TYPE_DISPLAY_NAME
+		stateType = repository.SET_STATE_TYPE_DISPLAY_NAME
 		for _, v := range message.Payload {
 			// resolve payload
 			displayNameState, err := repository.ResolveDisplayNameStateByPayload(v)
@@ -133,7 +133,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 			// create or update state
 			for _, displayName := range displayNameState {
 				// checkout
-				var setStateDto *state.SetStateDto
+				setStateDto := state.NewSetStateDto()
 				var setStateDtoInDB *state.SetStateDto
 				var err error
 				setStateDto.ConstructWithValue(displayName)
