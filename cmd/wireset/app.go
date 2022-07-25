@@ -15,25 +15,25 @@
 package wireset
 
 import (
-	"github.com/illa-family/builder-backend/api/resthandler"
-	"github.com/illa-family/builder-backend/api/router"
-	"github.com/illa-family/builder-backend/internal/repository"
-	"github.com/illa-family/builder-backend/pkg/app"
+    "github.com/illa-family/builder-backend/api/resthandler"
+    "github.com/illa-family/builder-backend/api/router"
+    "github.com/illa-family/builder-backend/internal/repository"
+    "github.com/illa-family/builder-backend/pkg/app"
 
-	"github.com/google/wire"
+    "github.com/google/wire"
 )
 
 var AppWireSet = wire.NewSet(
-	repository.NewKVStateRepositoryImpl,
-	wire.Bind(new(repository.KVStateRepository), new(*repository.KVStateRepositoryImpl)),
-	repository.NewTreeStateRepositoryImpl,
-	wire.Bind(new(repository.TreeStateRepository), new(*repository.TreeStateRepositoryImpl)),
-	repository.NewAppRepositoryImpl,
-	wire.Bind(new(repository.AppRepository), new(*repository.AppRepositoryImpl)),
-	app.NewAppServiceImpl,
-	wire.Bind(new(app.AppService), new(*app.AppServiceImpl)),
-	resthandler.NewAppRestHandlerImpl,
-	wire.Bind(new(resthandler.AppRestHandler), new(*resthandler.AppRestHandlerImpl)),
-	router.NewAppRouterImpl,
-	wire.Bind(new(router.AppRouter), new(*router.AppRouterImpl)),
+    repository.NewKVStateRepositoryImpl,
+    wire.Bind(new(repository.KVStateRepository), new(*repository.KVStateRepositoryImpl)),
+    repository.NewTreeStateRepositoryImpl,
+    wire.Bind(new(repository.TreeStateRepository), new(*repository.TreeStateRepositoryImpl)),
+    repository.NewAppRepositoryImpl,
+    wire.Bind(new(repository.AppRepository), new(*repository.AppRepositoryImpl)),
+    app.NewAppServiceImpl,
+    wire.Bind(new(app.AppService), new(*app.AppServiceImpl)),
+    resthandler.NewAppRestHandlerImpl,
+    wire.Bind(new(resthandler.AppRestHandler), new(*resthandler.AppRestHandlerImpl)),
+    router.NewAppRouterImpl,
+    wire.Bind(new(router.AppRouter), new(*router.AppRouterImpl)),
 )

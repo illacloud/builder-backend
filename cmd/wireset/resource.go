@@ -15,21 +15,21 @@
 package wireset
 
 import (
-	"github.com/illa-family/builder-backend/api/resthandler"
-	"github.com/illa-family/builder-backend/api/router"
-	"github.com/illa-family/builder-backend/internal/repository"
-	"github.com/illa-family/builder-backend/pkg/resource"
+    "github.com/illa-family/builder-backend/api/resthandler"
+    "github.com/illa-family/builder-backend/api/router"
+    "github.com/illa-family/builder-backend/internal/repository"
+    "github.com/illa-family/builder-backend/pkg/resource"
 
-	"github.com/google/wire"
+    "github.com/google/wire"
 )
 
 var ResourceWireSet = wire.NewSet(
-	repository.NewResourceRepositoryImpl,
-	wire.Bind(new(repository.ResourceRepository), new(*repository.ResourceRepositoryImpl)),
-	resource.NewResourceServiceImpl,
-	wire.Bind(new(resource.ResourceService), new(*resource.ResourceServiceImpl)),
-	resthandler.NewResourceRestHandlerImpl,
-	wire.Bind(new(resthandler.ResourceRestHandler), new(*resthandler.ResourceRestHandlerImpl)),
-	router.NewResourceRouterImpl,
-	wire.Bind(new(router.ResourceRouter), new(*router.ResourceRouterImpl)),
+    repository.NewResourceRepositoryImpl,
+    wire.Bind(new(repository.ResourceRepository), new(*repository.ResourceRepositoryImpl)),
+    resource.NewResourceServiceImpl,
+    wire.Bind(new(resource.ResourceService), new(*resource.ResourceServiceImpl)),
+    resthandler.NewResourceRestHandlerImpl,
+    wire.Bind(new(resthandler.ResourceRestHandler), new(*resthandler.ResourceRestHandlerImpl)),
+    router.NewResourceRouterImpl,
+    wire.Bind(new(router.ResourceRouter), new(*router.ResourceRouterImpl)),
 )

@@ -15,29 +15,29 @@
 package router
 
 import (
-	"github.com/illa-family/builder-backend/api/resthandler"
+    "github.com/illa-family/builder-backend/api/resthandler"
 
-	"github.com/gin-gonic/gin"
+    "github.com/gin-gonic/gin"
 )
 
 type AppRouter interface {
-	InitAppRouter(actionRouter *gin.RouterGroup)
+    InitAppRouter(actionRouter *gin.RouterGroup)
 }
 
 type AppRouterImpl struct {
-	appRestHandler resthandler.AppRestHandler
+    appRestHandler resthandler.AppRestHandler
 }
 
 func NewAppRouterImpl(appRestHandler resthandler.AppRestHandler) *AppRouterImpl {
-	return &AppRouterImpl{appRestHandler: appRestHandler}
+    return &AppRouterImpl{appRestHandler: appRestHandler}
 }
 
 func (impl AppRouterImpl) InitAppRouter(appRouter *gin.RouterGroup) {
-	appRouter.POST("", impl.appRestHandler.CreateApp)
-	appRouter.DELETE(":app", impl.appRestHandler.DeleteApp)
-	appRouter.PUT(":app", impl.appRestHandler.RenameApp)
-	appRouter.GET("", impl.appRestHandler.GetAllApps)
-	appRouter.GET(":app/versions/:version", impl.appRestHandler.GetMegaData)
-	appRouter.POST(":app/duplication", impl.appRestHandler.DuplicateApp)
-	appRouter.POST(":app/deploy", impl.appRestHandler.ReleaseApp)
+    appRouter.POST("", impl.appRestHandler.CreateApp)
+    appRouter.DELETE(":app", impl.appRestHandler.DeleteApp)
+    appRouter.PUT(":app", impl.appRestHandler.RenameApp)
+    appRouter.GET("", impl.appRestHandler.GetAllApps)
+    appRouter.GET(":app/versions/:version", impl.appRestHandler.GetMegaData)
+    appRouter.POST(":app/duplication", impl.appRestHandler.DuplicateApp)
+    appRouter.POST(":app/deploy", impl.appRestHandler.ReleaseApp)
 }

@@ -15,47 +15,47 @@
 package action
 
 import (
-	"github.com/illa-family/builder-backend/pkg/connector"
+    "github.com/illa-family/builder-backend/pkg/connector"
 
-	"github.com/mitchellh/mapstructure"
+    "github.com/mitchellh/mapstructure"
 )
 
 var (
-	REST_ACTION  = "restapi"
-	MYSQL_ACTION = "mysql"
+    REST_ACTION  = "restapi"
+    MYSQL_ACTION = "mysql"
 )
 
 type ActionFactory interface {
-	Generate() ActionAssemblyline
+    Generate() ActionAssemblyline
 }
 
 type ActionAssemblyline interface {
-	Run() (interface{}, error)
+    Run() (interface{}, error)
 }
 
 type Factory struct {
-	Type     string
-	Template map[string]interface{}
-	Resource *connector.Connector
+    Type     string
+    Template map[string]interface{}
+    Resource *connector.Connector
 }
 
 func (f *Factory) Build() ActionAssemblyline {
-	switch f.Type {
-	case REST_ACTION:
-		restapiAction := &RestApiAction{
-			Type:     f.Type,
-			Resource: f.Resource,
-		}
-		mapstructure.Decode(f.Template, &restapiAction.RestApiTemplate)
-		return restapiAction
-	case MYSQL_ACTION:
-		sqlAction := &SqlAction{
-			Type:     f.Type,
-			Resource: f.Resource,
-		}
-		mapstructure.Decode(f.Template, &sqlAction.SqlTemplate)
-		return sqlAction
-	default:
-		return nil
-	}
+    switch f.Type {
+    case REST_ACTION:
+        restapiAction := &RestApiAction{
+            Type:     f.Type,
+            Resource: f.Resource,
+        }
+        mapstructure.Decode(f.Template, &restapiAction.RestApiTemplate)
+        return restapiAction
+    case MYSQL_ACTION:
+        sqlAction := &SqlAction{
+            Type:     f.Type,
+            Resource: f.Resource,
+        }
+        mapstructure.Decode(f.Template, &sqlAction.SqlTemplate)
+        return sqlAction
+    default:
+        return nil
+    }
 }

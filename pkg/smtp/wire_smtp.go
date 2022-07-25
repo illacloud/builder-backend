@@ -17,6 +17,6 @@ package smtp
 import "github.com/google/wire"
 
 var SMTPWireSet = wire.NewSet(
-	GetConfig,
-	NewSMTPServer,
+    GetConfig,
+    NewSMTPServer,
 )

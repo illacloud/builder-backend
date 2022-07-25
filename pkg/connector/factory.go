@@ -17,28 +17,28 @@ package connector
 import "database/sql"
 
 var (
-	MYSQL_RESOURCE = "mysql"
+    MYSQL_RESOURCE = "mysql"
 )
 
 type BaseConnector interface {
-	Generate() BaseConnection
+    Generate() BaseConnection
 }
 
 type BaseConnection interface {
-	Format(connector *Connector) error
-	Connection() (*sql.DB, error)
+    Format(connector *Connector) error
+    Connection() (*sql.DB, error)
 }
 
 type Connector struct {
-	Type    string
-	Options map[string]interface{}
+    Type    string
+    Options map[string]interface{}
 }
 
 func (c *Connector) Generate() BaseConnection {
-	switch c.Type {
-	case MYSQL_RESOURCE:
-		return &MySQLConnection{Kind: c.Type}
-	default:
-		return nil
-	}
+    switch c.Type {
+    case MYSQL_RESOURCE:
+        return &MySQLConnection{Kind: c.Type}
+    default:
+        return nil
+    }
 }

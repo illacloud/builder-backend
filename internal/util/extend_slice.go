@@ -17,15 +17,15 @@ package util
 // remove target element from a slice
 // NOTE: this method remove first target element in slice only
 func DeleteElement(s []int, e int) []int {
-	if len(s) == 0 {
-		return s
-	}
-	pos := 0
-	for k, v := range s {
-		if v == e {
-			pos = k
-			break
-		}
-	}
-	return append(s[:pos], s[pos+1:]...)
+    if len(s) == 0 {
+        return s
+    }
+    pos := 0
+    for k, v := range s {
+        if v == e {
+            pos = k
+            break
+        }
+    }
+    return append(s[:pos], s[pos+1:]...)
 }

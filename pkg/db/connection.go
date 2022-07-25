@@ -15,48 +15,48 @@
 package db
 
 import (
-	"fmt"
+    "fmt"
 
-	"github.com/caarlos0/env"
-	"go.uber.org/zap"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+    "github.com/caarlos0/env"
+    "go.uber.org/zap"
+    "gorm.io/driver/postgres"
+    "gorm.io/gorm"
 )
 
 type Config struct {
-	Addr     string `env:"ILLA_PG_ADDR" envDefault:"dev.illasoft.com"`
-	Port     string `env:"ILLA_PG_PORT" envDefault:"30466"`
-	User     string `env:"ILLA_PG_USER" envDefault:"illa"`
-	Password string `env:"ILLA_PG_PASSWORD" envDefault:"illa2022"`
-	Database string `env:"ILLA_PG_DATABASE" envDefault:"illa"`
+    Addr     string `env:"ILLA_PG_ADDR" envDefault:"dev.illasoft.com"`
+    Port     string `env:"ILLA_PG_PORT" envDefault:"30466"`
+    User     string `env:"ILLA_PG_USER" envDefault:"illa"`
+    Password string `env:"ILLA_PG_PASSWORD" envDefault:"illa2022"`
+    Database string `env:"ILLA_PG_DATABASE" envDefault:"illa"`
 }
 
 func GetConfig() (*Config, error) {
-	cfg := &Config{}
-	err := env.Parse(cfg)
-	return cfg, err
+    cfg := &Config{}
+    err := env.Parse(cfg)
+    return cfg, err
 }
 
 func NewDbConnection(cfg *Config, logger *zap.SugaredLogger) (*gorm.DB, error) {
-	db, err := gorm.Open(postgres.New(postgres.Config{
-		DSN: fmt.Sprintf("host='%s' user='%s' password='%s' dbname='%s' port='%s'",
-			cfg.Addr, cfg.User, cfg.Password, cfg.Database, cfg.Port),
-		PreferSimpleProtocol: true, // disables implicit prepared statement usage
-	}), &gorm.Config{})
-	sqlDB, err := db.DB()
-	if err != nil {
-		logger.Errorw("error in connecting db ", "db", cfg, "err", err)
-		return nil, err
-	}
+    db, err := gorm.Open(postgres.New(postgres.Config{
+        DSN: fmt.Sprintf("host='%s' user='%s' password='%s' dbname='%s' port='%s'",
+            cfg.Addr, cfg.User, cfg.Password, cfg.Database, cfg.Port),
+        PreferSimpleProtocol: true, // disables implicit prepared statement usage
+    }), &gorm.Config{})
+    sqlDB, err := db.DB()
+    if err != nil {
+        logger.Errorw("error in connecting db ", "db", cfg, "err", err)
+        return nil, err
+    }
 
-	// check db connection
-	err = sqlDB.Ping()
-	if err != nil {
-		logger.Errorw("error in connecting db ", "db", cfg, "err", err)
-		return nil, err
-	}
+    // check db connection
+    err = sqlDB.Ping()
+    if err != nil {
+        logger.Errorw("error in connecting db ", "db", cfg, "err", err)
+        return nil, err
+    }
 
-	logger.Infow("connected with db", "db", cfg)
+    logger.Infow("connected with db", "db", cfg)
 
-	return db, err
+    return db, err
 }

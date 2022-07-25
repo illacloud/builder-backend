@@ -15,28 +15,28 @@
 package user
 
 import (
-	"net/http"
+    "net/http"
 
-	"github.com/gin-gonic/gin"
+    "github.com/gin-gonic/gin"
 )
 
 func JWTAuth() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		accessToken := c.Request.Header["Authorization"]
-		var token string
-		if len(accessToken) != 1 {
-			c.AbortWithStatus(http.StatusUnauthorized)
-		} else {
-			token = accessToken[0]
-		}
-		userID, extractErr := ExtractUserIDFromToken(token)
-		validAccessToken, validaAccessErr := ValidateAccessToken(token)
+    return func(c *gin.Context) {
+        accessToken := c.Request.Header["Authorization"]
+        var token string
+        if len(accessToken) != 1 {
+            c.AbortWithStatus(http.StatusUnauthorized)
+        } else {
+            token = accessToken[0]
+        }
+        userID, extractErr := ExtractUserIDFromToken(token)
+        validAccessToken, validaAccessErr := ValidateAccessToken(token)
 
-		if validAccessToken && validaAccessErr == nil && extractErr == nil {
-			c.Set("userID", userID)
-		} else {
-			c.AbortWithStatus(http.StatusUnauthorized)
-		}
-		c.Next()
-	}
+        if validAccessToken && validaAccessErr == nil && extractErr == nil {
+            c.Set("userID", userID)
+        } else {
+            c.AbortWithStatus(http.StatusUnauthorized)
+        }
+        c.Next()
+    }
 }

@@ -17,6 +17,6 @@ package db
 import "github.com/google/wire"
 
 var DbWireSet = wire.NewSet(
-	GetConfig,
-	NewDbConnection,
+    GetConfig,
+    NewDbConnection,
 )

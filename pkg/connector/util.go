@@ -15,50 +15,50 @@
 package connector
 
 import (
-	"database/sql"
+    "database/sql"
 )
 
 func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
-	columns, err := rows.Columns()
-	if err != nil {
-		return nil, err
-	}
-	// count of columns
-	count := len(columns)
-	mapData := make([]map[string]interface{}, 0)
+    columns, err := rows.Columns()
+    if err != nil {
+        return nil, err
+    }
+    // count of columns
+    count := len(columns)
+    mapData := make([]map[string]interface{}, 0)
 
-	// value of every row
-	values := make([]interface{}, count)
-	// pointer of every row values
-	valPointers := make([]interface{}, count)
-	for rows.Next() {
+    // value of every row
+    values := make([]interface{}, count)
+    // pointer of every row values
+    valPointers := make([]interface{}, count)
+    for rows.Next() {
 
-		// get pointer for every row
-		for i := 0; i < count; i++ {
-			valPointers[i] = &values[i]
-		}
+        // get pointer for every row
+        for i := 0; i < count; i++ {
+            valPointers[i] = &values[i]
+        }
 
-		// get query result
-		rows.Scan(valPointers...)
+        // get query result
+        rows.Scan(valPointers...)
 
-		// value for every single row
-		entry := make(map[string]interface{})
+        // value for every single row
+        entry := make(map[string]interface{})
 
-		for i, col := range columns {
-			var v interface{}
+        for i, col := range columns {
+            var v interface{}
 
-			val := values[i]
-			b, ok := val.([]byte)
-			if ok {
-				// []byte to string
-				v = string(b)
-			} else {
-				v = val
-			}
-			entry[col] = v
-		}
-		mapData = append(mapData, entry)
-	}
+            val := values[i]
+            b, ok := val.([]byte)
+            if ok {
+                // []byte to string
+                v = string(b)
+            } else {
+                v = val
+            }
+            entry[col] = v
+        }
+        mapData = append(mapData, entry)
+    }
 
-	return mapData, nil
+    return mapData, nil
 }

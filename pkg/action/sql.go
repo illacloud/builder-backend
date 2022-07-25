@@ -15,60 +15,60 @@
 package action
 
 import (
-	"errors"
-	"fmt"
-	"strings"
+    "errors"
+    "fmt"
+    "strings"
 
-	"github.com/illa-family/builder-backend/pkg/connector"
+    "github.com/illa-family/builder-backend/pkg/connector"
 )
 
 type SqlAction struct {
-	Type        string
-	SqlTemplate SqlTemplate
-	Resource    *connector.Connector
+    Type        string
+    SqlTemplate SqlTemplate
+    Resource    *connector.Connector
 }
 
 type SqlTemplate struct {
-	Query string
+    Query string
 }
 
 func (s *SqlAction) Run() (interface{}, error) {
-	dbResource := s.Resource.Generate()
-	if dbResource == nil {
-		err := errors.New("invalid ResourceType: unsupported type")
-		return nil, err
-	}
-	if err := dbResource.Format(s.Resource); err != nil {
-		return nil, err
-	}
-	dbConn, err := dbResource.Connection()
-	defer dbConn.Close()
-	if err != nil {
-		return nil, err
-	}
+    dbResource := s.Resource.Generate()
+    if dbResource == nil {
+        err := errors.New("invalid ResourceType: unsupported type")
+        return nil, err
+    }
+    if err := dbResource.Format(s.Resource); err != nil {
+        return nil, err
+    }
+    dbConn, err := dbResource.Connection()
+    defer dbConn.Close()
+    if err != nil {
+        return nil, err
+    }
 
-	var res interface{}
-	if strings.HasPrefix(s.SqlTemplate.Query, "SELECT") || strings.HasPrefix(s.SqlTemplate.Query, "select") {
-		rows, err := dbConn.Query(s.SqlTemplate.Query)
-		if err != nil {
-			return nil, err
-		}
-		res, err = connector.RetrieveToMap(rows)
-		defer rows.Close()
-	} else {
-		result, err := dbConn.Exec(s.SqlTemplate.Query)
-		if err != nil {
-			return nil, err
-		}
-		affectedRows, err := result.RowsAffected()
-		if err != nil {
-			return nil, err
-		}
-		res = fmt.Sprintf("Affeted %d rows.", affectedRows)
-	}
-	if err != nil {
-		return nil, err
-	}
+    var res interface{}
+    if strings.HasPrefix(s.SqlTemplate.Query, "SELECT") || strings.HasPrefix(s.SqlTemplate.Query, "select") {
+        rows, err := dbConn.Query(s.SqlTemplate.Query)
+        if err != nil {
+            return nil, err
+        }
+        res, err = connector.RetrieveToMap(rows)
+        defer rows.Close()
+    } else {
+        result, err := dbConn.Exec(s.SqlTemplate.Query)
+        if err != nil {
+            return nil, err
+        }
+        affectedRows, err := result.RowsAffected()
+        if err != nil {
+            return nil, err
+        }
+        res = fmt.Sprintf("Affeted %d rows.", affectedRows)
+    }
+    if err != nil {
+        return nil, err
+    }
 
-	return res, nil
+    return res, nil
 }

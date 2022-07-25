@@ -15,33 +15,33 @@
 package router
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/illa-family/builder-backend/api/resthandler"
+    "github.com/gin-gonic/gin"
+    "github.com/illa-family/builder-backend/api/resthandler"
 )
 
 type UserRouter interface {
-	InitAuthRouter(authRouter *gin.RouterGroup)
-	InitUserRouter(userRouter *gin.RouterGroup)
+    InitAuthRouter(authRouter *gin.RouterGroup)
+    InitUserRouter(userRouter *gin.RouterGroup)
 }
 
 type UserRouterImpl struct {
-	userRestHandler resthandler.UserRestHandler
+    userRestHandler resthandler.UserRestHandler
 }
 
 func NewUserRouterImpl(userRestHandler resthandler.UserRestHandler) *UserRouterImpl {
-	return &UserRouterImpl{userRestHandler: userRestHandler}
+    return &UserRouterImpl{userRestHandler: userRestHandler}
 }
 
 func (impl UserRouterImpl) InitAuthRouter(authRouter *gin.RouterGroup) {
-	authRouter.POST("/verification", impl.userRestHandler.GetVerificationCode)
-	authRouter.POST("/signup", impl.userRestHandler.SignUp)
-	authRouter.POST("/signin", impl.userRestHandler.SignIn)
-	authRouter.POST("/forgetPassword", impl.userRestHandler.ForgetPassword)
+    authRouter.POST("/verification", impl.userRestHandler.GetVerificationCode)
+    authRouter.POST("/signup", impl.userRestHandler.SignUp)
+    authRouter.POST("/signin", impl.userRestHandler.SignIn)
+    authRouter.POST("/forgetPassword", impl.userRestHandler.ForgetPassword)
 }
 
 func (impl UserRouterImpl) InitUserRouter(userRouter *gin.RouterGroup) {
-	userRouter.PATCH("/password", impl.userRestHandler.UpdatePassword)
-	userRouter.PATCH("/nickname", impl.userRestHandler.UpdateUsername)
-	userRouter.PATCH("/language", impl.userRestHandler.UpdateLanguage)
-	userRouter.GET("", impl.userRestHandler.GetUserInfo)
+    userRouter.PATCH("/password", impl.userRestHandler.UpdatePassword)
+    userRouter.PATCH("/nickname", impl.userRestHandler.UpdateUsername)
+    userRouter.PATCH("/language", impl.userRestHandler.UpdateLanguage)
+    userRouter.GET("", impl.userRestHandler.GetUserInfo)
 }

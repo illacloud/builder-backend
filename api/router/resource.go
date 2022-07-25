@@ -15,28 +15,28 @@
 package router
 
 import (
-	"github.com/illa-family/builder-backend/api/resthandler"
+    "github.com/illa-family/builder-backend/api/resthandler"
 
-	"github.com/gin-gonic/gin"
+    "github.com/gin-gonic/gin"
 )
 
 type ResourceRouter interface {
-	InitResourceRouter(resourceRouter *gin.RouterGroup)
+    InitResourceRouter(resourceRouter *gin.RouterGroup)
 }
 
 type ResourceRouterImpl struct {
-	resourceRestHandler resthandler.ResourceRestHandler
+    resourceRestHandler resthandler.ResourceRestHandler
 }
 
 func NewResourceRouterImpl(resourceRestHandler resthandler.ResourceRestHandler) *ResourceRouterImpl {
-	return &ResourceRouterImpl{resourceRestHandler: resourceRestHandler}
+    return &ResourceRouterImpl{resourceRestHandler: resourceRestHandler}
 }
 
 func (impl ResourceRouterImpl) InitResourceRouter(resourceRouter *gin.RouterGroup) {
-	resourceRouter.GET("", impl.resourceRestHandler.FindAllResources)
-	resourceRouter.POST("", impl.resourceRestHandler.CreateResource)
-	resourceRouter.GET("/:resource", impl.resourceRestHandler.GetResource)
-	resourceRouter.PUT("/:resource", impl.resourceRestHandler.UpdateResource)
-	resourceRouter.DELETE("/:resource", impl.resourceRestHandler.DeleteResource)
-	resourceRouter.POST("/testConnection", impl.resourceRestHandler.TestConnection)
+    resourceRouter.GET("", impl.resourceRestHandler.FindAllResources)
+    resourceRouter.POST("", impl.resourceRestHandler.CreateResource)
+    resourceRouter.GET("/:resource", impl.resourceRestHandler.GetResource)
+    resourceRouter.PUT("/:resource", impl.resourceRestHandler.UpdateResource)
+    resourceRouter.DELETE("/:resource", impl.resourceRestHandler.DeleteResource)
+    resourceRouter.POST("/testConnection", impl.resourceRestHandler.TestConnection)
 }
