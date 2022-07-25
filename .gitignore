@@ -16,6 +16,7 @@ dockerfile
 # bin
 main
 *.exe
+bin/
 
 # cert
 id_rsa

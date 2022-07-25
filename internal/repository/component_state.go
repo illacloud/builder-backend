@@ -17,6 +17,8 @@ package repository
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"reflect"
 	"strconv"
 )
 
@@ -24,19 +26,19 @@ type ComponentNode struct {
 	DisplayName    string                 `json:"displayName"`
 	ParentNode     string                 `json:"parentNode"`
 	ShowName       string                 `json:"showName"`
-	Cerror         bool                   `json:"error"`
+	Error          bool                   `json:"error"`
 	IsDragging     bool                   `json:"isDragging"`
 	ChildrenNode   []*ComponentNode       `json:"childrenNode"`
-	Ctype          string                 `json:"type"`
+	Type           string                 `json:"type"`
 	ContainerType  map[string]interface{} `json:"containerType"`
 	VerticalResize bool                   `json:"verticalResize"`
-	H              int                    `json:"h"`
-	W              int                    `json:"w"`
-	MinH           int                    `json:"minH"`
-	MinW           int                    `json:"minW"`
-	X              int                    `json:"x"`
-	Y              int                    `json:"y"`
-	Z              int                    `json:"z"`
+	H              float64                `json:"h"`
+	W              float64                `json:"w"`
+	MinH           float64                `json:"minH"`
+	MinW           float64                `json:"minW"`
+	X              float64                `json:"x"`
+	Y              float64                `json:"y"`
+	Z              float64                `json:"z"`
 	Props          map[string]interface{} `json:"props"`
 	PanelConfig    map[string]interface{} `json:"panelConfig"`
 }
@@ -47,6 +49,65 @@ func NewComponentNodeFromJSON(cnodebyte []byte) (*ComponentNode, error) {
 		return nil, err
 	}
 	return &cnode, nil
+}
+
+func ConstructComponentNodeByMap(data interface{}) *ComponentNode {
+	var cnode ComponentNode
+	var udata map[string]interface{}
+	var ok bool
+	fmt.Printf("[DUMP] data reflect.TypeOf: %v\n", reflect.TypeOf(data))
+
+	if udata, ok = data.(map[string]interface{}); !ok {
+		return nil
+	}
+	fmt.Printf("[DUMP] udata: %v\n", udata)
+	for k, v := range udata {
+		switch k {
+		case "displayName":
+			cnode.DisplayName, _ = v.(string)
+		case "parentNode":
+			cnode.ParentNode, _ = v.(string)
+		case "showName":
+			cnode.ShowName, _ = v.(string)
+		case "error":
+			cnode.Error, _ = v.(bool)
+		case "isDragging":
+			cnode.IsDragging, _ = v.(bool)
+		case "childrenNode":
+			childrenNode, _ := v.([]interface{})
+			for _, node := range childrenNode {
+				cnode.ChildrenNode = append(cnode.ChildrenNode, ConstructComponentNodeByMap(node))
+			}
+		case "type":
+			cnode.Type, _ = v.(string)
+		case "containerType":
+			cnode.ContainerType, _ = v.(map[string]interface{})
+		case "verticalResize":
+			cnode.VerticalResize, _ = v.(bool)
+		case "h":
+			fmt.Printf("[DUMP] data.v reflect.TypeOf: %v\n", reflect.TypeOf(v))
+			fmt.Printf("[DUMP] data.v: %v\n", v)
+
+			cnode.H, _ = v.(float64)
+		case "w":
+			cnode.W, _ = v.(float64)
+		case "minH":
+			cnode.MinH, _ = v.(float64)
+		case "minW":
+			cnode.MinW, _ = v.(float64)
+		case "x":
+			cnode.X, _ = v.(float64)
+		case "y":
+			cnode.Y, _ = v.(float64)
+		case "z":
+			cnode.Z, _ = v.(float64)
+		case "props":
+			cnode.Props, _ = v.(map[string]interface{})
+		case "panelConfig":
+			cnode.PanelConfig, _ = v.(map[string]interface{})
+		}
+	}
+	return &cnode
 }
 
 func (cnode *ComponentNode) UpdateParentNode(parentComponentNode *ComponentNode) {
@@ -67,9 +128,19 @@ func (cnode *ComponentNode) Serialization() ([]byte, error) {
 func (cnode *ComponentNode) SerializationForDatabase() ([]byte, error) {
 	// the parentNode and childrenNode relation info are storaged in special column in database.
 	// build these relations for client output serialization only.
+	tmpParentNode := cnode.ParentNode
+	tmpChildrenNode := cnode.ChildrenNode
 	cnode.ParentNode = ""
 	cnode.ChildrenNode = nil
-	return json.Marshal(cnode)
+	jsonbyte, err := json.Marshal(cnode)
+	// recover
+	cnode.ParentNode = tmpParentNode
+	cnode.ChildrenNode = tmpChildrenNode
+	if err != nil {
+		return nil, err
+	}
+	return jsonbyte, nil
+
 }
 
 func BuildComponentTree(treeState *TreeState, treeStateMap map[int]*TreeState, parentComponentNode *ComponentNode) (*ComponentNode, error) {
@@ -78,7 +149,12 @@ func BuildComponentTree(treeState *TreeState, treeStateMap map[int]*TreeState, p
 	if cnode, err = treeState.ExportContentAsComponentState(); err != nil {
 		return nil, err
 	}
-	for _, id := range treeState.ChildrenNodeRefIDs {
+	var treestateIDs []int
+	treestateIDs, err = treeState.ExportChildrenNodeRefIDs()
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range treestateIDs {
 		subcnode := &ComponentNode{}
 		var err error
 		// check if children nodes is exists

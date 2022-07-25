@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package websocket
+package ws
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	uuid "github.com/satori/go.uuid"
+)
 
 // message protocol from client in json:
 //
@@ -24,6 +28,7 @@ import "encoding/json"
 //     "payload":string
 // }
 
+// for message
 const SIGNAL_PING = 0
 const SIGNAL_ENTER = 1
 const SIGNAL_LEAVE = 2
@@ -45,24 +50,35 @@ const TARGET_DISPLAY_NAME = 5       // DisplayNameState
 const TARGET_APPS = 6               // only for broadcast
 const TARGET_RESOURCE = 7           // only for broadcast
 
+// for broadcast rewrite
+const BROADCAST_TYPE_SUFFIX = "/remote"
+
 type Broadcast struct {
-	Type    string `json:"type"`
-	Payload string `json:"payload"`
+	Type    string      `json:"type"`
+	Payload interface{} `json:"payload"`
 }
 
-type Protocol struct {
-	Signal    int                    `json:"signal"`
-	Option    int                    `json:"option"`
-	Target    int                    `json:"target"`
-	Payload   map[string]interface{} `json:"payload"`
-	Broadcast *Broadcast             `json:"broadcast"`
+type Message struct {
+	ClientID  uuid.UUID     `json:"clientID"`
+	Signal    int           `json:"signal"`
+	APPID     int           `json:"appID"` // also as APP ID
+	Option    int           `json:"option"`
+	Target    int           `json:"target"`
+	Payload   []interface{} `json:"payload"`
+	Broadcast *Broadcast    `json:"broadcast"`
 }
 
-func NewProtocol(roomID string, rawProtocol []byte) (*Protocol, error) {
+func NewMessage(clientID uuid.UUID, appID int, rawMessage []byte) (*Message, error) {
 	// init Action
-	var protocol Protocol
-	if err := json.Unmarshal(rawProtocol, &protocol); err != nil {
+	var message Message
+	if err := json.Unmarshal(rawMessage, &message); err != nil {
 		return nil, err
 	}
-	return &protocol, nil
+	message.ClientID = clientID
+	message.APPID = appID
+	return &message, nil
+}
+
+func (m *Message) RewriteBroadcast() {
+	m.Broadcast.Type = m.Broadcast.Type + BROADCAST_TYPE_SUFFIX
 }

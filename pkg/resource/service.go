@@ -17,6 +17,7 @@ package resource
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/illa-family/builder-backend/internal/repository"
@@ -54,6 +55,27 @@ type ResourceDto struct {
 	CreatedBy int                    `json:"createdBy,omitempty"`
 	UpdatedAt time.Time              `json:"updatedAt,omitempty"`
 	UpdatedBy int                    `json:"updatedBy,omitempty"`
+}
+
+func (resourced *ResourceDto) ConstructByMap(data interface{}) {
+	fmt.Printf("[D-1] data %v\n", data)
+	udata, ok := data.(map[string]interface{})
+	if !ok {
+		return
+	}
+	for k, v := range udata {
+		switch k {
+		case "id":
+			idf, _ := v.(float64)
+			resourced.ID = int(idf)
+		case "name":
+			resourced.Name, _ = v.(string)
+		case "type":
+			resourced.Type, _ = v.(string)
+		case "options":
+			resourced.Options, _ = v.(map[string]interface{})
+		}
+	}
 }
 
 type ResourceServiceImpl struct {

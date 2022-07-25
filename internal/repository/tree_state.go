@@ -15,27 +15,31 @@
 package repository
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
+	"github.com/illa-family/builder-backend/internal/util"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 const TREE_STATE_SUMMIT_ID = 0
+const TREE_STATE_SUMMIT_NAME = "root"
 
 type TreeState struct {
-	ID                 int       `json:"id" 					gorm:"column:id;type:bigserial"`
-	StateType          int       `json:"state_type" 			gorm:"column:state_type;type:bigint"`
-	ParentNodeRefID    int       `json:"parent_node_ref_id" 	gorm:"column:parent_node_ref_id;type:bigint"`
-	ChildrenNodeRefIDs []int     `json:"children_node_ref_ids"  gorm:"column:children_node_ref_ids;type:bigint"`
-	AppRefID           int       `json:"app_ref_id" 			gorm:"column:app_ref_id;type:bigint"`
-	Version            int       `json:"version" 				gorm:"column:version;type:bigint"`
-	Name               string    `json:"name" 					gorm:"column:name;type:text"`
-	Content            string    `json:"content"    			gorm:"column:content;type:jsonb"`
-	CreatedAt          time.Time `json:"created_at" 			gorm:"column:created_at;type:timestamp"`
-	CreatedBy          int       `json:"created_by" 			gorm:"column:created_by;type:bigint"`
-	UpdatedAt          time.Time `json:"updated_at" 			gorm:"column:updated_at;type:timestamp"`
-	UpdatedBy          int       `json:"updated_by" 			gorm:"column:updated_by;type:bigint"`
+	ID                 int       `json:"id" 							 gorm:"column:id;type:bigserial"`
+	StateType          int       `json:"state_type" 					 gorm:"column:state_type;type:bigint"`
+	ParentNodeRefID    int       `json:"parent_node_ref_id" 			 gorm:"column:parent_node_ref_id;type:bigint"`
+	ChildrenNodeRefIDs string    `json:"children_node_ref_ids" 		     gorm:"column:children_node_ref_ids;type:jsonb"`
+	AppRefID           int       `json:"app_ref_id" 					 gorm:"column:app_ref_id;type:bigint"`
+	Version            int       `json:"version" 					     gorm:"column:version;type:bigint"`
+	Name               string    `json:"name" 						     gorm:"column:name;type:text"`
+	Content            string    `json:"content"    					 gorm:"column:content;type:jsonb"`
+	CreatedAt          time.Time `json:"created_at" 					 gorm:"column:created_at;type:timestamp"`
+	CreatedBy          int       `json:"created_by" 					 gorm:"column:created_by;type:bigint"`
+	UpdatedAt          time.Time `json:"updated_at" 					 gorm:"column:updated_at;type:timestamp"`
+	UpdatedBy          int       `json:"updated_by" 					 gorm:"column:updated_by;type:bigint"`
 }
 
 type TreeStateRepository interface {
@@ -64,6 +68,42 @@ func (treeState *TreeState) ExportContentAsComponentState() (*ComponentNode, err
 	return cnode, nil
 }
 
+func (treeState *TreeState) ExportChildrenNodeRefIDs() ([]int, error) {
+	var ids []int
+	if err := json.Unmarshal([]byte(treeState.ChildrenNodeRefIDs), &ids); err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
+func (treeState *TreeState) AppendChildrenNodeRefIDs(id int) error {
+	var ids []int
+	if err := json.Unmarshal([]byte(treeState.ChildrenNodeRefIDs), &ids); err != nil {
+		return err
+	}
+	ids = append(ids, id)
+	idsjsonb, err := json.Marshal(ids)
+	if err != nil {
+		return err
+	}
+	treeState.ChildrenNodeRefIDs = string(idsjsonb)
+	return nil
+}
+
+func (treeState *TreeState) RemoveChildrenNodeRefIDs(id int) error {
+	var ids []int
+	if err := json.Unmarshal([]byte(treeState.ChildrenNodeRefIDs), &ids); err != nil {
+		return err
+	}
+	ids = util.DeleteElement(ids, id)
+	idsjsonb, err := json.Marshal(ids)
+	if err != nil {
+		return err
+	}
+	treeState.ChildrenNodeRefIDs = string(idsjsonb)
+	return nil
+}
+
 func NewTreeStateRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *TreeStateRepositoryImpl {
 	return &TreeStateRepositoryImpl{
 		logger: logger,
@@ -72,9 +112,11 @@ func NewTreeStateRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *TreeSta
 }
 
 func (impl *TreeStateRepositoryImpl) Create(treestate *TreeState) error {
+	fmt.Printf("[CREATE] %v\n", treestate)
 	if err := impl.db.Create(treestate).Error; err != nil {
 		return err
 	}
+	fmt.Printf("[CREATE DONE] %v\n", treestate)
 	return nil
 }
 
@@ -86,6 +128,7 @@ func (impl *TreeStateRepositoryImpl) Delete(treestateID int) error {
 }
 
 func (impl *TreeStateRepositoryImpl) Update(treestate *TreeState) error {
+	fmt.Printf("[UPDATE] %v \n", treestate)
 	if err := impl.db.Model(treestate).Updates(TreeState{
 		ID:                 treestate.ID,
 		StateType:          treestate.StateType,

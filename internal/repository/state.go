@@ -15,6 +15,7 @@
 package repository
 
 // define StateType
+const STATE_TYPE_INVALIED = 0
 const TREE_STATE_TYPE_COMPONENTS = 1       // ComponentsState
 const KV_STATE_TYPE_DEPENDENCIES = 2       // DependenciesState
 const KV_STATE_TYPE_DRAG_SHADOW = 3        // DragShadowState
