@@ -90,9 +90,13 @@ func NewClient(hub *Hub, conn *websocket.Conn, instanceID string, appID int) *Cl
 }
 
 func (c *Client) Feedback(message *Message, errorCode int, errorMessage error) {
+	m := ""
+	if errorMessage != nil {
+		m = errorMessage.Error()
+	}
 	feedCurrentClient := Feedback{
 		ErrorCode:    errorCode,
-		ErrorMessage: errorMessage.Error(),
+		ErrorMessage: m,
 		Broadcast:    message.Broadcast,
 		Data:         nil,
 	}
