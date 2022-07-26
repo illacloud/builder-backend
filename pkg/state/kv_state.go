@@ -250,7 +250,7 @@ func (impl *KVStateServiceImpl) GetKVStateByKey(kvStateDto *KVStateDto) (*KVStat
 		// not exists
 		return nil, err
 	}
-	var inDBKVStateDto *KVStateDto
+	inDBKVStateDto := NewKVStateDto()
 	inDBKVStateDto.ConstructByKvState(inDBKVState)
 	return inDBKVStateDto, nil
 }
