@@ -66,8 +66,7 @@ func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 		// serve on HTTP API, this signal only for broadcast
 	}
 
-	// feedback currentClient
-	currentClient.Feedback(message, ws.ERROR_MOVE_STATE_OK, nil)
+	// the currentClient does not need feedback when operation success
 
 	// feedback otherClient
 	hub.BroadcastToOtherClients(message, currentClient)
