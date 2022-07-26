@@ -99,6 +99,7 @@ func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, instanc
 	}
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {

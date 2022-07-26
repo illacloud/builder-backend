@@ -16,6 +16,7 @@ package state
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -77,8 +78,12 @@ func (setsd *SetStateDto) ConstructWithDisplayNameForDelete(displayNameInterface
 	return nil
 }
 
-func (setsd *SetStateDto) ConstructWithDisplayNameForUpdate(dnsfu *repository.DisplayNameStateForUpdate) {
+func (setsd *SetStateDto) ConstructWithValueBeforeUpdate(dnsfu *repository.DisplayNameStateForUpdate) {
 	setsd.Value = dnsfu.Before
+}
+
+func (setsd *SetStateDto) ConstructWithValueAfterUpdate(dnsfu *repository.DisplayNameStateForUpdate) {
+	setsd.Value = dnsfu.After
 }
 
 func (setsd *SetStateDto) ConstructWithType(stateType int) {
@@ -179,6 +184,7 @@ func (impl *SetStateServiceImpl) UpdateSetStateByValue(beforeSetStateDto *SetSta
 	if err := validate.Struct(afterSetStateDto); err != nil {
 		return err
 	}
+	fmt.Printf("[VALIDATE] pass\n")
 	// init model
 	afterSetStateDto.UpdatedAt = time.Now().UTC()
 	beforeSetState := &repository.SetState{
@@ -188,9 +194,13 @@ func (impl *SetStateServiceImpl) UpdateSetStateByValue(beforeSetStateDto *SetSta
 		Value:     beforeSetStateDto.Value,
 	}
 	afterSetState := &repository.SetState{
+		StateType: beforeSetStateDto.StateType,
+		AppRefID:  beforeSetStateDto.AppRefID,
 		Value:     afterSetStateDto.Value,
 		UpdatedAt: afterSetStateDto.UpdatedAt,
 	}
+	fmt.Printf("[DUMP] beforeSetState: %v\n", beforeSetState)
+	fmt.Printf("[DUMP] afterSetState: %v\n", afterSetState)
 	if err := impl.setStateRepository.UpdateByValue(beforeSetState, afterSetState); err != nil {
 		return err
 	}

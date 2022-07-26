@@ -16,6 +16,7 @@ package filter
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/illa-family/builder-backend/internal/repository"
 	ws "github.com/illa-family/builder-backend/internal/websocket"
@@ -106,20 +107,24 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 		for _, v := range message.Payload {
 			// resolve payload
 			dnsfu, err := repository.ConstructDisplayNameStateForUpdateByPayload(v)
+			fmt.Printf("[DUMP] dnsfu %v\n", dnsfu)
 			if err != nil {
 				return err
 			}
 			// init state dto
-			var beforeSetStateDto *state.SetStateDto
-			var afterSetStateDto *state.SetStateDto
-			beforeSetStateDto.ConstructWithDisplayNameForUpdate(dnsfu)
+			beforeSetStateDto := state.NewSetStateDto()
+			afterSetStateDto := state.NewSetStateDto()
+			beforeSetStateDto.ConstructWithValueBeforeUpdate(dnsfu)
 			beforeSetStateDto.ConstructWithType(stateType)
 			beforeSetStateDto.ConstructByApp(appDto)
 			beforeSetStateDto.ConstructWithEditVersion()
-			afterSetStateDto.ConstructWithDisplayNameForUpdate(dnsfu)
+			afterSetStateDto.ConstructWithValueAfterUpdate(dnsfu)
+			fmt.Printf("[DUMP] beforeSetStateDto %v\n", beforeSetStateDto)
+			fmt.Printf("[DUMP] afterSetStateDto %v\n", afterSetStateDto)
+
 			// update state
 			if err := hub.SetStateServiceImpl.UpdateSetStateByValue(beforeSetStateDto, afterSetStateDto); err != nil {
-				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
+				currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
 				return err
 			}
 		}

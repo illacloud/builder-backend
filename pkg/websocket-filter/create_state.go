@@ -77,20 +77,18 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 		// create set state
 		for _, v := range message.Payload {
 			// resolve payload
-			displayNameState, err := repository.ResolveDisplayNameStateByPayload(v)
+			displayName, err := repository.ResolveDisplayNameByPayload(v)
 			if err != nil {
 				return err
 			}
 			// save state
-			for _, displayName := range displayNameState {
-				setStateDto := state.NewSetStateDto()
-				setStateDto.ConstructWithValue(displayName)
-				setStateDto.ConstructWithType(stateType)
-				// create state
-				if _, err := hub.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
-					currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
-					return err
-				}
+			setStateDto := state.NewSetStateDto()
+			setStateDto.ConstructWithValue(displayName)
+			setStateDto.ConstructWithType(stateType)
+			// create state
+			if _, err := hub.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
+				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
+				return err
 			}
 		}
 
