@@ -27,6 +27,17 @@ type DisplayNameStateForUpdate struct {
 	After  string `json:"after"`
 }
 
+func ResolveDisplayNameByPayload(data interface{}) (string, error) {
+	var udata string
+	var ok bool
+	fmt.Printf("[DUMP] data reflect.TypeOf: %v\n", reflect.TypeOf(data))
+
+	if udata, ok = data.(string); !ok {
+		return "", errors.New("ConstructDisplayNameByMap() failed, please check payload syntax.")
+	}
+	return udata, nil
+}
+
 func ResolveDisplayNameStateByPayload(data interface{}) (DisplayNameState, error) {
 	var udata []interface{}
 	var ok bool

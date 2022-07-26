@@ -123,36 +123,40 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 	case ws.TARGET_DISPLAY_NAME:
 		stateType = repository.SET_STATE_TYPE_DISPLAY_NAME
 		for _, v := range message.Payload {
+			var err error
+			var displayName string
 			// resolve payload
-			displayNameState, err := repository.ResolveDisplayNameStateByPayload(v)
+			displayName, err = repository.ResolveDisplayNameByPayload(v)
+			fmt.Printf("[DUMP] err: %v\n", err)
+
 			if err != nil {
+				currentClient.Feedback(message, ws.ERROR_CREATE_OR_UPDATE_STATE_FAILED, err)
 				return err
 			}
 			// create or update state
-			for _, displayName := range displayNameState {
-				// checkout
-				setStateDto := state.NewSetStateDto()
-				var setStateDtoInDB *state.SetStateDto
-				var err error
-				setStateDto.ConstructWithValue(displayName)
-				setStateDto.ConstructWithType(stateType)
-				setStateDto.ConstructByApp(appDto)
-				setStateDto.ConstructWithEditVersion()
-				// lookup state
-				setStateDtoInDB, _ = hub.SetStateServiceImpl.GetByValue(setStateDto)
-				if setStateDtoInDB == nil {
-					// create
-					if _, err = hub.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
-						currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
-						return err
-					}
-				} else {
-					// update
-					setStateDtoInDB.ConstructWithValue(setStateDto.Value)
-					if _, err = hub.SetStateServiceImpl.UpdateSetState(setStateDtoInDB); err != nil {
-						currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
-						return err
-					}
+			fmt.Printf("[DUMP] displayName: %v\n", displayName)
+			// checkout
+			setStateDto := state.NewSetStateDto()
+			var setStateDtoInDB *state.SetStateDto
+			setStateDto.ConstructWithValue(displayName)
+			setStateDto.ConstructWithType(stateType)
+			setStateDto.ConstructByApp(appDto)
+			setStateDto.ConstructWithEditVersion()
+			// lookup state
+			setStateDtoInDB, _ = hub.SetStateServiceImpl.GetByValue(setStateDto)
+			if setStateDtoInDB == nil {
+				// create
+				fmt.Printf("[DUMP] setStateDto: %v\n", setStateDto)
+				if _, err = hub.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
+					currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
+					return err
+				}
+			} else {
+				// update
+				setStateDtoInDB.ConstructWithValue(setStateDto.Value)
+				if _, err = hub.SetStateServiceImpl.UpdateSetState(setStateDtoInDB); err != nil {
+					currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
+					return err
 				}
 			}
 		}
