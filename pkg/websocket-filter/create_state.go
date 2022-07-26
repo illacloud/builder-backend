@@ -64,6 +64,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 			// fill KVStateDto
 			kvStateDto := state.NewKVStateDto()
 			kvStateDto.ConstructByMap(v)
+			kvStateDto.ConstructByApp(appDto) // set AppRefID
 			kvStateDto.ConstructWithType(stateType)
 
 			if _, err := hub.KVStateServiceImpl.CreateKVState(kvStateDto); err != nil {
@@ -83,6 +84,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 			}
 			// save state
 			setStateDto := state.NewSetStateDto()
+			setStateDto.ConstructByApp(appDto) // set AppRefID
 			setStateDto.ConstructWithValue(displayName)
 			setStateDto.ConstructWithType(stateType)
 			// create state

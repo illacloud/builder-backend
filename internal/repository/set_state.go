@@ -15,6 +15,7 @@
 package repository
 
 import (
+	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -94,7 +95,14 @@ func (impl *SetStateRepositoryImpl) Update(setState *SetState) error {
 }
 
 func (impl *SetStateRepositoryImpl) UpdateByValue(beforeSetState *SetState, afterSetState *SetState) error {
-	if err := impl.db.Where("app_ref_id = ? AND state_type = ? AND version = ? AND value = ?", beforeSetState.AppRefID, beforeSetState.StateType, beforeSetState.Version, beforeSetState.Value).Model(afterSetState).Updates(afterSetState).Error; err != nil {
+	if err := impl.db.Model(afterSetState).Where(
+		"app_ref_id = ? AND state_type = ? AND version = ? AND value = ?",
+		beforeSetState.AppRefID,
+		beforeSetState.StateType,
+		beforeSetState.Version,
+		beforeSetState.Value,
+	).Updates(afterSetState).Error; err != nil {
+		fmt.Printf("[DUMP] error: %v\n", err)
 		return err
 	}
 	return nil
