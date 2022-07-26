@@ -15,6 +15,7 @@
 package state
 
 import (
+	"errors"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -64,6 +65,16 @@ func (setsd *SetStateDto) ConstructBySetState(setState *repository.SetState) {
 	setsd.CreatedBy = setState.CreatedBy
 	setsd.UpdatedAt = setState.UpdatedAt
 	setsd.UpdatedBy = setState.UpdatedBy
+}
+
+func (setsd *SetStateDto) ConstructWithDisplayNameForDelete(displayNameInterface interface{}) error {
+	dnis, ok := displayNameInterface.(string)
+	if !ok {
+		err := errors.New("ConstructWithDisplayNameForDelete() can not resolve displayName.")
+		return err
+	}
+	setsd.Value = dnis
+	return nil
 }
 
 func (setsd *SetStateDto) ConstructWithDisplayNameForUpdate(dnsfu *repository.DisplayNameStateForUpdate) {

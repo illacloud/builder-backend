@@ -89,6 +89,16 @@ func (kvsd *KVStateDto) ConstructByKvState(kvState *repository.KVState) {
 	kvsd.UpdatedBy = kvState.UpdatedBy
 }
 
+func (kvsd *KVStateDto) ConstructWithDisplayNameForDelete(displayNameInterface interface{}) error {
+	dnis, ok := displayNameInterface.(string)
+	if !ok {
+		err := errors.New("ConstructWithDisplayNameForDelete() can not resolve displayName.")
+		return err
+	}
+	kvsd.Key = dnis
+	return nil
+}
+
 func (kvsd *KVStateDto) ConstructWithID(id int) {
 	kvsd.ID = id
 }

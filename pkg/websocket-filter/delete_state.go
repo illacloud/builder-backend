@@ -38,8 +38,8 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 	case ws.TARGET_COMPONENTS:
 		for _, v := range message.Payload {
 			currentNode := state.NewTreeStateDto()
-			currentNode.ConstructByMap(v)      // set Name
-			currentNode.ConstructByApp(appDto) // set AppRefID
+			currentNode.ConstructWithDisplayNameForDelete(v) // set Name
+			currentNode.ConstructByApp(appDto)               // set AppRefID
 			currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS)
 
 			if err := hub.TreeStateServiceImpl.DeleteTreeStateNodeRecursive(currentNode); err != nil {
@@ -67,7 +67,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 		for _, v := range message.Payload {
 			// fill KVStateDto
 			kvStateDto := state.NewKVStateDto()
-			kvStateDto.ConstructByMap(v)
+			kvStateDto.ConstructWithDisplayNameForDelete(v)
 			kvStateDto.ConstructByApp(appDto) // set AppRefID
 			kvStateDto.ConstructWithType(stateType)
 
@@ -79,27 +79,19 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 
 	case ws.TARGET_DISPLAY_NAME:
 		stateType = repository.SET_STATE_TYPE_DISPLAY_NAME
-		// create dnsplayName state
-
+		// delete set state
 		for _, v := range message.Payload {
-			// resolve payload
-			dns, err := repository.ResolveDisplayNameStateByPayload(v)
-			if err != nil {
+
+			// init
+			setStateDto := state.NewSetStateDto()
+			setStateDto.ConstructWithDisplayNameForDelete(v)
+			setStateDto.ConstructWithType(stateType)
+			setStateDto.ConstructByApp(appDto)
+			setStateDto.ConstructWithEditVersion()
+			// delete state
+			if err := hub.SetStateServiceImpl.DeleteSetStateByValue(setStateDto); err != nil {
+				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 				return err
-			}
-			// save state
-			for _, displayName := range dns {
-				// init
-				setStateDto := state.NewSetStateDto()
-				setStateDto.ConstructWithValue(displayName)
-				setStateDto.ConstructWithType(stateType)
-				setStateDto.ConstructByApp(appDto)
-				setStateDto.ConstructWithEditVersion()
-				// delete state
-				if err := hub.SetStateServiceImpl.DeleteSetStateByValue(setStateDto); err != nil {
-					currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
-					return err
-				}
 			}
 		}
 	case ws.TARGET_APPS:

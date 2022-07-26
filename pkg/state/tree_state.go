@@ -16,6 +16,7 @@ package state
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/illa-family/builder-backend/internal/repository"
@@ -74,6 +75,16 @@ func (tsd *TreeStateDto) ConstructByMap(data interface{}) {
 			tsd.ParentNode, _ = v.(string)
 		}
 	}
+}
+
+func (tsd *TreeStateDto) ConstructWithDisplayNameForDelete(displayNameInterface interface{}) error {
+	dnis, ok := displayNameInterface.(string)
+	if !ok {
+		err := errors.New("ConstructWithDisplayNameForDelete() can not resolve displayName.")
+		return err
+	}
+	tsd.Name = dnis
+	return nil
 }
 
 func (tsd *TreeStateDto) ConstructByTreeState(treeState *repository.TreeState) error {
