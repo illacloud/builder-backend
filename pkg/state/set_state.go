@@ -217,7 +217,7 @@ func (impl *SetStateServiceImpl) GetByValue(setStateDto *SetStateDto) (*SetState
 	if err != nil {
 		return nil, err
 	}
-	var inDBSetStateDto *SetStateDto
+	inDBSetStateDto := NewSetStateDto()
 	inDBSetStateDto.ConstructBySetState(inDBSetState)
 	return inDBSetStateDto, nil
 }
