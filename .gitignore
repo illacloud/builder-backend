@@ -9,3 +9,17 @@
 
 # vim
 *.swp
+
+# docker
+dockerfile
+
+# bin
+main
+*.exe
+bin/
+
+# cert
+id_rsa
+id_rsa.pub
+*.pem
+

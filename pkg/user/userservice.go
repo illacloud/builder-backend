@@ -17,27 +17,32 @@ package user
 import (
 	"time"
 
+	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/pkg/smtp"
-	"github.com/illa-family/builder-backend/pkg/user/repository"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
+var language_array = []string{"", "en-US", "zh-CN"}
+var language_map = map[string]int{
+	"en-US": 1,
+	"zh-CN": 2,
+}
+
 type UserService interface {
-	CreateUser(userDto *UserDto) (*UserDto, error)
-	UpdateUser(userDto *UserDto) (*UserDto, error)
-	FindUserByEmail(email string) (*UserDto, error)
-	GetUser(userId uuid.UUID) (*UserDto, error)
-	GenerateVerificationCode(email string) (string, error)
-	ValidateVerificationCode(vCode, vToken string) (bool, error)
-	GetToken(userId uuid.UUID) (string, string, error)
+	CreateUser(userDto UserDto) (UserDto, error)
+	UpdateUser(userDto UserDto) (UserDto, error)
+	FindUserByEmail(email string) (UserDto, error)
+	GetUser(id int) (UserDto, error)
+	GetToken(id int) (string, error)
+	GenerateVerificationCode(email, usage string) (string, error)
+	ValidateVerificationCode(vCode, vToken, email, usage string) (bool, error)
 }
 
 type UserDto struct {
-	UserId       uuid.UUID `json:"userId,omitempty"`
-	Username     string    `json:"username,omitempty"`
+	ID           int       `json:"userId,omitempty"`
+	Nickname     string    `json:"nickname,omitempty"`
 	Password     string    `json:"-"`
 	Email        string    `json:"email,omitempty"`
 	Language     string    `json:"language,omitempty"`
@@ -61,95 +66,87 @@ func NewUserServiceImpl(userRepository repository.UserRepository, logger *zap.Su
 	}
 }
 
-func (impl *UserServiceImpl) CreateUser(userDto *UserDto) (*UserDto, error) {
-	userDto.UserId = uuid.New()
-	userDto.CreatedAt = time.Now().UTC()
-	userDto.UpdatedAt = time.Now().UTC()
+func (impl *UserServiceImpl) CreateUser(userDto UserDto) (UserDto, error) {
 	hashPwd, err := bcrypt.GenerateFromPassword([]byte(userDto.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return &UserDto{}, err
+		return UserDto{}, err
 	}
-	if err := impl.userRepository.CreateUser(&repository.User{
-		ID:             userDto.UserId,
-		Username:       userDto.Username,
+	id, err := impl.userRepository.CreateUser(&repository.User{
+		Nickname:       userDto.Nickname,
 		PasswordDigest: string(hashPwd),
 		Email:          userDto.Email,
-		Language:       userDto.Language,
+		Language:       language_map[userDto.Language],
 		IsSubscribed:   userDto.IsSubscribed,
 		CreatedAt:      userDto.CreatedAt,
 		UpdatedAt:      userDto.UpdatedAt,
-	}); err != nil {
-		return &UserDto{}, err
+	})
+	if err != nil {
+		return UserDto{}, err
 	}
+
+	userDto.ID = id
 	return userDto, nil
 }
 
-func (impl *UserServiceImpl) UpdateUser(userDto *UserDto) (*UserDto, error) {
-	userDto.UpdatedAt = time.Now().UTC()
+func (impl *UserServiceImpl) UpdateUser(userDto UserDto) (UserDto, error) {
 	if err := impl.userRepository.UpdateUser(&repository.User{
-		ID:             userDto.UserId,
-		Username:       userDto.Username,
+		ID:             userDto.ID,
+		Nickname:       userDto.Nickname,
 		PasswordDigest: userDto.Password,
-		Email:          userDto.Email,
-		Language:       userDto.Language,
-		IsSubscribed:   userDto.IsSubscribed,
-		CreatedAt:      userDto.CreatedAt,
+		Language:       language_map[userDto.Language],
 		UpdatedAt:      userDto.UpdatedAt,
 	}); err != nil {
-		return &UserDto{}, err
+		return UserDto{}, err
 	}
 	return userDto, nil
 }
 
-func (impl *UserServiceImpl) FindUserByEmail(email string) (*UserDto, error) {
+func (impl *UserServiceImpl) FindUserByEmail(email string) (UserDto, error) {
 	userRecord, err := impl.userRepository.FetchUserByEmail(email)
 	if err != nil {
-		return &UserDto{}, err
+		return UserDto{}, err
 	}
-	userDto := &UserDto{
-		UserId:       userRecord.ID,
-		Username:     userRecord.Username,
+	userDto := UserDto{
+		ID:           userRecord.ID,
+		Nickname:     userRecord.Nickname,
 		Email:        userRecord.Email,
 		Password:     userRecord.PasswordDigest,
-		Language:     userRecord.Language,
+		Language:     language_array[userRecord.Language],
 		IsSubscribed: userRecord.IsSubscribed,
 	}
 	return userDto, nil
 }
 
-func (impl *UserServiceImpl) GenerateVerificationCode(email string) (string, error) {
-	return impl.smtpServer.NewVerificationCode(email)
-}
-
-func (impl *UserServiceImpl) ValidateVerificationCode(vCode, vToken string) (bool, error) {
-	return impl.smtpServer.ValidateVerificationCode(vToken, vCode)
-}
-
-func (impl *UserServiceImpl) GetToken(userId uuid.UUID) (string, string, error) {
-	accessToken, err := CreateAccessToken(userId)
+func (impl *UserServiceImpl) GetUser(id int) (UserDto, error) {
+	userRecord, err := impl.userRepository.RetrieveByID(id)
 	if err != nil {
-		return "", "", nil
+		return UserDto{}, err
 	}
-	refreshToken, err := CreateRefreshToken(accessToken)
-	if err != nil {
-		return "", "", nil
-	}
-	return accessToken, refreshToken, nil
-}
-
-func (impl *UserServiceImpl) GetUser(userId uuid.UUID) (*UserDto, error) {
-	userRecord, err := impl.userRepository.RetrieveById(userId)
-	if err != nil {
-		return &UserDto{}, err
-	}
-	userDto := &UserDto{
-		UserId:       userRecord.ID,
-		Username:     userRecord.Username,
+	userDto := UserDto{
+		ID:           userRecord.ID,
+		Nickname:     userRecord.Nickname,
 		Email:        userRecord.Email,
-		Language:     userRecord.Language,
+		Password:     userRecord.PasswordDigest,
+		Language:     language_array[userRecord.Language],
 		IsSubscribed: userRecord.IsSubscribed,
 		CreatedAt:    userRecord.CreatedAt,
 		UpdatedAt:    userRecord.UpdatedAt,
 	}
 	return userDto, nil
+}
+
+func (impl *UserServiceImpl) GetToken(id int) (string, error) {
+	accessToken, err := CreateAccessToken(id)
+	if err != nil {
+		return "", nil
+	}
+	return accessToken, nil
+}
+
+func (impl *UserServiceImpl) GenerateVerificationCode(email, usage string) (string, error) {
+	return impl.smtpServer.NewVerificationCode(email, usage)
+}
+
+func (impl *UserServiceImpl) ValidateVerificationCode(vCode, vToken, email, usage string) (bool, error) {
+	return impl.smtpServer.ValidateVerificationCode(vToken, vCode, email, usage)
 }

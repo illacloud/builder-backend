@@ -22,25 +22,20 @@ import (
 
 func JWTAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		accessToken, _ := c.Cookie("access_token")
-		refreshToken, _ := c.Cookie("refresh_token")
-
-		validAccessToken, validaAccessErr := ValidateAccessToken(accessToken)
-		userId, extractErr := ExtractUserIdFromToken(accessToken)
-		if validAccessToken && validaAccessErr == nil && extractErr == nil {
-			c.Set("userId", userId)
+		accessToken := c.Request.Header["Authorization"]
+		var token string
+		if len(accessToken) != 1 {
+			c.AbortWithStatus(http.StatusUnauthorized)
 		} else {
-			// if access token expires, validate refresh token
-			validRefreshToken, err := ValidateRefreshToken(refreshToken)
-			if err != nil || !validRefreshToken {
-				c.AbortWithStatus(http.StatusUnauthorized)
-			} else {
-				c.Set("userId", userId)
-				newAccessToken, _ := CreateAccessToken(userId)
-				newRefreshToken, _ := CreateRefreshToken(newAccessToken)
-				c.SetCookie("access_token", newAccessToken, 7200, "/", "localhost", false, true)
-				c.SetCookie("refresh_token", newRefreshToken, 259200, "/", "localhost", false, true)
-			}
+			token = accessToken[0]
+		}
+		userID, extractErr := ExtractUserIDFromToken(token)
+		validAccessToken, validaAccessErr := ValidateAccessToken(token)
+
+		if validAccessToken && validaAccessErr == nil && extractErr == nil {
+			c.Set("userID", userID)
+		} else {
+			c.AbortWithStatus(http.StatusUnauthorized)
 		}
 		c.Next()
 	}

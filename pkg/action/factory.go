@@ -15,9 +15,9 @@
 package action
 
 import (
-	"github.com/illa-family/builder-backend/pkg/connector"
-
-	"github.com/mitchellh/mapstructure"
+	"github.com/illa-family/builder-backend/pkg/plugins/common"
+	"github.com/illa-family/builder-backend/pkg/plugins/mysql"
+	"github.com/illa-family/builder-backend/pkg/plugins/restapi"
 )
 
 var (
@@ -25,35 +25,21 @@ var (
 	MYSQL_ACTION = "mysql"
 )
 
-type ActionFactory interface {
-	Generate() ActionAssemblyline
-}
-
-type ActionAssemblyline interface {
-	Run() (interface{}, error)
+type AbstractActionFactory interface {
+	Build() common.DataConnector
 }
 
 type Factory struct {
-	Type     string
-	Template map[string]interface{}
-	Resource *connector.Connector
+	Type string
 }
 
-func (f *Factory) Build() ActionAssemblyline {
+func (f *Factory) Build() common.DataConnector {
 	switch f.Type {
 	case REST_ACTION:
-		restapiAction := &RestApiAction{
-			Type:     f.Type,
-			Resource: f.Resource,
-		}
-		mapstructure.Decode(f.Template, &restapiAction.RestApiTemplate)
+		restapiAction := &restapi.RESTAPIConnector{}
 		return restapiAction
 	case MYSQL_ACTION:
-		sqlAction := &SqlAction{
-			Type:     f.Type,
-			Resource: f.Resource,
-		}
-		mapstructure.Decode(f.Template, &sqlAction.SqlTemplate)
+		sqlAction := &mysql.MySQLConnector{}
 		return sqlAction
 	default:
 		return nil

@@ -28,6 +28,11 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
+var (
+	USAGE_SIGNUP = "signup"
+	USAGE_FORGET = "forgetpwd"
+)
+
 type Config struct {
 	Username string `env:"ILLA_MAIL_USERNAME" envDefault:"m17602200056@163.com"`
 	Password string `env:"ILLA_MAIL_PASSWORD" envDefault:"ESXNALKGBIAZCSYO"`
@@ -42,6 +47,13 @@ type SMTPServer struct {
 	Host     string
 	Port     string
 	Secret   string
+}
+
+type VCodeClaims struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+	Usage string `json:"usage"`
+	jwt.RegisteredClaims
 }
 
 func GetConfig() (*Config, error) {
@@ -60,7 +72,7 @@ func NewSMTPServer(cfg *Config) SMTPServer {
 	}
 }
 
-func (s *SMTPServer) NewVerificationCode(email string) (string, error) {
+func (s *SMTPServer) NewVerificationCode(email, usage string) (string, error) {
 	// Authentication.
 	auth := smtp.PlainAuth("", s.From, s.Password, s.Host)
 
@@ -70,7 +82,7 @@ func (s *SMTPServer) NewVerificationCode(email string) (string, error) {
 	header := make(map[string]string)
 	header["From"] = "illa-builder" + "<" + s.From + ">"
 	header["To"] = email
-	header["Subject"] = "[Illa]: Verification Code"
+	header["Subject"] = "[ILLA]: Verification Code"
 	body := "Verification Code: " + vCode
 	message := ""
 	for k, v := range header {
@@ -84,11 +96,18 @@ func (s *SMTPServer) NewVerificationCode(email string) (string, error) {
 		return "", err
 	}
 
-	codeClaims := jwt.MapClaims{}
-	codeClaims["id"] = vCode
-	codeClaims["exp"] = time.Now().Add(60 * time.Second).Unix()
-	codeClaims["iat"] = time.Now().Unix()
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, codeClaims)
+	claims := &VCodeClaims{
+		Email: email,
+		Code:  vCode,
+		Usage: usage,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer: "ILLA",
+			ExpiresAt: &jwt.NumericDate{
+				Time: time.Now().Add(time.Minute * 5),
+			},
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	codeToken, err := token.SignedString([]byte(s.Secret))
 	if err != nil {
 		return "", err
@@ -97,25 +116,23 @@ func (s *SMTPServer) NewVerificationCode(email string) (string, error) {
 	return codeToken, nil
 }
 
-func (s *SMTPServer) ValidateVerificationCode(codeToken, vCode string) (bool, error) {
-	token, err := jwt.Parse(codeToken, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
+func (s *SMTPServer) ValidateVerificationCode(codeToken, vCode, email, usage string) (bool, error) {
+	vCodeClaims := &VCodeClaims{}
+	token, err := jwt.ParseWithClaims(codeToken, vCodeClaims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(s.Secret), nil
 	})
 	if err != nil {
 		return false, err
 	}
 
-	var tokenCode string
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		tokenCode = claims["id"].(string)
-	} else {
-		return false, errors.New("invalid token: token payload is invalid")
+	claims, ok := token.Claims.(*VCodeClaims)
+	if !(ok && claims.Usage == usage) {
+		return false, errors.New("invalid verification token")
 	}
-
-	return tokenCode == vCode, err
+	if !(claims.Code == vCode && claims.Email == email) {
+		return false, errors.New("verification code wrong")
+	}
+	return true, nil
 }
 
 func SendMailUsingTLS(addr string, auth smtp.Auth, from string, to string, msg []byte) (err error) {

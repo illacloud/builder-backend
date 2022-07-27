@@ -26,16 +26,18 @@ type RESTRouter struct {
 	Router         *gin.RouterGroup
 	UserRouter     UserRouter
 	AppRouter      AppRouter
+	RoomRouter     RoomRouter
 	ActionRouter   ActionRouter
 	ResourceRouter ResourceRouter
 }
 
-func NewRESTRouter(logger *zap.SugaredLogger, userRouter UserRouter, appRouter AppRouter,
+func NewRESTRouter(logger *zap.SugaredLogger, userRouter UserRouter, appRouter AppRouter, roomRouter RoomRouter,
 	actionRouter ActionRouter, resourceRouter ResourceRouter) *RESTRouter {
 	return &RESTRouter{
 		logger:         logger,
 		UserRouter:     userRouter,
 		AppRouter:      appRouter,
+		RoomRouter:     roomRouter,
 		ActionRouter:   actionRouter,
 		ResourceRouter: resourceRouter,
 	}
@@ -47,17 +49,20 @@ func (r RESTRouter) InitRouter(router *gin.RouterGroup) {
 	authRouter := v1.Group("/auth")
 	userRouter := v1.Group("/users")
 	appRouter := v1.Group("/apps")
-	actionRouter := v1.Group("/versions/:versionId")
+	roomRouter := v1.Group("/room")
+	actionRouter := v1.Group("/apps/:app")
 	resourceRouter := v1.Group("/resources")
 
 	userRouter.Use(user.JWTAuth())
 	appRouter.Use(user.JWTAuth())
+	roomRouter.Use(user.JWTAuth())
 	actionRouter.Use(user.JWTAuth())
 	resourceRouter.Use(user.JWTAuth())
 
 	r.UserRouter.InitAuthRouter(authRouter)
 	r.UserRouter.InitUserRouter(userRouter)
 	r.AppRouter.InitAppRouter(appRouter)
+	r.RoomRouter.InitRoomRouter(roomRouter)
 	r.ActionRouter.InitActionRouter(actionRouter)
 	r.ResourceRouter.InitResourceRouter(resourceRouter)
 }
