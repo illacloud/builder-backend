@@ -155,7 +155,7 @@ func (impl *AppServiceImpl) initialAllTypeTreeStates(appID, user int) error {
 	if err := impl.treestateRepository.Create(&repository.TreeState{
 		StateType:          repository.TREE_STATE_TYPE_COMPONENTS,
 		ParentNodeRefID:    0,
-		ChildrenNodeRefIDs: "",
+		ChildrenNodeRefIDs: "[]",
 		AppRefID:           appID,
 		Version:            repository.APP_EDIT_VERSION,
 		Name:               "rootDsl",

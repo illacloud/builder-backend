@@ -19,7 +19,7 @@ package main
 
 import (
 	"github.com/illa-family/builder-backend/api/router"
-	"github.com/illa-family/builder-backend/cmd/wireset"
+	"github.com/illa-family/builder-backend/cmd/http-server/wireset"
 	"github.com/illa-family/builder-backend/internal/util"
 	"github.com/illa-family/builder-backend/pkg/db"
 	"github.com/illa-family/builder-backend/pkg/smtp"

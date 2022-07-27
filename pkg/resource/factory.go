@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package action
+package resource
 
 import (
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
@@ -21,11 +21,11 @@ import (
 )
 
 var (
-	REST_ACTION  = "restapi"
-	MYSQL_ACTION = "mysql"
+	REST_RESOURCE  = "restapi"
+	MYSQL_RESOURCE = "mysql"
 )
 
-type AbstractActionFactory interface {
+type AbstractResourceFactory interface {
 	Build() common.DataConnector
 }
 
@@ -33,14 +33,14 @@ type Factory struct {
 	Type string
 }
 
-func (f *Factory) Build() common.DataConnector {
+func (f *Factory) Generate() common.DataConnector {
 	switch f.Type {
-	case REST_ACTION:
-		restapiAction := &restapi.RESTAPIConnector{}
-		return restapiAction
-	case MYSQL_ACTION:
-		sqlAction := &mysql.MySQLConnector{}
-		return sqlAction
+	case REST_RESOURCE:
+		restapiRsc := &restapi.RESTAPIConnector{}
+		return restapiRsc
+	case MYSQL_RESOURCE:
+		sqlRsc := &mysql.MySQLConnector{}
+		return sqlRsc
 	default:
 		return nil
 	}

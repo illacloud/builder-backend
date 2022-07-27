@@ -79,6 +79,13 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 		})
 		return
 	}
+	if err := impl.actionService.ValidateActionOptions(act.Type, act.Template); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": "parse request body error: " + err.Error(),
+		})
+		return
+	}
 
 	act.App = app
 	act.Version = 0
@@ -123,6 +130,13 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": "parse request body error" + err.Error(),
+		})
+		return
+	}
+	if err := impl.actionService.ValidateActionOptions(act.Type, act.Template); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": "parse request body error: " + err.Error(),
 		})
 		return
 	}
