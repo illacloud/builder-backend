@@ -20,4 +20,4 @@ const TREE_STATE_TYPE_COMPONENTS = 1       // ComponentsState
 const KV_STATE_TYPE_DEPENDENCIES = 2       // DependenciesState
 const KV_STATE_TYPE_DRAG_SHADOW = 3        // DragShadowState
 const KV_STATE_TYPE_DOTTED_LINE_SQUARE = 4 // DottedLineSquareState
-const KV_STATE_TYPE_DISPLAY_NAME = 5       // DisplayNameState
+const SET_STATE_TYPE_DISPLAY_NAME = 5      // DisplayNameState

@@ -16,6 +16,7 @@ package ws
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"time"
 
@@ -90,9 +91,13 @@ func NewClient(hub *Hub, conn *websocket.Conn, instanceID string, appID int) *Cl
 }
 
 func (c *Client) Feedback(message *Message, errorCode int, errorMessage error) {
+	m := ""
+	if errorMessage != nil {
+		m = errorMessage.Error()
+	}
 	feedCurrentClient := Feedback{
 		ErrorCode:    errorCode,
-		ErrorMessage: errorMessage.Error(),
+		ErrorMessage: m,
 		Broadcast:    message.Broadcast,
 		Data:         nil,
 	}
@@ -123,6 +128,8 @@ func (c *Client) ReadPump() {
 		}
 		// on message, format
 		message = bytes.TrimSpace(bytes.Replace(message, newline, charSpace, -1))
+		// for debug
+		fmt.Printf("[on message] %v\n", string(message))
 		msg, _ := NewMessage(c.ID, c.APPID, message)
 		// send to hub and process
 		if msg != nil {

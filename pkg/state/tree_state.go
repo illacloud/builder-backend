@@ -16,6 +16,7 @@ package state
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/illa-family/builder-backend/internal/repository"
@@ -56,6 +57,10 @@ type TreeStateServiceImpl struct {
 	treestateRepository repository.TreeStateRepository
 }
 
+func NewTreeStateDto() *TreeStateDto {
+	return &TreeStateDto{}
+}
+
 func (tsd *TreeStateDto) ConstructByMap(data interface{}) {
 
 	udata, ok := data.(map[string]interface{})
@@ -70,6 +75,16 @@ func (tsd *TreeStateDto) ConstructByMap(data interface{}) {
 			tsd.ParentNode, _ = v.(string)
 		}
 	}
+}
+
+func (tsd *TreeStateDto) ConstructWithDisplayNameForDelete(displayNameInterface interface{}) error {
+	dnis, ok := displayNameInterface.(string)
+	if !ok {
+		err := errors.New("ConstructWithDisplayNameForDelete() can not resolve displayName.")
+		return err
+	}
+	tsd.Name = dnis
+	return nil
 }
 
 func (tsd *TreeStateDto) ConstructByTreeState(treeState *repository.TreeState) error {
@@ -111,6 +126,10 @@ func (tsd *TreeStateDto) ConstructWithEditVersion() {
 
 func (tsd *TreeStateDto) ConstructWithContent(content []byte) {
 	tsd.Content = string(content)
+}
+
+func (tsd *TreeStateDto) ConstructWithNewStateContent(ntsd *TreeStateDto) {
+	tsd.Content = ntsd.Content
 }
 
 func NewTreeStateServiceImpl(logger *zap.SugaredLogger, treestateRepository repository.TreeStateRepository) *TreeStateServiceImpl {
@@ -320,7 +339,7 @@ func (impl *TreeStateServiceImpl) GetTreeStateByName(currentNode *TreeStateDto) 
 		// not exists
 		return nil, err
 	}
-	var inDBTreeStateDto *TreeStateDto
+	inDBTreeStateDto := NewTreeStateDto()
 	inDBTreeStateDto.ConstructByTreeState(inDBTreeState)
 	return inDBTreeStateDto, nil
 }
@@ -446,6 +465,7 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 
 	// convert ComponentNode to TreeState
 	currentNode := &TreeStateDto{}
+	currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS)
 	var err error
 	if currentNode, err = impl.NewTreeStateByComponentState(appDto, componentNodeTree); err != nil {
 		return err

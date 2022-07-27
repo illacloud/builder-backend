@@ -15,6 +15,8 @@
 package state
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -45,6 +47,10 @@ type SetStateDto struct {
 	UpdatedBy int       `json:"updated_by"`
 }
 
+func NewSetStateDto() *SetStateDto {
+	return &SetStateDto{}
+}
+
 type SetStateServiceImpl struct {
 	logger             *zap.SugaredLogger
 	setStateRepository repository.SetStateRepository
@@ -62,8 +68,22 @@ func (setsd *SetStateDto) ConstructBySetState(setState *repository.SetState) {
 	setsd.UpdatedBy = setState.UpdatedBy
 }
 
-func (setsd *SetStateDto) ConstructWithDisplayNameForUpdate(dnsfu *repository.DisplayNameStateForUpdate) {
+func (setsd *SetStateDto) ConstructWithDisplayNameForDelete(displayNameInterface interface{}) error {
+	dnis, ok := displayNameInterface.(string)
+	if !ok {
+		err := errors.New("ConstructWithDisplayNameForDelete() can not resolve displayName.")
+		return err
+	}
+	setsd.Value = dnis
+	return nil
+}
+
+func (setsd *SetStateDto) ConstructWithValueBeforeUpdate(dnsfu *repository.DisplayNameStateForUpdate) {
 	setsd.Value = dnsfu.Before
+}
+
+func (setsd *SetStateDto) ConstructWithValueAfterUpdate(dnsfu *repository.DisplayNameStateForUpdate) {
+	setsd.Value = dnsfu.After
 }
 
 func (setsd *SetStateDto) ConstructWithType(stateType int) {
@@ -164,6 +184,7 @@ func (impl *SetStateServiceImpl) UpdateSetStateByValue(beforeSetStateDto *SetSta
 	if err := validate.Struct(afterSetStateDto); err != nil {
 		return err
 	}
+	fmt.Printf("[VALIDATE] pass\n")
 	// init model
 	afterSetStateDto.UpdatedAt = time.Now().UTC()
 	beforeSetState := &repository.SetState{
@@ -173,9 +194,13 @@ func (impl *SetStateServiceImpl) UpdateSetStateByValue(beforeSetStateDto *SetSta
 		Value:     beforeSetStateDto.Value,
 	}
 	afterSetState := &repository.SetState{
+		StateType: beforeSetStateDto.StateType,
+		AppRefID:  beforeSetStateDto.AppRefID,
 		Value:     afterSetStateDto.Value,
 		UpdatedAt: afterSetStateDto.UpdatedAt,
 	}
+	fmt.Printf("[DUMP] beforeSetState: %v\n", beforeSetState)
+	fmt.Printf("[DUMP] afterSetState: %v\n", afterSetState)
 	if err := impl.setStateRepository.UpdateByValue(beforeSetState, afterSetState); err != nil {
 		return err
 	}
@@ -213,7 +238,7 @@ func (impl *SetStateServiceImpl) GetByValue(setStateDto *SetStateDto) (*SetState
 	if err != nil {
 		return nil, err
 	}
-	var inDBSetStateDto *SetStateDto
+	inDBSetStateDto := NewSetStateDto()
 	inDBSetStateDto.ConstructBySetState(inDBSetState)
 	return inDBSetStateDto, nil
 }
