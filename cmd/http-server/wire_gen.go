@@ -16,6 +16,7 @@ import (
 	"github.com/illa-family/builder-backend/pkg/app"
 	"github.com/illa-family/builder-backend/pkg/db"
 	"github.com/illa-family/builder-backend/pkg/resource"
+	"github.com/illa-family/builder-backend/pkg/room"
 	"github.com/illa-family/builder-backend/pkg/smtp"
 	"github.com/illa-family/builder-backend/pkg/user"
 )
@@ -49,10 +50,14 @@ func Initialize() (*Server, error) {
 	appRepositoryImpl := repository.NewAppRepositoryImpl(sugaredLogger, gormDB)
 	kvStateRepositoryImpl := repository.NewKVStateRepositoryImpl(sugaredLogger, gormDB)
 	treeStateRepositoryImpl := repository.NewTreeStateRepositoryImpl(sugaredLogger, gormDB)
+	setStateRepositoryImpl := repository.NewSetStateRepositoryImpl(sugaredLogger, gormDB)
 	actionRepositoryImpl := repository.NewActionRepositoryImpl(sugaredLogger, gormDB)
-	appServiceImpl := app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, userRepositoryImpl, kvStateRepositoryImpl, treeStateRepositoryImpl, actionRepositoryImpl)
+	appServiceImpl := app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, userRepositoryImpl, kvStateRepositoryImpl, treeStateRepositoryImpl, setStateRepositoryImpl, actionRepositoryImpl)
 	appRestHandlerImpl := resthandler.NewAppRestHandlerImpl(sugaredLogger, appServiceImpl)
 	appRouterImpl := router.NewAppRouterImpl(appRestHandlerImpl)
+	roomServiceImpl := room.NewRoomServiceImpl(sugaredLogger)
+	roomRestHandlerImpl := resthandler.NewRoomRestHandlerImpl(sugaredLogger, roomServiceImpl)
+	roomRouterImpl := router.NewRoomRouterImpl(roomRestHandlerImpl)
 	resourceRepositoryImpl := repository.NewResourceRepositoryImpl(sugaredLogger, gormDB)
 	actionServiceImpl := action.NewActionServiceImpl(sugaredLogger, actionRepositoryImpl, resourceRepositoryImpl)
 	actionRestHandlerImpl := resthandler.NewActionRestHandlerImpl(sugaredLogger, actionServiceImpl)

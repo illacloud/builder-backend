@@ -19,8 +19,6 @@ import (
 	"time"
 
 	"github.com/illa-family/builder-backend/internal/repository"
-	"github.com/illa-family/builder-backend/pkg/connector"
-
 	"go.uber.org/zap"
 )
 
@@ -43,6 +41,7 @@ type ActionService interface {
 	GetAction(id int) (ActionDto, error)
 	FindActionsByAppVersion(app, version int) ([]ActionDto, error)
 	RunAction(action ActionDto) (interface{}, error)
+	ValidateActionOptions(actionType string, options map[string]interface{}) error
 }
 
 type ActionDto struct {
@@ -50,9 +49,11 @@ type ActionDto struct {
 	App         int                    `json:"-"`
 	Version     int                    `json:"-"`
 	Resource    int                    `json:"resourceId,omitempty"`
-	DisplayName string                 `json:"displayName,omitempty" validate:"required"`
-	Type        string                 `json:"actionType,omitempty" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb"`
-	Template    map[string]interface{} `json:"actionTemplate,omitempty" validate:"required"`
+	DisplayName string                 `json:"displayName" validate:"required"`
+	Type        string                 `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb"`
+	Template    map[string]interface{} `json:"content" validate:"required"`
+	Transformer map[string]interface{} `json:"transformer" validate:"required"`
+	TriggerMode string                 `json:"triggerMode" validate:"oneof=manually automate"`
 	CreatedAt   time.Time              `json:"createdAt,omitempty"`
 	CreatedBy   int                    `json:"createdBy,omitempty"`
 	UpdatedAt   time.Time              `json:"updatedAt,omitempty"`
@@ -77,17 +78,19 @@ func NewActionServiceImpl(logger *zap.SugaredLogger, actionRepository repository
 func (impl *ActionServiceImpl) CreateAction(action ActionDto) (ActionDto, error) {
 	// TODO: guarantee `action` DisplayName unique
 	id, err := impl.actionRepository.Create(&repository.Action{
-		ID:        action.ID,
-		App:       action.App,
-		Version:   action.Version,
-		Resource:  action.Resource,
-		Name:      action.DisplayName,
-		Type:      type_map[action.Type],
-		Template:  action.Template,
-		CreatedAt: action.CreatedAt,
-		CreatedBy: action.CreatedBy,
-		UpdatedAt: action.UpdatedAt,
-		UpdatedBy: action.UpdatedBy,
+		ID:          action.ID,
+		App:         action.App,
+		Version:     action.Version,
+		Resource:    action.Resource,
+		Name:        action.DisplayName,
+		Type:        type_map[action.Type],
+		TriggerMode: action.TriggerMode,
+		Transformer: action.Transformer,
+		Template:    action.Template,
+		CreatedAt:   action.CreatedAt,
+		CreatedBy:   action.CreatedBy,
+		UpdatedAt:   action.UpdatedAt,
+		UpdatedBy:   action.UpdatedBy,
 	})
 	if err != nil {
 		return ActionDto{}, err
@@ -107,13 +110,15 @@ func (impl *ActionServiceImpl) DeleteAction(id int) error {
 func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (ActionDto, error) {
 	// TODO: guarantee `action` DisplayName unique
 	if err := impl.actionRepository.Update(&repository.Action{
-		ID:        action.ID,
-		Resource:  action.Resource,
-		Name:      action.DisplayName,
-		Type:      type_map[action.Type],
-		Template:  action.Template,
-		UpdatedAt: action.UpdatedAt,
-		UpdatedBy: action.UpdatedBy,
+		ID:          action.ID,
+		Resource:    action.Resource,
+		Name:        action.DisplayName,
+		Type:        type_map[action.Type],
+		TriggerMode: action.TriggerMode,
+		Transformer: action.Transformer,
+		Template:    action.Template,
+		UpdatedAt:   action.UpdatedAt,
+		UpdatedBy:   action.UpdatedBy,
 	}); err != nil {
 		return ActionDto{}, err
 	}
@@ -130,6 +135,8 @@ func (impl *ActionServiceImpl) GetAction(id int) (ActionDto, error) {
 		Resource:    res.Resource,
 		DisplayName: res.Name,
 		Type:        type_array[res.Type],
+		TriggerMode: res.TriggerMode,
+		Transformer: res.Transformer,
 		Template:    res.Template,
 		CreatedBy:   res.CreatedBy,
 		CreatedAt:   res.CreatedAt,
@@ -152,6 +159,8 @@ func (impl *ActionServiceImpl) FindActionsByAppVersion(app, version int) ([]Acti
 			Resource:    value.Resource,
 			DisplayName: value.Name,
 			Type:        type_array[value.Type],
+			TriggerMode: value.TriggerMode,
+			Transformer: value.Transformer,
 			Template:    value.Template,
 			CreatedBy:   value.CreatedBy,
 			CreatedAt:   value.CreatedAt,
@@ -163,35 +172,42 @@ func (impl *ActionServiceImpl) FindActionsByAppVersion(app, version int) ([]Acti
 }
 
 func (impl *ActionServiceImpl) RunAction(action ActionDto) (interface{}, error) {
-	var actionFactory *Factory
-	if action.Resource != 0 {
-		rsc, err := impl.resourceRepository.RetrieveByID(action.Resource)
-		if err != nil {
-			return nil, err
-		}
-		resourceConn := &connector.Connector{
-			Type:    type_array[rsc.Type],
-			Options: rsc.Options,
-		}
-		actionFactory = &Factory{
-			Type:     action.Type,
-			Template: action.Template,
-			Resource: resourceConn,
-		}
-	} else {
-		actionFactory = &Factory{
-			Type:     action.Type,
-			Template: action.Template,
-			Resource: nil,
-		}
+	if action.Resource == 0 {
+		return nil, errors.New("resource is required")
 	}
+	rsc, err := impl.resourceRepository.RetrieveByID(action.Resource)
+	if err != nil {
+		return nil, err
+	}
+	actionFactory := Factory{Type: action.Type}
 	actionAssemblyLine := actionFactory.Build()
 	if actionAssemblyLine == nil {
 		return nil, errors.New("invalid ActionType:: unsupported type")
 	}
-	res, err := actionAssemblyLine.Run()
+	if _, err := actionAssemblyLine.ValidateResourceOptions(rsc.Options); err != nil {
+		return nil, errors.New("invalid resource content")
+	}
+	if _, err := actionAssemblyLine.ValidateActionOptions(action.Template); err != nil {
+		return nil, errors.New("invalid action content")
+	}
+	res, err := actionAssemblyLine.Run(rsc.Options, action.Template)
 	if err != nil {
 		return nil, err
 	}
 	return res, nil
+}
+
+func (impl *ActionServiceImpl) ValidateActionOptions(actionType string, options map[string]interface{}) error {
+	if actionType == TRANSFORMER_ACTION {
+		return nil
+	}
+	actionFactory := Factory{Type: actionType}
+	actionAssemblyLine := actionFactory.Build()
+	if actionAssemblyLine == nil {
+		return errors.New("invalid ActionType:: unsupported type")
+	}
+	if _, err := actionAssemblyLine.ValidateActionOptions(options); err != nil {
+		return errors.New("invalid action content")
+	}
+	return nil
 }

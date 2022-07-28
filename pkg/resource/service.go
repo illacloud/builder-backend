@@ -15,13 +15,11 @@
 package resource
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/illa-family/builder-backend/internal/repository"
-	"github.com/illa-family/builder-backend/pkg/connector"
 
 	"go.uber.org/zap"
 )
@@ -43,14 +41,15 @@ type ResourceService interface {
 	UpdateResource(resource ResourceDto) (ResourceDto, error)
 	GetResource(id int) (ResourceDto, error)
 	FindAllResources() ([]ResourceDto, error)
-	OpenConnection(resource ResourceDto) (*sql.DB, error)
+	TestConnection(resource ResourceDto) (bool, error)
+	ValidateResourceOptions(resourceType string, options map[string]interface{}) error
 }
 
 type ResourceDto struct {
 	ID        int                    `json:"resourceId"`
-	Name      string                 `json:"resourceName,omitempty" validate:"required"`
-	Type      string                 `json:"resourceType,omitempty" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb"`
-	Options   map[string]interface{} `json:"options,omitempty" validate:"required"`
+	Name      string                 `json:"resourceName" validate:"required"`
+	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb"`
+	Options   map[string]interface{} `json:"content" validate:"required"`
 	CreatedAt time.Time              `json:"createdAt,omitempty"`
 	CreatedBy int                    `json:"createdBy,omitempty"`
 	UpdatedAt time.Time              `json:"updatedAt,omitempty"`
@@ -169,22 +168,30 @@ func (impl *ResourceServiceImpl) FindAllResources() ([]ResourceDto, error) {
 	return resDtoSlice, nil
 }
 
-func (impl *ResourceServiceImpl) OpenConnection(resource ResourceDto) (*sql.DB, error) {
-	resourceConn := &connector.Connector{
-		Type:    resource.Type,
-		Options: resource.Options,
-	}
-	dbResource := resourceConn.Generate()
+func (impl *ResourceServiceImpl) TestConnection(resource ResourceDto) (bool, error) {
+	rscFactory := Factory{Type: resource.Type}
+	dbResource := rscFactory.Generate()
 	if dbResource == nil {
-		err := errors.New("invalid ResourceType: unsupported type")
-		return nil, err
+		return false, errors.New("invalid ResourceType: unsupported type")
 	}
-	if err := dbResource.Format(resourceConn); err != nil {
-		return nil, err
+	if _, err := dbResource.ValidateResourceOptions(resource.Options); err != nil {
+		return false, err
 	}
-	dbConn, err := dbResource.Connection()
-	if err != nil {
-		return nil, err
+	connRes, err := dbResource.TestConnection(resource.Options)
+	if err != nil || !connRes.Success {
+		return false, errors.New("connection failed")
 	}
-	return dbConn, nil
+	return true, nil
+}
+
+func (impl *ResourceServiceImpl) ValidateResourceOptions(resourceType string, options map[string]interface{}) error {
+	rscFactory := Factory{Type: resourceType}
+	dbResource := rscFactory.Generate()
+	if dbResource == nil {
+		return errors.New("invalid ResourceType: unsupported type")
+	}
+	if _, err := dbResource.ValidateResourceOptions(options); err != nil {
+		return err
+	}
+	return nil
 }

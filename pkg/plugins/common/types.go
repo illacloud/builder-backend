@@ -12,12 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repository
+package common
 
-// define StateType
-const STATE_TYPE_INVALIED = 0
-const TREE_STATE_TYPE_COMPONENTS = 1       // ComponentsState
-const KV_STATE_TYPE_DEPENDENCIES = 2       // DependenciesState
-const KV_STATE_TYPE_DRAG_SHADOW = 3        // DragShadowState
-const KV_STATE_TYPE_DOTTED_LINE_SQUARE = 4 // DottedLineSquareState
-const SET_STATE_TYPE_DISPLAY_NAME = 5      // DisplayNameState
+type ValidateResult struct {
+	Valid bool
+	Extra map[string]interface{}
+}
+
+type ConnectionResult struct {
+	Success bool
+}
+
+type RuntimeResult struct {
+	Success bool
+	Rows    []map[string]interface{}
+	Extra   map[string]interface{}
+}

@@ -12,12 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repository
+package restapi
 
-// define StateType
-const STATE_TYPE_INVALIED = 0
-const TREE_STATE_TYPE_COMPONENTS = 1       // ComponentsState
-const KV_STATE_TYPE_DEPENDENCIES = 2       // DependenciesState
-const KV_STATE_TYPE_DRAG_SHADOW = 3        // DragShadowState
-const KV_STATE_TYPE_DOTTED_LINE_SQUARE = 4 // DottedLineSquareState
-const SET_STATE_TYPE_DISPLAY_NAME = 5      // DisplayNameState
+const (
+	METHOD_GET    = "GET"
+	METHOD_POST   = "POST"
+	METHOD_PUT    = "PUT"
+	METHOD_DELETE = "DELETE"
+	METHOD_PATCH  = "PATCH"
+
+	BODY_NONE = "none"
+	BODY_JSON = "json"
+	BODY_FORM = "form-data"
+	BODY_XWFU = "x-www-form-urlencoded"
+
+	AUTH_NONE   = "none"
+	AUTH_BASIC  = "basic"
+	AUTH_BEARER = "bearer"
+)

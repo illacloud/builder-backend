@@ -16,6 +16,7 @@ package state
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -57,8 +58,12 @@ type TreeStateServiceImpl struct {
 	treestateRepository repository.TreeStateRepository
 }
 
+func NewTreeStateDto() *TreeStateDto {
+	return &TreeStateDto{}
+}
+
 func (tsd *TreeStateDto) ConstructByMap(data interface{}) {
-	fmt.Printf("[D-1] data %v\n", data)
+
 	udata, ok := data.(map[string]interface{})
 	if !ok {
 		return
@@ -73,6 +78,61 @@ func (tsd *TreeStateDto) ConstructByMap(data interface{}) {
 	}
 }
 
+func (tsd *TreeStateDto) ConstructWithDisplayNameForDelete(displayNameInterface interface{}) error {
+	dnis, ok := displayNameInterface.(string)
+	if !ok {
+		err := errors.New("ConstructWithDisplayNameForDelete() can not resolve displayName.")
+		return err
+	}
+	tsd.Name = dnis
+	return nil
+}
+
+func (tsd *TreeStateDto) ConstructByTreeState(treeState *repository.TreeState) error {
+	cids, err := treeState.ExportChildrenNodeRefIDs()
+	if err != nil {
+		return err
+	}
+	tsd.ID = treeState.ID
+	tsd.StateType = treeState.StateType
+	tsd.ParentNodeRefID = treeState.ParentNodeRefID
+	tsd.ChildrenNodeRefIDs = cids
+	tsd.AppRefID = treeState.AppRefID
+	tsd.Version = treeState.Version
+	tsd.Name = treeState.Name
+	tsd.ParentNode = ""
+	tsd.Content = treeState.Content
+	tsd.CreatedAt = treeState.CreatedAt
+	tsd.CreatedBy = treeState.CreatedBy
+	tsd.UpdatedBy = treeState.UpdatedBy
+	tsd.UpdatedAt = treeState.UpdatedAt
+	return nil
+}
+
+func (tsd *TreeStateDto) ConstructWithID(id int) {
+	tsd.ID = id
+}
+
+func (tsd *TreeStateDto) ConstructWithType(stateType int) {
+	tsd.StateType = stateType
+}
+
+func (tsd *TreeStateDto) ConstructByApp(app *app.AppDto) {
+	tsd.AppRefID = app.ID
+}
+
+func (tsd *TreeStateDto) ConstructWithEditVersion() {
+	tsd.Version = repository.APP_EDIT_VERSION
+}
+
+func (tsd *TreeStateDto) ConstructWithContent(content []byte) {
+	tsd.Content = string(content)
+}
+
+func (tsd *TreeStateDto) ConstructWithNewStateContent(ntsd *TreeStateDto) {
+	tsd.Content = ntsd.Content
+}
+
 func NewTreeStateServiceImpl(logger *zap.SugaredLogger, treestateRepository repository.TreeStateRepository) *TreeStateServiceImpl {
 	return &TreeStateServiceImpl{
 		logger:              logger,
@@ -80,7 +140,7 @@ func NewTreeStateServiceImpl(logger *zap.SugaredLogger, treestateRepository repo
 	}
 }
 
-func (impl *TreeStateServiceImpl) NewTreeStateByComponentState(apprefid int, cnode *repository.ComponentNode) (*TreeStateDto, error) {
+func (impl *TreeStateServiceImpl) NewTreeStateByComponentState(appDto *app.AppDto, cnode *repository.ComponentNode) (*TreeStateDto, error) {
 	var cnodeserilized []byte
 	var err error
 	if cnodeserilized, err = cnode.SerializationForDatabase(); err != nil {
@@ -89,7 +149,7 @@ func (impl *TreeStateServiceImpl) NewTreeStateByComponentState(apprefid int, cno
 
 	treestatedto := &TreeStateDto{
 		StateType: repository.TREE_STATE_TYPE_COMPONENTS,
-		AppRefID:  apprefid,
+		AppRefID:  appDto.ID,
 		Version:   repository.APP_EDIT_VERSION,
 		Name:      cnode.DisplayName,
 		Content:   string(cnodeserilized),
@@ -122,11 +182,11 @@ func (impl *TreeStateServiceImpl) CreateTreeState(treestate TreeStateDto) (TreeS
 		UpdatedAt:          treestate.UpdatedAt,
 		UpdatedBy:          treestate.UpdatedBy,
 	}
-	if err := impl.treestateRepository.Create(&treeStateForStorage); err != nil {
+	if _, err := impl.treestateRepository.Create(&treeStateForStorage); err != nil {
 		return TreeStateDto{}, err
 	}
 	// fill created id
-	fmt.Printf("[DUMP indb id] treeStateForStorage.ID %d\n", treeStateForStorage.ID)
+
 	treestate.ID = treeStateForStorage.ID
 	return treestate, nil
 }
@@ -138,17 +198,17 @@ func (impl *TreeStateServiceImpl) DeleteTreeState(treestateID int) error {
 	return nil
 }
 
-func (impl *TreeStateServiceImpl) UpdateTreeState(treestate TreeStateDto) (TreeStateDto, error) {
+func (impl *TreeStateServiceImpl) UpdateTreeState(treestate *TreeStateDto) (*TreeStateDto, error) {
 	validate := validator.New()
 	if err := validate.Struct(treestate); err != nil {
-		return TreeStateDto{}, err
+		return nil, err
 	}
 	treestate.UpdatedAt = time.Now().UTC()
 	treestateIDsJSON, err := json.Marshal(treestate.ChildrenNodeRefIDs)
 	if err != nil {
-		return TreeStateDto{}, err
+		return nil, err
 	}
-	fmt.Printf("[DUMP] treestate: %v\n", treestate.Content)
+
 	treeStateRepo := &repository.TreeState{
 		ID:                 treestate.ID,
 		StateType:          treestate.StateType,
@@ -161,9 +221,9 @@ func (impl *TreeStateServiceImpl) UpdateTreeState(treestate TreeStateDto) (TreeS
 		UpdatedAt:          treestate.UpdatedAt,
 		UpdatedBy:          treestate.UpdatedBy,
 	}
-	fmt.Printf("[DUMP] treeStateRepo:%v\n", treeStateRepo)
+
 	if err := impl.treestateRepository.Update(treeStateRepo); err != nil {
-		return TreeStateDto{}, err
+		return nil, err
 	}
 	return treestate, nil
 }
@@ -265,67 +325,52 @@ func (impl *TreeStateServiceImpl) ReleaseTreeStateByApp(app *app.AppDto) error {
 	}
 	// and put them to the database as duplicate
 	for _, treestate := range treestates {
-		if err := impl.treestateRepository.Create(treestate); err != nil {
+		if _, err := impl.treestateRepository.Create(treestate); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (impl *TreeStateServiceImpl) UpdateTreeStateNode(apprefid int, nowNode *TreeStateDto) error {
-	// get id by displayName
-	nowTreeState := &repository.TreeState{}
-	var err error
-	if nowTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, nowNode.StateType, nowNode.Name); err != nil {
-		return err
-	}
-	fmt.Printf("[DUMP] nowTreeState: %v\n", nowTreeState)
-	// replace data
-	nowNode.ID = nowTreeState.ID
-	if _, err = impl.UpdateTreeState(*nowNode); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (impl *TreeStateServiceImpl) IsTreeStateNodeExists(apprefid int, nowNode *TreeStateDto) bool {
+func (impl *TreeStateServiceImpl) GetTreeStateByName(currentNode *TreeStateDto) (*TreeStateDto, error) {
 	// get id by displayName
 	var err error
-	if _, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, nowNode.StateType, nowNode.Name); err != nil {
+	var inDBTreeState *repository.TreeState
+	if inDBTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, currentNode.Name); err != nil {
 		// not exists
-		return false
+		return nil, err
 	}
-	return true
+	inDBTreeStateDto := NewTreeStateDto()
+	inDBTreeStateDto.ConstructByTreeState(inDBTreeState)
+	return inDBTreeStateDto, nil
 }
 
 // @todo: add tree ref circle checker.
-func (impl *TreeStateServiceImpl) MoveTreeStateNode(apprefid int, nowNode *TreeStateDto) error {
+func (impl *TreeStateServiceImpl) MoveTreeStateNode(currentNode *TreeStateDto) error {
 	// prepare data
 	oldParentTreeState := &repository.TreeState{}
 	newParentTreeState := &repository.TreeState{}
 	nowTreeState := &repository.TreeState{}
 	var err error
 	// get nowTreeState by name
-	if nowTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, nowNode.StateType, nowNode.Name); err != nil {
+	if nowTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, currentNode.Name); err != nil {
 		return err
 	}
-	fmt.Printf("[DUMP] nowTreeState: %v\n", nowTreeState)
+
 	// get oldParentTreeState by id
 	if oldParentTreeState, err = impl.treestateRepository.RetrieveByID(nowTreeState.ParentNodeRefID); err != nil {
 		return err
 	}
-	fmt.Printf("[DUMP] oldParentTreeState: %v\n", oldParentTreeState)
 
 	// get newParentTreeState by name
-	switch nowNode.StateType {
+	switch currentNode.StateType {
 	case repository.TREE_STATE_TYPE_COMPONENTS:
-		if newParentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, nowNode.StateType, nowNode.ParentNode); err != nil {
+		if newParentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, currentNode.ParentNode); err != nil {
 			return err
 		}
 	default:
 		return nil
 	}
-	fmt.Printf("[DUMP] newParentTreeState: %v\n", newParentTreeState)
 
 	// fill into database
 	// update nowTreeState
@@ -352,11 +397,11 @@ func (impl *TreeStateServiceImpl) MoveTreeStateNode(apprefid int, nowNode *TreeS
 	return nil
 }
 
-func (impl *TreeStateServiceImpl) DeleteTreeStateNodeRecursive(apprefid int, nowNode *TreeStateDto) error {
+func (impl *TreeStateServiceImpl) DeleteTreeStateNodeRecursive(currentNode *TreeStateDto) error {
 	// get nowTreeState by displayName from database
 	var err error
 	nowTreeState := &repository.TreeState{}
-	if nowTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(apprefid, nowNode.StateType, nowNode.Name); err != nil {
+	if nowTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, currentNode.Name); err != nil {
 		return err
 	}
 	// unlink parentNode
@@ -382,9 +427,9 @@ func (impl *TreeStateServiceImpl) DeleteTreeStateNodeRecursive(apprefid int, now
 	targetNodes = append(targetNodes, nowTreeState)
 	// delete them all
 	// @todo: replace this Delete to a batch method
-	fmt.Printf("[DUMP] targetNodes: %v\n", targetNodes)
+
 	for _, node := range targetNodes {
-		fmt.Printf("[DELETING] id: %d\n", node.ID)
+
 		if err = impl.treestateRepository.Delete(node.ID); err != nil {
 			return err
 		}
@@ -395,7 +440,6 @@ func (impl *TreeStateServiceImpl) DeleteTreeStateNodeRecursive(apprefid int, now
 func (impl *TreeStateServiceImpl) retrieveChildrenNodes(treeState *repository.TreeState, childrenNodes *[]*repository.TreeState) error {
 	// @todo: replace this RetrieveByID to a batch method
 	ids, err := treeState.ExportChildrenNodeRefIDs()
-	fmt.Printf("[DUMP] treeState.ExportChildrenNodeRefIDs: %v\n", ids)
 
 	if err != nil {
 		return err
@@ -405,73 +449,79 @@ func (impl *TreeStateServiceImpl) retrieveChildrenNodes(treeState *repository.Tr
 		if node, err = impl.treestateRepository.RetrieveByID(id); err != nil {
 			return err
 		}
-		var subChildrenNodes []*repository.TreeState
 		if err := impl.retrieveChildrenNodes(node, childrenNodes); err != nil {
 			return err
 		}
-		fmt.Printf("[DUMP] subChildrenNodes: %v\n", subChildrenNodes)
+
 		*childrenNodes = append(*childrenNodes, node)
 	}
 	return nil
 }
 
-func (impl *TreeStateServiceImpl) CreateComponentTree(apprefid int, parentNodeID int, componentNodeTree *repository.ComponentNode) error {
-	fmt.Printf("[DUMP] parentNodeID: %d\n", parentNodeID)
-	fmt.Printf("[DUMP] componentNodeTree: %v\n", componentNodeTree)
-	fmt.Printf("[DUMP] componentNodeTree.ChildrenNode: %v\n", componentNodeTree.ChildrenNode)
+func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parentNodeID int, componentNodeTree *repository.ComponentNode) error {
+	// summit node
+	if parentNodeID == 0 {
+		parentNodeID = repository.TREE_STATE_SUMMIT_ID
+	}
+
 	// convert ComponentNode to TreeState
-	nowNode := &TreeStateDto{}
+	currentNode := NewTreeStateDto()
+	currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS)
 	var err error
-	if nowNode, err = impl.NewTreeStateByComponentState(apprefid, componentNodeTree); err != nil {
+	if currentNode, err = impl.NewTreeStateByComponentState(appDto, componentNodeTree); err != nil {
 		return err
 	}
-	fmt.Printf("\n[D-0] %v\n", componentNodeTree.ChildrenNode)
-	fmt.Printf("\n[D-X] %v\n", nowNode)
+
 	// get parentNode
-	parentTreeState := &repository.TreeState{}
+	parentTreeState := repository.NewTreeState()
 	isSummitNode := true
-	if parentNodeID != 0 { // parentNode is in database
+	if parentNodeID != 0 || currentNode.ParentNode == repository.TREE_STATE_SUMMIT_NAME { // parentNode is in database
 		isSummitNode = false
 		if parentTreeState, err = impl.treestateRepository.RetrieveByID(parentNodeID); err != nil {
 			return err
 		}
-	} else if componentNodeTree.ParentNode != "" { // or parentNode is exist
+	} else if componentNodeTree.ParentNode != "" && componentNodeTree.ParentNode != repository.TREE_STATE_SUMMIT_NAME { // or parentNode is exist
 		isSummitNode = false
-		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(nowNode.AppRefID, nowNode.StateType, componentNodeTree.ParentNode); err != nil {
+		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, componentNodeTree.ParentNode); err != nil {
 			return err
 		}
 	}
 
-	// no parentNode, nowNode is tree summit
-	if isSummitNode {
-		nowNode.ParentNodeRefID = repository.TREE_STATE_SUMMIT_ID
-	} else {
-		// fill nowNode.ParentNodeRefID
-		nowNode.ParentNodeRefID = parentTreeState.ID
+	// no parentNode, currentNode is tree summit
+	if isSummitNode && currentNode.Name != repository.TREE_STATE_ROOTDSL_NAME {
+
+		fmt.Printf("[DUMP] parentTreeState: %v\n", parentTreeState)
+		fmt.Printf("[DUMP] currentNode: %v\n", currentNode)
+		// get rootDsl node
+		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, repository.TREE_STATE_ROOTDSL_NAME); err != nil {
+			return err
+		}
 	}
-	// insert nowNode and get id
-	fmt.Printf("\n[D-1] %v\n", componentNodeTree.ChildrenNode)
+	currentNode.ParentNodeRefID = parentTreeState.ID
+
+	// insert currentNode and get id
 	var treeStateDtoInDB TreeStateDto
-	if treeStateDtoInDB, err = impl.CreateTreeState(*nowNode); err != nil {
+	if treeStateDtoInDB, err = impl.CreateTreeState(*currentNode); err != nil {
 		return err
 	}
-	nowNode.ID = treeStateDtoInDB.ID
+	currentNode.ID = treeStateDtoInDB.ID
 
-	// fill nowNode id into parentNode.ChildrenNodeRefIDs
-	if !isSummitNode {
-		fmt.Printf("[fill nowNode id into parentNode.ChildrenNodeRefIDs]\n")
-		parentTreeState.AppendChildrenNodeRefIDs(nowNode.ID)
-		fmt.Printf("[DUMP] nowNode.ID: %d\n", nowNode.ID)
-		fmt.Printf("[DUMP] parentTreeState.ChildrenNodeRefIDs: %v\n", parentTreeState.ChildrenNodeRefIDs)
+	// fill currentNode id into parentNode.ChildrenNodeRefIDs
+	if currentNode.Name != repository.TREE_STATE_ROOTDSL_NAME {
+
+		parentTreeState.AppendChildrenNodeRefIDs(currentNode.ID)
+
+		fmt.Printf("[DUMP] parentTreeState: %v\n", parentTreeState)
+
 		// save parentNode
 		if err = impl.treestateRepository.Update(parentTreeState); err != nil {
 			return err
 		}
 	}
-	// create nowNode.ChildrenNode
-	fmt.Printf("\n[D2] %v\n", componentNodeTree.ChildrenNode)
+	// create currentNode.ChildrenNode
+
 	for _, childrenComponentNode := range componentNodeTree.ChildrenNode {
-		if err := impl.CreateComponentTree(apprefid, nowNode.ID, childrenComponentNode); err != nil {
+		if err := impl.CreateComponentTree(appDto, currentNode.ID, childrenComponentNode); err != nil {
 			return err
 		}
 	}

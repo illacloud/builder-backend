@@ -30,7 +30,7 @@ type ComponentNode struct {
 	IsDragging     bool                   `json:"isDragging"`
 	ChildrenNode   []*ComponentNode       `json:"childrenNode"`
 	Type           string                 `json:"type"`
-	ContainerType  map[string]interface{} `json:"containerType"`
+	ContainerType  string                 `json:"containerType"`
 	VerticalResize bool                   `json:"verticalResize"`
 	H              float64                `json:"h"`
 	W              float64                `json:"w"`
@@ -81,7 +81,7 @@ func ConstructComponentNodeByMap(data interface{}) *ComponentNode {
 		case "type":
 			cnode.Type, _ = v.(string)
 		case "containerType":
-			cnode.ContainerType, _ = v.(map[string]interface{})
+			cnode.ContainerType, _ = v.(string)
 		case "verticalResize":
 			cnode.VerticalResize, _ = v.(bool)
 		case "h":

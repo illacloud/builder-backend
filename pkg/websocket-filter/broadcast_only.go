@@ -12,12 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repository
+package filter
 
-// define StateType
-const STATE_TYPE_INVALIED = 0
-const TREE_STATE_TYPE_COMPONENTS = 1       // ComponentsState
-const KV_STATE_TYPE_DEPENDENCIES = 2       // DependenciesState
-const KV_STATE_TYPE_DRAG_SHADOW = 3        // DragShadowState
-const KV_STATE_TYPE_DOTTED_LINE_SQUARE = 4 // DottedLineSquareState
-const SET_STATE_TYPE_DISPLAY_NAME = 5      // DisplayNameState
+import (
+	ws "github.com/illa-family/builder-backend/internal/websocket"
+)
+
+func SignalBroadcastOnly(hub *ws.Hub, message *ws.Message) error {
+	// deserialize message
+	currentClient := hub.Clients[message.ClientID]
+	message.RewriteBroadcast()
+
+	// feedback otherClient
+	hub.BroadcastToOtherClients(message, currentClient)
+	return nil
+}

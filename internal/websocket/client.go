@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package websocket
+package ws
 
 import (
 	"bytes"
 	"fmt"
 	"log"
-	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -40,7 +39,7 @@ const (
 )
 
 const DEAULT_INSTANCE_ID = "SELF_HOST"
-const DEAULT_ROOM_ID = 0
+const DEAULT_APP_ID = 0
 
 var (
 	newline   = []byte{'\n'}
@@ -71,8 +70,39 @@ type Client struct {
 	// instanceID, SELF_HOST by default
 	InstanceID string
 
-	// roomID, 0 by default
-	RoomID int
+	// appID, 0 by default
+	APPID int
+}
+
+func (c *Client) GetAPPID() int {
+	return c.APPID
+}
+
+func NewClient(hub *Hub, conn *websocket.Conn, instanceID string, appID int) *Client {
+	return &Client{
+		ID:           uuid.Must(uuid.NewV4(), nil),
+		MappedUserID: 0,
+		IsLoggedIn:   false,
+		Hub:          hub,
+		Conn:         conn,
+		Send:         make(chan []byte, 256),
+		InstanceID:   instanceID,
+		APPID:        appID}
+}
+
+func (c *Client) Feedback(message *Message, errorCode int, errorMessage error) {
+	m := ""
+	if errorMessage != nil {
+		m = errorMessage.Error()
+	}
+	feedCurrentClient := Feedback{
+		ErrorCode:    errorCode,
+		ErrorMessage: m,
+		Broadcast:    message.Broadcast,
+		Data:         nil,
+	}
+	feedbyte, _ := feedCurrentClient.Serialization()
+	c.Send <- feedbyte
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -80,7 +110,7 @@ type Client struct {
 // The application runs readPump in a per-connection goroutine. The application
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine.
-func (c *Client) readPump() {
+func (c *Client) ReadPump() {
 	defer func() {
 		c.Hub.Unregister <- c
 		c.Conn.Close()
@@ -96,10 +126,11 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		// format message
+		// on message, format
 		message = bytes.TrimSpace(bytes.Replace(message, newline, charSpace, -1))
-		fmt.Printf("[dump] %v\n", message)
-		msg, _ := NewMessage(c.ID, c.RoomID, message)
+		// for debug
+		fmt.Printf("[on message] %v\n", string(message))
+		msg, _ := NewMessage(c.ID, c.APPID, message)
 		// send to hub and process
 		if msg != nil {
 			c.Hub.OnMessage <- msg
@@ -112,7 +143,7 @@ func (c *Client) readPump() {
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
-func (c *Client) writePump() {
+func (c *Client) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
@@ -166,25 +197,4 @@ func ping(ws *websocket.Conn, done chan struct{}) {
 			return
 		}
 	}
-}
-
-func internalError(ws *websocket.Conn, msg string, err error) {
-	log.Println(msg, err)
-	ws.WriteMessage(websocket.TextMessage, []byte("Internal server error."))
-}
-
-// ServeWebsocket handle websocket requests from the peer.
-func ServeWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request, instanceID string, roomID int) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	client := &Client{ID: uuid.Must(uuid.NewV4(), nil), MappedUserID: 0, IsLoggedIn: false, Hub: hub, Conn: conn, Send: make(chan []byte, 256), InstanceID: instanceID, RoomID: roomID}
-	client.Hub.Register <- client
-
-	// Allow collection of memory referenced by the caller by doing all work in
-	// new goroutines.
-	go client.writePump()
-	go client.readPump()
 }

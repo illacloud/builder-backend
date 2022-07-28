@@ -23,6 +23,7 @@ import (
 )
 
 var RoomWireSet = wire.NewSet(
+	room.NewRoomServiceImpl,
 	wire.Bind(new(room.RoomService), new(*room.RoomServiceImpl)),
 	resthandler.NewRoomRestHandlerImpl,
 	wire.Bind(new(resthandler.RoomRestHandler), new(*resthandler.RoomRestHandlerImpl)),
