@@ -21,7 +21,7 @@ import (
 )
 
 const DASHBOARD_WS_URL = "ws://ws.dev.illasoft.com/room/%s/dashboard"
-const ROOM_WS_URL = "ws://ws.dev.illasoft.com/room/%s/app/%s"
+const ROOM_WS_URL = "ws://ws.dev.illasoft.com/room/%s/app/%d"
 
 type RoomService interface {
 	GetDashboardConn(instanceID string) (WSURLResponse, error)
