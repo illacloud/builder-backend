@@ -28,6 +28,8 @@ var AppWireSet = wire.NewSet(
 	wire.Bind(new(repository.KVStateRepository), new(*repository.KVStateRepositoryImpl)),
 	repository.NewTreeStateRepositoryImpl,
 	wire.Bind(new(repository.TreeStateRepository), new(*repository.TreeStateRepositoryImpl)),
+	repository.NewSetStateRepositoryImpl,
+	wire.Bind(new(repository.SetStateRepository), new(*repository.SetStateRepositoryImpl)),
 	repository.NewAppRepositoryImpl,
 	wire.Bind(new(repository.AppRepository), new(*repository.AppRepositoryImpl)),
 	app.NewAppServiceImpl,

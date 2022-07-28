@@ -44,6 +44,7 @@ type SetStateRepository interface {
 	RetrieveSetStatesByVersion(version int) ([]*SetState, error)
 	RetrieveByValue(setState *SetState) (*SetState, error)
 	RetrieveSetStatesByApp(apprefid int, statetype int, version int) ([]*SetState, error)
+	DeleteAllTypeSetStatesByApp(apprefid int) error
 }
 
 type SetStateRepositoryImpl struct {
@@ -144,4 +145,11 @@ func (impl *SetStateRepositoryImpl) RetrieveSetStatesByApp(apprefid int, statety
 		return nil, err
 	}
 	return setStates, nil
+}
+
+func (impl *SetStateRepositoryImpl) DeleteAllTypeSetStatesByApp(apprefid int) error {
+	if err := impl.db.Where("app_ref_id = ?", apprefid).Delete(&SetState{}).Error; err != nil {
+		return err
+	}
+	return nil
 }

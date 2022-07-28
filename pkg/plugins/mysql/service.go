@@ -86,7 +86,11 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 	}
 
 	// run mysql query
-	queryResult := common.RuntimeResult{Success: false}
+	queryResult := common.RuntimeResult{
+		Success: false,
+		Rows:    []map[string]interface{}{},
+		Extra:   map[string]interface{}{},
+	}
 	// fetch data
 	if strings.HasPrefix(m.Action.Query, "SELECT") || strings.HasPrefix(m.Action.Query, "select") {
 		rows, err := db.Query(m.Action.Query)
