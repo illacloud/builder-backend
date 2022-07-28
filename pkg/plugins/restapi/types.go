@@ -16,9 +16,9 @@ package restapi
 
 type RESTOptions struct {
 	BaseURL        string `validate:"required"`
-	URLParams      map[string]string
-	Headers        map[string]string
-	Cookies        map[string]string
+	URLParams      []map[string]string
+	Headers        []map[string]string
+	Cookies        []map[string]string
 	Authentication string            `validate:"oneof=none basic bearer"`
 	AuthContent    map[string]string `validate:"required_unless=Authentication none"`
 }
@@ -27,8 +27,8 @@ type RESTTemplate struct {
 	URL       string `validate:"required"`
 	Method    string `validate:"oneof=GET POST PUT PATCH DELETE"`
 	BodyType  string `validate:"oneof=none form-data x-www-form-urlencoded json"`
-	UrlParams map[string]string
-	Headers   map[string]string
+	UrlParams []map[string]string
+	Headers   []map[string]string
 	Body      map[string]string `validate:"required_unless=BodyType none"`
-	Cookies   map[string]string
+	Cookies   []map[string]string
 }

@@ -198,6 +198,9 @@ func (impl *ActionServiceImpl) RunAction(action ActionDto) (interface{}, error) 
 }
 
 func (impl *ActionServiceImpl) ValidateActionOptions(actionType string, options map[string]interface{}) error {
+	if actionType == TRANSFORMER_ACTION {
+		return nil
+	}
 	actionFactory := Factory{Type: actionType}
 	actionAssemblyLine := actionFactory.Build()
 	if actionAssemblyLine == nil {

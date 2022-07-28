@@ -80,17 +80,17 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 		})
 		return
 	}
-	if err := impl.resourceService.ValidateResourceOptions(rsc.Type, rsc.Options); err != nil {
+
+	// validate `resource` valid required fields
+	validate := validator.New()
+	if err := validate.Struct(rsc); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": "parse request body error: " + err.Error(),
 		})
 		return
 	}
-
-	// validate `resource` valid required fields
-	validate := validator.New()
-	if err := validate.Struct(rsc); err != nil {
+	if err := impl.resourceService.ValidateResourceOptions(rsc.Type, rsc.Options); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": "parse request body error: " + err.Error(),
@@ -163,17 +163,17 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 		})
 		return
 	}
-	if err := impl.resourceService.ValidateResourceOptions(rsc.Type, rsc.Options); err != nil {
+
+	// validate `resource` valid required fields
+	validate := validator.New()
+	if err := validate.Struct(rsc); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": "parse request body error: " + err.Error(),
 		})
 		return
 	}
-
-	// validate `resource` valid required fields
-	validate := validator.New()
-	if err := validate.Struct(rsc); err != nil {
+	if err := impl.resourceService.ValidateResourceOptions(rsc.Type, rsc.Options); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": "parse request body error: " + err.Error(),

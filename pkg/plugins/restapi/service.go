@@ -87,8 +87,33 @@ func (r *RESTAPIConnector) TestConnection(resourceOptions map[string]interface{}
 }
 
 func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
-	res := common.RuntimeResult{}
+	res := common.RuntimeResult{
+		Success: false,
+		Rows:    []map[string]interface{}{},
+		Extra:   map[string]interface{}{},
+	}
 	var err error
+
+	actionURLParams := map[string]string{}
+	for _, param := range r.Action.UrlParams {
+		actionURLParams[param["key"]] = param["value"]
+	}
+
+	headers := map[string]string{}
+	for _, header := range r.Resource.Headers {
+		headers[header["key"]] = header["value"]
+	}
+	for _, header := range r.Action.Headers {
+		headers[header["key"]] = header["value"]
+	}
+
+	cookies := map[string]string{}
+	for _, cookie := range r.Resource.Cookies {
+		headers[cookie["key"]] = cookie["value"]
+	}
+	for _, cookie := range r.Action.Cookies {
+		headers[cookie["key"]] = cookie["value"]
+	}
 
 	client := resty.New()
 
@@ -99,21 +124,13 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		return res, err
 	}
 	params := url.Values{}
-	for k, v := range r.Resource.URLParams {
-		params.Set(k, v)
+	for _, v := range r.Resource.URLParams {
+		params.Set(v["key"], v["value"])
 	}
 	uri.RawQuery = params.Encode()
 	baseURL := uri.String()
 
 	// resty client set `resource` options
-	// set headers, can be overridden by action options
-	client.SetHeaders(r.Resource.Headers)
-	// set cookies, can be overridden by action options
-	cookies := make([]*http.Cookie, 0, len(r.Resource.Cookies))
-	for k, v := range r.Resource.Cookies {
-		cookies = append(cookies, &http.Cookie{Name: k, Value: v})
-	}
-	client.SetCookies(cookies)
 	// set auth
 	switch r.Resource.Authentication {
 	case AUTH_BASIC:
@@ -127,11 +144,11 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	// resty client instance set `action` options
 	actionClient := client.R()
 	// set headers, will override `resource` headers
-	actionClient.SetHeaders(r.Action.Headers)
+	actionClient.SetHeaders(headers)
 	// set cookies, will override `resource` cookies
 	actionCookies := make([]*http.Cookie, 0, len(r.Action.Cookies))
-	for k, v := range r.Action.Cookies {
-		cookies = append(cookies, &http.Cookie{Name: k, Value: v})
+	for k, v := range cookies {
+		actionCookies = append(actionCookies, &http.Cookie{Name: k, Value: v})
 	}
 	actionClient.SetCookies(actionCookies)
 
@@ -154,7 +171,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 
 	switch r.Action.Method {
 	case METHOD_GET:
-		resp, err := actionClient.SetQueryParams(r.Action.UrlParams).Get(baseURL + r.Action.URL)
+		resp, err := actionClient.SetQueryParams(actionURLParams).Get(baseURL + r.Action.URL)
 		body := make(map[string]interface{})
 		if err := json.Unmarshal(resp.Body(), &body); err == nil {
 			res.Rows = append(res.Rows, body)
@@ -167,7 +184,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		}
 		break
 	case METHOD_POST:
-		resp, err := actionClient.SetQueryParams(r.Action.UrlParams).Post(baseURL + r.Action.URL)
+		resp, err := actionClient.SetQueryParams(actionURLParams).Post(baseURL + r.Action.URL)
 		body := make(map[string]interface{})
 		if err := json.Unmarshal(resp.Body(), &body); err == nil {
 			res.Rows = append(res.Rows, body)
@@ -180,7 +197,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		}
 		break
 	case METHOD_PUT:
-		resp, err := actionClient.SetQueryParams(r.Action.UrlParams).Put(baseURL + r.Action.URL)
+		resp, err := actionClient.SetQueryParams(actionURLParams).Put(baseURL + r.Action.URL)
 		body := make(map[string]interface{})
 		if err := json.Unmarshal(resp.Body(), &body); err == nil {
 			res.Rows = append(res.Rows, body)
@@ -193,7 +210,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		}
 		break
 	case METHOD_PATCH:
-		resp, err := actionClient.SetQueryParams(r.Action.UrlParams).Patch(baseURL + r.Action.URL)
+		resp, err := actionClient.SetQueryParams(actionURLParams).Patch(baseURL + r.Action.URL)
 		body := make(map[string]interface{})
 		if err := json.Unmarshal(resp.Body(), &body); err == nil {
 			res.Rows = append(res.Rows, body)
@@ -206,7 +223,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		}
 		break
 	case METHOD_DELETE:
-		resp, err := actionClient.SetQueryParams(r.Action.UrlParams).Delete(baseURL + r.Action.URL)
+		resp, err := actionClient.SetQueryParams(actionURLParams).Delete(baseURL + r.Action.URL)
 		body := make(map[string]interface{})
 		if err := json.Unmarshal(resp.Body(), &body); err == nil {
 			res.Rows = append(res.Rows, body)

@@ -21,8 +21,9 @@ import (
 )
 
 var (
-	REST_ACTION  = "restapi"
-	MYSQL_ACTION = "mysql"
+	REST_ACTION        = "restapi"
+	MYSQL_ACTION       = "mysql"
+	TRANSFORMER_ACTION = "transformer"
 )
 
 type AbstractActionFactory interface {

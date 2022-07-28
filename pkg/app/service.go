@@ -42,6 +42,7 @@ type AppServiceImpl struct {
 	userRepository      repository.UserRepository
 	kvstateRepository   repository.KVStateRepository
 	treestateRepository repository.TreeStateRepository
+	setstateRepository  repository.SetStateRepository
 	actionRepository    repository.ActionRepository
 }
 
@@ -108,7 +109,7 @@ type Action struct {
 	Resource    int                    `json:"resourceId,omitempty"`
 	DisplayName string                 `json:"displayName,omitempty"`
 	Type        string                 `json:"actionType,omitempty"`
-	Template    map[string]interface{} `json:"actionTemplate,omitempty"`
+	Template    map[string]interface{} `json:"content,omitempty"`
 	CreatedAt   time.Time              `json:"createdAt,omitempty"`
 	CreatedBy   int                    `json:"createdBy,omitempty"`
 	UpdatedAt   time.Time              `json:"updatedAt,omitempty"`
@@ -117,13 +118,15 @@ type Action struct {
 
 func NewAppServiceImpl(logger *zap.SugaredLogger, appRepository repository.AppRepository,
 	userRepository repository.UserRepository, kvstateRepository repository.KVStateRepository,
-	treestateRepository repository.TreeStateRepository, actionRepository repository.ActionRepository) *AppServiceImpl {
+	treestateRepository repository.TreeStateRepository, setstateRepository repository.SetStateRepository,
+	actionRepository repository.ActionRepository) *AppServiceImpl {
 	return &AppServiceImpl{
 		logger:              logger,
 		appRepository:       appRepository,
 		userRepository:      userRepository,
 		kvstateRepository:   kvstateRepository,
 		treestateRepository: treestateRepository,
+		setstateRepository:  setstateRepository,
 		actionRepository:    actionRepository,
 	}
 }
@@ -152,7 +155,6 @@ func (impl *AppServiceImpl) CreateApp(app AppDto) (AppDto, error) {
 	app.AppActivity.ModifiedAt = app.UpdatedAt // TODO: find last modified time in another record with version 0
 	// create kv_states and tree_states for new app
 	_ = impl.initialAllTypeTreeStates(app.ID, app.CreatedBy)
-	_ = impl.initialAllTypeKVStates(app.ID, app.CreatedBy)
 	return app, nil
 }
 
@@ -171,61 +173,6 @@ func (impl *AppServiceImpl) initialAllTypeTreeStates(appID, user int) error {
 		UpdatedAt:          time.Now().UTC(),
 		UpdatedBy:          user,
 	}); err != nil {
-		return errors.New("initial tree state failed")
-	}
-	return nil
-}
-
-func (impl *AppServiceImpl) initialAllTypeKVStates(appID, user int) error {
-	// create dependencies state
-	errS := impl.kvstateRepository.Create(&repository.KVState{
-		StateType: repository.KV_STATE_TYPE_DEPENDENCIES,
-		AppRefID:  appID,
-		Version:   repository.APP_EDIT_VERSION,
-		Key:       "rootDsl",
-		Value:     "{}",
-		CreatedAt: time.Now().UTC(),
-		CreatedBy: user,
-		UpdatedAt: time.Now().UTC(),
-		UpdatedBy: user,
-	})
-	// create drag shadow state
-	errA := impl.kvstateRepository.Create(&repository.KVState{
-		StateType: repository.KV_STATE_TYPE_DRAG_SHADOW,
-		AppRefID:  appID,
-		Version:   repository.APP_EDIT_VERSION,
-		Key:       "rootDsl",
-		Value:     "{}",
-		CreatedAt: time.Now().UTC(),
-		CreatedBy: user,
-		UpdatedAt: time.Now().UTC(),
-		UpdatedBy: user,
-	})
-	// create dotted line square state
-	errL := impl.kvstateRepository.Create(&repository.KVState{
-		StateType: repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE,
-		AppRefID:  appID,
-		Version:   repository.APP_EDIT_VERSION,
-		Key:       "rootDsl",
-		Value:     "{}",
-		CreatedAt: time.Now().UTC(),
-		CreatedBy: user,
-		UpdatedAt: time.Now().UTC(),
-		UpdatedBy: user,
-	})
-	// create displayName state
-	errD := impl.kvstateRepository.Create(&repository.KVState{
-		StateType: repository.SET_STATE_TYPE_DISPLAY_NAME,
-		AppRefID:  appID,
-		Version:   repository.APP_EDIT_VERSION,
-		Key:       "displayName",
-		Value:     "[]",
-		CreatedAt: time.Now().UTC(),
-		CreatedBy: user,
-		UpdatedAt: time.Now().UTC(),
-		UpdatedBy: user,
-	})
-	if errA != nil || errS != nil || errL != nil || errD != nil {
 		return errors.New("initial tree state failed")
 	}
 	return nil
@@ -269,6 +216,7 @@ func (impl *AppServiceImpl) DeleteApp(appID int) error { // TODO: maybe need tra
 	_ = impl.treestateRepository.DeleteAllTypeTreeStatesByApp(appID)
 	_ = impl.kvstateRepository.DeleteAllTypeKVStatesByApp(appID)
 	_ = impl.actionRepository.DeleteActionsByApp(appID)
+	_ = impl.setstateRepository.DeleteAllTypeSetStatesByApp(appID)
 	return impl.appRepository.Delete(appID)
 }
 
@@ -336,6 +284,7 @@ func (impl *AppServiceImpl) DuplicateApp(appID, userID int, name string) (AppDto
 	}
 	_ = impl.copyAllTreeState(appID, appB.ID, userID)
 	_ = impl.copyAllKVState(appID, appB.ID, userID)
+	_ = impl.copyAllSetState(appID, appB.ID, userID)
 	_ = impl.copyActions(appID, appB.ID, userID)
 	return appB, nil
 }
@@ -390,6 +339,30 @@ func (impl *AppServiceImpl) copyAllKVState(appA, appB, user int) error {
 	return nil
 }
 
+func (impl *AppServiceImpl) copyAllSetState(appA, appB, user int) error {
+	setstates, err := impl.setstateRepository.RetrieveSetStatesByApp(appA, repository.SET_STATE_TYPE_DISPLAY_NAME, repository.APP_EDIT_VERSION)
+	if err != nil {
+		return err
+	}
+	// update some fields
+	for serial, _ := range setstates {
+		setstates[serial].ID = 0
+		setstates[serial].AppRefID = appB
+		setstates[serial].Version = repository.APP_EDIT_VERSION
+		setstates[serial].CreatedBy = user
+		setstates[serial].CreatedAt = time.Now().UTC()
+		setstates[serial].UpdatedBy = user
+		setstates[serial].UpdatedAt = time.Now().UTC()
+	}
+	// and put them to the database as duplicate
+	for _, setstate := range setstates {
+		if err := impl.setstateRepository.Create(setstate); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (impl *AppServiceImpl) copyActions(appA, appB, user int) error {
 	// get edit version K-V state from database
 	actions, err := impl.actionRepository.RetrieveActionsByAppVersion(appA, repository.APP_EDIT_VERSION)
@@ -424,6 +397,7 @@ func (impl *AppServiceImpl) ReleaseApp(appID int) (int, error) {
 	app.ReleaseVersion = app.MainlineVersion
 	_ = impl.releaseTreeStateByApp(AppDto{ID: appID, MainlineVersion: app.MainlineVersion})
 	_ = impl.releaseKVStateByApp(AppDto{ID: appID, MainlineVersion: app.MainlineVersion})
+	_ = impl.releaseSetStateByApp(AppDto{ID: appID, MainlineVersion: app.MainlineVersion})
 	_ = impl.releaseActionsByApp(AppDto{ID: appID, MainlineVersion: app.MainlineVersion})
 	if err := impl.appRepository.Update(app); err != nil {
 		return -1, nil
@@ -466,6 +440,25 @@ func (impl *AppServiceImpl) releaseKVStateByApp(app AppDto) error {
 	// and put them to the database as duplicate
 	for _, kvstate := range kvstates {
 		if err := impl.kvstateRepository.Create(kvstate); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (impl *AppServiceImpl) releaseSetStateByApp(app AppDto) error {
+	setstates, err := impl.setstateRepository.RetrieveSetStatesByApp(app.ID, repository.SET_STATE_TYPE_DISPLAY_NAME, repository.APP_EDIT_VERSION)
+	if err != nil {
+		return err
+	}
+	// update some fields
+	for serial, _ := range setstates {
+		setstates[serial].ID = 0
+		setstates[serial].Version = app.MainlineVersion
+	}
+	// and put them to the database as duplicate
+	for _, setstate := range setstates {
+		if err := impl.setstateRepository.Create(setstate); err != nil {
 			return err
 		}
 	}
@@ -580,7 +573,7 @@ func (impl *AppServiceImpl) formatDependenciesState(appID, version int) (map[str
 
 	resMap := map[string][]string{}
 
-	if len(res) == 1 {
+	if len(res) == 0 {
 		return resMap, nil
 	}
 
@@ -601,7 +594,7 @@ func (impl *AppServiceImpl) formatDragShadowState(appID, version int) (map[strin
 
 	resMap := map[string]interface{}{}
 
-	if len(res) == 1 {
+	if len(res) == 0 {
 		return resMap, nil
 	}
 
@@ -622,7 +615,7 @@ func (impl *AppServiceImpl) formatDottedLineSquareState(appID, version int) (map
 
 	resMap := map[string]interface{}{}
 
-	if len(res) == 1 {
+	if len(res) == 0 {
 		return resMap, nil
 	}
 
@@ -636,17 +629,18 @@ func (impl *AppServiceImpl) formatDottedLineSquareState(appID, version int) (map
 }
 
 func (impl *AppServiceImpl) formatDisplayNameState(appID, version int) ([]string, error) {
-	res, err := impl.kvstateRepository.RetrieveKVStatesByApp(appID, repository.SET_STATE_TYPE_DISPLAY_NAME, version)
+	res, err := impl.setstateRepository.RetrieveSetStatesByApp(appID, repository.SET_STATE_TYPE_DISPLAY_NAME, version)
 	if err != nil {
 		return nil, err
 	}
 
 	resSlice := make([]string, 0, len(res))
+	if len(res) == 0 {
+		return resSlice, nil
+	}
 
-	if len(res) == 1 {
-		var revMsg []string
-		json.Unmarshal([]byte(res[0].Value), &revMsg)
-		resSlice = revMsg
+	for _, displayName := range res {
+		resSlice = append(resSlice, displayName.Value)
 	}
 
 	return resSlice, nil
