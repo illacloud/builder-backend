@@ -182,7 +182,7 @@ func (impl *TreeStateServiceImpl) CreateTreeState(treestate TreeStateDto) (TreeS
 		UpdatedAt:          treestate.UpdatedAt,
 		UpdatedBy:          treestate.UpdatedBy,
 	}
-	if err := impl.treestateRepository.Create(&treeStateForStorage); err != nil {
+	if _, err := impl.treestateRepository.Create(&treeStateForStorage); err != nil {
 		return TreeStateDto{}, err
 	}
 	// fill created id
@@ -325,7 +325,7 @@ func (impl *TreeStateServiceImpl) ReleaseTreeStateByApp(app *app.AppDto) error {
 	}
 	// and put them to the database as duplicate
 	for _, treestate := range treestates {
-		if err := impl.treestateRepository.Create(treestate); err != nil {
+		if _, err := impl.treestateRepository.Create(treestate); err != nil {
 			return err
 		}
 	}

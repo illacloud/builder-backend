@@ -162,7 +162,7 @@ func (impl *AppServiceImpl) CreateApp(app AppDto) (AppDto, error) {
 
 func (impl *AppServiceImpl) initialAllTypeTreeStates(appID, user int) error {
 	// create `root` component
-	if err := impl.treestateRepository.Create(&repository.TreeState{
+	if _, err := impl.treestateRepository.Create(&repository.TreeState{
 		StateType:          repository.TREE_STATE_TYPE_COMPONENTS,
 		ParentNodeRefID:    0,
 		ChildrenNodeRefIDs: "[]",
@@ -309,7 +309,7 @@ func (impl *AppServiceImpl) copyAllTreeState(appA, appB, user int) error {
 	}
 	// and put them to the database as duplicate
 	for _, treestate := range treestates {
-		if err := impl.treestateRepository.Create(treestate); err != nil {
+		if _, err := impl.treestateRepository.Create(treestate); err != nil {
 			return err
 		}
 	}
@@ -414,17 +414,30 @@ func (impl *AppServiceImpl) releaseTreeStateByApp(app AppDto) error {
 	if err != nil {
 		return err
 	}
+	indexIDMap := map[int]int{}
+	releaseIDMap := map[int]int{}
 	// set version as mainline version
 	for serial, _ := range treestates {
+		indexIDMap[serial] = treestates[serial].ID
 		treestates[serial].ID = 0
 		treestates[serial].Version = app.MainlineVersion
 	}
 	// and put them to the database as duplicate
+	for i, treestate := range treestates {
+		id, err := impl.treestateRepository.Create(treestate)
+		if err != nil {
+			return err
+		}
+		oldID := indexIDMap[i]
+		releaseIDMap[oldID] = id
+	}
 	for _, treestate := range treestates {
-		if err := impl.treestateRepository.Create(treestate); err != nil {
+		treestate.ChildrenNodeRefIDs = convertLink(treestate.ChildrenNodeRefIDs, releaseIDMap)
+		if err := impl.treestateRepository.Update(treestate); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -652,4 +665,24 @@ func (impl *AppServiceImpl) formatDisplayNameState(appID, version int) ([]string
 	}
 
 	return resSlice, nil
+}
+
+func convertLink(ref string, idMap map[int]int) string {
+	// convert string to []int
+	var oldIDs []int
+	if err := json.Unmarshal([]byte(ref), &oldIDs); err != nil {
+		return ""
+	}
+	// map old id to new id
+	newIDs := make([]int, 0, len(oldIDs))
+	for _, oldID := range oldIDs {
+		newIDs = append(newIDs, idMap[oldID])
+	}
+	// convert []int to string
+	idsjsonb, err := json.Marshal(newIDs)
+	if err != nil {
+		return ""
+	}
+	// return result
+	return string(idsjsonb)
 }
