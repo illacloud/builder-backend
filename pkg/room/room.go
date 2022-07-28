@@ -20,8 +20,8 @@ import (
 	"go.uber.org/zap"
 )
 
-const DASHBOARD_WS_URL = "ws://api.dev.illasoft.com:8000/room/%s/dashboard"
-const ROOM_WS_URL = "ws://api.dev.illasoft.com:8000/room/%s/app/%s"
+const DASHBOARD_WS_URL = "ws://ws.dev.illasoft.com/room/%s/dashboard"
+const ROOM_WS_URL = "ws://ws.dev.illasoft.com/room/%s/app/%s"
 
 type RoomService interface {
 	GetDashboardConn(instanceID string) (WSURLResponse, error)
