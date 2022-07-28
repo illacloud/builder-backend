@@ -15,6 +15,7 @@
 package resthandler
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -46,6 +47,8 @@ func NewRoomRestHandlerImpl(logger *zap.SugaredLogger, RoomService room.RoomServ
 func (impl RoomRestHandlerImpl) GetDashboardRoomConn(c *gin.Context) {
 	// Get User from auth middleware
 	instanceID, okGet := c.Get("instanceID")
+	log.Printf("[DUMP] instanceID: %v\n", instanceID)
+
 	iid, okReflect := instanceID.(string)
 	if !(okGet && okReflect) {
 		c.JSON(http.StatusUnauthorized, gin.H{

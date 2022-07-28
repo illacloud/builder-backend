@@ -117,6 +117,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 					return err
 				}
 			}
+
 		}
 
 	case ws.TARGET_DISPLAY_NAME:
