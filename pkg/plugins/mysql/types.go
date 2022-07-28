@@ -43,5 +43,5 @@ type SSHOptions struct {
 
 type MySQLQuery struct {
 	Mode  string `validate:"required,oneof=gui sql"`
-	Query string `validate:"required"`
+	Query string
 }
