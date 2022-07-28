@@ -44,12 +44,12 @@ type WSURLResponse struct {
 
 func (impl *RoomServiceImpl) GetDashboardConn(instanceID string) (WSURLResponse, error) {
 	var r WSURLResponse
-	r.WSURL = fmt.Sprint(DASHBOARD_WS_URL, instanceID)
+	r.WSURL = fmt.Sprintf(DASHBOARD_WS_URL, instanceID)
 	return r, nil
 }
 
 func (impl *RoomServiceImpl) GetAppRoomConn(instanceID string, roomID int) (WSURLResponse, error) {
 	var r WSURLResponse
-	r.WSURL = fmt.Sprint(DASHBOARD_WS_URL, instanceID, roomID)
+	r.WSURL = fmt.Sprintf(DASHBOARD_WS_URL, instanceID, roomID)
 	return r, nil
 }

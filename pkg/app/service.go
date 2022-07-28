@@ -107,9 +107,11 @@ type Action struct {
 	App         int                    `json:"-"`
 	Version     int                    `json:"-"`
 	Resource    int                    `json:"resourceId,omitempty"`
-	DisplayName string                 `json:"displayName,omitempty"`
-	Type        string                 `json:"actionType,omitempty"`
-	Template    map[string]interface{} `json:"content,omitempty"`
+	DisplayName string                 `json:"displayName" validate:"required"`
+	Type        string                 `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb"`
+	Template    map[string]interface{} `json:"content" validate:"required"`
+	Transformer map[string]interface{} `json:"transformer" validate:"required"`
+	TriggerMode string                 `json:"triggerMode" validate:"oneof=manually automate"`
 	CreatedAt   time.Time              `json:"createdAt,omitempty"`
 	CreatedBy   int                    `json:"createdBy,omitempty"`
 	UpdatedAt   time.Time              `json:"updatedAt,omitempty"`
@@ -536,6 +538,8 @@ func (impl *AppServiceImpl) formatActions(appID, version int) ([]Action, error) 
 			Resource:    value.Resource,
 			DisplayName: value.Name,
 			Type:        type_array[value.Type],
+			Transformer: value.Transformer,
+			TriggerMode: value.TriggerMode,
 			Template:    value.Template,
 			CreatedBy:   value.CreatedBy,
 			CreatedAt:   value.CreatedAt,
