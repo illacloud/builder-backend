@@ -65,10 +65,12 @@ func SignalFilter(hub *ws.Hub, message *ws.Message) error {
 		return SignalUpdateState(hub, message)
 	case ws.SIGNAL_MOVE_STATE:
 		return SignalMoveState(hub, message)
-	case ws.SIGNAL_CREATE_OR_UPDATE:
+	case ws.SIGNAL_CREATE_OR_UPDATE_STATE:
 		return SignalCreateOrUpdateState(hub, message)
 	case ws.SIGNAL_ONLY_BROADCAST:
 		return SignalBroadcastOnly(hub, message)
+	case ws.SIGNAL_PUT_STATE:
+		return SignalPutState(hub, message)
 	default:
 		return nil
 

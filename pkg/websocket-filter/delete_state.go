@@ -49,16 +49,14 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 		}
 
 	case ws.TARGET_DEPENDENCIES:
-		fallthrough
+		// dependency can not delete
 
 	case ws.TARGET_DRAG_SHADOW:
 		fallthrough
 
 	case ws.TARGET_DOTTED_LINE_SQUARE:
 		// fill type
-		if message.Target == ws.TARGET_DEPENDENCIES {
-			stateType = repository.KV_STATE_TYPE_DEPENDENCIES
-		} else if message.Target == ws.TARGET_DRAG_SHADOW {
+		if message.Target == ws.TARGET_DRAG_SHADOW {
 			stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
 		} else {
 			stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
