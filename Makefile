@@ -6,7 +6,7 @@ build:
 	go build -o bin/illa-backend cmd/http-server/main.go cmd/http-server/wire_gen.go cmd/http-server/server.go
 
 build-websocket-server:
-	go build -o bin/illa-websocket-server cmd/websocket-server/main.go
+	go build -o bin/illa-backend-ws cmd/websocket-server/main.go
 
 test:
 	PROJECT_PWD=$(shell pwd) go test -race ./...
