@@ -24,7 +24,7 @@ type RESTOptions struct {
 }
 
 type RESTTemplate struct {
-	URL       string `validate:"required"`
+	URL       string
 	Method    string `validate:"oneof=GET POST PUT PATCH DELETE"`
 	BodyType  string `validate:"oneof=none form-data x-www-form-urlencoded json"`
 	UrlParams []map[string]string
