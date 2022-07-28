@@ -21,5 +21,8 @@ fmt:
 fmt-check:
 	@gofmt -l $(shell find . -type f -name '*.go' -not -path './*_test.go')
 
+init-database:
+	/bin/bash scripts/postgres-init.sh
+
 clean:
 	@ro -fR bin
