@@ -26,6 +26,7 @@ import (
 
 const TREE_STATE_SUMMIT_ID = 0
 const TREE_STATE_SUMMIT_NAME = "root"
+const TREE_STATE_ROOTDSL_NAME = "rootDsl"
 
 type TreeState struct {
 	ID                 int       `json:"id" 							 gorm:"column:id;type:bigserial"`
@@ -58,6 +59,10 @@ type TreeStateRepository interface {
 type TreeStateRepositoryImpl struct {
 	logger *zap.SugaredLogger
 	db     *gorm.DB
+}
+
+func NewTreeState() *TreeState {
+	return &TreeState{}
 }
 
 func (treeState *TreeState) ExportContentAsComponentState() (*ComponentNode, error) {
