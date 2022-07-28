@@ -12,33 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package connector
+package common
 
-import "database/sql"
-
-var (
-	MYSQL_RESOURCE = "mysql"
-)
-
-type BaseConnector interface {
-	Generate() BaseConnection
-}
-
-type BaseConnection interface {
-	Format(connector *Connector) error
-	Connection() (*sql.DB, error)
-}
-
-type Connector struct {
-	Type    string
-	Options map[string]interface{}
-}
-
-func (c *Connector) Generate() BaseConnection {
-	switch c.Type {
-	case MYSQL_RESOURCE:
-		return &MySQLConnection{Kind: c.Type}
-	default:
-		return nil
-	}
+type DataConnector interface {
+	ValidateResourceOptions(resourceOptions map[string]interface{}) (ValidateResult, error)
+	ValidateActionOptions(actionOptions map[string]interface{}) (ValidateResult, error)
+	TestConnection(resourceOptions map[string]interface{}) (ConnectionResult, error)
+	Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (RuntimeResult, error)
 }

@@ -80,6 +80,13 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 		})
 		return
 	}
+	if err := impl.resourceService.ValidateResourceOptions(rsc.Type, rsc.Options); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": "parse request body error: " + err.Error(),
+		})
+		return
+	}
 
 	// validate `resource` valid required fields
 	validate := validator.New()
@@ -156,6 +163,13 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 		})
 		return
 	}
+	if err := impl.resourceService.ValidateResourceOptions(rsc.Type, rsc.Options); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": "parse request body error: " + err.Error(),
+		})
+		return
+	}
 
 	// validate `resource` valid required fields
 	validate := validator.New()
@@ -224,22 +238,15 @@ func (impl ResourceRestHandlerImpl) TestConnection(c *gin.Context) {
 		return
 	}
 
-	dbConn, err := impl.resourceService.OpenConnection(rsc)
-	if err != nil {
+	connRes, err := impl.resourceService.TestConnection(rsc)
+	if err != nil || !connRes {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"errorCode":    500,
 			"errorMessage": "test connection failed: " + err.Error(),
 		})
 		return
 	}
-	if err := dbConn.Ping(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
-			"errorMessage": "test connection failed: " + err.Error(),
-		})
-		return
-	}
-	defer dbConn.Close()
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "test connection successfully",
 	})

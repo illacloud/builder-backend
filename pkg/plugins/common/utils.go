@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package connector
+package common
 
-import (
-	"database/sql"
-)
+import "database/sql"
 
 func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 	columns, err := rows.Columns()
