@@ -298,7 +298,10 @@ func (impl *AppServiceImpl) copyAllTreeState(appA, appB, user int) error {
 		return err
 	}
 	// update some fields
+	indexIDMap := map[int]int{}
+	releaseIDMap := map[int]int{}
 	for serial, _ := range treestates {
+		indexIDMap[serial] = treestates[serial].ID
 		treestates[serial].ID = 0
 		treestates[serial].AppRefID = appB
 		treestates[serial].Version = repository.APP_EDIT_VERSION
@@ -308,11 +311,22 @@ func (impl *AppServiceImpl) copyAllTreeState(appA, appB, user int) error {
 		treestates[serial].UpdatedAt = time.Now().UTC()
 	}
 	// and put them to the database as duplicate
+	for i, treestate := range treestates {
+		id, err := impl.treestateRepository.Create(treestate)
+		if err != nil {
+			return err
+		}
+		oldID := indexIDMap[i]
+		releaseIDMap[oldID] = id
+	}
+
 	for _, treestate := range treestates {
-		if _, err := impl.treestateRepository.Create(treestate); err != nil {
+		treestate.ChildrenNodeRefIDs = convertLink(treestate.ChildrenNodeRefIDs, releaseIDMap)
+		if err := impl.treestateRepository.Update(treestate); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
