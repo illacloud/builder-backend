@@ -561,10 +561,14 @@ func (impl *AppServiceImpl) formatComponents(appID, version int) (*ComponentNode
 	}
 
 	tempMap := map[int]*repository.TreeState{}
+	root := &repository.TreeState{}
 	for _, component := range res {
+		if component.Name == "rootDsl" {
+			root = component
+		}
 		tempMap[component.ID] = component
 	}
-	resNode, _ := buildComponentTree(res[0], tempMap, nil)
+	resNode, _ := buildComponentTree(root, tempMap, nil)
 
 	return resNode, nil
 }
