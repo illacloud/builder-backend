@@ -50,6 +50,7 @@ const TARGET_DOTTED_LINE_SQUARE = 4 // DottedLineSquareState
 const TARGET_DISPLAY_NAME = 5       // DisplayNameState
 const TARGET_APPS = 6               // only for broadcast
 const TARGET_RESOURCE = 7           // only for broadcast
+const TARGET_ACTION = 8             // only for broadcast
 
 // for broadcast rewrite
 const BROADCAST_TYPE_SUFFIX = "/remote"

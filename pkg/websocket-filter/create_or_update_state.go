@@ -164,6 +164,8 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 		// serve on HTTP API, this signal only for broadcast
 	case ws.TARGET_RESOURCE:
 		// serve on HTTP API, this signal only for broadcast
+	case ws.TARGET_ACTION:
+		// serve on HTTP API, this signal only for broadcast
 	}
 
 	// the currentClient does not need feedback when operation success
