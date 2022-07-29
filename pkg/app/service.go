@@ -516,8 +516,8 @@ func (impl *AppServiceImpl) releaseActionsByApp(app AppDto) error {
 
 func (impl *AppServiceImpl) GetMegaData(appID, version int) (Editor, error) {
 	editor, err := impl.fetchEditor(appID, version)
-	if err != err {
-		return Editor{}, nil
+	if err != nil {
+		return Editor{}, err
 	}
 	return editor, nil
 }
@@ -526,6 +526,9 @@ func (impl *AppServiceImpl) fetchEditor(appID int, version int) (Editor, error) 
 	app, err := impl.appRepository.RetrieveAppByID(appID)
 	if err != nil {
 		return Editor{}, err
+	}
+	if app.ID == 0 || version > app.MainlineVersion {
+		return Editor{}, errors.New("content not found")
 	}
 	userRecord, _ := impl.userRepository.RetrieveByID(app.UpdatedBy)
 

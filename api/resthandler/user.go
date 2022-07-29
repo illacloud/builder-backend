@@ -184,6 +184,10 @@ func (impl UserRestHandlerImpl) SignUp(c *gin.Context) {
 		return
 	}
 
+	// generate access token and refresh token
+	accessToken, _ := impl.userService.GetToken(userDto.ID)
+	c.Header("illa-token", accessToken)
+
 	c.JSON(http.StatusOK, userDto)
 }
 

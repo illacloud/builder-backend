@@ -72,6 +72,10 @@ func (m *MySQLConnector) TestConnection(resourceOptions map[string]interface{}) 
 	return common.ConnectionResult{Success: true}, nil
 }
 
+func (m *MySQLConnector) GetMetaInfo(resourceOptions map[string]interface{}) (common.MetaInfoResult, error) {
+	return common.MetaInfoResult{}, errors.New("not implemented")
+}
+
 func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
 	// get mysql connection
 	db, err := m.getConnectionWithOptions(resourceOptions)

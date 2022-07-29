@@ -173,9 +173,12 @@ func (impl *ActionServiceImpl) FindActionsByAppVersion(app, version int) ([]Acti
 
 func (impl *ActionServiceImpl) RunAction(action ActionDto) (interface{}, error) {
 	if action.Resource == 0 {
-		return nil, errors.New("resource is required")
+		return nil, errors.New("no resource")
 	}
 	rsc, err := impl.resourceRepository.RetrieveByID(action.Resource)
+	if rsc.ID == 0 {
+		return nil, errors.New("no resource")
+	}
 	if err != nil {
 		return nil, err
 	}

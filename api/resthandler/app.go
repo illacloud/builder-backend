@@ -218,6 +218,13 @@ func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 	// Fetch Mega data via `app` and `version`
 	res, err := impl.appService.GetMegaData(id, version)
 	if err != nil {
+		if err.Error() == "content not found" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"errorCode":    404,
+				"errorMessage": "get app mega data error: " + err.Error(),
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"errorCode":    500,
 			"errorMessage": "get app mega data error: " + err.Error(),

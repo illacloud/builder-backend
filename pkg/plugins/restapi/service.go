@@ -86,6 +86,10 @@ func (r *RESTAPIConnector) TestConnection(resourceOptions map[string]interface{}
 	return common.ConnectionResult{Success: false}, errors.New("unsupported type: REST API")
 }
 
+func (r *RESTAPIConnector) GetMetaInfo(resourceOptions map[string]interface{}) (common.MetaInfoResult, error) {
+	return common.MetaInfoResult{Success: false}, errors.New("unsupported type: REST API")
+}
+
 func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
 	res := common.RuntimeResult{
 		Success: false,
@@ -96,23 +100,33 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 
 	actionURLParams := map[string]string{}
 	for _, param := range r.Action.UrlParams {
-		actionURLParams[param["key"]] = param["value"]
+		if param["key"] != "" {
+			actionURLParams[param["key"]] = param["value"]
+		}
 	}
 
 	headers := map[string]string{}
 	for _, header := range r.Resource.Headers {
-		headers[header["key"]] = header["value"]
+		if header["key"] != "" {
+			headers[header["key"]] = header["value"]
+		}
 	}
 	for _, header := range r.Action.Headers {
-		headers[header["key"]] = header["value"]
+		if header["key"] != "" {
+			headers[header["key"]] = header["value"]
+		}
 	}
 
 	cookies := map[string]string{}
 	for _, cookie := range r.Resource.Cookies {
-		headers[cookie["key"]] = cookie["value"]
+		if cookie["key"] != "" {
+			cookies[cookie["key"]] = cookie["value"]
+		}
 	}
 	for _, cookie := range r.Action.Cookies {
-		headers[cookie["key"]] = cookie["value"]
+		if cookie["key"] != "" {
+			cookies[cookie["key"]] = cookie["value"]
+		}
 	}
 
 	client := resty.New()
@@ -125,7 +139,9 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	}
 	params := url.Values{}
 	for _, v := range r.Resource.URLParams {
-		params.Set(v["key"], v["value"])
+		if v["key"] != "" {
+			params.Set(v["key"], v["value"])
+		}
 	}
 	uri.RawQuery = params.Encode()
 	baseURL := uri.String()
