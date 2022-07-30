@@ -186,7 +186,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		actionClient.SetBody(b)
 		break
 	case BODY_XWFU:
-		b := r.Action.ReflectBodyToRecord()
+		b := r.Action.ReflectBodyToMap()
 		actionClient.SetHeader("Content-Type", "application/x-www-form-urlencoded")
 		actionClient.SetFormData(b)
 		break
