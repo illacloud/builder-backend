@@ -172,22 +172,18 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	switch r.Action.BodyType {
 	case BODY_RAW:
 		b := r.Action.ReflectBodyToRaw()
-		actionClient.SetHeader("Content-Type", b.Type)
 		actionClient.SetBody(b.Content)
 		break
 	case BODY_BINARY:
 		b := r.Action.ReflectBodyToBinary()
-		actionClient.SetHeader("Content-Type", "multipart/form-data")
 		actionClient.SetBody(b)
 		break
 	case BODY_FORM:
-		b := r.Action.ReflectBodyToRecord()
-		actionClient.SetHeader("Content-Type", "application/form-data")
+		b := r.Action.ReflectBodyToMap()
 		actionClient.SetBody(b)
 		break
 	case BODY_XWFU:
 		b := r.Action.ReflectBodyToMap()
-		actionClient.SetHeader("Content-Type", "application/x-www-form-urlencoded")
 		actionClient.SetFormData(b)
 		break
 	case BODY_NONE:
