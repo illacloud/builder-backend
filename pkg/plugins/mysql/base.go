@@ -42,7 +42,7 @@ func (m *MySQLConnector) getConnectionWithOptions(resourceOptions map[string]int
 func (m *MySQLConnector) connectPure() (db *sql.DB, err error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.Resource.DatabaseUsername,
 		m.Resource.DatabasePassword, m.Resource.Host, m.Resource.Port, m.Resource.DatabaseName)
-	db, err = sql.Open("mysql", dsn)
+	db, err = sql.Open("mysql", dsn+"?timeout=5s")
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (m *MySQLConnector) connectViaSSL() (db *sql.DB, err error) {
 }
 
 func tablesInfo(db *sql.DB, dbName string) []string {
-	var tableNames []string
+	tableNames := make([]string, 0, 0)
 	tableRows, err := db.Query(tableSQLStr, dbName)
 	if err != nil {
 		return nil
@@ -83,13 +83,13 @@ func tablesInfo(db *sql.DB, dbName string) []string {
 }
 
 func fieldsInfo(db *sql.DB, dbName string, tableNames []string) map[string]interface{} {
-	var columns map[string]interface{}
+	columns := make(map[string]interface{})
 	for _, tableName := range tableNames {
 		columnRows, err := db.Query(columnSQLStr, dbName, tableName)
 		if err != nil {
 			return nil
 		}
-		var tables map[string]interface{}
+		tables := make(map[string]interface{})
 
 		for columnRows.Next() {
 			var columnName, columnType string
