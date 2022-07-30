@@ -73,7 +73,58 @@ func (m *MySQLConnector) TestConnection(resourceOptions map[string]interface{}) 
 }
 
 func (m *MySQLConnector) GetMetaInfo(resourceOptions map[string]interface{}) (common.MetaInfoResult, error) {
-	return common.MetaInfoResult{}, errors.New("not implemented")
+	// get mysql connection
+	db, err := m.getConnectionWithOptions(resourceOptions)
+	if err != nil {
+		return common.MetaInfoResult{Success: false}, err
+	}
+	defer db.Close()
+
+	// test mysql connection
+	if err := db.Ping(); err != nil {
+		return common.MetaInfoResult{Success: false}, err
+	}
+
+	tableNames := make([]string, 0, 0)
+	tableRows, err := db.Query(tableSQLStr, m.Resource.DatabaseName)
+	if err != nil {
+		return common.MetaInfoResult{Success: false}, err
+	}
+	for tableRows.Next() {
+		var tableName string
+		err = tableRows.Scan(&tableName)
+		if err != nil {
+			return common.MetaInfoResult{Success: false}, err
+		}
+
+		tableNames = append(tableNames, tableName)
+	}
+
+	//	columns := fieldsInfo(db, m.Resource.DatabaseName, tablesInfo(db, m.Resource.DatabaseName))
+	columns := make(map[string]interface{})
+	for _, tableName := range tableNames {
+		columnRows, err := db.Query(columnSQLStr, m.Resource.DatabaseName, tableName)
+		if err != nil {
+			return common.MetaInfoResult{Success: false}, err
+		}
+		tables := make(map[string]interface{})
+
+		for columnRows.Next() {
+			var columnName, columnType string
+			err = columnRows.Scan(&columnName, &columnType)
+			if err != nil {
+				return common.MetaInfoResult{Success: false}, err
+			}
+			tables[columnName] = map[string]string{"data_type": columnType}
+
+		}
+		columns[tableName] = tables
+	}
+
+	return common.MetaInfoResult{
+		Success: true,
+		Schema:  columns,
+	}, nil
 }
 
 func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {

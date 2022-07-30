@@ -31,6 +31,5 @@ type RuntimeResult struct {
 
 type MetaInfoResult struct {
 	Success bool
-	Rows    map[string]interface{}
-	Extra   map[string]interface{}
+	Schema  map[string]interface{}
 }

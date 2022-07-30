@@ -34,6 +34,7 @@ type ResourceRestHandler interface {
 	UpdateResource(c *gin.Context)
 	DeleteResource(c *gin.Context)
 	TestConnection(c *gin.Context)
+	GetMetaInfo(c *gin.Context)
 }
 
 type ResourceRestHandlerImpl struct {
@@ -250,4 +251,20 @@ func (impl ResourceRestHandlerImpl) TestConnection(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "test connection successfully",
 	})
+}
+
+func (impl ResourceRestHandlerImpl) GetMetaInfo(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("resource"))
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{})
+		return
+	}
+
+	res, err := impl.resourceService.GetMetaInfo(id)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+	return
 }
