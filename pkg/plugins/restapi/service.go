@@ -170,16 +170,29 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 
 	// set body for action client
 	switch r.Action.BodyType {
+	case BODY_RAW:
+		b := r.Action.ReflectBodyToRaw()
+		actionClient.SetHeader("Content-Type", b.Type)
+		actionClient.SetBody(b.Content)
+		break
+	case BODY_BINARY:
+		b := r.Action.ReflectBodyToBinary()
+		actionClient.SetHeader("Content-Type", "multipart/form-data")
+		actionClient.SetBody(b)
+		break
 	case BODY_JSON:
 		actionClient.SetHeader("Content-Type", "application/json")
 		actionClient.SetBody(r.Action.Body)
 		break
 	case BODY_FORM:
+		b := r.Action.ReflectBodyToRecord()
 		actionClient.SetHeader("Content-Type", "application/form-data")
-		actionClient.SetBody(r.Action.Body)
+		actionClient.SetBody(b)
 		break
 	case BODY_XWFU:
-		actionClient.SetFormData(r.Action.Body)
+		b := r.Action.ReflectBodyToRecord()
+		actionClient.SetHeader("Content-Type", "application/x-www-form-urlencoded")
+		actionClient.SetFormData(b)
 		break
 	case BODY_NONE:
 		break
