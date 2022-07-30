@@ -23,6 +23,11 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const (
+	tableSQLStr  = "SELECT TABLE_NAME tableName FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ?"
+	columnSQLStr = "SELECT COLUMN_NAME columnName, DATA_TYPE columnType FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?"
+)
+
 func (m *MySQLConnector) getConnectionWithOptions(resourceOptions map[string]interface{}) (*sql.DB, error) {
 	if err := mapstructure.Decode(resourceOptions, &m.Resource); err != nil {
 		return nil, err
@@ -56,4 +61,46 @@ func (m *MySQLConnector) connectViaSSH() (db *sql.DB, err error) {
 func (m *MySQLConnector) connectViaSSL() (db *sql.DB, err error) {
 	// TODO: implement
 	return nil, errors.New("inaccessible")
+}
+
+func tablesInfo(db *sql.DB, dbName string) []string {
+	tableNames := make([]string, 0, 0)
+	tableRows, err := db.Query(tableSQLStr, dbName)
+	if err != nil {
+		return nil
+	}
+	for tableRows.Next() {
+		var tableName string
+		err = tableRows.Scan(&tableName)
+		if err != nil {
+			return nil
+		}
+
+		tableNames = append(tableNames, tableName)
+	}
+
+	return tableNames
+}
+
+func fieldsInfo(db *sql.DB, dbName string, tableNames []string) map[string]interface{} {
+	columns := make(map[string]interface{})
+	for _, tableName := range tableNames {
+		columnRows, err := db.Query(columnSQLStr, dbName, tableName)
+		if err != nil {
+			return nil
+		}
+		tables := make(map[string]interface{})
+
+		for columnRows.Next() {
+			var columnName, columnType string
+			err = columnRows.Scan(&columnName, &columnType)
+			if err != nil {
+				return nil
+			}
+			tables[columnName] = map[string]string{"data_type": columnType}
+
+		}
+		columns[tableName] = tables
+	}
+	return columns
 }

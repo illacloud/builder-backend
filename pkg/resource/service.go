@@ -43,6 +43,7 @@ type ResourceService interface {
 	FindAllResources() ([]ResourceDto, error)
 	TestConnection(resource ResourceDto) (bool, error)
 	ValidateResourceOptions(resourceType string, options map[string]interface{}) error
+	GetMetaInfo(id int) (map[string]interface{}, error)
 }
 
 type ResourceDto struct {
@@ -194,4 +195,25 @@ func (impl *ResourceServiceImpl) ValidateResourceOptions(resourceType string, op
 		return err
 	}
 	return nil
+}
+
+func (impl *ResourceServiceImpl) GetMetaInfo(id int) (map[string]interface{}, error) {
+	rsc, err := impl.resourceRepository.RetrieveByID(id)
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+	rscFactory := Factory{Type: type_array[rsc.Type-1]}
+	dbResource := rscFactory.Generate()
+	if dbResource == nil {
+		return map[string]interface{}{}, errors.New("invalid ResourceType: unsupported type")
+	}
+	if _, err := dbResource.ValidateResourceOptions(rsc.Options); err != nil {
+		return map[string]interface{}{}, err
+	}
+	res, err := dbResource.GetMetaInfo(rsc.Options)
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	return map[string]interface{}{"schema": res.Schema, "resourceName": rsc.Name}, nil
 }

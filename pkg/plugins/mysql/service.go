@@ -73,7 +73,24 @@ func (m *MySQLConnector) TestConnection(resourceOptions map[string]interface{}) 
 }
 
 func (m *MySQLConnector) GetMetaInfo(resourceOptions map[string]interface{}) (common.MetaInfoResult, error) {
-	return common.MetaInfoResult{}, errors.New("not implemented")
+	// get mysql connection
+	db, err := m.getConnectionWithOptions(resourceOptions)
+	if err != nil {
+		return common.MetaInfoResult{Success: false}, err
+	}
+	defer db.Close()
+
+	// test mysql connection
+	if err := db.Ping(); err != nil {
+		return common.MetaInfoResult{Success: false}, err
+	}
+
+	columns := fieldsInfo(db, m.Resource.DatabaseName, tablesInfo(db, m.Resource.DatabaseName))
+
+	return common.MetaInfoResult{
+		Success: true,
+		Schema:  columns,
+	}, nil
 }
 
 func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
