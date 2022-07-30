@@ -15,7 +15,7 @@
 package restapi
 
 import (
-	"github.com/illa-family/builder-backend/internal/util"
+	"github.com/imroc/biu"
 )
 
 type RESTOptions struct {
@@ -65,7 +65,8 @@ func (t *RESTTemplate) ReflectBodyToRaw() *RawBody {
 
 func (t *RESTTemplate) ReflectBodyToBinary() []byte {
 	bs, _ := t.Body.(string)
-	bi := util.StringToBinary(bs, 8)
+	bs = "[" + bs + "]"
+	bi := biu.ReadBinaryString(bs)
 	return bi
 }
 
