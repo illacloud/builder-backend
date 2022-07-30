@@ -22,7 +22,6 @@ const (
 	METHOD_PATCH  = "PATCH"
 
 	BODY_NONE   = "none"
-	BODY_JSON   = "json"
 	BODY_RAW    = "raw"
 	BODY_BINARY = "binary"
 	BODY_FORM   = "form-data"

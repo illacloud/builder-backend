@@ -180,10 +180,6 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		actionClient.SetHeader("Content-Type", "multipart/form-data")
 		actionClient.SetBody(b)
 		break
-	case BODY_JSON:
-		actionClient.SetHeader("Content-Type", "application/json")
-		actionClient.SetBody(r.Action.Body)
-		break
 	case BODY_FORM:
 		b := r.Action.ReflectBodyToRecord()
 		actionClient.SetHeader("Content-Type", "application/form-data")

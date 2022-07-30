@@ -87,3 +87,22 @@ func (t *RESTTemplate) ReflectBodyToRecord() []*RecordBody {
 	}
 	return rs
 }
+
+func (t *RESTTemplate) ReflectBodyToMap() map[string]string {
+	rs := make(map[string]string)
+	objs, _ := t.Body.([]interface{})
+	for _, v := range objs {
+		obj, _ := v.(map[string]interface{})
+		record := &RecordBody{}
+		for k, v2 := range obj {
+			switch k {
+			case "key":
+				record.Key, _ = v2.(string)
+			case "value":
+				record.Value, _ = v2.(string)
+			}
+		}
+		rs[record.Key] = record.Value
+	}
+	return rs
+}
