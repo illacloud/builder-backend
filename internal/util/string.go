@@ -12,22 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package restapi
+package util
 
-const (
-	METHOD_GET    = "GET"
-	METHOD_POST   = "POST"
-	METHOD_PUT    = "PUT"
-	METHOD_DELETE = "DELETE"
-	METHOD_PATCH  = "PATCH"
+import "strconv"
 
-	BODY_NONE   = "none"
-	BODY_RAW    = "raw"
-	BODY_BINARY = "binary"
-	BODY_FORM   = "form-data"
-	BODY_XWFU   = "x-www-form-urlencoded"
-
-	AUTH_NONE   = "none"
-	AUTH_BASIC  = "basic"
-	AUTH_BEARER = "bearer"
-)
+func StringToBinary(s string, base int) []byte {
+	var b []byte
+	for _, c := range s {
+		b = strconv.AppendInt(b, int64(c), base)
+	}
+	return b
+}
