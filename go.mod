@@ -12,7 +12,6 @@ require (
 	github.com/google/wire v0.5.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/imroc/biu v0.0.0-20170329141542-0376ce6761c0
 	github.com/jackc/pgtype v1.11.0
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/satori/go.uuid v1.2.0

@@ -14,9 +14,7 @@
 
 package restapi
 
-import (
-	"github.com/imroc/biu"
-)
+import "encoding/base64"
 
 type RESTOptions struct {
 	BaseURL        string `validate:"required"`
@@ -65,9 +63,8 @@ func (t *RESTTemplate) ReflectBodyToRaw() *RawBody {
 
 func (t *RESTTemplate) ReflectBodyToBinary() []byte {
 	bs, _ := t.Body.(string)
-	bs = "[" + bs + "]"
-	bi := biu.BinaryStringToBytes(bs)
-	return bi
+	sdec, _ := base64.StdEncoding.DecodeString(bs)
+	return sdec
 }
 
 func (t *RESTTemplate) ReflectBodyToRecord() []*RecordBody {
