@@ -66,7 +66,7 @@ func (t *RESTTemplate) ReflectBodyToRaw() *RawBody {
 func (t *RESTTemplate) ReflectBodyToBinary() []byte {
 	bs, _ := t.Body.(string)
 	bs = "[" + bs + "]"
-	bi := biu.ReadBinaryString(bs)
+	bi := biu.BinaryStringToBytes(bs)
 	return bi
 }
 
