@@ -96,6 +96,22 @@ func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client)
 	}
 }
 
+func (hub *Hub) BroadcastToGlobal(message *Message, currentClient *Client, includeCurrentClient bool) {
+	feed := Feedback{
+		ErrorCode:    ERROR_CODE_BROADCAST,
+		ErrorMessage: "",
+		Broadcast:    message.Broadcast,
+		Data:         nil,
+	}
+	feedbyte, _ := feed.Serialization()
+	for clientid, client := range hub.Clients {
+		if clientid == currentClient.ID && !includeCurrentClient {
+			continue
+		}
+		client.Send <- feedbyte
+	}
+}
+
 func KickClient(hub *Hub, client *Client) {
 	close(client.Send)
 	delete(hub.Clients, client.ID)

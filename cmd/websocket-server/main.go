@@ -65,26 +65,21 @@ func initEnv() error {
 	tssi = state.NewTreeStateServiceImpl(sugaredLogger, treestateRepositoryImpl)
 	kvssi = state.NewKVStateServiceImpl(sugaredLogger, kvstateRepositoryImpl)
 	sssi = state.NewSetStateServiceImpl(sugaredLogger, setstateRepositoryImpl)
-	asi = app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, userRepositoryImpl, kvstateRepositoryImpl, treestateRepositoryImpl, actionRepositoryImpl)
+	asi = app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, userRepositoryImpl, kvstateRepositoryImpl, treestateRepositoryImpl, setstateRepositoryImpl, actionRepositoryImpl)
 	rsi = resource.NewResourceServiceImpl(sugaredLogger, resourceRepositoryImpl)
 	return nil
 }
 
-var dashboardHub *ws.Hub
-var appHub *ws.Hub
+var hub *ws.Hub
 
 func InitHub(asi *app.AppServiceImpl, rsi *resource.ResourceServiceImpl, tssi *state.TreeStateServiceImpl, kvssi *state.KVStateServiceImpl, sssi *state.SetStateServiceImpl) {
-	dashboardHub = ws.NewHub()
-	dashboardHub.SetAppServiceImpl(asi)
-	go filter.Run(dashboardHub)
-
-	// init APP websocket hub
-	appHub = ws.NewHub()
-	appHub.SetResourceServiceImpl(rsi)
-	appHub.SetTreeStateServiceImpl(tssi)
-	appHub.SetKVStateServiceImpl(kvssi)
-	appHub.SetSetStateServiceImpl(sssi)
-	go filter.Run(appHub)
+	hub = ws.NewHub()
+	hub.SetAppServiceImpl(asi)
+	hub.SetResourceServiceImpl(rsi)
+	hub.SetTreeStateServiceImpl(tssi)
+	hub.SetKVStateServiceImpl(kvssi)
+	hub.SetSetStateServiceImpl(sssi)
+	go filter.Run(hub)
 }
 
 // ServeWebsocket handle websocket requests from the peer.
@@ -138,17 +133,17 @@ func main() {
 	r.HandleFunc("/room/{instanceID}/dashboard", func(w http.ResponseWriter, r *http.Request) {
 		instanceID := mux.Vars(r)["instanceID"]
 		log.Printf("[Connected] /room/%s/dashboard", instanceID)
-		ServeWebsocket(dashboardHub, w, r, instanceID, ws.DEAULT_APP_ID)
+		ServeWebsocket(hub, w, r, instanceID, ws.DASHBOARD_APP_ID)
 	})
 	// handle ws://{ip:port}/room/{instanceID}/app/{appID}
 	r.HandleFunc("/room/{instanceID}/app/{appID}", func(w http.ResponseWriter, r *http.Request) {
 		instanceID := mux.Vars(r)["instanceID"]
 		appID, err := strconv.Atoi(mux.Vars(r)["appID"])
 		if err != nil {
-			appID = ws.DEAULT_APP_ID
+			appID = ws.DEFAULT_APP_ID
 		}
 		log.Printf("[Connected] /room/%s/app/%d", instanceID, appID)
-		ServeWebsocket(appHub, w, r, instanceID, appID)
+		ServeWebsocket(hub, w, r, instanceID, appID)
 	})
 	srv := &http.Server{
 		Handler:      r,

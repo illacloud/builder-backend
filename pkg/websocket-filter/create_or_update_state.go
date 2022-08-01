@@ -77,7 +77,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 		}
 
 	case ws.TARGET_DEPENDENCIES:
-		fallthrough
+		// dependencies can not create or update by this method
 
 	case ws.TARGET_DRAG_SHADOW:
 		// create by displayName
@@ -163,6 +163,8 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 	case ws.TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast
 	case ws.TARGET_RESOURCE:
+		// serve on HTTP API, this signal only for broadcast
+	case ws.TARGET_ACTION:
 		// serve on HTTP API, this signal only for broadcast
 	}
 

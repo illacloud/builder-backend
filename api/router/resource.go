@@ -39,4 +39,5 @@ func (impl ResourceRouterImpl) InitResourceRouter(resourceRouter *gin.RouterGrou
 	resourceRouter.PUT("/:resource", impl.resourceRestHandler.UpdateResource)
 	resourceRouter.DELETE("/:resource", impl.resourceRestHandler.DeleteResource)
 	resourceRouter.POST("/testConnection", impl.resourceRestHandler.TestConnection)
+	resourceRouter.GET("/:resource/meta", impl.resourceRestHandler.GetMetaInfo)
 }

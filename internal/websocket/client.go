@@ -38,8 +38,9 @@ const (
 	maxMessageSize = 102400 // 100 KiB
 )
 
-const DEAULT_INSTANCE_ID = "SELF_HOST"
-const DEAULT_APP_ID = 0
+const DEFAULT_INSTANCE_ID = "SELF_HOST"
+const DEFAULT_APP_ID = 0
+const DASHBOARD_APP_ID = -1
 
 var (
 	newline   = []byte{'\n'}
@@ -70,7 +71,7 @@ type Client struct {
 	// instanceID, SELF_HOST by default
 	InstanceID string
 
-	// appID, 0 by default
+	// appID, 0 by default, -1 for dashboard
 	APPID int
 }
 

@@ -17,6 +17,7 @@ package resthandler
 import (
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/illa-family/builder-backend/pkg/room"
@@ -46,30 +47,21 @@ func NewRoomRestHandlerImpl(logger *zap.SugaredLogger, RoomService room.RoomServ
 
 func (impl RoomRestHandlerImpl) GetDashboardRoomConn(c *gin.Context) {
 	// Get User from auth middleware
-	instanceID, okGet := c.Get("instanceID")
+	instanceID := c.Param("instanceID")
 	log.Printf("[DUMP] instanceID: %v\n", instanceID)
 
-	iid, okReflect := instanceID.(string)
-	if !(okGet && okReflect) {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"errorCode":    401,
-			"errorMessage": "unauthorized",
-		})
-		return
-	}
-
-	roomData, _ := impl.RoomService.GetDashboardConn(iid)
+	roomData, _ := impl.RoomService.GetDashboardConn(instanceID)
 
 	c.JSON(http.StatusOK, roomData)
 }
 
 func (impl RoomRestHandlerImpl) GetAppRoomConn(c *gin.Context) {
 	// Get User from auth middleware
-	instanceID, ok1 := c.Get("instanceID")
-	roomID, ok2 := c.Get("roomID")
-	iid, okReflect1 := instanceID.(string)
-	rid, okReflect2 := roomID.(int)
-	if !(ok1 && ok2 && okReflect1 && okReflect2) {
+	instanceID := c.Param("instanceID")
+	roomID := c.Param("roomID")
+
+	rid, err := strconv.Atoi(roomID)
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"errorCode":    401,
 			"errorMessage": "unauthorized",
@@ -77,7 +69,7 @@ func (impl RoomRestHandlerImpl) GetAppRoomConn(c *gin.Context) {
 		return
 	}
 
-	roomData, _ := impl.RoomService.GetAppRoomConn(iid, rid)
+	roomData, _ := impl.RoomService.GetAppRoomConn(instanceID, rid)
 
 	c.JSON(http.StatusOK, roomData)
 }

@@ -76,6 +76,12 @@ func (kvsd *KVStateDto) ConstructByMap(data interface{}) error {
 	return nil
 }
 
+func (kvsd *KVStateDto) ConstructForDependenciesState(data interface{}) error {
+	jsonbyte, _ := json.Marshal(data)
+	kvsd.Value = string(jsonbyte)
+	return nil
+}
+
 func (kvsd *KVStateDto) ConstructByKvState(kvState *repository.KVState) {
 	kvsd.ID = kvState.ID
 	kvsd.StateType = kvState.StateType
@@ -295,6 +301,15 @@ func (impl *KVStateServiceImpl) DeleteKVStateByKey(kvStateDto *KVStateDto) error
 
 	// delete by id
 	if err := impl.kvStateRepository.Delete(kvstateid); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (impl *KVStateServiceImpl) DeleteAllEditKVStateByStateType(kvStateDto *KVStateDto) error {
+	// get kvstate from database by kvstate.Key
+	err := impl.kvStateRepository.DeleteAllKVStatesByAppVersionAndType(kvStateDto.AppRefID, repository.APP_EDIT_VERSION, kvStateDto.StateType)
+	if err != nil {
 		return err
 	}
 	return nil

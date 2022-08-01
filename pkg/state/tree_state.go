@@ -17,6 +17,7 @@ package state
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/illa-family/builder-backend/internal/repository"
@@ -181,7 +182,7 @@ func (impl *TreeStateServiceImpl) CreateTreeState(treestate TreeStateDto) (TreeS
 		UpdatedAt:          treestate.UpdatedAt,
 		UpdatedBy:          treestate.UpdatedBy,
 	}
-	if err := impl.treestateRepository.Create(&treeStateForStorage); err != nil {
+	if _, err := impl.treestateRepository.Create(&treeStateForStorage); err != nil {
 		return TreeStateDto{}, err
 	}
 	// fill created id
@@ -324,7 +325,7 @@ func (impl *TreeStateServiceImpl) ReleaseTreeStateByApp(app *app.AppDto) error {
 	}
 	// and put them to the database as duplicate
 	for _, treestate := range treestates {
-		if err := impl.treestateRepository.Create(treestate); err != nil {
+		if _, err := impl.treestateRepository.Create(treestate); err != nil {
 			return err
 		}
 	}
@@ -464,7 +465,7 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 	}
 
 	// convert ComponentNode to TreeState
-	currentNode := &TreeStateDto{}
+	currentNode := NewTreeStateDto()
 	currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS)
 	var err error
 	if currentNode, err = impl.NewTreeStateByComponentState(appDto, componentNodeTree); err != nil {
@@ -472,7 +473,7 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 	}
 
 	// get parentNode
-	parentTreeState := &repository.TreeState{}
+	parentTreeState := repository.NewTreeState()
 	isSummitNode := true
 	if parentNodeID != 0 || currentNode.ParentNode == repository.TREE_STATE_SUMMIT_NAME { // parentNode is in database
 		isSummitNode = false
@@ -487,14 +488,18 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 	}
 
 	// no parentNode, currentNode is tree summit
-	if isSummitNode {
-		currentNode.ParentNodeRefID = repository.TREE_STATE_SUMMIT_ID
-	} else {
-		// fill currentNode.ParentNodeRefID
-		currentNode.ParentNodeRefID = parentTreeState.ID
-	}
-	// insert currentNode and get id
+	if isSummitNode && currentNode.Name != repository.TREE_STATE_ROOTDSL_NAME {
 
+		fmt.Printf("[DUMP] parentTreeState: %v\n", parentTreeState)
+		fmt.Printf("[DUMP] currentNode: %v\n", currentNode)
+		// get rootDsl node
+		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, repository.TREE_STATE_ROOTDSL_NAME); err != nil {
+			return err
+		}
+	}
+	currentNode.ParentNodeRefID = parentTreeState.ID
+
+	// insert currentNode and get id
 	var treeStateDtoInDB TreeStateDto
 	if treeStateDtoInDB, err = impl.CreateTreeState(*currentNode); err != nil {
 		return err
@@ -502,9 +507,11 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 	currentNode.ID = treeStateDtoInDB.ID
 
 	// fill currentNode id into parentNode.ChildrenNodeRefIDs
-	if !isSummitNode {
+	if currentNode.Name != repository.TREE_STATE_ROOTDSL_NAME {
 
 		parentTreeState.AppendChildrenNodeRefIDs(currentNode.ID)
+
+		fmt.Printf("[DUMP] parentTreeState: %v\n", parentTreeState)
 
 		// save parentNode
 		if err = impl.treestateRepository.Update(parentTreeState); err != nil {

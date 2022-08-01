@@ -20,8 +20,8 @@ import (
 	"go.uber.org/zap"
 )
 
-const DASHBOARD_WS_URL = "ws://ws.dev.illasoft.com/room/%s/dashboard"
-const ROOM_WS_URL = "ws://ws.dev.illasoft.com/room/%s/app/%s"
+const DASHBOARD_WS_URL = "wss://ws.dev.illasoft.com/room/%s/dashboard"
+const ROOM_WS_URL = "wss://ws.dev.illasoft.com/room/%s/app/%d"
 
 type RoomService interface {
 	GetDashboardConn(instanceID string) (WSURLResponse, error)
@@ -39,17 +39,17 @@ func NewRoomServiceImpl(logger *zap.SugaredLogger) *RoomServiceImpl {
 }
 
 type WSURLResponse struct {
-	WSURL string `json:"WSUrl"`
+	WSURL string `json:"wsURL"`
 }
 
 func (impl *RoomServiceImpl) GetDashboardConn(instanceID string) (WSURLResponse, error) {
 	var r WSURLResponse
-	r.WSURL = fmt.Sprint(DASHBOARD_WS_URL, instanceID)
+	r.WSURL = fmt.Sprintf(DASHBOARD_WS_URL, instanceID)
 	return r, nil
 }
 
 func (impl *RoomServiceImpl) GetAppRoomConn(instanceID string, roomID int) (WSURLResponse, error) {
 	var r WSURLResponse
-	r.WSURL = fmt.Sprint(DASHBOARD_WS_URL, instanceID, roomID)
+	r.WSURL = fmt.Sprintf(ROOM_WS_URL, instanceID, roomID)
 	return r, nil
 }

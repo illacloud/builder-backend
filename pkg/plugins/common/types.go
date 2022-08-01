@@ -28,3 +28,8 @@ type RuntimeResult struct {
 	Rows    []map[string]interface{}
 	Extra   map[string]interface{}
 }
+
+type MetaInfoResult struct {
+	Success bool
+	Schema  map[string]interface{}
+}

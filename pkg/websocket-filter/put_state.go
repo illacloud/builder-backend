@@ -24,7 +24,7 @@ import (
 	ws "github.com/illa-family/builder-backend/internal/websocket"
 )
 
-func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
+func SignalPutState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
@@ -37,17 +37,17 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 	case ws.TARGET_NOTNING:
 		return nil
 	case ws.TARGET_COMPONENTS:
-		// build component tree from json
-		for _, v := range message.Payload {
-			componentTree := repository.ConstructComponentNodeByMap(v)
-			if err := hub.TreeStateServiceImpl.CreateComponentTree(appDto, 0, componentTree); err != nil {
-				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
-				return err
-			}
-		}
+		return nil
 
 	case ws.TARGET_DEPENDENCIES:
 		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
+		// delete all
+		kvStateDto := state.NewKVStateDto()
+		kvStateDto.ConstructByApp(appDto) // set AppRefID
+		kvStateDto.ConstructWithType(stateType)
+		if err := hub.KVStateServiceImpl.DeleteAllEditKVStateByStateType(kvStateDto); err != nil {
+			return err
+		}
 		// create k-v state
 		for _, v := range message.Payload {
 			subv, ok := v.(map[string]interface{})
@@ -70,55 +70,17 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 			}
 		}
 	case ws.TARGET_DRAG_SHADOW:
-		fallthrough
+		return nil
 
 	case ws.TARGET_DOTTED_LINE_SQUARE:
-		// fill type
-		if message.Target == ws.TARGET_DRAG_SHADOW {
-			stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
-		} else {
-			stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
-		}
-		// create k-v state
-		for _, v := range message.Payload {
-			// fill KVStateDto
-			kvStateDto := state.NewKVStateDto()
-			kvStateDto.ConstructByMap(v)
-			kvStateDto.ConstructByApp(appDto) // set AppRefID
-			kvStateDto.ConstructWithType(stateType)
-
-			if _, err := hub.KVStateServiceImpl.CreateKVState(kvStateDto); err != nil {
-				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
-				return err
-			}
-		}
+		return nil
 
 	case ws.TARGET_DISPLAY_NAME:
-		stateType = repository.SET_STATE_TYPE_DISPLAY_NAME
-		// create set state
-		for _, v := range message.Payload {
-			// resolve payload
-			displayName, err := repository.ResolveDisplayNameByPayload(v)
-			if err != nil {
-				return err
-			}
-			// save state
-			setStateDto := state.NewSetStateDto()
-			setStateDto.ConstructByApp(appDto) // set AppRefID
-			setStateDto.ConstructWithValue(displayName)
-			setStateDto.ConstructWithType(stateType)
-			// create state
-			if _, err := hub.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
-				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
-				return err
-			}
-		}
+		return nil
 
 	case ws.TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast
 	case ws.TARGET_RESOURCE:
-		// serve on HTTP API, this signal only for broadcast
-	case ws.TARGET_ACTION:
 		// serve on HTTP API, this signal only for broadcast
 	}
 

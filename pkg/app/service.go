@@ -107,9 +107,11 @@ type Action struct {
 	App         int                    `json:"-"`
 	Version     int                    `json:"-"`
 	Resource    int                    `json:"resourceId,omitempty"`
-	DisplayName string                 `json:"displayName,omitempty"`
-	Type        string                 `json:"actionType,omitempty"`
-	Template    map[string]interface{} `json:"content,omitempty"`
+	DisplayName string                 `json:"displayName" validate:"required"`
+	Type        string                 `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb"`
+	Template    map[string]interface{} `json:"content" validate:"required"`
+	Transformer map[string]interface{} `json:"transformer" validate:"required"`
+	TriggerMode string                 `json:"triggerMode" validate:"oneof=manually automate"`
 	CreatedAt   time.Time              `json:"createdAt,omitempty"`
 	CreatedBy   int                    `json:"createdBy,omitempty"`
 	UpdatedAt   time.Time              `json:"updatedAt,omitempty"`
@@ -160,7 +162,7 @@ func (impl *AppServiceImpl) CreateApp(app AppDto) (AppDto, error) {
 
 func (impl *AppServiceImpl) initialAllTypeTreeStates(appID, user int) error {
 	// create `root` component
-	if err := impl.treestateRepository.Create(&repository.TreeState{
+	if _, err := impl.treestateRepository.Create(&repository.TreeState{
 		StateType:          repository.TREE_STATE_TYPE_COMPONENTS,
 		ParentNodeRefID:    0,
 		ChildrenNodeRefIDs: "[]",
@@ -296,7 +298,10 @@ func (impl *AppServiceImpl) copyAllTreeState(appA, appB, user int) error {
 		return err
 	}
 	// update some fields
+	indexIDMap := map[int]int{}
+	releaseIDMap := map[int]int{}
 	for serial, _ := range treestates {
+		indexIDMap[serial] = treestates[serial].ID
 		treestates[serial].ID = 0
 		treestates[serial].AppRefID = appB
 		treestates[serial].Version = repository.APP_EDIT_VERSION
@@ -306,11 +311,22 @@ func (impl *AppServiceImpl) copyAllTreeState(appA, appB, user int) error {
 		treestates[serial].UpdatedAt = time.Now().UTC()
 	}
 	// and put them to the database as duplicate
+	for i, treestate := range treestates {
+		id, err := impl.treestateRepository.Create(treestate)
+		if err != nil {
+			return err
+		}
+		oldID := indexIDMap[i]
+		releaseIDMap[oldID] = id
+	}
+
 	for _, treestate := range treestates {
-		if err := impl.treestateRepository.Create(treestate); err != nil {
+		treestate.ChildrenNodeRefIDs = convertLink(treestate.ChildrenNodeRefIDs, releaseIDMap)
+		if err := impl.treestateRepository.Update(treestate); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -412,17 +428,30 @@ func (impl *AppServiceImpl) releaseTreeStateByApp(app AppDto) error {
 	if err != nil {
 		return err
 	}
+	indexIDMap := map[int]int{}
+	releaseIDMap := map[int]int{}
 	// set version as mainline version
 	for serial, _ := range treestates {
+		indexIDMap[serial] = treestates[serial].ID
 		treestates[serial].ID = 0
 		treestates[serial].Version = app.MainlineVersion
 	}
 	// and put them to the database as duplicate
+	for i, treestate := range treestates {
+		id, err := impl.treestateRepository.Create(treestate)
+		if err != nil {
+			return err
+		}
+		oldID := indexIDMap[i]
+		releaseIDMap[oldID] = id
+	}
 	for _, treestate := range treestates {
-		if err := impl.treestateRepository.Create(treestate); err != nil {
+		treestate.ChildrenNodeRefIDs = convertLink(treestate.ChildrenNodeRefIDs, releaseIDMap)
+		if err := impl.treestateRepository.Update(treestate); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -487,8 +516,8 @@ func (impl *AppServiceImpl) releaseActionsByApp(app AppDto) error {
 
 func (impl *AppServiceImpl) GetMegaData(appID, version int) (Editor, error) {
 	editor, err := impl.fetchEditor(appID, version)
-	if err != err {
-		return Editor{}, nil
+	if err != nil {
+		return Editor{}, err
 	}
 	return editor, nil
 }
@@ -497,6 +526,9 @@ func (impl *AppServiceImpl) fetchEditor(appID int, version int) (Editor, error) 
 	app, err := impl.appRepository.RetrieveAppByID(appID)
 	if err != nil {
 		return Editor{}, err
+	}
+	if app.ID == 0 || version > app.MainlineVersion {
+		return Editor{}, errors.New("content not found")
 	}
 	userRecord, _ := impl.userRepository.RetrieveByID(app.UpdatedBy)
 
@@ -536,6 +568,8 @@ func (impl *AppServiceImpl) formatActions(appID, version int) ([]Action, error) 
 			Resource:    value.Resource,
 			DisplayName: value.Name,
 			Type:        type_array[value.Type],
+			Transformer: value.Transformer,
+			TriggerMode: value.TriggerMode,
 			Template:    value.Template,
 			CreatedBy:   value.CreatedBy,
 			CreatedAt:   value.CreatedAt,
@@ -557,10 +591,14 @@ func (impl *AppServiceImpl) formatComponents(appID, version int) (*ComponentNode
 	}
 
 	tempMap := map[int]*repository.TreeState{}
+	root := &repository.TreeState{}
 	for _, component := range res {
+		if component.Name == "rootDsl" {
+			root = component
+		}
 		tempMap[component.ID] = component
 	}
-	resNode, _ := buildComponentTree(res[0], tempMap, nil)
+	resNode, _ := buildComponentTree(root, tempMap, nil)
 
 	return resNode, nil
 }
@@ -644,4 +682,24 @@ func (impl *AppServiceImpl) formatDisplayNameState(appID, version int) ([]string
 	}
 
 	return resSlice, nil
+}
+
+func convertLink(ref string, idMap map[int]int) string {
+	// convert string to []int
+	var oldIDs []int
+	if err := json.Unmarshal([]byte(ref), &oldIDs); err != nil {
+		return ""
+	}
+	// map old id to new id
+	newIDs := make([]int, 0, len(oldIDs))
+	for _, oldID := range oldIDs {
+		newIDs = append(newIDs, idMap[oldID])
+	}
+	// convert []int to string
+	idsjsonb, err := json.Marshal(newIDs)
+	if err != nil {
+		return ""
+	}
+	// return result
+	return string(idsjsonb)
 }

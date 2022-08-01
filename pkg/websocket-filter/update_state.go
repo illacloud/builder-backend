@@ -73,7 +73,28 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 		}
 
 	case ws.TARGET_DEPENDENCIES:
-		fallthrough
+		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
+		// update k-v state
+		for _, v := range message.Payload {
+			subv, ok := v.(map[string]interface{})
+			if !ok {
+				err := errors.New("K-V State reflect failed, please check your input.")
+				return err
+			}
+			for key, depState := range subv {
+				// fill KVStateDto
+				kvStateDto := state.NewKVStateDto()
+				kvStateDto.ConstructWithKey(key)
+				kvStateDto.ConstructForDependenciesState(depState)
+				kvStateDto.ConstructByApp(appDto) // set AppRefID
+				kvStateDto.ConstructWithType(stateType)
+
+				if err := hub.KVStateServiceImpl.UpdateKVStateByKey(kvStateDto); err != nil {
+					currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
+					return err
+				}
+			}
+		}
 
 	case ws.TARGET_DRAG_SHADOW:
 		fallthrough
@@ -132,6 +153,8 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 	case ws.TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast
 	case ws.TARGET_RESOURCE:
+		// serve on HTTP API, this signal only for broadcast
+	case ws.TARGET_ACTION:
 		// serve on HTTP API, this signal only for broadcast
 	}
 

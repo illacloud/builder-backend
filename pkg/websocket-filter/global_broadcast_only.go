@@ -12,22 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package restapi
+package filter
 
-const (
-	METHOD_GET    = "GET"
-	METHOD_POST   = "POST"
-	METHOD_PUT    = "PUT"
-	METHOD_DELETE = "DELETE"
-	METHOD_PATCH  = "PATCH"
-
-	BODY_NONE   = "none"
-	BODY_RAW    = "raw"
-	BODY_BINARY = "binary"
-	BODY_FORM   = "form-data"
-	BODY_XWFU   = "x-www-form-urlencoded"
-
-	AUTH_NONE   = "none"
-	AUTH_BASIC  = "basic"
-	AUTH_BEARER = "bearer"
+import (
+	ws "github.com/illa-family/builder-backend/internal/websocket"
 )
+
+func SignalGlobalBroadcastOnly(hub *ws.Hub, message *ws.Message) error {
+	// deserialize message
+	currentClient := hub.Clients[message.ClientID]
+	message.RewriteBroadcast()
+
+	// feedback to all Client (do not include current client itself)
+	hub.BroadcastToGlobal(message, currentClient, false)
+	return nil
+}

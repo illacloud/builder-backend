@@ -26,6 +26,7 @@ import (
 
 const TREE_STATE_SUMMIT_ID = 0
 const TREE_STATE_SUMMIT_NAME = "root"
+const TREE_STATE_ROOTDSL_NAME = "rootDsl"
 
 type TreeState struct {
 	ID                 int       `json:"id" 							 gorm:"column:id;type:bigserial"`
@@ -43,7 +44,7 @@ type TreeState struct {
 }
 
 type TreeStateRepository interface {
-	Create(treestate *TreeState) error
+	Create(treestate *TreeState) (int, error)
 	Delete(treestateID int) error
 	Update(treestate *TreeState) error
 	RetrieveByID(treestateID int) (*TreeState, error)
@@ -58,6 +59,10 @@ type TreeStateRepository interface {
 type TreeStateRepositoryImpl struct {
 	logger *zap.SugaredLogger
 	db     *gorm.DB
+}
+
+func NewTreeState() *TreeState {
+	return &TreeState{}
 }
 
 func (treeState *TreeState) ExportContentAsComponentState() (*ComponentNode, error) {
@@ -111,13 +116,13 @@ func NewTreeStateRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *TreeSta
 	}
 }
 
-func (impl *TreeStateRepositoryImpl) Create(treestate *TreeState) error {
+func (impl *TreeStateRepositoryImpl) Create(treestate *TreeState) (int, error) {
 	fmt.Printf("[CREATE] %v\n", treestate)
 	if err := impl.db.Create(treestate).Error; err != nil {
-		return err
+		return 0, err
 	}
 	fmt.Printf("[CREATE DONE] %v\n", treestate)
-	return nil
+	return treestate.ID, nil
 }
 
 func (impl *TreeStateRepositoryImpl) Delete(treestateID int) error {
