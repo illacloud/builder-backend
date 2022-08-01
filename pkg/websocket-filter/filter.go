@@ -18,7 +18,6 @@ import (
 	ws "github.com/illa-family/builder-backend/internal/websocket"
 )
 
-// @todo: the client should check userID, make sure do not broadcast to self.
 func Run(hub *ws.Hub) {
 	for {
 		select {
