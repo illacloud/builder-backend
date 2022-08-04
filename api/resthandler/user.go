@@ -184,7 +184,9 @@ func (impl UserRestHandlerImpl) SignUp(c *gin.Context) {
 		return
 	}
 
-	_ = impl.userService.SendSubscriptionEmail(payload.Email)
+	if payload.IsSubscribed {
+		_ = impl.userService.SendSubscriptionEmail(payload.Email)
+	}
 
 	// generate access token and refresh token
 	accessToken, _ := impl.userService.GetToken(userDto.ID)
