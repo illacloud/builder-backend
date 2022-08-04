@@ -38,6 +38,7 @@ type UserService interface {
 	GetToken(id int) (string, error)
 	GenerateVerificationCode(email, usage string) (string, error)
 	ValidateVerificationCode(vCode, vToken, email, usage string) (bool, error)
+	SendSubscriptionEmail(email string) error
 }
 
 type UserDto struct {
@@ -149,4 +150,8 @@ func (impl *UserServiceImpl) GenerateVerificationCode(email, usage string) (stri
 
 func (impl *UserServiceImpl) ValidateVerificationCode(vCode, vToken, email, usage string) (bool, error) {
 	return impl.smtpServer.ValidateVerificationCode(vToken, vCode, email, usage)
+}
+
+func (impl *UserServiceImpl) SendSubscriptionEmail(email string) error {
+	return impl.smtpServer.SendSubscriptionEmail(email)
 }
