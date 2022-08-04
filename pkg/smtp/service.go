@@ -26,6 +26,7 @@ import (
 
 	"github.com/caarlos0/env"
 	"github.com/golang-jwt/jwt/v4"
+	email_cloud "github.com/illa-family/builder-backend/pkg/email-cloud"
 )
 
 var (
@@ -74,25 +75,29 @@ func NewSMTPServer(cfg *Config) SMTPServer {
 
 func (s *SMTPServer) NewVerificationCode(email, usage string) (string, error) {
 	// Authentication.
-	auth := smtp.PlainAuth("", s.From, s.Password, s.Host)
+	//auth := smtp.PlainAuth("", s.From, s.Password, s.Host)
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	vCode := fmt.Sprintf("%06v", rnd.Int31n(1000000))
 
-	header := make(map[string]string)
-	header["From"] = "illa-builder" + "<" + s.From + ">"
-	header["To"] = email
-	header["Subject"] = "[ILLA]: Verification Code"
-	body := "Verification Code: " + vCode
-	message := ""
-	for k, v := range header {
-		message += fmt.Sprintf("%s:%s\r\n", k, v)
-	}
-	message += "\r\n" + body
+	//header := make(map[string]string)
+	//header["From"] = "illa-builder" + "<" + s.From + ">"
+	//header["To"] = email
+	//header["Subject"] = "[ILLA]: Verification Code"
+	//body := "Verification Code: " + vCode
+	//message := ""
+	//for k, v := range header {
+	//	message += fmt.Sprintf("%s:%s\r\n", k, v)
+	//}
+	//message += "\r\n" + body
+	//
+	//// Sending email.
+	//err := SendMailUsingTLS(s.Host+":"+s.Port, auth, s.From, email, []byte(message))
+	//if err != nil {
+	//	return "", err
+	//}
 
-	// Sending email.
-	err := SendMailUsingTLS(s.Host+":"+s.Port, auth, s.From, email, []byte(message))
-	if err != nil {
+	if err := email_cloud.SendVerificationEmail(email, vCode, usage); err != nil {
 		return "", err
 	}
 
@@ -114,6 +119,10 @@ func (s *SMTPServer) NewVerificationCode(email, usage string) (string, error) {
 	}
 
 	return codeToken, nil
+}
+
+func (s *SMTPServer) SendSubscriptionEmail(email string) error {
+	return email_cloud.SendSubscriptionEmail(email)
 }
 
 func (s *SMTPServer) ValidateVerificationCode(codeToken, vCode, email, usage string) (bool, error) {
