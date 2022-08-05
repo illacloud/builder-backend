@@ -108,7 +108,7 @@ func (s *SMTPServer) NewVerificationCode(email, usage string) (string, error) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer: "ILLA",
 			ExpiresAt: &jwt.NumericDate{
-				Time: time.Now().Add(time.Minute * 5),
+				Time: time.Now().Add(time.Minute * 15),
 			},
 		},
 	}
