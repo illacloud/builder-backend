@@ -22,7 +22,7 @@ import (
 )
 
 func TestBuildComponentTree(t *testing.T) {
-	serilizationResult := `{"displayName":"cnode1","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode2","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode4","parentNode":"cnode2","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode5","parentNode":"cnode4","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null},{"displayName":"cnode3","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
+	serilizationResult := `{"displayName":"cnode1","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode2","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode4","parentNode":"cnode2","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode5","parentNode":"cnode4","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null},{"displayName":"cnode3","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
 	// init component node
 	cnode1 := ComponentNode{
 		DisplayName: "cnode1",
@@ -45,40 +45,56 @@ func TestBuildComponentTree(t *testing.T) {
 	}
 	cnode5str, _ := json.Marshal(cnode5)
 
+	// init children node ref ids
+	cnrids1 := []int{2, 3}
+	cnrids1str, _ := json.Marshal(cnrids1)
+
+	cnrids2 := []int{4}
+	cnrids2str, _ := json.Marshal(cnrids2)
+
+	cnrids3 := []int{}
+	cnrids3str, _ := json.Marshal(cnrids3)
+
+	cnrids4 := []int{5}
+	cnrids4str, _ := json.Marshal(cnrids4)
+
+	cnrids5 := []int{}
+	cnrids5str, _ := json.Marshal(cnrids5)
+
 	// init tree state data
 	treeState1 := TreeState{
 		ID:                 1,
 		StateType:          TREE_STATE_TYPE_COMPONENTS,
 		ParentNodeRefID:    0,
-		ChildrenNodeRefIDs: []int{2, 3},
+		ChildrenNodeRefIDs: string(cnrids1str),
 		Content:            string(cnode1str),
 	}
 	treeState2 := TreeState{
 		ID:                 2,
 		StateType:          TREE_STATE_TYPE_COMPONENTS,
 		ParentNodeRefID:    0,
-		ChildrenNodeRefIDs: []int{4},
+		ChildrenNodeRefIDs: string(cnrids2str),
 		Content:            string(cnode2str),
 	}
 	treeState3 := TreeState{
 		ID:                 3,
 		StateType:          TREE_STATE_TYPE_COMPONENTS,
 		ParentNodeRefID:    0,
-		ChildrenNodeRefIDs: []int{},
+		ChildrenNodeRefIDs: string(cnrids3str),
 		Content:            string(cnode3str),
 	}
 	treeState4 := TreeState{
 		ID:                 4,
 		StateType:          TREE_STATE_TYPE_COMPONENTS,
 		ParentNodeRefID:    0,
-		ChildrenNodeRefIDs: []int{5},
+		ChildrenNodeRefIDs: string(cnrids4str),
 		Content:            string(cnode4str),
 	}
 	treeState5 := TreeState{
 		ID:                 5,
 		StateType:          TREE_STATE_TYPE_COMPONENTS,
 		ParentNodeRefID:    0,
-		ChildrenNodeRefIDs: []int{},
+		ChildrenNodeRefIDs: string(cnrids5str),
 		Content:            string(cnode5str),
 	}
 
