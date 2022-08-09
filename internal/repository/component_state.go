@@ -43,6 +43,11 @@ type ComponentNode struct {
 	PanelConfig    map[string]interface{} `json:"panelConfig"`
 }
 
+func NewComponentNode() *ComponentNode {
+	return &ComponentNode{}
+
+}
+
 func NewComponentNodeFromJSON(cnodebyte []byte) (*ComponentNode, error) {
 	cnode := ComponentNode{}
 	if err := json.Unmarshal(cnodebyte, &cnode); err != nil {
