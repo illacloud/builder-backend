@@ -21,6 +21,90 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewComponentNodeFromJSON(t *testing.T) {
+	serilizationData := `{"displayName":"cnode1","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode2","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode4","parentNode":"cnode2","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode5","parentNode":"cnode4","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null},{"displayName":"cnode3","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
+	_, err := NewComponentNodeFromJSON([]byte(serilizationData))
+	assert.Nil(t, err)
+}
+
+func TestConstructComponentNodeByMap(t *testing.T) {
+	var mapInstance = make(map[string]interface{})
+	input := `{    "displayName": "rootDsl",    "parentNode": "",    "showName": "",    "error": false,    "isDragging": false,    "childrenNode": [],    "type": "",    "containerType": null,    "verticalResize": false,    "h": 0,    "w": 0,    "minH": 0,    "minW": 0,    "x": 0,    "y": 0,    "z": 0,    "props": null,    "panelConfig": null}`
+	json.Unmarshal([]byte(input), &mapInstance)
+	cnode := NewComponentNode()
+	cnode = ConstructComponentNodeByMap(mapInstance)
+	var emptyCNodeList []*ComponentNode
+	var emptyMap map[string]interface{}
+	// test
+	assert.Equal(t, "rootDsl", cnode.DisplayName, "the construct result should be equal")
+	assert.Equal(t, "", cnode.ParentNode, "the construct result should be equal")
+	assert.Equal(t, "", cnode.ShowName, "the construct result should be equal")
+	assert.Equal(t, false, cnode.Error, "the construct result should be equal")
+	assert.Equal(t, false, cnode.IsDragging, "the construct result should be equal")
+	assert.Equal(t, emptyCNodeList, cnode.ChildrenNode, "the construct result should be equal")
+	assert.Equal(t, "", cnode.Type, "the construct result should be equal")
+	assert.Equal(t, "", cnode.ContainerType, "the construct result should be equal")
+	assert.Equal(t, false, cnode.VerticalResize, "the construct result should be equal")
+
+	assert.Equal(t, 0.0, cnode.H, "the construct result should be equal")
+	assert.Equal(t, 0.0, cnode.W, "the construct result should be equal")
+	assert.Equal(t, 0.0, cnode.MinH, "the construct result should be equal")
+	assert.Equal(t, 0.0, cnode.MinW, "the construct result should be equal")
+	assert.Equal(t, 0.0, cnode.UnitW, "the construct result should be equal")
+	assert.Equal(t, 0.0, cnode.UnitH, "the construct result should be equal")
+	assert.Equal(t, 0.0, cnode.X, "the construct result should be equal")
+	assert.Equal(t, 0.0, cnode.Y, "the construct result should be equal")
+	assert.Equal(t, 0.0, cnode.Z, "the construct result should be equal")
+
+	assert.Equal(t, emptyMap, cnode.Props, "the construct result should be equal")
+	assert.Equal(t, emptyMap, cnode.PanelConfig, "the construct result should be equal")
+
+}
+
+func TestUpdateParentNode(t *testing.T) {
+	displayName := "testDisplayName-01"
+	parentCNode := NewComponentNode()
+	parentCNode.DisplayName = displayName
+	cnode := NewComponentNode()
+	cnode.UpdateParentNode(parentCNode)
+
+	assert.Equal(t, displayName, cnode.ParentNode, "UpdateParentNode() method can not update DisplayName")
+}
+
+func TestAppendChildrenNode(t *testing.T) {
+	cnode := NewComponentNode()
+	childrenCNode := NewComponentNode()
+	cnode.AppendChildrenNode(childrenCNode)
+
+	assert.Equal(t, cnode.ChildrenNode[0], childrenCNode, "AppendChildrenNode() method can not append children node")
+}
+
+func TestSerialization(t *testing.T) {
+	cnode := NewComponentNode()
+	cnode.DisplayName = "test"
+	_, err := cnode.Serialization()
+	assert.Nil(t, err)
+}
+
+func TestSerializationForDatabase(t *testing.T) {
+	serilizationData := `{"displayName":"","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
+	children := "children"
+	parent := "parent"
+	cnode := NewComponentNode()
+	childrenCNode := NewComponentNode()
+	childrenCNode.DisplayName = children
+	cnode.ParentNode = parent
+	cnode.AppendChildrenNode(childrenCNode)
+	jsonbyte, err := cnode.SerializationForDatabase()
+	assert.Nil(t, err)
+	// check serilization result
+	assert.Equal(t, serilizationData, string(jsonbyte), "AppendChildrenNode() method can not append children node")
+	// check field recover
+	assert.Equal(t, parent, cnode.ParentNode, "AppendChildrenNode() method can not append children node")
+	assert.Equal(t, childrenCNode, cnode.ChildrenNode[0], "AppendChildrenNode() method can not append children node")
+
+}
+
 func TestBuildComponentTree(t *testing.T) {
 	serilizationResult := `{"displayName":"cnode1","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode2","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode4","parentNode":"cnode2","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode5","parentNode":"cnode4","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null},{"displayName":"cnode3","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
 	// init component node
@@ -108,88 +192,4 @@ func TestBuildComponentTree(t *testing.T) {
 	b, err = cnodefin.Serialization()
 	assert.Nil(t, err)
 	assert.Equal(t, serilizationResult, string(b), "the serlization result should be equal")
-}
-
-func TestNewComponentNodeFromJSON(t *testing.T) {
-	serilizationData := `{"displayName":"cnode1","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode2","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode4","parentNode":"cnode2","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode5","parentNode":"cnode4","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null},{"displayName":"cnode3","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
-	_, err := NewComponentNodeFromJSON([]byte(serilizationData))
-	assert.Nil(t, err)
-}
-
-func TestConstructComponentNodeByMap(t *testing.T) {
-	var mapInstance = make(map[string]interface{})
-	input := `{    "displayName": "rootDsl",    "parentNode": "",    "showName": "",    "error": false,    "isDragging": false,    "childrenNode": [],    "type": "",    "containerType": null,    "verticalResize": false,    "h": 0,    "w": 0,    "minH": 0,    "minW": 0,    "x": 0,    "y": 0,    "z": 0,    "props": null,    "panelConfig": null}`
-	json.Unmarshal([]byte(input), &mapInstance)
-	cnode := NewComponentNode()
-	cnode = ConstructComponentNodeByMap(mapInstance)
-	var emptyCNodeList []*ComponentNode
-	var emptyMap map[string]interface{}
-	// test
-	assert.Equal(t, "rootDsl", cnode.DisplayName, "the construct result should be equal")
-	assert.Equal(t, "", cnode.ParentNode, "the construct result should be equal")
-	assert.Equal(t, "", cnode.ShowName, "the construct result should be equal")
-	assert.Equal(t, false, cnode.Error, "the construct result should be equal")
-	assert.Equal(t, false, cnode.IsDragging, "the construct result should be equal")
-	assert.Equal(t, emptyCNodeList, cnode.ChildrenNode, "the construct result should be equal")
-	assert.Equal(t, "", cnode.Type, "the construct result should be equal")
-	assert.Equal(t, "", cnode.ContainerType, "the construct result should be equal")
-	assert.Equal(t, false, cnode.VerticalResize, "the construct result should be equal")
-
-	assert.Equal(t, 0.0, cnode.H, "the construct result should be equal")
-	assert.Equal(t, 0.0, cnode.W, "the construct result should be equal")
-	assert.Equal(t, 0.0, cnode.MinH, "the construct result should be equal")
-	assert.Equal(t, 0.0, cnode.MinW, "the construct result should be equal")
-	assert.Equal(t, 0.0, cnode.UnitW, "the construct result should be equal")
-	assert.Equal(t, 0.0, cnode.UnitH, "the construct result should be equal")
-	assert.Equal(t, 0.0, cnode.X, "the construct result should be equal")
-	assert.Equal(t, 0.0, cnode.Y, "the construct result should be equal")
-	assert.Equal(t, 0.0, cnode.Z, "the construct result should be equal")
-
-	assert.Equal(t, emptyMap, cnode.Props, "the construct result should be equal")
-	assert.Equal(t, emptyMap, cnode.PanelConfig, "the construct result should be equal")
-
-}
-
-func TestUpdateParentNode(t *testing.T) {
-	displayName := "testDisplayName-01"
-	parentCNode := NewComponentNode()
-	parentCNode.DisplayName = displayName
-	cnode := NewComponentNode()
-	cnode.UpdateParentNode(parentCNode)
-
-	assert.Equal(t, displayName, cnode.ParentNode, "UpdateParentNode() method can not update DisplayName")
-}
-
-func TestAppendChildrenNode(t *testing.T) {
-	cnode := NewComponentNode()
-	childrenCNode := NewComponentNode()
-	cnode.AppendChildrenNode(childrenCNode)
-
-	assert.Equal(t, cnode.ChildrenNode[0], childrenCNode, "AppendChildrenNode() method can not append children node")
-}
-
-func TestSerialization(t *testing.T) {
-	cnode := NewComponentNode()
-	cnode.DisplayName = "test"
-	_, err := cnode.Serialization()
-	assert.Nil(t, err)
-}
-
-func TestSerializationForDatabase(t *testing.T) {
-	serilizationData := `{"displayName":"","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
-	children := "children"
-	parent := "parent"
-	cnode := NewComponentNode()
-	childrenCNode := NewComponentNode()
-	childrenCNode.DisplayName = children
-	cnode.ParentNode = parent
-	cnode.AppendChildrenNode(childrenCNode)
-	jsonbyte, err := cnode.SerializationForDatabase()
-	assert.Nil(t, err)
-	// check serilization result
-	assert.Equal(t, serilizationData, string(jsonbyte), "AppendChildrenNode() method can not append children node")
-	// check field recover
-	assert.Equal(t, parent, cnode.ParentNode, "AppendChildrenNode() method can not append children node")
-	assert.Equal(t, childrenCNode, cnode.ChildrenNode[0], "AppendChildrenNode() method can not append children node")
-
 }
