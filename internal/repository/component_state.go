@@ -36,6 +36,8 @@ type ComponentNode struct {
 	W              float64                `json:"w"`
 	MinH           float64                `json:"minH"`
 	MinW           float64                `json:"minW"`
+	UnitW          float64                `json:"unitW"`
+	UnitH          float64                `json:"unitH"`
 	X              float64                `json:"x"`
 	Y              float64                `json:"y"`
 	Z              float64                `json:"z"`
@@ -100,6 +102,10 @@ func ConstructComponentNodeByMap(data interface{}) *ComponentNode {
 			cnode.MinH, _ = v.(float64)
 		case "minW":
 			cnode.MinW, _ = v.(float64)
+		case "unitW":
+			cnode.UnitW, _ = v.(float64)
+		case "unitH":
+			cnode.UnitH, _ = v.(float64)
 		case "x":
 			cnode.X, _ = v.(float64)
 		case "y":

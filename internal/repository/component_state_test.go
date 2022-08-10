@@ -22,7 +22,7 @@ import (
 )
 
 func TestBuildComponentTree(t *testing.T) {
-	serilizationResult := `{"displayName":"cnode1","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode2","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode4","parentNode":"cnode2","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode5","parentNode":"cnode4","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null},{"displayName":"cnode3","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
+	serilizationResult := `{"displayName":"cnode1","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode2","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode4","parentNode":"cnode2","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode5","parentNode":"cnode4","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null},{"displayName":"cnode3","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
 	// init component node
 	cnode1 := ComponentNode{
 		DisplayName: "cnode1",
@@ -111,7 +111,7 @@ func TestBuildComponentTree(t *testing.T) {
 }
 
 func TestNewComponentNodeFromJSON(t *testing.T) {
-	serilizationData := `{"displayName":"cnode1","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode2","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode4","parentNode":"cnode2","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode5","parentNode":"cnode4","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null},{"displayName":"cnode3","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
+	serilizationData := `{"displayName":"cnode1","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode2","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode4","parentNode":"cnode2","showName":"","error":false,"isDragging":false,"childrenNode":[{"displayName":"cnode5","parentNode":"cnode4","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null},{"displayName":"cnode3","parentNode":"cnode1","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}],"type":"","containerType":null,"verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
 	_, err := NewComponentNodeFromJSON([]byte(serilizationData))
 	assert.Nil(t, err)
 }
@@ -139,6 +139,8 @@ func TestConstructComponentNodeByMap(t *testing.T) {
 	assert.Equal(t, 0.0, cnode.W, "the construct result should be equal")
 	assert.Equal(t, 0.0, cnode.MinH, "the construct result should be equal")
 	assert.Equal(t, 0.0, cnode.MinW, "the construct result should be equal")
+	assert.Equal(t, 0.0, cnode.UnitW, "the construct result should be equal")
+	assert.Equal(t, 0.0, cnode.UnitH, "the construct result should be equal")
 	assert.Equal(t, 0.0, cnode.X, "the construct result should be equal")
 	assert.Equal(t, 0.0, cnode.Y, "the construct result should be equal")
 	assert.Equal(t, 0.0, cnode.Z, "the construct result should be equal")
@@ -174,7 +176,7 @@ func TestSerialization(t *testing.T) {
 }
 
 func TestSerializationForDatabase(t *testing.T) {
-	serilizationData := `{"displayName":"","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
+	serilizationData := `{"displayName":"","parentNode":"","showName":"","error":false,"isDragging":false,"childrenNode":null,"type":"","containerType":"","verticalResize":false,"h":0,"w":0,"minH":0,"minW":0,"unitW":0,"unitH":0,"x":0,"y":0,"z":0,"props":null,"panelConfig":null}`
 	children := "children"
 	parent := "parent"
 	cnode := NewComponentNode()
