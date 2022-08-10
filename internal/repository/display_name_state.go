@@ -30,10 +30,9 @@ type DisplayNameStateForUpdate struct {
 func ResolveDisplayNameByPayload(data interface{}) (string, error) {
 	var udata string
 	var ok bool
-	fmt.Printf("[DUMP] data reflect.TypeOf: %v\n", reflect.TypeOf(data))
 
 	if udata, ok = data.(string); !ok {
-		return "", errors.New("ConstructDisplayNameByMap() failed, please check payload syntax.")
+		return "", errors.New("ResolveDisplayNameByPayload() failed, please check payload syntax.")
 	}
 	return udata, nil
 }
