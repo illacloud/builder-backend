@@ -237,7 +237,6 @@ func (lexer *Lexer) skipIgnored() {
 				lexer.skipSQL(1)
 			}
 			lexer.skipSQL(2) // skip "*/"
-
 		} else {
 			break
 		}
@@ -409,6 +408,8 @@ func (lexer *Lexer) MatchToken() (lineNum int, tokenType int, token string) {
 	// check multiple character token
 	if lexer.sql[0] == '_' || isLetter(lexer.sql[0]) {
 		token := lexer.scanWord()
+		// to lowercase, SQL is not case sensitive
+		token = strings.ToLower(token)
 		if tokenType, isMatch := keywords[token]; isMatch {
 			return lexer.lineNum, tokenType, token
 		} else {
