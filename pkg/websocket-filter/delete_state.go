@@ -29,6 +29,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 	stateType := repository.STATE_TYPE_INVALIED
 	appDto := app.NewAppDto()
 	appDto.ConstructWithID(currentClient.APPID)
+	appDto.ConstructWithUpdateBy(currentClient.MappedUserID)
 	message.RewriteBroadcast()
 
 	// target switch
@@ -102,7 +103,11 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 
 	// the currentClient does not need feedback when operation success
 
+	// change app modify time
+	hub.AppServiceImpl.UpdateAppModifyTime(appDto)
+
 	// feedback otherClient
 	hub.BroadcastToOtherClients(message, currentClient)
+
 	return nil
 }
