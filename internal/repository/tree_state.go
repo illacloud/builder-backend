@@ -134,7 +134,7 @@ func (impl *TreeStateRepositoryImpl) Delete(treestateID int) error {
 
 func (impl *TreeStateRepositoryImpl) Update(treestate *TreeState) error {
 	fmt.Printf("[UPDATE] %v \n", treestate)
-	if err := impl.db.Model(treestate).Updates(TreeState{
+	if err := impl.db.Model(treestate).UpdateColumns(TreeState{
 		ID:                 treestate.ID,
 		StateType:          treestate.StateType,
 		ParentNodeRefID:    treestate.ParentNodeRefID,

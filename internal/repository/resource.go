@@ -70,7 +70,7 @@ func (impl *ResourceRepositoryImpl) Delete(id int) error {
 }
 
 func (impl *ResourceRepositoryImpl) Update(resource *Resource) error {
-	if err := impl.db.Model(resource).Updates(Resource{
+	if err := impl.db.Model(resource).UpdateColumns(Resource{
 		Name:      resource.Name,
 		Options:   resource.Options,
 		UpdatedBy: resource.UpdatedBy,
