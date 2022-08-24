@@ -75,7 +75,7 @@ func (impl *KVStateRepositoryImpl) Delete(kvstateID int) error {
 }
 
 func (impl *KVStateRepositoryImpl) Update(kvstate *KVState) error {
-	if err := impl.db.Model(kvstate).Updates(KVState{
+	if err := impl.db.Model(kvstate).UpdateColumns(KVState{
 		ID:        kvstate.ID,
 		StateType: kvstate.StateType,
 		AppRefID:  kvstate.AppRefID,

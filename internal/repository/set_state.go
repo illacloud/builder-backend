@@ -81,7 +81,7 @@ func (impl *SetStateRepositoryImpl) DeleteByValue(setState *SetState) error {
 }
 
 func (impl *SetStateRepositoryImpl) Update(setState *SetState) error {
-	if err := impl.db.Model(setState).Updates(SetState{
+	if err := impl.db.Model(setState).UpdateColumns(SetState{
 		ID:        setState.ID,
 		StateType: setState.StateType,
 		AppRefID:  setState.AppRefID,
@@ -102,7 +102,7 @@ func (impl *SetStateRepositoryImpl) UpdateByValue(beforeSetState *SetState, afte
 		beforeSetState.StateType,
 		beforeSetState.Version,
 		beforeSetState.Value,
-	).Updates(afterSetState).Error; err != nil {
+	).UpdateColumns(afterSetState).Error; err != nil {
 		fmt.Printf("[DUMP] error: %v\n", err)
 		return err
 	}
