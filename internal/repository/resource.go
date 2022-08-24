@@ -40,6 +40,7 @@ type ResourceRepository interface {
 	Update(resource *Resource) error
 	RetrieveByID(id int) (*Resource, error)
 	RetrieveAll() ([]*Resource, error)
+	RetrieveAllByUpdatedTime() ([]*Resource, error)
 }
 
 type ResourceRepositoryImpl struct {
@@ -91,6 +92,14 @@ func (impl *ResourceRepositoryImpl) RetrieveByID(id int) (*Resource, error) {
 func (impl *ResourceRepositoryImpl) RetrieveAll() ([]*Resource, error) {
 	var resources []*Resource
 	if err := impl.db.Find(&resources).Error; err != nil {
+		return nil, err
+	}
+	return resources, nil
+}
+
+func (impl *ResourceRepositoryImpl) RetrieveAllByUpdatedTime() ([]*Resource, error) {
+	var resources []*Resource
+	if err := impl.db.Order("updated_at desc").Find(&resources).Error; err != nil {
 		return nil, err
 	}
 	return resources, nil
