@@ -40,6 +40,7 @@ type AppRepository interface {
 	Update(app *App) error
 	RetrieveAll() ([]*App, error)
 	RetrieveAppByID(appID int) (*App, error)
+	RetrieveAllByUpdatedTime() ([]*App, error)
 }
 
 type AppRepositoryImpl struct {
@@ -95,4 +96,12 @@ func (impl *AppRepositoryImpl) RetrieveAppByID(id int) (*App, error) {
 		return nil, err
 	}
 	return app, nil
+}
+
+func (impl *AppRepositoryImpl) RetrieveAllByUpdatedTime() ([]*App, error) {
+	var apps []*App
+	if err := impl.db.Order("updated_at desc").Find(&apps).Error; err != nil {
+		return nil, err
+	}
+	return apps, nil
 }
