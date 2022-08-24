@@ -87,9 +87,11 @@ func (appd *AppDto) ConstructByMap(data interface{}) {
 }
 
 func (appd *AppDto) ConstructWithID(id int) {
-	fmt.Printf("[DUMP] appd:%v\n", appd)
-	fmt.Printf("[DUMP] id:%v\n", id)
 	appd.ID = id
+}
+
+func (appd *AppDto) ConstructWithUpdateBy(updateBy int) {
+	appd.UpdatedBy = updateBy
 }
 
 type Editor struct {
@@ -196,6 +198,19 @@ func (impl *AppServiceImpl) UpdateApp(app AppDto) (AppDto, error) {
 	app.AppActivity.Modifier = userRecord.Nickname
 	app.AppActivity.ModifiedAt = app.UpdatedAt // TODO: find last modified time in another record with version 0
 	return app, nil
+}
+
+// call this method when action (over HTTP) and state (over websocket) changed
+func (impl *AppServiceImpl) UpdateAppModifyTime(app *AppDto) error {
+	app.UpdatedAt = time.Now().UTC()
+	if err := impl.appRepository.Update(&repository.App{
+		ID:        app.ID,
+		UpdatedBy: app.UpdatedBy,
+		UpdatedAt: app.UpdatedAt,
+	}); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (impl *AppServiceImpl) FetchAppByID(appID int) (AppDto, error) {

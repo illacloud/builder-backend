@@ -16,6 +16,7 @@ package filter
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/pkg/app"
@@ -30,6 +31,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 	stateType := repository.STATE_TYPE_INVALIED
 	appDto := app.NewAppDto()
 	appDto.ConstructWithID(currentClient.APPID)
+	appDto.ConstructWithUpdateBy(currentClient.MappedUserID)
 	message.RewriteBroadcast()
 
 	// target switch
@@ -123,6 +125,10 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 	}
 
 	// the currentClient does not need feedback when operation success
+
+	// change app modify time
+	err := hub.AppServiceImpl.UpdateAppModifyTime(appDto)
+	fmt.Printf("UpdateAppModifyTime() error: %s", err)
 
 	// feedback otherClient
 	hub.BroadcastToOtherClients(message, currentClient)
