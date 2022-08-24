@@ -37,7 +37,7 @@ import (
  *
  */
 
-func parseWords(lexer *Lexer) (*Words, error) {
+func parseWords(lexer *Lexer) (*Word, error) {
 	lineNum, _, token := lexer.GetNextToken()
 	for _, b := range []rune(token) {
 		if b == '_' ||
@@ -50,7 +50,7 @@ func parseWords(lexer *Lexer) (*Words, error) {
 			return nil, errors.New(err)
 		}
 	}
-	return &Words{lineNum, token}, nil
+	return &Word{lineNum, token}, nil
 }
 
 // output golang built-in string type value
@@ -76,16 +76,16 @@ func parseStringValueSimple(lexer *Lexer) (string, error) {
 }
 
 func parseSQL(lexer *Lexer) (*SQL, error) {
-	var document SQL
+	var sql SQL
 	var err error
 
 	// LastLineNum
-	document.LastLineNum = lexer.GetLineNum()
+	sql.LastLineNum = lexer.GetLineNum()
 	// Statement+
-	if document.Statements, err = parseStatements(lexer); err != nil {
+	if sql.Statements, err = parseStatements(lexer); err != nil {
 		return nil, err
 	}
-	return &document, nil
+	return &sql, nil
 }
 
 func isSQLEnd(tokenType int) bool {
@@ -96,20 +96,21 @@ func isSQLEnd(tokenType int) bool {
 }
 
 func parseStatements(lexer *Lexer) ([]Statement, error) {
-	var definitions []Statement
-	for !isDocumentEnd(lexer.LookAhead()) {
-		var definition Statement
+	var statements []Statement
+	for !isSQLEnd(lexer.LookAhead()) {
+		var statement Statement
 		var err error
-		if definition, err = parseStatement(lexer); err != nil {
+		if statement, err = parseStatement(lexer); err != nil {
 			return nil, err
 		}
-		definitions = append(definitions, definition)
+		statements = append(statements, statement)
 	}
-	return definitions, nil
+	return statements, nil
 }
 
 func parseStatement(lexer *Lexer) (Statement, error) {
-	switch lexer.LookAhead() {
-	}
+	var statement Statement
+
+	return statement, nil
 
 }

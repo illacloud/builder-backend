@@ -161,9 +161,9 @@ func (lexer *Lexer) NextTokenIs(tokenType int) (lineNum int, token string) {
 	nowLineNum, nowTokenType, nowToken := lexer.GetNextToken()
 	// syntax error
 	if tokenType != nowTokenType {
-		fmt.Println("\n\n\033[05m\033[41;37m                    OOOOOOOOOPS! TOKEN EXCEPT FAILED                    \033[0m\n")
+		fmt.Println("\n\n\033[05m\033[41;37m                    OOOOOOOOOPS! TOKEN EXCEPT FAILED                    \033[0m ")
 		err := fmt.Sprintf("line %d: syntax error near '%s'.", lexer.GetLineNum(), nowToken)
-		fmt.Println("- [Lexer Dump] -------------------------------------------------------\n")
+		fmt.Println("- [Lexer Dump] ------------------------------------------------------- ")
 		fmt.Printf("sql:\n\n\033[33m%v\033[0m\n\n", lexer.sql)
 		fmt.Printf("lineNum:          \033[33m%v\033[0m\n", lexer.lineNum)
 		fmt.Printf("NextTokenIs:      \033[33m%v\033[0m\n", tokenNameMap[tokenType])
@@ -227,7 +227,7 @@ func (lexer *Lexer) skipIgnored() {
 		} else if isWhiteSpace(lexer.sql[0]) {
 			lexer.skipSQL(1)
 			// check comment
-		} else if lexer.nextSQLIs(tokenNameMap[TOKEN_COMMENT_SHARP]) | lexer.nextSQLIs(tokenNameMap[TOKEN_SINGLE_LINE_COMMENT]) {
+		} else if lexer.nextSQLIs(tokenNameMap[TOKEN_COMMENT_SHARP]) || lexer.nextSQLIs(tokenNameMap[TOKEN_SINGLE_LINE_COMMENT]) {
 			lexer.skipSQL(1)
 			for !isNewLine(lexer.sql[0]) {
 				lexer.skipSQL(1)
@@ -236,6 +236,8 @@ func (lexer *Lexer) skipIgnored() {
 			for !lexer.nextSQLIs(tokenNameMap[TOKEN_MULTI_LINE_COMMENT_END]) {
 				lexer.skipSQL(1)
 			}
+			lexer.skipSQL(2) // skip "*/"
+
 		} else {
 			break
 		}

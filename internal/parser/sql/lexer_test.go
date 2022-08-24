@@ -15,7 +15,7 @@
 package parser_sql
 
 import (
-	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,5 +26,16 @@ func TestSkipIgnored(t *testing.T) {
 	/* select syntax for client query */
 	SELECT * FROM tab1 where id=12;
 	`
+	lexer := NewLexer(sql_1)
+	lexer.skipIgnored()
+
+	fmt.Printf(lexer.sql)
+
+	lineNum, tokenType, token := lexer.GetNextToken()
+	fmt.Printf("lineNum: %d \n", lineNum)
+	fmt.Printf("tokenType: %d \n", tokenType)
+	fmt.Printf("token: %v \n", token)
+
+	assert.Equal(t, tokenNameMap[TOKEN_SELECT], token, "the token should be equal")
 
 }

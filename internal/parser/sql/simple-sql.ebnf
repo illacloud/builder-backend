@@ -28,4 +28,4 @@ BlockStringCharacter ::= SourceCharacter - '"""' | SourceCharacter - '\"""' | '\
 SQL             ::= Ignored Statement+ Ignored 
 Statement       ::= Ignored QueryType Ignored Query Ignored   
 QueryType       ::= "select" | "update" | "delete" | "create" 
-Query           ::= Token
+Query           ::= Token+
