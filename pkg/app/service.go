@@ -238,7 +238,7 @@ func (impl *AppServiceImpl) DeleteApp(appID int) error { // TODO: maybe need tra
 }
 
 func (impl *AppServiceImpl) GetAllApps() ([]AppDto, error) {
-	res, err := impl.appRepository.RetrieveAll()
+	res, err := impl.appRepository.RetrieveAllByUpdatedTime()
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ func (impl *AppServiceImpl) GetAllApps() ([]AppDto, error) {
 			UpdatedBy:       value.UpdatedBy,
 			AppActivity: AppActivity{
 				Modifier:   userRecord.Nickname,
-				ModifiedAt: userRecord.UpdatedAt,
+				ModifiedAt: value.UpdatedAt,
 			},
 		})
 	}

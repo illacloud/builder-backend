@@ -149,7 +149,7 @@ func (impl *ResourceServiceImpl) GetResource(id int) (ResourceDto, error) {
 }
 
 func (impl *ResourceServiceImpl) FindAllResources() ([]ResourceDto, error) {
-	res, err := impl.resourceRepository.RetrieveAll()
+	res, err := impl.resourceRepository.RetrieveAllByUpdatedTime()
 	if err != nil {
 		return nil, err
 	}
