@@ -1,10 +1,5 @@
 package parser_sql
 
-import (
-	"errors"
-	"fmt"
-)
-
 /*
  * SourceCharacter Expression
  * SourceCharacter ::=  #x0009 | #x000A | #x000D | [#x0020-#xFFFF] // /[\u0009\u000A\u000D\u0020-\uFFFF]/
@@ -37,55 +32,14 @@ import (
  *
  */
 
-func parseWords(lexer *Lexer) (*Word, error) {
-	lineNum, _, token := lexer.GetNextToken()
-	for _, b := range []rune(token) {
-		if b == '_' ||
-			b >= 'a' && b <= 'z' ||
-			b >= 'A' && b <= 'Z' ||
-			b >= '0' && b <= '9' {
-			continue
-		} else {
-			err := fmt.Sprintf("parseWords(): line %d: unexpected symbol near '%v', it is not a words expression", lineNum, token)
-			return nil, errors.New(err)
+func IsSelectSQL(lexer *Lexer) bool {
+	for !isSQLEnd(lexer.LookAhead()) {
+		_, _, token := lexer.GetNextToken()
+		if token == tokenNameMap[TOKEN_SELECT] {
+			return true
 		}
 	}
-	return &Word{lineNum, token}, nil
-}
-
-// output golang built-in string type value
-func parseStringValueSimple(lexer *Lexer) (string, error) {
-	var str string
-	var err error
-	// quotes
-	if lexer.LookAhead() == TOKEN_DUOQUOTE {
-		lexer.NextTokenIs(TOKEN_DUOQUOTE)
-		return "", nil
-	}
-	if lexer.LookAhead() == TOKEN_QUOTE {
-		lexer.NextTokenIs(TOKEN_QUOTE)
-		quoteRune := []byte(tokenNameMap[TOKEN_QUOTE])
-		if str, err = lexer.scanBeforeByte(quoteRune[0]); err != nil {
-			return "", err
-		}
-		lexer.NextTokenIs(TOKEN_QUOTE)
-		return str, nil
-	}
-	err = errors.New("not a StringValue")
-	return "", err
-}
-
-func parseSQL(lexer *Lexer) (*SQL, error) {
-	var sql SQL
-	var err error
-
-	// LastLineNum
-	sql.LastLineNum = lexer.GetLineNum()
-	// Statement+
-	if sql.Statements, err = parseStatements(lexer); err != nil {
-		return nil, err
-	}
-	return &sql, nil
+	return false
 }
 
 func isSQLEnd(tokenType int) bool {
@@ -93,24 +47,4 @@ func isSQLEnd(tokenType int) bool {
 		return true
 	}
 	return false
-}
-
-func parseStatements(lexer *Lexer) ([]Statement, error) {
-	var statements []Statement
-	for !isSQLEnd(lexer.LookAhead()) {
-		var statement Statement
-		var err error
-		if statement, err = parseStatement(lexer); err != nil {
-			return nil, err
-		}
-		statements = append(statements, statement)
-	}
-	return statements, nil
-}
-
-func parseStatement(lexer *Lexer) (Statement, error) {
-	var statement Statement
-
-	return statement, nil
-
 }

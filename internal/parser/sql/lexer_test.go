@@ -39,3 +39,66 @@ func TestSkipIgnored(t *testing.T) {
 	assert.Equal(t, tokenNameMap[TOKEN_SELECT], token, "the token should be equal")
 
 }
+
+func TestSkipIgnored2(t *testing.T) {
+
+	sql_2 := `
+	# comment
+	select * FROM tab1 where id=12; -- comment
+	`
+
+	lexer := NewLexer(sql_2)
+	lexer.skipIgnored()
+
+	fmt.Printf(lexer.sql)
+
+	lineNum, tokenType, token := lexer.GetNextToken()
+	fmt.Printf("lineNum: %d \n", lineNum)
+	fmt.Printf("tokenType: %d \n", tokenType)
+	fmt.Printf("token: %v \n", token)
+
+	assert.Equal(t, tokenNameMap[TOKEN_SELECT], token, "the token should be equal")
+
+}
+
+func TestSkipIgnored3(t *testing.T) {
+
+	sql_3 := `
+	# comment /* also comment */
+	SelecT * FROM tab1 where id=12; -- comment
+	`
+
+	lexer := NewLexer(sql_3)
+	lexer.skipIgnored()
+
+	fmt.Printf(lexer.sql)
+
+	lineNum, tokenType, token := lexer.GetNextToken()
+	fmt.Printf("lineNum: %d \n", lineNum)
+	fmt.Printf("tokenType: %d \n", tokenType)
+	fmt.Printf("token: %v \n", token)
+
+	assert.Equal(t, tokenNameMap[TOKEN_SELECT], token, "the token should be equal")
+
+}
+
+func TestSkipIgnored4(t *testing.T) {
+
+	sql_4 := `
+	/* comment  */
+	DELETE  FROM tab1 where id=12; -- comment
+	`
+
+	lexer := NewLexer(sql_4)
+	lexer.skipIgnored()
+
+	fmt.Printf(lexer.sql)
+
+	lineNum, tokenType, token := lexer.GetNextToken()
+	fmt.Printf("lineNum: %d \n", lineNum)
+	fmt.Printf("tokenType: %d \n", tokenType)
+	fmt.Printf("token: %v \n", token)
+
+	assert.Equal(t, tokenNameMap[TOKEN_DELETE], token, "the token should be equal")
+
+}
