@@ -75,7 +75,7 @@ func (impl *ActionRepositoryImpl) Delete(id int) error {
 }
 
 func (impl *ActionRepositoryImpl) Update(action *Action) error {
-	if err := impl.db.Model(action).Updates(Action{
+	if err := impl.db.Model(action).UpdateColumns(Action{
 		Resource:    action.Resource,
 		Type:        action.Type,
 		Name:        action.Name,

@@ -203,7 +203,7 @@ func (impl *AppServiceImpl) UpdateApp(app AppDto) (AppDto, error) {
 // call this method when action (over HTTP) and state (over websocket) changed
 func (impl *AppServiceImpl) UpdateAppModifyTime(app *AppDto) error {
 	app.UpdatedAt = time.Now().UTC()
-	if err := impl.appRepository.Update(&repository.App{
+	if err := impl.appRepository.UpdateUpdatedAt(&repository.App{
 		ID:        app.ID,
 		UpdatedBy: app.UpdatedBy,
 		UpdatedAt: app.UpdatedAt,
