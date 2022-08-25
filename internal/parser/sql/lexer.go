@@ -22,6 +22,7 @@ const (
 	TOKEN_LT                      // <
 	TOKEN_GT                      // >
 	TOKEN_COLON                   // :
+	TOKEN_SEMICOLON               // ;
 	TOKEN_DOT                     // .
 	TOKEN_EQUAL                   // =
 	TOKEN_AT                      // @
@@ -29,6 +30,7 @@ const (
 	TOKEN_VERTICAL_BAR            // |
 	TOKEN_QUOTE                   // "
 	TOKEN_DUOQUOTE                // ""
+	TOKEN_BACKQUOTE               // `
 	TOKEN_ESCAPE_CHARACTER        // \
 
 	// comment
@@ -61,6 +63,7 @@ var tokenNameMap = map[int]string{
 	TOKEN_LT:               "<",
 	TOKEN_GT:               ">",
 	TOKEN_COLON:            ":",
+	TOKEN_SEMICOLON:        ";",
 	TOKEN_DOT:              ".",
 	TOKEN_EQUAL:            "=",
 	TOKEN_AT:               "@",
@@ -68,6 +71,7 @@ var tokenNameMap = map[int]string{
 	TOKEN_VERTICAL_BAR:     "|",
 	TOKEN_QUOTE:            "\"",
 	TOKEN_DUOQUOTE:         "\"\"",
+	TOKEN_BACKQUOTE:        "`",
 	TOKEN_ESCAPE_CHARACTER: "\\",
 
 	TOKEN_MULTI_LINE_COMMENT_START: "/*",
@@ -381,6 +385,9 @@ func (lexer *Lexer) MatchToken() (lineNum int, tokenType int, token string) {
 	case ':':
 		lexer.skipSQL(1)
 		return lexer.lineNum, TOKEN_COLON, ":"
+	case ';':
+		lexer.skipSQL(1)
+		return lexer.lineNum, TOKEN_SEMICOLON, ";"
 	case '.':
 		lexer.skipSQL(1)
 		return lexer.lineNum, TOKEN_DOT, "."
@@ -396,6 +403,9 @@ func (lexer *Lexer) MatchToken() (lineNum int, tokenType int, token string) {
 	case '|':
 		lexer.skipSQL(1)
 		return lexer.lineNum, TOKEN_VERTICAL_BAR, "|"
+	case '`':
+		lexer.skipSQL(1)
+		return lexer.lineNum, TOKEN_BACKQUOTE, "`"
 	case '"':
 		if lexer.nextSQLIs("\"\"") {
 			lexer.skipSQL(2)
