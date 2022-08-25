@@ -140,12 +140,12 @@ var reUnicodeEscapeSeq = regexp.MustCompile(`^\\u\{[0-9a-fA-F]+\}`)
 
 // lexer struct
 type Lexer struct {
-	sql              string // graphql sql
-	lineNum          int    // current line number
+	sql              string
+	lineNum          int
 	nextToken        string
 	nextTokenType    int
 	nextTokenLineNum int
-	pos              int // now position of sql
+	pos              int
 }
 
 func NewLexer(sql string) *Lexer {
@@ -160,41 +160,36 @@ func (lexer *Lexer) GetPos() int {
 	return lexer.pos
 }
 
-func (lexer *Lexer) NextTokenIs(tokenType int) (lineNum int, token string) {
-
-	nowLineNum, nowTokenType, nowToken := lexer.GetNextToken()
+func (lexer *Lexer) NextTokenIs(tokenType int) (lineNum int, token string, err error) {
+	nowLineNum, nowTokenType, nowToken, err := lexer.GetNextToken()
+	if err != nil {
+		return nowLineNum, nowToken, err
+	}
 	// syntax error
 	if tokenType != nowTokenType {
-		fmt.Println("\n\n\033[05m\033[41;37m                    OOOOOOOOOPS! TOKEN EXCEPT FAILED                    \033[0m ")
-		err := fmt.Sprintf("line %d: syntax error near '%s'.", lexer.GetLineNum(), nowToken)
-		fmt.Println("- [Lexer Dump] ------------------------------------------------------- ")
-		fmt.Printf("sql:\n\n\033[33m%v\033[0m\n\n", lexer.sql)
-		fmt.Printf("lineNum:          \033[33m%v\033[0m\n", lexer.lineNum)
-		fmt.Printf("NextTokenIs:      \033[33m%v\033[0m\n", tokenNameMap[tokenType])
-		fmt.Printf("nowToken:         \033[33m%v\033[0m\n", nowToken)
-		fmt.Printf("nextToken:        \033[33m%v\033[0m\n", lexer.nextToken)
-		fmt.Printf("nextTokenType:    \033[33m%v\033[0m\n", lexer.nextTokenType)
-		fmt.Printf("nextTokenLineNum: \033[33m%v\033[0m\n", lexer.nextTokenLineNum)
-		fmt.Printf("\n---------------------------------------------------------------------\n\n")
-		panic(err)
+		err := errors.New(fmt.Sprintf("line %d: syntax error near '%s'.", lexer.GetLineNum(), nowToken))
+		return nowLineNum, nowToken, err
 	}
-	return nowLineNum, nowToken
+	return nowLineNum, nowToken, nil
 }
 
-func (lexer *Lexer) LookAhead() int {
+func (lexer *Lexer) LookAhead() (int, error) {
 	// lexer.nextToken* already setted
 	if lexer.nextTokenLineNum > 0 {
-		return lexer.nextTokenType
+		return lexer.nextTokenType, nil
 	}
 	// set it
 	nowLineNum := lexer.lineNum
-	lineNum, tokenType, token := lexer.GetNextToken()
+	lineNum, tokenType, token, err := lexer.GetNextToken()
+	if err != nil {
+		return 0, err
+	}
 
 	lexer.lineNum = nowLineNum
 	lexer.nextTokenLineNum = lineNum
 	lexer.nextTokenType = tokenType
 	lexer.nextToken = token
-	return tokenType
+	return tokenType, nil
 }
 
 func (lexer *Lexer) nextSQLIs(s string) bool {
@@ -248,24 +243,24 @@ func (lexer *Lexer) skipIgnored() {
 }
 
 // use regex scan for number, identifier
-func (lexer *Lexer) scan(regexp *regexp.Regexp) string {
+func (lexer *Lexer) scan(regexp *regexp.Regexp) (string, error) {
 	if token := regexp.FindString(lexer.sql); token != "" {
 		lexer.skipSQL(len(token))
-		return token
+		return token, nil
 	}
-	panic("unreachable!")
-	return ""
+	err := errors.New("unreachable!")
+	return "", err
 }
 
 // return content before token
-func (lexer *Lexer) scanBeforeToken(token string) string {
+func (lexer *Lexer) scanBeforeToken(token string) (string, error) {
 	s := strings.Split(lexer.sql, token)
 	if len(s) < 2 {
-		panic("unreachable!")
-		return ""
+		err := errors.New("unreachable!")
+		return "", err
 	}
 	lexer.skipSQL(len(s[0]))
-	return s[0]
+	return s[0], nil
 }
 
 // NOTE: this method can skip escape character
@@ -293,7 +288,7 @@ func (lexer *Lexer) scanBeforeByte(b byte) (string, error) {
 	return "", errors.New("Can not find target byte.")
 }
 
-func (lexer *Lexer) scanNumber() string {
+func (lexer *Lexer) scanNumber() (string, error) {
 	docLen := len(lexer.sql)
 	for i := 0; i < docLen; i++ {
 		c := lexer.sql[i]
@@ -302,11 +297,11 @@ func (lexer *Lexer) scanNumber() string {
 		} else {
 			target := lexer.sql[:i]
 			lexer.skipSQL(i)
-			return target
+			return target, nil
 		}
 	}
-	panic("unreachable!")
-	return ""
+	err := errors.New("unreachable!")
+	return "", err
 }
 
 func isDigit(c byte) bool {
@@ -317,7 +312,7 @@ func isLetter(c byte) bool {
 	return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
 }
 
-func (lexer *Lexer) scanWord() string {
+func (lexer *Lexer) scanWord() (string, error) {
 	docLen := len(lexer.sql)
 	for i := 0; i < docLen; i++ {
 		c := lexer.sql[i]
@@ -326,14 +321,14 @@ func (lexer *Lexer) scanWord() string {
 		} else {
 			target := lexer.sql[:i]
 			lexer.skipSQL(i)
-			return target
+			return target, nil
 		}
 	}
-	panic("unreachable!")
-	return ""
+	err := errors.New("unreachable!")
+	return "", err
 }
 
-func (lexer *Lexer) GetNextToken() (lineNum int, tokenType int, token string) {
+func (lexer *Lexer) GetNextToken() (lineNum int, tokenType int, token string, err error) {
 	// next token already loaded
 	if lexer.nextTokenLineNum > 0 {
 		lineNum = lexer.nextTokenLineNum
@@ -347,94 +342,99 @@ func (lexer *Lexer) GetNextToken() (lineNum int, tokenType int, token string) {
 
 }
 
-func (lexer *Lexer) MatchToken() (lineNum int, tokenType int, token string) {
+func (lexer *Lexer) MatchToken() (lineNum int, tokenType int, token string, err error) {
 	lexer.skipIgnored()
 	// finish
 	if len(lexer.sql) == 0 {
-		return lexer.lineNum, TOKEN_EOF, tokenNameMap[TOKEN_EOF]
+		return lexer.lineNum, TOKEN_EOF, tokenNameMap[TOKEN_EOF], nil
 	}
 	// check token
 	switch lexer.sql[0] {
 	case '!':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_NOT, "!"
+		return lexer.lineNum, TOKEN_NOT, "!", nil
 	case '(':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_LEFT_PAREN, "("
+		return lexer.lineNum, TOKEN_LEFT_PAREN, "(", nil
 	case ')':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_RIGHT_PAREN, ")"
+		return lexer.lineNum, TOKEN_RIGHT_PAREN, ")", nil
 	case '[':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_LEFT_BRACKET, "["
+		return lexer.lineNum, TOKEN_LEFT_BRACKET, "[", nil
 	case ']':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_RIGHT_BRACKET, "]"
+		return lexer.lineNum, TOKEN_RIGHT_BRACKET, "]", nil
 	case '{':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_LEFT_BRACE, "{"
+		return lexer.lineNum, TOKEN_LEFT_BRACE, "{", nil
 	case '}':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_RIGHT_BRACE, "}"
+		return lexer.lineNum, TOKEN_RIGHT_BRACE, "}", nil
 	case '<':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_LT, "<"
+		return lexer.lineNum, TOKEN_LT, "<", nil
 	case '>':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_GT, ">"
+		return lexer.lineNum, TOKEN_GT, ">", nil
 	case ':':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_COLON, ":"
+		return lexer.lineNum, TOKEN_COLON, ":", nil
 	case ';':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_SEMICOLON, ";"
+		return lexer.lineNum, TOKEN_SEMICOLON, ";", nil
 	case '.':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_DOT, "."
+		return lexer.lineNum, TOKEN_DOT, ".", nil
 	case '=':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_EQUAL, "="
+		return lexer.lineNum, TOKEN_EQUAL, "=", nil
 	case '@':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_AT, "@"
+		return lexer.lineNum, TOKEN_AT, "@", nil
 	case '&':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_AND, "&"
+		return lexer.lineNum, TOKEN_AND, "&", nil
 	case '|':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_VERTICAL_BAR, "|"
+		return lexer.lineNum, TOKEN_VERTICAL_BAR, "|", nil
 	case '`':
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_BACKQUOTE, "`"
+		return lexer.lineNum, TOKEN_BACKQUOTE, "`", nil
 	case '"':
 		if lexer.nextSQLIs("\"\"") {
 			lexer.skipSQL(2)
-			return lexer.lineNum, TOKEN_DUOQUOTE, "\"\""
+			return lexer.lineNum, TOKEN_DUOQUOTE, "\"\"", nil
 		}
 		lexer.skipSQL(1)
-		return lexer.lineNum, TOKEN_QUOTE, "\""
+		return lexer.lineNum, TOKEN_QUOTE, "\"", nil
 	}
 
 	// check multiple character token
 	if lexer.sql[0] == '_' || isLetter(lexer.sql[0]) {
-		token := lexer.scanWord()
+		token, err := lexer.scanWord()
+		if err != nil {
+			return lexer.lineNum, 0, "", err
+		}
 		// to lowercase, SQL is not case sensitive
 		token = strings.ToLower(token)
 		if tokenType, isMatch := keywords[token]; isMatch {
-			return lexer.lineNum, tokenType, token
+			return lexer.lineNum, tokenType, token, nil
 		} else {
-			return lexer.lineNum, TOKEN_OTHER_TOKEN, token
+			return lexer.lineNum, TOKEN_OTHER_TOKEN, token, nil
 		}
 	}
 	if lexer.sql[0] == '.' || lexer.sql[0] == '-' || isDigit(lexer.sql[0]) {
-		token := lexer.scanNumber()
-		return lexer.GetLineNum(), TOKEN_NUMBER, token
+		token, err := lexer.scanNumber()
+		if err != nil {
+			return lexer.lineNum, 0, "", err
+		}
+		return lexer.GetLineNum(), TOKEN_NUMBER, token, nil
 	}
 
 	// unexpected symbol
-	err := fmt.Sprintf("line %d: unexpected symbol near '%q'.", lexer.lineNum, lexer.sql[0])
-	panic(err)
-	return
+	err = errors.New(fmt.Sprintf("line %d: unexpected symbol near '%q'.", lexer.lineNum, lexer.sql[0]))
+	return lexer.lineNum, 0, "", err
 }
 
 func (lexer *Lexer) escape(str string) (string, error) {

@@ -1,6 +1,10 @@
 package parser_sql
 
-/*
+import (
+	"fmt"
+)
+
+/**
  * SourceCharacter Expression
  * SourceCharacter ::=  #x0009 | #x000A | #x000D | [#x0020-#xFFFF] // /[\u0009\u000A\u000D\u0020-\uFFFF]/
  *
@@ -32,14 +36,33 @@ package parser_sql
  *
  */
 
-func IsSelectSQL(lexer *Lexer) bool {
-	for !isSQLEnd(lexer.LookAhead()) {
-		_, _, token := lexer.GetNextToken()
-		if token == tokenNameMap[TOKEN_SELECT] {
-			return true
+func IsSelectSQL(lexer *Lexer) (bool, error) {
+
+	var token int
+	var nextToken string
+	var err error
+
+	for {
+		token, err = lexer.LookAhead()
+		if err != nil {
+			return false, err
+		}
+		if !isSQLEnd(token) {
+			break
+		}
+
+		_, _, nextToken, err = lexer.GetNextToken()
+		fmt.Printf("nextToken: %v\n", nextToken)
+
+		if err != nil {
+			return false, err
+		}
+		if nextToken == tokenNameMap[TOKEN_SELECT] {
+			return true, nil
 		}
 	}
-	return false
+	// not a select query
+	return false, nil
 }
 
 func isSQLEnd(tokenType int) bool {

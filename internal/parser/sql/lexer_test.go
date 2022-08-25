@@ -31,7 +31,9 @@ func TestSkipIgnored(t *testing.T) {
 
 	fmt.Printf(lexer.sql)
 
-	lineNum, tokenType, token := lexer.GetNextToken()
+	lineNum, tokenType, token, err := lexer.GetNextToken()
+	assert.Nil(t, err)
+
 	fmt.Printf("lineNum: %d \n", lineNum)
 	fmt.Printf("tokenType: %d \n", tokenType)
 	fmt.Printf("token: %v \n", token)
@@ -52,7 +54,9 @@ func TestSkipIgnored2(t *testing.T) {
 
 	fmt.Printf(lexer.sql)
 
-	lineNum, tokenType, token := lexer.GetNextToken()
+	lineNum, tokenType, token, err := lexer.GetNextToken()
+	assert.Nil(t, err)
+
 	fmt.Printf("lineNum: %d \n", lineNum)
 	fmt.Printf("tokenType: %d \n", tokenType)
 	fmt.Printf("token: %v \n", token)
@@ -73,7 +77,9 @@ func TestSkipIgnored3(t *testing.T) {
 
 	fmt.Printf(lexer.sql)
 
-	lineNum, tokenType, token := lexer.GetNextToken()
+	lineNum, tokenType, token, err := lexer.GetNextToken()
+	assert.Nil(t, err)
+
 	fmt.Printf("lineNum: %d \n", lineNum)
 	fmt.Printf("tokenType: %d \n", tokenType)
 	fmt.Printf("token: %v \n", token)
@@ -94,7 +100,9 @@ func TestSkipIgnored4(t *testing.T) {
 
 	fmt.Printf(lexer.sql)
 
-	lineNum, tokenType, token := lexer.GetNextToken()
+	lineNum, tokenType, token, err := lexer.GetNextToken()
+	assert.Nil(t, err)
+
 	fmt.Printf("lineNum: %d \n", lineNum)
 	fmt.Printf("tokenType: %d \n", tokenType)
 	fmt.Printf("token: %v \n", token)

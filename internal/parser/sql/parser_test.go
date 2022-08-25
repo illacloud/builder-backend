@@ -20,26 +20,30 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSample(t *testing.T) {
+	assert.Nil(t, nil)
+}
+
 func TestIsSelectSQL(t *testing.T) {
 	sql_1 := `
 	/* select syntax for client query */
-	SELECT * FROM tab1 where id=12;
+	SELECT * FROM tab1 where id=14 and type=1;
 	`
 	lexer := NewLexer(sql_1)
-	doesItIs := IsSelectSQL(lexer)
+	doesItIs, err := IsSelectSQL(lexer)
+	assert.Nil(t, err)
 
 	assert.Equal(t, true, doesItIs, "it should be select query")
-
 }
 
 func TestIsSelectSQL2(t *testing.T) {
 	sql_2 := `
-	/* delete syntax for client query */
+	/* select syntax for client query */
 	DELETE FROM tab1 where id=12;
 	`
 	lexer := NewLexer(sql_2)
-	doesItIs := IsSelectSQL(lexer)
+	doesItIs, err := IsSelectSQL(lexer)
+	assert.Nil(t, err)
 
 	assert.Equal(t, false, doesItIs, "it should be delete query")
-
 }
