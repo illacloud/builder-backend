@@ -17,9 +17,9 @@ package mysql
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/go-playground/validator/v10"
+	parser_sql "github.com/illa-family/builder-backend/internal/parser/sql"
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
 	"github.com/mitchellh/mapstructure"
 )
@@ -112,8 +112,13 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 		Rows:    []map[string]interface{}{},
 		Extra:   map[string]interface{}{},
 	}
+	// check if m.Action.Query is select query
+	isSelectQuery := false
+	lexer := parser_sql.NewLexer(m.Action.Query)
+	isSelectQuery = parser_sql.IsSelectSQL(lexer)
+
 	// fetch data
-	if strings.HasPrefix(m.Action.Query, "SELECT") || strings.HasPrefix(m.Action.Query, "select") {
+	if isSelectQuery {
 		rows, err := db.Query(m.Action.Query)
 		if err != nil {
 			return queryResult, err

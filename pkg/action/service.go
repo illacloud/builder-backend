@@ -62,14 +62,16 @@ type ActionDto struct {
 
 type ActionServiceImpl struct {
 	logger             *zap.SugaredLogger
+	appRepository      repository.AppRepository
 	actionRepository   repository.ActionRepository
 	resourceRepository repository.ResourceRepository
 }
 
-func NewActionServiceImpl(logger *zap.SugaredLogger, actionRepository repository.ActionRepository,
-	resourceRepository repository.ResourceRepository) *ActionServiceImpl {
+func NewActionServiceImpl(logger *zap.SugaredLogger, appRepository repository.AppRepository,
+	actionRepository repository.ActionRepository, resourceRepository repository.ResourceRepository) *ActionServiceImpl {
 	return &ActionServiceImpl{
 		logger:             logger,
+		appRepository:      appRepository,
 		actionRepository:   actionRepository,
 		resourceRepository: resourceRepository,
 	}
@@ -97,13 +99,30 @@ func (impl *ActionServiceImpl) CreateAction(action ActionDto) (ActionDto, error)
 	}
 	action.ID = id
 
+	// update app `updatedAt` field
+	_ = impl.appRepository.UpdateUpdatedAt(&repository.App{
+		ID:        action.App,
+		UpdatedAt: time.Now().UTC(),
+		UpdatedBy: action.UpdatedBy,
+	})
+
 	return action, nil
 }
 
 func (impl *ActionServiceImpl) DeleteAction(id int) error {
+	action, _ := impl.actionRepository.RetrieveByID(id)
+
 	if err := impl.actionRepository.Delete(id); err != nil {
 		return err
 	}
+
+	// update app `updatedAt` field
+	_ = impl.appRepository.UpdateUpdatedAt(&repository.App{
+		ID:        action.App,
+		UpdatedAt: time.Now().UTC(),
+		UpdatedBy: action.UpdatedBy,
+	})
+
 	return nil
 }
 
@@ -122,6 +141,14 @@ func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (ActionDto, error)
 	}); err != nil {
 		return ActionDto{}, err
 	}
+
+	// update app `updatedAt` field
+	_ = impl.appRepository.UpdateUpdatedAt(&repository.App{
+		ID:        action.App,
+		UpdatedAt: time.Now().UTC(),
+		UpdatedBy: action.UpdatedBy,
+	})
+
 	return action, nil
 }
 

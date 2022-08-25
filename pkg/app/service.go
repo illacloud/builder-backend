@@ -87,9 +87,11 @@ func (appd *AppDto) ConstructByMap(data interface{}) {
 }
 
 func (appd *AppDto) ConstructWithID(id int) {
-	fmt.Printf("[DUMP] appd:%v\n", appd)
-	fmt.Printf("[DUMP] id:%v\n", id)
 	appd.ID = id
+}
+
+func (appd *AppDto) ConstructWithUpdateBy(updateBy int) {
+	appd.UpdatedBy = updateBy
 }
 
 type Editor struct {
@@ -198,6 +200,19 @@ func (impl *AppServiceImpl) UpdateApp(app AppDto) (AppDto, error) {
 	return app, nil
 }
 
+// call this method when action (over HTTP) and state (over websocket) changed
+func (impl *AppServiceImpl) UpdateAppModifyTime(app *AppDto) error {
+	app.UpdatedAt = time.Now().UTC()
+	if err := impl.appRepository.UpdateUpdatedAt(&repository.App{
+		ID:        app.ID,
+		UpdatedBy: app.UpdatedBy,
+		UpdatedAt: app.UpdatedAt,
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (impl *AppServiceImpl) FetchAppByID(appID int) (AppDto, error) {
 	app, err := impl.appRepository.RetrieveAppByID(appID)
 	if err != nil {
@@ -223,7 +238,7 @@ func (impl *AppServiceImpl) DeleteApp(appID int) error { // TODO: maybe need tra
 }
 
 func (impl *AppServiceImpl) GetAllApps() ([]AppDto, error) {
-	res, err := impl.appRepository.RetrieveAll()
+	res, err := impl.appRepository.RetrieveAllByUpdatedTime()
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +254,7 @@ func (impl *AppServiceImpl) GetAllApps() ([]AppDto, error) {
 			UpdatedBy:       value.UpdatedBy,
 			AppActivity: AppActivity{
 				Modifier:   userRecord.Nickname,
-				ModifiedAt: userRecord.UpdatedAt,
+				ModifiedAt: value.UpdatedAt,
 			},
 		})
 	}

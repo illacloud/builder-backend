@@ -38,8 +38,10 @@ type AppRepository interface {
 	Create(app *App) (int, error)
 	Delete(appID int) error
 	Update(app *App) error
+	UpdateUpdatedAt(app *App) error
 	RetrieveAll() ([]*App, error)
 	RetrieveAppByID(appID int) (*App, error)
+	RetrieveAllByUpdatedTime() ([]*App, error)
 }
 
 type AppRepositoryImpl struct {
@@ -69,7 +71,7 @@ func (impl *AppRepositoryImpl) Delete(appID int) error {
 }
 
 func (impl *AppRepositoryImpl) Update(app *App) error {
-	if err := impl.db.Model(app).Updates(App{
+	if err := impl.db.Model(app).UpdateColumns(App{
 		Name:            app.Name,
 		ReleaseVersion:  app.ReleaseVersion,
 		MainlineVersion: app.MainlineVersion,
@@ -95,4 +97,22 @@ func (impl *AppRepositoryImpl) RetrieveAppByID(id int) (*App, error) {
 		return nil, err
 	}
 	return app, nil
+}
+
+func (impl *AppRepositoryImpl) RetrieveAllByUpdatedTime() ([]*App, error) {
+	var apps []*App
+	if err := impl.db.Order("updated_at desc").Find(&apps).Error; err != nil {
+		return nil, err
+	}
+	return apps, nil
+}
+
+func (impl *AppRepositoryImpl) UpdateUpdatedAt(app *App) error {
+	if err := impl.db.Model(app).UpdateColumns(App{
+		UpdatedBy: app.UpdatedBy,
+		UpdatedAt: app.UpdatedAt,
+	}).Error; err != nil {
+		return err
+	}
+	return nil
 }

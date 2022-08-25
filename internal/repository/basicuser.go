@@ -56,7 +56,7 @@ func (impl *UserRepositoryImpl) CreateUser(user *User) (int, error) {
 }
 
 func (impl *UserRepositoryImpl) UpdateUser(user *User) error {
-	if err := impl.db.Model(user).Updates(User{
+	if err := impl.db.Model(user).UpdateColumns(User{
 		Nickname:       user.Nickname,
 		PasswordDigest: user.PasswordDigest,
 		Language:       user.Language,

@@ -59,7 +59,7 @@ func Initialize() (*Server, error) {
 	roomRestHandlerImpl := resthandler.NewRoomRestHandlerImpl(sugaredLogger, roomServiceImpl)
 	roomRouterImpl := router.NewRoomRouterImpl(roomRestHandlerImpl)
 	resourceRepositoryImpl := repository.NewResourceRepositoryImpl(sugaredLogger, gormDB)
-	actionServiceImpl := action.NewActionServiceImpl(sugaredLogger, actionRepositoryImpl, resourceRepositoryImpl)
+	actionServiceImpl := action.NewActionServiceImpl(sugaredLogger, appRepositoryImpl, actionRepositoryImpl, resourceRepositoryImpl)
 	actionRestHandlerImpl := resthandler.NewActionRestHandlerImpl(sugaredLogger, actionServiceImpl)
 	actionRouterImpl := router.NewActionRouterImpl(actionRestHandlerImpl)
 	resourceServiceImpl := resource.NewResourceServiceImpl(sugaredLogger, resourceRepositoryImpl)
