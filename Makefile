@@ -11,6 +11,9 @@ build-websocket-server:
 test:
 	PROJECT_PWD=$(shell pwd) go test -race ./...
 
+test-cover:
+	go test -cover --count=1 ./...
+	
 cov:
 	PROJECT_PWD=$(shell pwd) go test -coverprofile cover.out ./...
 	go tool cover -html=cover.out -o cover.html
