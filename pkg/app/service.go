@@ -337,6 +337,7 @@ func (impl *AppServiceImpl) copyAllTreeState(appA, appB, user int) error {
 
 	for _, treestate := range treestates {
 		treestate.ChildrenNodeRefIDs = convertLink(treestate.ChildrenNodeRefIDs, releaseIDMap)
+		treestate.ParentNodeRefID = releaseIDMap[treestate.ParentNodeRefID]
 		if err := impl.treestateRepository.Update(treestate); err != nil {
 			return err
 		}
@@ -462,6 +463,7 @@ func (impl *AppServiceImpl) releaseTreeStateByApp(app AppDto) error {
 	}
 	for _, treestate := range treestates {
 		treestate.ChildrenNodeRefIDs = convertLink(treestate.ChildrenNodeRefIDs, releaseIDMap)
+		treestate.ParentNodeRefID = releaseIDMap[treestate.ParentNodeRefID]
 		if err := impl.treestateRepository.Update(treestate); err != nil {
 			return err
 		}
