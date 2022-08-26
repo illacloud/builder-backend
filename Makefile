@@ -13,7 +13,11 @@ test:
 
 test-cover:
 	go test -cover --count=1 ./...
-	
+
+cover-total:
+	go test -cover --count=1 ./... -coverprofile cover.out
+	go tool cover -func cover.out | grep total 
+
 cov:
 	PROJECT_PWD=$(shell pwd) go test -coverprofile cover.out ./...
 	go tool cover -html=cover.out -o cover.html
