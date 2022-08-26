@@ -24,12 +24,15 @@ const (
 	TOKEN_COLON                   // :
 	TOKEN_SEMICOLON               // ;
 	TOKEN_DOT                     // .
+	TOKEN_COMMA                   // ,
 	TOKEN_EQUAL                   // =
 	TOKEN_AT                      // @
 	TOKEN_AND                     // &
 	TOKEN_VERTICAL_BAR            // |
 	TOKEN_QUOTE                   // "
 	TOKEN_DUOQUOTE                // ""
+	TOKEN_SINGLE_QUOTE            // '
+	TOKEN_DUO_SINGLE_QUOTE        // ''
 	TOKEN_BACKQUOTE               // `
 	TOKEN_ESCAPE_CHARACTER        // \
 
@@ -47,6 +50,7 @@ const (
 	TOKEN_UPDATE // update
 	TOKEN_DELETE // delete
 	TOKEN_CREATE // create
+	TOKEN_INSERT // insert
 
 	TOKEN_OTHER_TOKEN // SourceCharacter - Words
 )
@@ -65,12 +69,15 @@ var tokenNameMap = map[int]string{
 	TOKEN_COLON:            ":",
 	TOKEN_SEMICOLON:        ";",
 	TOKEN_DOT:              ".",
+	TOKEN_COMMA:            ",",
 	TOKEN_EQUAL:            "=",
 	TOKEN_AT:               "@",
 	TOKEN_AND:              "&",
 	TOKEN_VERTICAL_BAR:     "|",
 	TOKEN_QUOTE:            "\"",
 	TOKEN_DUOQUOTE:         "\"\"",
+	TOKEN_SINGLE_QUOTE:     "'",
+	TOKEN_DUO_SINGLE_QUOTE: "''",
 	TOKEN_BACKQUOTE:        "`",
 	TOKEN_ESCAPE_CHARACTER: "\\",
 
@@ -85,6 +92,7 @@ var tokenNameMap = map[int]string{
 	TOKEN_UPDATE: "update",
 	TOKEN_DELETE: "delete",
 	TOKEN_CREATE: "create",
+	TOKEN_INSERT: "insert",
 
 	TOKEN_OTHER_TOKEN: "other_token",
 }
@@ -94,10 +102,12 @@ var keywords = map[string]int{
 	"update": TOKEN_UPDATE,
 	"delete": TOKEN_DELETE,
 	"create": TOKEN_CREATE,
+	"insert": TOKEN_INSERT,
 	"SELECT": TOKEN_SELECT,
 	"UPDATE": TOKEN_UPDATE,
 	"DELETE": TOKEN_DELETE,
 	"CREATE": TOKEN_CREATE,
+	"INSERT": TOKEN_INSERT,
 }
 
 var avaliableNumberParts = map[byte]bool{
@@ -386,6 +396,9 @@ func (lexer *Lexer) MatchToken() (lineNum int, tokenType int, token string, err 
 	case '.':
 		lexer.skipSQL(1)
 		return lexer.lineNum, TOKEN_DOT, ".", nil
+	case ',':
+		lexer.skipSQL(1)
+		return lexer.lineNum, TOKEN_COMMA, ",", nil
 	case '=':
 		lexer.skipSQL(1)
 		return lexer.lineNum, TOKEN_EQUAL, "=", nil
@@ -408,6 +421,13 @@ func (lexer *Lexer) MatchToken() (lineNum int, tokenType int, token string, err 
 		}
 		lexer.skipSQL(1)
 		return lexer.lineNum, TOKEN_QUOTE, "\"", nil
+	case '\'':
+		if lexer.nextSQLIs("''") {
+			lexer.skipSQL(2)
+			return lexer.lineNum, TOKEN_DUO_SINGLE_QUOTE, "''", nil
+		}
+		lexer.skipSQL(1)
+		return lexer.lineNum, TOKEN_SINGLE_QUOTE, "'", nil
 	}
 
 	// check multiple character token

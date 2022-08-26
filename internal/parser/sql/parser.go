@@ -1,9 +1,5 @@
 package parser_sql
 
-import (
-	"fmt"
-)
-
 /**
  * SourceCharacter Expression
  * SourceCharacter ::=  #x0009 | #x000A | #x000D | [#x0020-#xFFFF] // /[\u0009\u000A\u000D\u0020-\uFFFF]/
@@ -47,18 +43,24 @@ func IsSelectSQL(lexer *Lexer) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		if !isSQLEnd(token) {
+		if isSQLEnd(token) {
 			break
 		}
 
 		_, _, nextToken, err = lexer.GetNextToken()
-		fmt.Printf("nextToken: %v\n", nextToken)
 
 		if err != nil {
 			return false, err
 		}
-		if nextToken == tokenNameMap[TOKEN_SELECT] {
+		switch nextToken {
+		case tokenNameMap[TOKEN_SELECT]:
 			return true, nil
+		case tokenNameMap[TOKEN_INSERT]:
+			fallthrough
+		case tokenNameMap[TOKEN_UPDATE]:
+			fallthrough
+		case tokenNameMap[TOKEN_DELETE]:
+			return false, nil
 		}
 	}
 	// not a select query
