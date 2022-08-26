@@ -16,8 +16,6 @@ package repository
 
 import (
 	"errors"
-	"fmt"
-	"reflect"
 )
 
 type DisplayNameState []string
@@ -41,12 +39,10 @@ func ResolveDisplayNameStateByPayload(data interface{}) (DisplayNameState, error
 	var udata []interface{}
 	var ok bool
 	var dns DisplayNameState
-	fmt.Printf("[DUMP] data reflect.TypeOf: %v\n", reflect.TypeOf(data))
 
 	if udata, ok = data.([]interface{}); !ok {
 		return nil, errors.New("ConstructDisplayNameByMap() failed, please check payload syntax.")
 	}
-	fmt.Printf("[DUMP] udata: %v\n", udata)
 	for _, v := range udata {
 		dns = append(dns, v.(string))
 	}
@@ -57,12 +53,11 @@ func ConstructDisplayNameStateForUpdateByPayload(data interface{}) (*DisplayName
 	var udata map[string]interface{}
 	var ok bool
 	var dnsfu DisplayNameStateForUpdate
-	fmt.Printf("[DUMP] data reflect.TypeOf: %v\n", reflect.TypeOf(data))
 
 	if udata, ok = data.(map[string]interface{}); !ok {
 		return nil, errors.New("ConstructDisplayNameStateForUpdateByPayload() failed, please check payload syntax.")
 	}
-	fmt.Printf("[DUMP] udata: %v\n", udata)
+
 	for k, v := range udata {
 		switch k {
 		case "before":

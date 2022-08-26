@@ -16,7 +16,6 @@ package repository
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/illa-family/builder-backend/internal/util"
@@ -117,11 +116,9 @@ func NewTreeStateRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *TreeSta
 }
 
 func (impl *TreeStateRepositoryImpl) Create(treestate *TreeState) (int, error) {
-	fmt.Printf("[CREATE] %v\n", treestate)
 	if err := impl.db.Create(treestate).Error; err != nil {
 		return 0, err
 	}
-	fmt.Printf("[CREATE DONE] %v\n", treestate)
 	return treestate.ID, nil
 }
 
@@ -133,7 +130,6 @@ func (impl *TreeStateRepositoryImpl) Delete(treestateID int) error {
 }
 
 func (impl *TreeStateRepositoryImpl) Update(treestate *TreeState) error {
-	fmt.Printf("[UPDATE] %v \n", treestate)
 	if err := impl.db.Model(treestate).UpdateColumns(TreeState{
 		ID:                 treestate.ID,
 		StateType:          treestate.StateType,

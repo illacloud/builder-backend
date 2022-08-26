@@ -17,8 +17,6 @@ package repository
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"reflect"
 	"strconv"
 )
 
@@ -62,12 +60,10 @@ func ConstructComponentNodeByMap(data interface{}) *ComponentNode {
 	var cnode ComponentNode
 	var udata map[string]interface{}
 	var ok bool
-	fmt.Printf("[DUMP] data reflect.TypeOf: %v\n", reflect.TypeOf(data))
 
 	if udata, ok = data.(map[string]interface{}); !ok {
 		return nil
 	}
-	fmt.Printf("[DUMP] udata: %v\n", udata)
 	for k, v := range udata {
 		switch k {
 		case "displayName":
@@ -92,9 +88,6 @@ func ConstructComponentNodeByMap(data interface{}) *ComponentNode {
 		case "verticalResize":
 			cnode.VerticalResize, _ = v.(bool)
 		case "h":
-			fmt.Printf("[DUMP] data.v reflect.TypeOf: %v\n", reflect.TypeOf(v))
-			fmt.Printf("[DUMP] data.v: %v\n", v)
-
 			cnode.H, _ = v.(float64)
 		case "w":
 			cnode.W, _ = v.(float64)

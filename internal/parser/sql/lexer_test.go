@@ -15,7 +15,6 @@
 package parser_sql
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,17 +28,10 @@ func TestSkipIgnored(t *testing.T) {
 	lexer := NewLexer(sql_1)
 	lexer.skipIgnored()
 
-	fmt.Printf(lexer.sql)
-
-	lineNum, tokenType, token, err := lexer.GetNextToken()
+	_, _, token, err := lexer.GetNextToken()
 	assert.Nil(t, err)
 
-	fmt.Printf("lineNum: %d \n", lineNum)
-	fmt.Printf("tokenType: %d \n", tokenType)
-	fmt.Printf("token: %v \n", token)
-
 	assert.Equal(t, tokenNameMap[TOKEN_SELECT], token, "the token should be equal")
-
 }
 
 func TestSkipIgnored2(t *testing.T) {
@@ -52,17 +44,10 @@ func TestSkipIgnored2(t *testing.T) {
 	lexer := NewLexer(sql_2)
 	lexer.skipIgnored()
 
-	fmt.Printf(lexer.sql)
-
-	lineNum, tokenType, token, err := lexer.GetNextToken()
+	_, _, token, err := lexer.GetNextToken()
 	assert.Nil(t, err)
 
-	fmt.Printf("lineNum: %d \n", lineNum)
-	fmt.Printf("tokenType: %d \n", tokenType)
-	fmt.Printf("token: %v \n", token)
-
 	assert.Equal(t, tokenNameMap[TOKEN_SELECT], token, "the token should be equal")
-
 }
 
 func TestSkipIgnored3(t *testing.T) {
@@ -75,17 +60,10 @@ func TestSkipIgnored3(t *testing.T) {
 	lexer := NewLexer(sql_3)
 	lexer.skipIgnored()
 
-	fmt.Printf(lexer.sql)
-
-	lineNum, tokenType, token, err := lexer.GetNextToken()
+	_, _, token, err := lexer.GetNextToken()
 	assert.Nil(t, err)
 
-	fmt.Printf("lineNum: %d \n", lineNum)
-	fmt.Printf("tokenType: %d \n", tokenType)
-	fmt.Printf("token: %v \n", token)
-
 	assert.Equal(t, tokenNameMap[TOKEN_SELECT], token, "the token should be equal")
-
 }
 
 func TestSkipIgnored4(t *testing.T) {
@@ -98,17 +76,10 @@ func TestSkipIgnored4(t *testing.T) {
 	lexer := NewLexer(sql_4)
 	lexer.skipIgnored()
 
-	fmt.Printf(lexer.sql)
-
-	lineNum, tokenType, token, err := lexer.GetNextToken()
+	_, _, token, err := lexer.GetNextToken()
 	assert.Nil(t, err)
 
-	fmt.Printf("lineNum: %d \n", lineNum)
-	fmt.Printf("tokenType: %d \n", tokenType)
-	fmt.Printf("token: %v \n", token)
-
 	assert.Equal(t, tokenNameMap[TOKEN_DELETE], token, "the token should be equal")
-
 }
 
 func TestNextTokenIs1(t *testing.T) {

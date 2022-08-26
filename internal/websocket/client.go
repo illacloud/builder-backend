@@ -16,7 +16,6 @@ package ws
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"time"
 
@@ -129,8 +128,6 @@ func (c *Client) ReadPump() {
 		}
 		// on message, format
 		message = bytes.TrimSpace(bytes.Replace(message, newline, charSpace, -1))
-		// for debug
-		fmt.Printf("[on message] %v\n", string(message))
 		msg, _ := NewMessage(c.ID, c.APPID, message)
 		// send to hub and process
 		if msg != nil {

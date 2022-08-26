@@ -15,7 +15,6 @@
 package repository
 
 import (
-	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -103,7 +102,6 @@ func (impl *SetStateRepositoryImpl) UpdateByValue(beforeSetState *SetState, afte
 		beforeSetState.Version,
 		beforeSetState.Value,
 	).UpdateColumns(afterSetState).Error; err != nil {
-		fmt.Printf("[DUMP] error: %v\n", err)
 		return err
 	}
 	return nil
