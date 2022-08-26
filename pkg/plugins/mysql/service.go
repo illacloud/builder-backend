@@ -114,6 +114,7 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 	}
 	// check if m.Action.Query is select query
 	isSelectQuery := false
+
 	lexer := parser_sql.NewLexer(m.Action.Query)
 	isSelectQuery, err = parser_sql.IsSelectSQL(lexer)
 	if err != nil {

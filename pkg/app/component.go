@@ -35,15 +35,15 @@ type ComponentNode struct {
 	Ctype          string                 `json:"type"`
 	ContainerType  string                 `json:"containerType"`
 	VerticalResize bool                   `json:"verticalResize"`
-	H              int                    `json:"h"`
-	W              int                    `json:"w"`
-	MinH           int                    `json:"minH"`
-	MinW           int                    `json:"minW"`
-	UnitW          int                    `json:"unitW"`
-	UnitH          int                    `json:"unitH"`
-	X              int                    `json:"x"`
-	Y              int                    `json:"y"`
-	Z              int                    `json:"z"`
+	H              float64                `json:"h"`
+	W              float64                `json:"w"`
+	MinH           float64                `json:"minH"`
+	MinW           float64                `json:"minW"`
+	UnitW          float64                `json:"unitW"`
+	UnitH          float64                `json:"unitH"`
+	X              float64                `json:"x"`
+	Y              float64                `json:"y"`
+	Z              float64                `json:"z"`
 	Props          map[string]interface{} `json:"props"`
 	PanelConfig    map[string]interface{} `json:"panelConfig"`
 }
@@ -69,7 +69,8 @@ func (cnode *ComponentNode) updateParentNode(parentComponentNode *ComponentNode)
 func buildComponentTree(treeState *repository.TreeState, treeStateMap map[int]*repository.TreeState, parentComponentNode *ComponentNode) (*ComponentNode, error) {
 	cnode := &ComponentNode{}
 	var err error
-	if cnode, err = newComponentNodeFromJSON([]byte(treeState.Content)); err != nil {
+	cnode, err = newComponentNodeFromJSON([]byte(treeState.Content))
+	if err != nil {
 		return nil, err
 	}
 	var treestateIDs []int
