@@ -17,7 +17,6 @@ package state
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/illa-family/builder-backend/internal/repository"
@@ -490,8 +489,6 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 	// no parentNode, currentNode is tree summit
 	if isSummitNode && currentNode.Name != repository.TREE_STATE_ROOTDSL_NAME {
 
-		fmt.Printf("[DUMP] parentTreeState: %v\n", parentTreeState)
-		fmt.Printf("[DUMP] currentNode: %v\n", currentNode)
 		// get rootDsl node
 		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, repository.TREE_STATE_ROOTDSL_NAME); err != nil {
 			return err
@@ -510,8 +507,6 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 	if currentNode.Name != repository.TREE_STATE_ROOTDSL_NAME {
 
 		parentTreeState.AppendChildrenNodeRefIDs(currentNode.ID)
-
-		fmt.Printf("[DUMP] parentTreeState: %v\n", parentTreeState)
 
 		// save parentNode
 		if err = impl.treestateRepository.Update(parentTreeState); err != nil {

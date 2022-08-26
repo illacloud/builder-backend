@@ -15,8 +15,6 @@
 package filter
 
 import (
-	"fmt"
-
 	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/pkg/app"
 	"github.com/illa-family/builder-backend/pkg/state"
@@ -101,7 +99,6 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 			kvStateDto.ConstructByMap(v)
 			kvStateDto.ConstructByApp(appDto)
 			kvStateDto.ConstructWithType(stateType)
-			fmt.Printf("[DUMP] kvStateDto: %v\n", kvStateDto)
 
 			inDBkvStateDto, _ = hub.KVStateServiceImpl.GetKVStateByKey(kvStateDto)
 			if inDBkvStateDto == nil {
@@ -128,14 +125,13 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 			var displayName string
 			// resolve payload
 			displayName, err = repository.ResolveDisplayNameByPayload(v)
-			fmt.Printf("[DUMP] err: %v\n", err)
 
 			if err != nil {
 				currentClient.Feedback(message, ws.ERROR_CREATE_OR_UPDATE_STATE_FAILED, err)
 				return err
 			}
 			// create or update state
-			fmt.Printf("[DUMP] displayName: %v\n", displayName)
+
 			// checkout
 			setStateDto := state.NewSetStateDto()
 			var setStateDtoInDB *state.SetStateDto
@@ -147,7 +143,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 			setStateDtoInDB, _ = hub.SetStateServiceImpl.GetByValue(setStateDto)
 			if setStateDtoInDB == nil {
 				// create
-				fmt.Printf("[DUMP] setStateDto: %v\n", setStateDto)
+
 				if _, err = hub.SetStateServiceImpl.CreateSetState(setStateDto); err != nil {
 					currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 					return err

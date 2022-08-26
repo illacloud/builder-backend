@@ -17,7 +17,6 @@ package app
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/illa-family/builder-backend/internal/repository"
@@ -70,7 +69,7 @@ func NewAppDto() *AppDto {
 }
 
 func (appd *AppDto) ConstructByMap(data interface{}) {
-	fmt.Printf("[D-1] data %v\n", data)
+
 	udata, ok := data.(map[string]interface{})
 	if !ok {
 		return

@@ -16,7 +16,6 @@ package resource
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/illa-family/builder-backend/internal/repository"
@@ -58,7 +57,7 @@ type ResourceDto struct {
 }
 
 func (resourced *ResourceDto) ConstructByMap(data interface{}) {
-	fmt.Printf("[D-1] data %v\n", data)
+
 	udata, ok := data.(map[string]interface{})
 	if !ok {
 		return

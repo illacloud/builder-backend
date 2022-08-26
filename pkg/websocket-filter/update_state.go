@@ -16,7 +16,6 @@ package filter
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/illa-family/builder-backend/internal/repository"
 	ws "github.com/illa-family/builder-backend/internal/websocket"
@@ -129,7 +128,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 		for _, v := range message.Payload {
 			// resolve payload
 			dnsfu, err := repository.ConstructDisplayNameStateForUpdateByPayload(v)
-			fmt.Printf("[DUMP] dnsfu %v\n", dnsfu)
+
 			if err != nil {
 				return err
 			}
@@ -141,8 +140,6 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 			beforeSetStateDto.ConstructByApp(appDto)
 			beforeSetStateDto.ConstructWithEditVersion()
 			afterSetStateDto.ConstructWithValueAfterUpdate(dnsfu)
-			fmt.Printf("[DUMP] beforeSetStateDto %v\n", beforeSetStateDto)
-			fmt.Printf("[DUMP] afterSetStateDto %v\n", afterSetStateDto)
 
 			// update state
 			if err := hub.SetStateServiceImpl.UpdateSetStateByValue(beforeSetStateDto, afterSetStateDto); err != nil {
