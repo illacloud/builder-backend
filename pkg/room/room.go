@@ -22,8 +22,8 @@ import (
 )
 
 const DEFAULT_SERVER_ADDRESS = "localhost"
-const DASHBOARD_WS_URL = "wss://%s:8000/room/%s/dashboard"
-const ROOM_WS_URL = "wss://%s:8000/room/%s/app/%d"
+const DASHBOARD_WS_URL = "ws://%s:8000/room/%s/dashboard"
+const ROOM_WS_URL = "ws://%s:8000/room/%s/app/%d"
 
 type RoomService interface {
 	GetDashboardConn(instanceID string) (WSURLResponse, error)
