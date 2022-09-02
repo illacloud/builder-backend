@@ -16,12 +16,14 @@ package room
 
 import (
 	"fmt"
+	"os"
 
 	"go.uber.org/zap"
 )
 
-const DASHBOARD_WS_URL = "wss://localhost:8000/room/%s/dashboard"
-const ROOM_WS_URL = "wss://localhost:8000/room/%s/app/%d"
+const DEFAULT_SERVER_ADDRESS = "localhost"
+const DASHBOARD_WS_URL = "wss://%s:8000/room/%s/dashboard"
+const ROOM_WS_URL = "wss://%s:8000/room/%s/app/%d"
 
 type RoomService interface {
 	GetDashboardConn(instanceID string) (WSURLResponse, error)
@@ -42,14 +44,22 @@ type WSURLResponse struct {
 	WSURL string `json:"wsURL"`
 }
 
+func getServerAddress() string {
+	serverAddress := os.Getenv("SERVER_ADDRESS")
+	if len(serverAddress) == 0 || serverAddress == "" {
+		return DEFAULT_SERVER_ADDRESS
+	}
+	return serverAddress
+}
+
 func (impl *RoomServiceImpl) GetDashboardConn(instanceID string) (WSURLResponse, error) {
 	var r WSURLResponse
-	r.WSURL = fmt.Sprintf(DASHBOARD_WS_URL, instanceID)
+	r.WSURL = fmt.Sprintf(DASHBOARD_WS_URL, getServerAddress(), instanceID)
 	return r, nil
 }
 
 func (impl *RoomServiceImpl) GetAppRoomConn(instanceID string, roomID int) (WSURLResponse, error) {
 	var r WSURLResponse
-	r.WSURL = fmt.Sprintf(ROOM_WS_URL, instanceID, roomID)
+	r.WSURL = fmt.Sprintf(ROOM_WS_URL, getServerAddress(), instanceID, roomID)
 	return r, nil
 }
