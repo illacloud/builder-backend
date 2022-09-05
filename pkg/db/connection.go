@@ -24,7 +24,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const RETRY_TIMES = 5
+const RETRY_TIMES = 6
 
 type Config struct {
 	Addr     string `env:"ILLA_PG_ADDR" envDefault:"localhost"`
@@ -57,7 +57,7 @@ func NewDbConnection(cfg *Config, logger *zap.SugaredLogger) (*gorm.DB, error) {
 		}
 		if retries > 1 {
 			retries--
-			time.Sleep(5 * time.Second)
+			time.Sleep(10 * time.Second)
 			db, err = gorm.Open(postgres.New(postgres.Config{
 				DSN: fmt.Sprintf("host='%s' user='%s' password='%s' dbname='%s' port='%s'",
 					cfg.Addr, cfg.User, cfg.Password, cfg.Database, cfg.Port),
