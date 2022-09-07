@@ -43,6 +43,11 @@ type ComponentNode struct {
 	PanelConfig    map[string]interface{} `json:"panelConfig"`
 }
 
+type ComponentStateForUpdate struct {
+	Before string `json:"before"`
+	After  string `json:"after"`
+}
+
 func NewComponentNode() *ComponentNode {
 	return &ComponentNode{}
 
@@ -54,6 +59,26 @@ func NewComponentNodeFromJSON(cnodebyte []byte) (*ComponentNode, error) {
 		return nil, err
 	}
 	return &cnode, nil
+}
+
+func ConstructComponentStateForUpdateByPayload(data interface{}) (*ComponentStateForUpdate, error) {
+	var udata map[string]interface{}
+	var ok bool
+	var csfu ComponentStateForUpdate
+
+	if udata, ok = data.(map[string]interface{}); !ok {
+		return nil, errors.New("ConstructComponentStateForUpdateByPayload() failed, please check payload syntax.")
+	}
+
+	for k, v := range udata {
+		switch k {
+		case "before":
+			csfu.Before = v.(string)
+		case "after":
+			csfu.After = v.(string)
+		}
+	}
+	return &csfu, nil
 }
 
 func ConstructComponentNodeByMap(data interface{}) *ComponentNode {
