@@ -44,8 +44,8 @@ type ComponentNode struct {
 }
 
 type ComponentStateForUpdate struct {
-	Before string `json:"before"`
-	After  string `json:"after"`
+	Before interface{} `json:"before"`
+	After  interface{} `json:"after"`
 }
 
 func NewComponentNode() *ComponentNode {
@@ -73,9 +73,9 @@ func ConstructComponentStateForUpdateByPayload(data interface{}) (*ComponentStat
 	for k, v := range udata {
 		switch k {
 		case "before":
-			csfu.Before = v.(string)
+			csfu.Before = v.(interface{})
 		case "after":
-			csfu.After = v.(string)
+			csfu.After = v.(interface{})
 		}
 	}
 	return &csfu, nil
