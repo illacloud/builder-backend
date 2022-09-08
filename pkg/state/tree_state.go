@@ -130,6 +130,7 @@ func (tsd *TreeStateDto) ConstructWithContent(content []byte) {
 
 func (tsd *TreeStateDto) ConstructWithNewStateContent(ntsd *TreeStateDto) {
 	tsd.Content = ntsd.Content
+	tsd.Name = ntsd.Name
 }
 
 func NewTreeStateServiceImpl(logger *zap.SugaredLogger, treestateRepository repository.TreeStateRepository) *TreeStateServiceImpl {

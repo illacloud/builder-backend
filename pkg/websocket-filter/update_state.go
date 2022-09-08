@@ -38,34 +38,41 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 	case ws.TARGET_NOTNING:
 		return nil
 	case ws.TARGET_COMPONENTS:
+		stateType = repository.TREE_STATE_TYPE_COMPONENTS
 		for _, v := range message.Payload {
-			// update
-			// construct update data
-			currentNode := state.NewTreeStateDto()
-			componentNode := repository.ConstructComponentNodeByMap(v)
-			serializedComponent, err := componentNode.SerializationForDatabase()
+			// construct payload
+			csfu, err := repository.ConstructComponentStateForUpdateByPayload(v)
 			if err != nil {
 				return err
 			}
-			currentNode.ConstructByMap(v) // set Name
-			currentNode.ConstructWithContent(serializedComponent)
-			currentNode.ConstructByApp(appDto) // set AppRefID
-			currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS)
 
-			// get state by name
-			inDBTreeStateDto, err := hub.TreeStateServiceImpl.GetTreeStateByName(currentNode)
+			// find component id by displayName
+			beforeTreeState := state.NewTreeStateDto()
+			beforeTreeState.ConstructByApp(appDto)
+			beforeTreeState.ConstructWithType(stateType)
+			beforeTreeState.ConstructByMap(csfu.Before)
+
+			inDBTreeStateDto, err := hub.TreeStateServiceImpl.GetTreeStateByName(beforeTreeState)
 			if err != nil {
 				currentClient.Feedback(message, ws.ERROR_CREATE_OR_UPDATE_STATE_FAILED, err)
 				return err
 			}
+
 			if inDBTreeStateDto == nil {
 				err := errors.New("[websocket-server] target state not exists, can not update.")
 				currentClient.Feedback(message, ws.ERROR_CREATE_OR_UPDATE_STATE_FAILED, err)
 				return nil
 			}
 
-			// update content
-			inDBTreeStateDto.ConstructWithNewStateContent(currentNode)
+			// construct update data
+			component := repository.ConstructComponentNodeByMap(csfu.After)
+			afterTreeState, err := hub.TreeStateServiceImpl.NewTreeStateByComponentState(appDto, component)
+			if err != nil {
+				return err
+			}
+
+			// update
+			inDBTreeStateDto.ConstructWithNewStateContent(afterTreeState)
 			if _, err := hub.TreeStateServiceImpl.UpdateTreeState(inDBTreeStateDto); err != nil {
 				currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
 				return err
