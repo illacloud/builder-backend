@@ -25,6 +25,9 @@ func TestSample(t *testing.T) {
 }
 
 func TestGetServerAddress(t *testing.T) {
+	os.Setenv("SERVER_ADDRESS", "")
+	os.Setenv("WEBSOCKET_PORT", "")
+
 	addr0 := getServerAddress()
 	assert.Equal(t, "localhost", addr0, "the server address should be localhost")
 
@@ -35,5 +38,60 @@ func TestGetServerAddress(t *testing.T) {
 	os.Setenv("SERVER_ADDRESS", "thisismyhost.com")
 	addr2 := getServerAddress()
 	assert.Equal(t, "thisismyhost.com", addr2, "the server address should be thisismyhost.com")
+
+}
+
+func TestGetWebSocketPort(t *testing.T) {
+	os.Setenv("SERVER_ADDRESS", "")
+	os.Setenv("WEBSOCKET_PORT", "")
+
+	port0 := getWebSocketPort()
+	assert.Equal(t, "8000", port0, "the default websocket port should be 8000")
+
+	os.Setenv("WEBSOCKET_PORT", "8000")
+	port1 := getWebSocketPort()
+	assert.Equal(t, "8000", port1, "the websocket port should be 8000")
+
+	os.Setenv("WEBSOCKET_PORT", "9999")
+	port2 := getWebSocketPort()
+	assert.Equal(t, "9999", port2, "the websocket port should be 9999")
+
+}
+
+func TestGetDashboardConn(t *testing.T) {
+	// set env to default
+	os.Setenv("SERVER_ADDRESS", "")
+	os.Setenv("WEBSOCKET_PORT", "")
+
+	rsi := RoomServiceImpl{}
+	r, err := rsi.GetDashboardConn("SELF_SERVE")
+	assert.Nil(t, err)
+	assert.Equal(t, "ws://localhost:8000/room/SELF_SERVE/dashboard", r.WSURL, "the server address should be ws://localhost:8000/room/SELF_SERVE/dashboard")
+
+	os.Setenv("SERVER_ADDRESS", "myhostname.com")
+	os.Setenv("WEBSOCKET_PORT", "443")
+
+	r2, err2 := rsi.GetDashboardConn("XHRT12A")
+	assert.Nil(t, err2)
+	assert.Equal(t, "ws://myhostname.com:443/room/XHRT12A/dashboard", r2.WSURL, "the server address should be ws://myhostname.com:443/room/XHRT12A/dashboard")
+
+}
+
+func TestGetAppRoomConn(t *testing.T) {
+	// set env to default
+	os.Setenv("SERVER_ADDRESS", "")
+	os.Setenv("WEBSOCKET_PORT", "")
+
+	rsi := RoomServiceImpl{}
+	r, err := rsi.GetAppRoomConn("SELF_SERVE", 74)
+	assert.Nil(t, err)
+	assert.Equal(t, "ws://localhost:8000/room/SELF_SERVE/app/74", r.WSURL, "the server address should be ws://localhost:8000/room/SELF_SERVE/app/74")
+
+	os.Setenv("SERVER_ADDRESS", "myhostname2.com")
+	os.Setenv("WEBSOCKET_PORT", "4430")
+
+	r2, err2 := rsi.GetAppRoomConn("SELF_SERVE", 74)
+	assert.Nil(t, err2)
+	assert.Equal(t, "ws://myhostname2.com:4430/room/SELF_SERVE/app/74", r2.WSURL, "the server address should be ws://myhostname2.com:4430/room/SELF_SERVE/app/74")
 
 }

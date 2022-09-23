@@ -22,8 +22,9 @@ import (
 )
 
 const DEFAULT_SERVER_ADDRESS = "localhost"
-const DASHBOARD_WS_URL = "ws://%s:8000/room/%s/dashboard"
-const ROOM_WS_URL = "ws://%s:8000/room/%s/app/%d"
+const DEFAULT_WEBSOCKET_PORT = "8000"
+const DASHBOARD_WS_URL = "ws://%s:%s/room/%s/dashboard"
+const ROOM_WS_URL = "ws://%s:%s/room/%s/app/%d"
 
 type RoomService interface {
 	GetDashboardConn(instanceID string) (WSURLResponse, error)
@@ -52,14 +53,22 @@ func getServerAddress() string {
 	return serverAddress
 }
 
+func getWebSocketPort() string {
+	webSockerPort := os.Getenv("WEBSOCKET_PORT")
+	if len(webSockerPort) == 0 || webSockerPort == "" {
+		return DEFAULT_WEBSOCKET_PORT
+	}
+	return webSockerPort
+}
+
 func (impl *RoomServiceImpl) GetDashboardConn(instanceID string) (WSURLResponse, error) {
 	var r WSURLResponse
-	r.WSURL = fmt.Sprintf(DASHBOARD_WS_URL, getServerAddress(), instanceID)
+	r.WSURL = fmt.Sprintf(DASHBOARD_WS_URL, getServerAddress(), getWebSocketPort(), instanceID)
 	return r, nil
 }
 
 func (impl *RoomServiceImpl) GetAppRoomConn(instanceID string, roomID int) (WSURLResponse, error) {
 	var r WSURLResponse
-	r.WSURL = fmt.Sprintf(ROOM_WS_URL, getServerAddress(), instanceID, roomID)
+	r.WSURL = fmt.Sprintf(ROOM_WS_URL, getServerAddress(), getWebSocketPort(), instanceID, roomID)
 	return r, nil
 }
