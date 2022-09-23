@@ -27,7 +27,7 @@ import (
 
 type Config struct {
 	ILLA_SERVER_HOST string `env:"ILLA_SERVER_HOST" envDefault:"0.0.0.0"`
-	ILLA_SERVER_PORT string `env:"ILLA_SERVER_PORT" envDefault:"8999"`
+	ILLA_SERVER_PORT string `env:"ILLA_SERVER_PORT" envDefault:"9999"`
 	ILLA_SERVER_MODE string `env:"ILLA_SERVER_MODE" envDefault:"debug"`
 }
 

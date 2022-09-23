@@ -16,6 +16,7 @@ package db
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/caarlos0/env"
 	"go.uber.org/zap"
@@ -23,9 +24,11 @@ import (
 	"gorm.io/gorm"
 )
 
+const RETRY_TIMES = 6
+
 type Config struct {
-	Addr     string `env:"ILLA_PG_ADDR" envDefault:"dev.illasoft.com"`
-	Port     string `env:"ILLA_PG_PORT" envDefault:"31006"`
+	Addr     string `env:"ILLA_PG_ADDR" envDefault:"localhost"`
+	Port     string `env:"ILLA_PG_PORT" envDefault:"5432"`
 	User     string `env:"ILLA_PG_USER" envDefault:"illa"`
 	Password string `env:"ILLA_PG_PASSWORD" envDefault:"illa2022"`
 	Database string `env:"ILLA_PG_DATABASE" envDefault:"illa"`
@@ -38,11 +41,33 @@ func GetConfig() (*Config, error) {
 }
 
 func NewDbConnection(cfg *Config, logger *zap.SugaredLogger) (*gorm.DB, error) {
-	db, err := gorm.Open(postgres.New(postgres.Config{
+	var db *gorm.DB
+	var err error
+	retries := RETRY_TIMES
+
+	db, err = gorm.Open(postgres.New(postgres.Config{
 		DSN: fmt.Sprintf("host='%s' user='%s' password='%s' dbname='%s' port='%s'",
 			cfg.Addr, cfg.User, cfg.Password, cfg.Database, cfg.Port),
 		PreferSimpleProtocol: true, // disables implicit prepared statement usage
 	}), &gorm.Config{})
+
+	for err != nil {
+		if logger != nil {
+			logger.Errorw("Failed to connect to database, %d", retries)
+		}
+		if retries > 1 {
+			retries--
+			time.Sleep(10 * time.Second)
+			db, err = gorm.Open(postgres.New(postgres.Config{
+				DSN: fmt.Sprintf("host='%s' user='%s' password='%s' dbname='%s' port='%s'",
+					cfg.Addr, cfg.User, cfg.Password, cfg.Database, cfg.Port),
+				PreferSimpleProtocol: true, // disables implicit prepared statement usage
+			}), &gorm.Config{})
+			continue
+		}
+		panic(err)
+	}
+
 	sqlDB, err := db.DB()
 	if err != nil {
 		logger.Errorw("error in connecting db ", "db", cfg, "err", err)
