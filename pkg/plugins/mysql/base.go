@@ -19,6 +19,7 @@ import (
 	"crypto/x509"
 	"database/sql"
 	"encoding/pem"
+	"errors"
 	"fmt"
 
 	"github.com/go-sql-driver/mysql"
@@ -48,7 +49,7 @@ func (m *MySQLConnector) getConnectionWithOptions(resourceOptions map[string]int
 func (m *MySQLConnector) connectPure() (db *sql.DB, err error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.Resource.DatabaseUsername,
 		m.Resource.DatabasePassword, m.Resource.Host, m.Resource.Port, m.Resource.DatabaseName)
-	db, err = sql.Open("mysql", dsn+"?timeout=5s")
+	db, err = sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -64,8 +65,9 @@ func (m *MySQLConnector) connectViaSSL() (db *sql.DB, err error) {
 		m.Resource.DatabasePassword, m.Resource.Host, m.Resource.Port, m.Resource.DatabaseName)
 	pool := x509.NewCertPool()
 	if ok := pool.AppendCertsFromPEM([]byte(m.Resource.SSL.ServerCert)); !ok {
-		return nil, err
+		return nil, errors.New("MySQL SSL/TLS Connection failed")
 	}
+	config := tls.Config{RootCAs: pool}
 	ccBlock, _ := pem.Decode([]byte(m.Resource.SSL.ClientCert))
 	ckBlock, _ := pem.Decode([]byte(m.Resource.SSL.ClientKey))
 	if (ccBlock != nil && ccBlock.Type == "CERTIFICATE") && (ckBlock != nil || ckBlock.Type == "PRIVATE KEY") {
@@ -73,18 +75,11 @@ func (m *MySQLConnector) connectViaSSL() (db *sql.DB, err error) {
 		if err != nil {
 			return nil, err
 		}
-		mysql.RegisterTLSConfig("custom", &tls.Config{
-			RootCAs:      pool,
-			Certificates: []tls.Certificate{cert},
-		})
-	} else {
-		mysql.RegisterTLSConfig("custom", &tls.Config{
-			RootCAs: pool,
-		})
+		config.Certificates = []tls.Certificate{cert}
 	}
-
+	mysql.RegisterTLSConfig("custom", &config)
 	dsn += "?tls=custom"
-	db, err = sql.Open("mysql", dsn+"?timeout=5s")
+	db, err = sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
 	}
