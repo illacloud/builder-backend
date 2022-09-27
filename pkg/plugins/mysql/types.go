@@ -21,24 +21,13 @@ type MySQLOptions struct {
 	DatabaseUsername string     `validate:"required"`
 	DatabasePassword string     `validate:"required"`
 	SSL              SSLOptions `validate:"required,omitempty"`
-	SSH              SSHOptions `validate:"required,omitempty"`
 }
 
 type SSLOptions struct {
 	SSL        bool
 	ServerCert string `validate:"required_unless=SSL false"`
-	ClientKey  string `validate:"required_unless=SSL false"`
-	ClientCert string `validate:"required_unless=SSL false"`
-}
-
-type SSHOptions struct {
-	SSH           bool
-	SSHHost       string `validate:"required_unless=SSH false"`
-	SSHPort       string `validate:"required_unless=SSH false"`
-	SSHUsername   string `validate:"required_unless=SSH false"`
-	SSHPassword   string `validate:"required_unless=SSH false"`
-	SSHPrivateKey string `validate:"required_unless=SSH false"`
-	SSHPassphrase string `validate:"required_unless=SSH false"`
+	ClientKey  string
+	ClientCert string
 }
 
 type MySQLQuery struct {

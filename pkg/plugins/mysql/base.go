@@ -15,10 +15,14 @@
 package mysql
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"database/sql"
+	"encoding/pem"
 	"errors"
 	"fmt"
 
+	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/mitchellh/mapstructure"
 )
@@ -34,15 +38,18 @@ func (m *MySQLConnector) getConnectionWithOptions(resourceOptions map[string]int
 	}
 	var db *sql.DB
 	var err error
-	// TODO: connect via ssh or ssl
-	db, err = m.connectPure()
+	if m.Resource.SSL.SSL == true {
+		db, err = m.connectViaSSL()
+	} else {
+		db, err = m.connectPure()
+	}
 	return db, err
 }
 
 func (m *MySQLConnector) connectPure() (db *sql.DB, err error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.Resource.DatabaseUsername,
 		m.Resource.DatabasePassword, m.Resource.Host, m.Resource.Port, m.Resource.DatabaseName)
-	db, err = sql.Open("mysql", dsn+"?timeout=5s")
+	db, err = sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -53,14 +60,34 @@ func (m *MySQLConnector) connectPure() (db *sql.DB, err error) {
 	return db, nil
 }
 
-func (m *MySQLConnector) connectViaSSH() (db *sql.DB, err error) {
-	// TODO: implement
-	return nil, errors.New("inaccessible")
-}
-
 func (m *MySQLConnector) connectViaSSL() (db *sql.DB, err error) {
-	// TODO: implement
-	return nil, errors.New("inaccessible")
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.Resource.DatabaseUsername,
+		m.Resource.DatabasePassword, m.Resource.Host, m.Resource.Port, m.Resource.DatabaseName)
+	pool := x509.NewCertPool()
+	if ok := pool.AppendCertsFromPEM([]byte(m.Resource.SSL.ServerCert)); !ok {
+		return nil, errors.New("MySQL SSL/TLS Connection failed")
+	}
+	config := tls.Config{RootCAs: pool}
+	ccBlock, _ := pem.Decode([]byte(m.Resource.SSL.ClientCert))
+	ckBlock, _ := pem.Decode([]byte(m.Resource.SSL.ClientKey))
+	if (ccBlock != nil && ccBlock.Type == "CERTIFICATE") && (ckBlock != nil || ckBlock.Type == "PRIVATE KEY") {
+		cert, err := tls.X509KeyPair([]byte(m.Resource.SSL.ClientCert), []byte(m.Resource.SSL.ClientKey))
+		if err != nil {
+			return nil, err
+		}
+		config.Certificates = []tls.Certificate{cert}
+	}
+	mysql.RegisterTLSConfig("custom", &config)
+	dsn += "?tls=custom"
+	db, err = sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, err
+	}
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
 }
 
 func tablesInfo(db *sql.DB, dbName string) []string {
