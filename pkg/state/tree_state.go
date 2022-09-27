@@ -488,10 +488,10 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 	}
 
 	// no parentNode, currentNode is tree summit
-	if isSummitNode && currentNode.Name != repository.TREE_STATE_ROOTDSL_NAME {
+	if isSummitNode && currentNode.Name != repository.TREE_STATE_SUMMIT_NAME {
 
-		// get rootDsl node
-		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, repository.TREE_STATE_ROOTDSL_NAME); err != nil {
+		// get root node
+		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(currentNode.AppRefID, currentNode.StateType, repository.TREE_STATE_SUMMIT_NAME); err != nil {
 			return err
 		}
 	}
@@ -505,7 +505,7 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 	currentNode.ID = treeStateDtoInDB.ID
 
 	// fill currentNode id into parentNode.ChildrenNodeRefIDs
-	if currentNode.Name != repository.TREE_STATE_ROOTDSL_NAME {
+	if currentNode.Name != repository.TREE_STATE_SUMMIT_NAME {
 
 		parentTreeState.AppendChildrenNodeRefIDs(currentNode.ID)
 

@@ -29,14 +29,14 @@ func TestNewComponentNodeFromJSON(t *testing.T) {
 
 func TestConstructComponentNodeByMap(t *testing.T) {
 	var mapInstance = make(map[string]interface{})
-	input := `{    "displayName": "rootDsl",    "parentNode": "",    "showName": "",    "error": false,    "isDragging": false,    "childrenNode": [],    "type": "",    "containerType": null,    "verticalResize": false,    "h": 0,    "w": 0,    "minH": 0,    "minW": 0,    "x": 0,    "y": 0,    "z": 0,    "props": null,    "panelConfig": null}`
+	input := `{    "displayName": "root",    "parentNode": "",    "showName": "",    "error": false,    "isDragging": false,    "childrenNode": [],    "type": "",    "containerType": null,    "verticalResize": false,    "h": 0,    "w": 0,    "minH": 0,    "minW": 0,    "x": 0,    "y": 0,    "z": 0,    "props": null,    "panelConfig": null}`
 	json.Unmarshal([]byte(input), &mapInstance)
 	cnode := NewComponentNode()
 	cnode = ConstructComponentNodeByMap(mapInstance)
 	var emptyCNodeList []*ComponentNode
 	var emptyMap map[string]interface{}
 	// test
-	assert.Equal(t, "rootDsl", cnode.DisplayName, "the construct result should be equal")
+	assert.Equal(t, "root", cnode.DisplayName, "the construct result should be equal")
 	assert.Equal(t, "", cnode.ParentNode, "the construct result should be equal")
 	assert.Equal(t, "", cnode.ShowName, "the construct result should be equal")
 	assert.Equal(t, false, cnode.Error, "the construct result should be equal")

@@ -169,7 +169,7 @@ func (impl *AppServiceImpl) initialAllTypeTreeStates(appID, user int) error {
 		ChildrenNodeRefIDs: "[]",
 		AppRefID:           appID,
 		Version:            repository.APP_EDIT_VERSION,
-		Name:               "rootDsl",
+		Name:               "root",
 		Content:            initialComponet,
 		CreatedAt:          time.Now().UTC(),
 		CreatedBy:          user,
@@ -609,7 +609,7 @@ func (impl *AppServiceImpl) formatComponents(appID, version int) (*ComponentNode
 	tempMap := map[int]*repository.TreeState{}
 	root := &repository.TreeState{}
 	for _, component := range res {
-		if component.Name == "rootDsl" {
+		if component.Name == repository.TREE_STATE_SUMMIT_NAME {
 			root = component
 		}
 		tempMap[component.ID] = component
