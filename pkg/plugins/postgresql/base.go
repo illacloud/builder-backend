@@ -147,6 +147,20 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 		for i, v := range values {
 			valuePtrs[i] = reflect.New(reflect.TypeOf(v)).Interface() // allocate pointer to type
 		}
+		rows.Scan(valuePtrs...)
+		entry := make(map[string]interface{})
+		for i, col := range columns {
+			var v interface{}
+			val := reflect.ValueOf(valuePtrs[i]).Elem().Interface() // dereference pointer
+			b, ok := val.([]byte)
+			if ok {
+				v = string(b)
+			} else {
+				v = val
+			}
+			entry[col] = v
+		}
+		tableData = append(tableData, entry)
 		break
 	}
 
