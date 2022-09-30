@@ -113,8 +113,8 @@ func (impl UserRestHandlerImpl) GetVerificationCode(c *gin.Context) {
 
 	vToken, err := impl.userService.GenerateVerificationCode(payload.Email, payload.Usage)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "send verification code error: " + err.Error(),
 		})
 		return
@@ -177,8 +177,8 @@ func (impl UserRestHandlerImpl) SignUp(c *gin.Context) {
 		UpdatedAt:    time.Now().UTC(),
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "sign up error: " + err.Error(),
 		})
 		return
@@ -288,16 +288,16 @@ func (impl UserRestHandlerImpl) ForgetPassword(c *gin.Context) {
 	// update password
 	hashPwd, err := bcrypt.GenerateFromPassword([]byte(payload.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "forget password error: " + err.Error(),
 		})
 		return
 	}
 	userDto.Password = string(hashPwd)
 	if _, err := impl.userService.UpdateUser(userDto); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "forget password error: " + err.Error(),
 		})
 		return
@@ -341,8 +341,8 @@ func (impl UserRestHandlerImpl) UpdateUsername(c *gin.Context) {
 	}
 	userDto, err := impl.userService.GetUser(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "get user error: " + err.Error(),
 		})
 		return
@@ -351,8 +351,8 @@ func (impl UserRestHandlerImpl) UpdateUsername(c *gin.Context) {
 	// update user Nickname
 	userDto.Nickname = payload.Nickname
 	if _, err := impl.userService.UpdateUser(userDto); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "update user error: " + err.Error(),
 		})
 		return
@@ -395,8 +395,8 @@ func (impl UserRestHandlerImpl) UpdatePassword(c *gin.Context) {
 	}
 	userDto, err := impl.userService.GetUser(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "get user error: " + err.Error(),
 		})
 		return
@@ -414,16 +414,16 @@ func (impl UserRestHandlerImpl) UpdatePassword(c *gin.Context) {
 	// update password
 	hashPwd, err := bcrypt.GenerateFromPassword([]byte(payload.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "update password error: " + err.Error(),
 		})
 		return
 	}
 	userDto.Password = string(hashPwd)
 	if _, err := impl.userService.UpdateUser(userDto); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "update password error: " + err.Error(),
 		})
 		return
@@ -465,8 +465,8 @@ func (impl UserRestHandlerImpl) UpdateLanguage(c *gin.Context) {
 	}
 	userDto, err := impl.userService.GetUser(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "get user error: " + err.Error(),
 		})
 		return
@@ -475,8 +475,8 @@ func (impl UserRestHandlerImpl) UpdateLanguage(c *gin.Context) {
 	// update user language
 	userDto.Language = payload.Language
 	if _, err := impl.userService.UpdateUser(userDto); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "update language error: " + err.Error(),
 		})
 		return
@@ -498,8 +498,8 @@ func (impl UserRestHandlerImpl) GetUserInfo(c *gin.Context) {
 	}
 	userDto, err := impl.userService.GetUser(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": err.Error(),
 		})
 		return
