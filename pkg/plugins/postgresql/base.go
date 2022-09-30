@@ -71,7 +71,7 @@ func (p *Connector) connectViaSSL() (db *pgx.Conn, err error) {
 	if ok := pool.AppendCertsFromPEM([]byte(p.Resource.SSL.ServerCert)); !ok {
 		return nil, errors.New("PostgreSQL SSL/TLS Connection failed")
 	}
-	tlsConfig := tls.Config{RootCAs: pool}
+	tlsConfig := tls.Config{RootCAs: pool, ServerName: p.Resource.Host}
 	ccBlock, _ := pem.Decode([]byte(p.Resource.SSL.ClientCert))
 	ckBlock, _ := pem.Decode([]byte(p.Resource.SSL.ClientKey))
 	if (ccBlock != nil && ccBlock.Type == "CERTIFICATE") && (ckBlock != nil || ckBlock.Type == "PRIVATE KEY") {
