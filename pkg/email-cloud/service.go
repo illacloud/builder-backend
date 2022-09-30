@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	BASEURL          = "https://email.dev.illasoft.com/v1/"
+	BASEURL          = "email.dev.illasoft.com/v1/"
 	SUBSCRIBE        = "subscribe"
 	VERIFICATIONCODE = "code"
 )
