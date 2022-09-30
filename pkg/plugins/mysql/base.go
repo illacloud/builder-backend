@@ -49,11 +49,7 @@ func (m *MySQLConnector) getConnectionWithOptions(resourceOptions map[string]int
 func (m *MySQLConnector) connectPure() (db *sql.DB, err error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.Resource.DatabaseUsername,
 		m.Resource.DatabasePassword, m.Resource.Host, m.Resource.Port, m.Resource.DatabaseName)
-	db, err = sql.Open("mysql", dsn)
-	if err != nil {
-		return nil, err
-	}
-	err = db.Ping()
+	db, err = sql.Open("mysql", dsn+"?timeout=5s")
 	if err != nil {
 		return nil, err
 	}
@@ -79,11 +75,7 @@ func (m *MySQLConnector) connectViaSSL() (db *sql.DB, err error) {
 	}
 	mysql.RegisterTLSConfig("custom", &config)
 	dsn += "?tls=custom"
-	db, err = sql.Open("mysql", dsn)
-	if err != nil {
-		return nil, err
-	}
-	err = db.Ping()
+	db, err = sql.Open("mysql", dsn+"?timeout=5s")
 	if err != nil {
 		return nil, err
 	}
