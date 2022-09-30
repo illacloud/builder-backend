@@ -16,10 +16,10 @@ package email_cloud
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -36,7 +36,7 @@ func SendSubscriptionEmail(email string) error {
 	if resp.StatusCode() != http.StatusOK || err != nil {
 		return errors.New("failed to send subscription email")
 	}
-	log.Error().Msgf("response: %+v, err: %+v", resp, err)
+	log.Printf("response: %+v, err: %+v", resp, err)
 	return nil
 }
 
@@ -48,6 +48,6 @@ func SendVerificationEmail(email, code, usage string) error {
 	if resp.StatusCode() != http.StatusOK || err != nil {
 		return errors.New("failed to send verification code email")
 	}
-	log.Error().Msgf("response: %+v, err: %+v", resp, err)
+	log.Printf("response: %+v, err: %+v", resp, err)
 	return nil
 }
