@@ -16,13 +16,14 @@ package email_cloud
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/go-resty/resty/v2"
 )
 
 const (
-	BASEURL          = "email.dev.illasoft.com/v1/"
+	BASEURL          = "http://email.dev.illasoft.com/v1/"
 	SUBSCRIBE        = "subscribe"
 	VERIFICATIONCODE = "code"
 )
@@ -35,6 +36,7 @@ func SendSubscriptionEmail(email string) error {
 	if resp.StatusCode() != http.StatusOK || err != nil {
 		return errors.New("failed to send subscription email")
 	}
+	log.Printf("response: %+v, err: %+v", resp, err)
 	return nil
 }
 
@@ -46,5 +48,6 @@ func SendVerificationEmail(email, code, usage string) error {
 	if resp.StatusCode() != http.StatusOK || err != nil {
 		return errors.New("failed to send verification code email")
 	}
+	log.Printf("response: %+v, err: %+v", resp, err)
 	return nil
 }
