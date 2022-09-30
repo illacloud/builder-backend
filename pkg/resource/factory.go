@@ -17,12 +17,15 @@ package resource
 import (
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
 	"github.com/illa-family/builder-backend/pkg/plugins/mysql"
+	"github.com/illa-family/builder-backend/pkg/plugins/postgresql"
 	"github.com/illa-family/builder-backend/pkg/plugins/restapi"
 )
 
 var (
-	REST_RESOURCE  = "restapi"
-	MYSQL_RESOURCE = "mysql"
+	REST_RESOURCE     = "restapi"
+	MYSQL_RESOURCE    = "mysql"
+	MARIADB_RESOURCE  = "mariadb"
+	POSTGRES_RESOURCE = "postgresql"
 )
 
 type AbstractResourceFactory interface {
@@ -38,9 +41,12 @@ func (f *Factory) Generate() common.DataConnector {
 	case REST_RESOURCE:
 		restapiRsc := &restapi.RESTAPIConnector{}
 		return restapiRsc
-	case MYSQL_RESOURCE:
+	case MYSQL_RESOURCE, MARIADB_RESOURCE:
 		sqlRsc := &mysql.MySQLConnector{}
 		return sqlRsc
+	case POSTGRES_RESOURCE:
+		pgsRsc := &postgresql.Connector{}
+		return pgsRsc
 	default:
 		return nil
 	}
