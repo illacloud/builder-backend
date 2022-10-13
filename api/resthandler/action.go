@@ -155,6 +155,10 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 		})
 		return
 	}
+	originInfo, _ := impl.actionService.GetAction(act.ID)
+	res.CreatedBy = originInfo.CreatedBy
+	res.CreatedAt = originInfo.CreatedAt
+
 	c.JSON(http.StatusOK, res)
 }
 
