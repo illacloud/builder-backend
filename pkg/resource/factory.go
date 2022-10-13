@@ -18,6 +18,7 @@ import (
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
 	"github.com/illa-family/builder-backend/pkg/plugins/mysql"
 	"github.com/illa-family/builder-backend/pkg/plugins/postgresql"
+	"github.com/illa-family/builder-backend/pkg/plugins/redis"
 	"github.com/illa-family/builder-backend/pkg/plugins/restapi"
 )
 
@@ -25,7 +26,9 @@ var (
 	REST_RESOURCE     = "restapi"
 	MYSQL_RESOURCE    = "mysql"
 	MARIADB_RESOURCE  = "mariadb"
+	TIDB_RESOURCE     = "tidb"
 	POSTGRES_RESOURCE = "postgresql"
+	REDIS_RESOURCE    = "redis"
 )
 
 type AbstractResourceFactory interface {
@@ -41,12 +44,15 @@ func (f *Factory) Generate() common.DataConnector {
 	case REST_RESOURCE:
 		restapiRsc := &restapi.RESTAPIConnector{}
 		return restapiRsc
-	case MYSQL_RESOURCE, MARIADB_RESOURCE:
+	case MYSQL_RESOURCE, MARIADB_RESOURCE, TIDB_RESOURCE:
 		sqlRsc := &mysql.MySQLConnector{}
 		return sqlRsc
 	case POSTGRES_RESOURCE:
 		pgsRsc := &postgresql.Connector{}
 		return pgsRsc
+	case REDIS_RESOURCE:
+		redisRsc := &redis.Connector{}
+		return redisRsc
 	default:
 		return nil
 	}
