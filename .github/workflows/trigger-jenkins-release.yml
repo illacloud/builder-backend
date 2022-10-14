@@ -1,11 +1,8 @@
 name: jenkins-illa-builder-release
 on:
   push:
-    branches:
-    - 'releases/**'
-  pull_request:
-    branches:
-    - 'releases/**'
+    tags:
+      - "v*.*.*"
 jobs:
 
   build:
