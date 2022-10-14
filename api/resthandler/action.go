@@ -95,8 +95,8 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 	act.UpdatedBy = user
 	res, err := impl.actionService.CreateAction(act)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "create action error: " + err.Error(),
 		})
 		return
@@ -149,12 +149,16 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	act.UpdatedBy = user
 	res, err := impl.actionService.UpdateAction(act)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "update action error: " + err.Error(),
 		})
 		return
 	}
+	originInfo, _ := impl.actionService.GetAction(act.ID)
+	res.CreatedBy = originInfo.CreatedBy
+	res.CreatedAt = originInfo.CreatedAt
+
 	c.JSON(http.StatusOK, res)
 }
 
@@ -168,8 +172,8 @@ func (impl ActionRestHandlerImpl) DeleteAction(c *gin.Context) {
 		return
 	}
 	if err := impl.actionService.DeleteAction(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "delete action error: " + err.Error(),
 		})
 		return
@@ -190,8 +194,8 @@ func (impl ActionRestHandlerImpl) GetAction(c *gin.Context) {
 	}
 	res, err := impl.actionService.GetAction(id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "get action error: " + err.Error(),
 		})
 		return
@@ -210,8 +214,8 @@ func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 	}
 	res, err := impl.actionService.FindActionsByAppVersion(app, 0)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "get actions error: " + err.Error(),
 		})
 		return
@@ -249,8 +253,8 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 			})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "run action error: " + err.Error(),
 		})
 		return
@@ -288,8 +292,8 @@ func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 			})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "run action error: " + err.Error(),
 		})
 		return

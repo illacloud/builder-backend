@@ -52,8 +52,8 @@ func NewResourceRestHandlerImpl(logger *zap.SugaredLogger, resourceService resou
 func (impl ResourceRestHandlerImpl) FindAllResources(c *gin.Context) {
 	res, err := impl.resourceService.FindAllResources()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "get resources error: " + err.Error(),
 		})
 		return
@@ -105,8 +105,8 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 	rsc.UpdatedBy = user
 	res, err := impl.resourceService.CreateResource(rsc)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "create resource error: " + err.Error(),
 		})
 		return
@@ -126,8 +126,8 @@ func (impl ResourceRestHandlerImpl) GetResource(c *gin.Context) {
 
 	res, err := impl.resourceService.GetResource(id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "get resource error: " + err.Error(),
 		})
 		return
@@ -187,12 +187,16 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 	rsc.UpdatedAt = time.Now().UTC()
 	res, err := impl.resourceService.UpdateResource(rsc)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "update resource error: " + err.Error(),
 		})
 		return
 	}
+	originInfo, _ := impl.resourceService.GetResource(rsc.ID)
+	res.CreatedAt = originInfo.CreatedAt
+	res.CreatedBy = originInfo.CreatedBy
+
 	c.JSON(http.StatusOK, res)
 }
 
@@ -207,8 +211,8 @@ func (impl ResourceRestHandlerImpl) DeleteResource(c *gin.Context) {
 	}
 
 	if err := impl.resourceService.DeleteResource(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "delete resource error: " + err.Error(),
 		})
 		return
@@ -241,8 +245,8 @@ func (impl ResourceRestHandlerImpl) TestConnection(c *gin.Context) {
 
 	connRes, err := impl.resourceService.TestConnection(rsc)
 	if err != nil || !connRes {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "test connection failed: " + err.Error(),
 		})
 		return

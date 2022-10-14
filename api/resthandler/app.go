@@ -88,8 +88,8 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 	// Call `app service` create app
 	res, err := impl.appService.CreateApp(app)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "create app error: " + err.Error(),
 		})
 		return
@@ -109,8 +109,8 @@ func (impl AppRestHandlerImpl) DeleteApp(c *gin.Context) {
 	}
 	// Call `app service` delete app
 	if err := impl.appService.DeleteApp(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "delete app error: " + err.Error(),
 		})
 		return
@@ -164,8 +164,8 @@ func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
 	// Call `app service` update app
 	appDTO, err := impl.appService.FetchAppByID(id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "rename app error: " + err.Error(),
 		})
 		return
@@ -174,8 +174,8 @@ func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
 	appDTO.UpdatedBy = user
 	res, err := impl.appService.UpdateApp(appDTO)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "rename app error: " + err.Error(),
 		})
 		return
@@ -187,8 +187,8 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 	// Call `app service` get all apps
 	res, err := impl.appService.GetAllApps()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "get all apps error: " + err.Error(),
 		})
 		return
@@ -225,8 +225,8 @@ func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 			})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "get app mega data error: " + err.Error(),
 		})
 		return
@@ -277,8 +277,8 @@ func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
 	// Call `app service` to duplicate app
 	res, err := impl.appService.DuplicateApp(id, user, payload.Name)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "duplicate app error: " + err.Error(),
 		})
 		return
@@ -299,8 +299,8 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	// Call `app service` to release app
 	version, err := impl.appService.ReleaseApp(id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"errorCode":    500,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
 			"errorMessage": "release app error: " + err.Error(),
 		})
 		return

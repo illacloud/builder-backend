@@ -23,7 +23,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var type_array = [7]string{"restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb"}
+var type_array = [8]string{"restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb", "tidb"}
 var type_map = map[string]int{
 	"restapi":    1,
 	"graphql":    2,
@@ -32,6 +32,7 @@ var type_map = map[string]int{
 	"mariadb":    5,
 	"postgresql": 6,
 	"mongodb":    7,
+	"tidb":       8,
 }
 
 type ResourceService interface {
@@ -119,8 +120,6 @@ func (impl *ResourceServiceImpl) UpdateResource(resource ResourceDto) (ResourceD
 		Name:      resource.Name,
 		Type:      type_map[resource.Type],
 		Options:   resource.Options,
-		CreatedAt: resource.CreatedAt,
-		CreatedBy: resource.CreatedBy,
 		UpdatedAt: resource.UpdatedAt,
 		UpdatedBy: resource.UpdatedBy,
 	}); err != nil {

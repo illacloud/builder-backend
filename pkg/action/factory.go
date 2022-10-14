@@ -17,13 +17,19 @@ package action
 import (
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
 	"github.com/illa-family/builder-backend/pkg/plugins/mysql"
+	"github.com/illa-family/builder-backend/pkg/plugins/postgresql"
+	"github.com/illa-family/builder-backend/pkg/plugins/redis"
 	"github.com/illa-family/builder-backend/pkg/plugins/restapi"
 )
 
 var (
 	REST_ACTION        = "restapi"
 	MYSQL_ACTION       = "mysql"
+	MARIADB_ACTION     = "mariadb"
+	TIDB_ACTION        = "tidb"
 	TRANSFORMER_ACTION = "transformer"
+	POSTGRESQL_ACTION  = "postgresql"
+	REDIS_ACTION       = "redis"
 )
 
 type AbstractActionFactory interface {
@@ -39,9 +45,15 @@ func (f *Factory) Build() common.DataConnector {
 	case REST_ACTION:
 		restapiAction := &restapi.RESTAPIConnector{}
 		return restapiAction
-	case MYSQL_ACTION:
+	case MYSQL_ACTION, MARIADB_ACTION, TIDB_ACTION:
 		sqlAction := &mysql.MySQLConnector{}
 		return sqlAction
+	case POSTGRESQL_ACTION:
+		pgsAction := &postgresql.Connector{}
+		return pgsAction
+	case REDIS_ACTION:
+		redisAction := &redis.Connector{}
+		return redisAction
 	default:
 		return nil
 	}
