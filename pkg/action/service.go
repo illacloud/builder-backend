@@ -22,7 +22,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var type_array = [8]string{"transformer", "restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb"}
+var type_array = [9]string{"transformer", "restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb", "tidb"}
 var type_map = map[string]int{
 	"transformer": 0,
 	"restapi":     1,
@@ -32,6 +32,7 @@ var type_map = map[string]int{
 	"mariadb":     5,
 	"postgresql":  6,
 	"mongodb":     7,
+	"tidb":        8,
 }
 
 type ActionService interface {
@@ -78,7 +79,15 @@ func NewActionServiceImpl(logger *zap.SugaredLogger, appRepository repository.Ap
 }
 
 func (impl *ActionServiceImpl) CreateAction(action ActionDto) (ActionDto, error) {
-	// TODO: guarantee `action` DisplayName unique
+	// validate app
+	if _, err := impl.appRepository.RetrieveAppByID(action.App); err != nil {
+		return ActionDto{}, errors.New("app not found")
+	}
+	// validate resource
+	if _, err := impl.resourceRepository.RetrieveByID(action.Resource); err != nil {
+		return ActionDto{}, errors.New("resource not found")
+	}
+
 	id, err := impl.actionRepository.Create(&repository.Action{
 		ID:          action.ID,
 		App:         action.App,
@@ -127,7 +136,15 @@ func (impl *ActionServiceImpl) DeleteAction(id int) error {
 }
 
 func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (ActionDto, error) {
-	// TODO: guarantee `action` DisplayName unique
+	// validate app
+	if _, err := impl.appRepository.RetrieveAppByID(action.App); err != nil {
+		return ActionDto{}, errors.New("app not found")
+	}
+	// validate resource
+	if _, err := impl.resourceRepository.RetrieveByID(action.Resource); err != nil {
+		return ActionDto{}, errors.New("resource not found")
+	}
+
 	if err := impl.actionRepository.Update(&repository.Action{
 		ID:          action.ID,
 		Resource:    action.Resource,

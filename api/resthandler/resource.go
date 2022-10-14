@@ -193,6 +193,10 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 		})
 		return
 	}
+	originInfo, _ := impl.resourceService.GetResource(rsc.ID)
+	res.CreatedAt = originInfo.CreatedAt
+	res.CreatedBy = originInfo.CreatedBy
+
 	c.JSON(http.StatusOK, res)
 }
 
