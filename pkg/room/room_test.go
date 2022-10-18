@@ -25,24 +25,24 @@ func TestSample(t *testing.T) {
 }
 
 func TestGetServerAddress(t *testing.T) {
-	os.Setenv("SERVER_ADDRESS", "")
+	os.Setenv("WEBSOCKET_SERVER_ADDRESS", "")
 	os.Setenv("WEBSOCKET_PORT", "")
 
 	addr0 := getServerAddress()
 	assert.Equal(t, "localhost", addr0, "the server address should be localhost")
 
-	os.Setenv("SERVER_ADDRESS", "127.0.0.1")
+	os.Setenv("WEBSOCKET_SERVER_ADDRESS", "127.0.0.1")
 	addr1 := getServerAddress()
 	assert.Equal(t, "127.0.0.1", addr1, "the server address should be 127.0.0.1")
 
-	os.Setenv("SERVER_ADDRESS", "thisismyhost.com")
+	os.Setenv("WEBSOCKET_SERVER_ADDRESS", "thisismyhost.com")
 	addr2 := getServerAddress()
 	assert.Equal(t, "thisismyhost.com", addr2, "the server address should be thisismyhost.com")
 
 }
 
 func TestGetWebSocketPort(t *testing.T) {
-	os.Setenv("SERVER_ADDRESS", "")
+	os.Setenv("WEBSOCKET_SERVER_ADDRESS", "")
 	os.Setenv("WEBSOCKET_PORT", "")
 
 	port0 := getWebSocketPort()
@@ -60,7 +60,7 @@ func TestGetWebSocketPort(t *testing.T) {
 
 func TestGetDashboardConn(t *testing.T) {
 	// set env to default
-	os.Setenv("SERVER_ADDRESS", "")
+	os.Setenv("WEBSOCKET_SERVER_ADDRESS", "")
 	os.Setenv("WEBSOCKET_PORT", "")
 
 	rsi := RoomServiceImpl{}
@@ -68,7 +68,7 @@ func TestGetDashboardConn(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "ws://localhost:8000/room/SELF_SERVE/dashboard", r.WSURL, "the server address should be ws://localhost:8000/room/SELF_SERVE/dashboard")
 
-	os.Setenv("SERVER_ADDRESS", "myhostname.com")
+	os.Setenv("WEBSOCKET_SERVER_ADDRESS", "myhostname.com")
 	os.Setenv("WEBSOCKET_PORT", "443")
 
 	r2, err2 := rsi.GetDashboardConn("XHRT12A")
@@ -79,7 +79,7 @@ func TestGetDashboardConn(t *testing.T) {
 
 func TestGetAppRoomConn(t *testing.T) {
 	// set env to default
-	os.Setenv("SERVER_ADDRESS", "")
+	os.Setenv("WEBSOCKET_SERVER_ADDRESS", "")
 	os.Setenv("WEBSOCKET_PORT", "")
 
 	rsi := RoomServiceImpl{}
@@ -87,7 +87,7 @@ func TestGetAppRoomConn(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "ws://localhost:8000/room/SELF_SERVE/app/74", r.WSURL, "the server address should be ws://localhost:8000/room/SELF_SERVE/app/74")
 
-	os.Setenv("SERVER_ADDRESS", "myhostname2.com")
+	os.Setenv("WEBSOCKET_SERVER_ADDRESS", "myhostname2.com")
 	os.Setenv("WEBSOCKET_PORT", "4430")
 
 	r2, err2 := rsi.GetAppRoomConn("SELF_SERVE", 74)
