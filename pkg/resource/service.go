@@ -49,7 +49,7 @@ type ResourceService interface {
 type ResourceDto struct {
 	ID        int                    `json:"resourceId"`
 	Name      string                 `json:"resourceName" validate:"required"`
-	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb"`
+	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb"`
 	Options   map[string]interface{} `json:"content" validate:"required"`
 	CreatedAt time.Time              `json:"createdAt,omitempty"`
 	CreatedBy int                    `json:"createdBy,omitempty"`
