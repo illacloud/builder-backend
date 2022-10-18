@@ -46,7 +46,7 @@ type WSURLResponse struct {
 }
 
 func getServerAddress() string {
-	serverAddress := os.Getenv("SERVER_ADDRESS")
+	serverAddress := os.Getenv("WEBSOCKET_SERVER_ADDRESS")
 	if len(serverAddress) == 0 || serverAddress == "" {
 		return DEFAULT_SERVER_ADDRESS
 	}
