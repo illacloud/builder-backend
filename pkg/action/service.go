@@ -51,7 +51,7 @@ type ActionDto struct {
 	Version     int                    `json:"-"`
 	Resource    int                    `json:"resourceId,omitempty"`
 	DisplayName string                 `json:"displayName" validate:"required"`
-	Type        string                 `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb"`
+	Type        string                 `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb tidb"`
 	Template    map[string]interface{} `json:"content" validate:"required"`
 	Transformer map[string]interface{} `json:"transformer" validate:"required"`
 	TriggerMode string                 `json:"triggerMode" validate:"oneof=manually automate"`
