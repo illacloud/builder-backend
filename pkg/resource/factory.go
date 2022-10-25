@@ -16,6 +16,7 @@ package resource
 
 import (
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
+	"github.com/illa-family/builder-backend/pkg/plugins/mongodb"
 	"github.com/illa-family/builder-backend/pkg/plugins/mysql"
 	"github.com/illa-family/builder-backend/pkg/plugins/postgresql"
 	"github.com/illa-family/builder-backend/pkg/plugins/redis"
@@ -29,6 +30,7 @@ var (
 	TIDB_RESOURCE     = "tidb"
 	POSTGRES_RESOURCE = "postgresql"
 	REDIS_RESOURCE    = "redis"
+	MONGODB_RESOURCE  = "mongodb"
 )
 
 type AbstractResourceFactory interface {
@@ -53,6 +55,9 @@ func (f *Factory) Generate() common.DataConnector {
 	case REDIS_RESOURCE:
 		redisRsc := &redis.Connector{}
 		return redisRsc
+	case MONGODB_RESOURCE:
+		mongoRsc := &mongodb.Connector{}
+		return mongoRsc
 	default:
 		return nil
 	}

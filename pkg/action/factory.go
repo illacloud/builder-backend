@@ -16,6 +16,7 @@ package action
 
 import (
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
+	"github.com/illa-family/builder-backend/pkg/plugins/mongodb"
 	"github.com/illa-family/builder-backend/pkg/plugins/mysql"
 	"github.com/illa-family/builder-backend/pkg/plugins/postgresql"
 	"github.com/illa-family/builder-backend/pkg/plugins/redis"
@@ -30,6 +31,7 @@ var (
 	TRANSFORMER_ACTION = "transformer"
 	POSTGRESQL_ACTION  = "postgresql"
 	REDIS_ACTION       = "redis"
+	MONGODB_ACTION     = "mongodb"
 )
 
 type AbstractActionFactory interface {
@@ -54,6 +56,9 @@ func (f *Factory) Build() common.DataConnector {
 	case REDIS_ACTION:
 		redisAction := &redis.Connector{}
 		return redisAction
+	case MONGODB_ACTION:
+		mongoAction := &mongodb.Connector{}
+		return mongoAction
 	default:
 		return nil
 	}
