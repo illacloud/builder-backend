@@ -64,7 +64,16 @@ func (m *Connector) ValidateResourceOptions(resourceOptions map[string]interface
 }
 
 func (m *Connector) ValidateActionOptions(actionOptions map[string]interface{}) (common.ValidateResult, error) {
+	// format mongodb query options
+	if err := mapstructure.Decode(actionOptions, &m.Action); err != nil {
+		return common.ValidateResult{Valid: false}, err
+	}
 
+	// validate
+	validate := validator.New()
+	if err := validate.Struct(m.Action); err != nil {
+		return common.ValidateResult{Valid: false}, err
+	}
 	return common.ValidateResult{Valid: true}, nil
 }
 
@@ -74,10 +83,10 @@ func (m *Connector) TestConnection(resourceOptions map[string]interface{}) (comm
 	if err != nil {
 		return common.ConnectionResult{Success: false}, err
 	}
-	defer client.Disconnect(context.TODO())
+	defer client.Disconnect(context.Background())
 
 	// test mongodb connection
-	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
+	if err := client.Ping(context.Background(), readpref.Primary()); err != nil {
 		return common.ConnectionResult{Success: false}, err
 	}
 	return common.ConnectionResult{Success: true}, nil
@@ -92,6 +101,12 @@ func (m *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.
 }
 
 func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
+	// get mongodb connection
+	client, err := m.getConnectionWithOptions(resourceOptions)
+	if err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+	defer client.Disconnect(context.Background())
 
 	return common.RuntimeResult{Success: false}, nil
 }

@@ -108,7 +108,7 @@ func (m *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 	if m.Resource.SSL.Open == true && m.Resource.SSL.CA != "" {
 		clientOptions = clientOptions.SetTLSConfig(&tlsConfig).SetAuth(credential)
 	}
-	client, err = mongo.Connect(context.TODO(), clientOptions)
+	client, err = mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		return nil, err
 	}
