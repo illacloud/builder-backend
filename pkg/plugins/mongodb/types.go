@@ -17,26 +17,117 @@ package mongodb
 const (
 	STANDARD_FORMAT    = "standard"
 	DNSSEEDLIST_FORMAT = "mongodb+srv"
+	GUI_OPTIONS        = "gui"
+	URI_OPTIONS        = "uri"
+)
+
+var (
+	CONNECTION_FORMAT = map[string]string{STANDARD_FORMAT: "mongodb", DNSSEEDLIST_FORMAT: "mongodb+srv"}
 )
 
 type Options struct {
+	ConfigType    string                 `validate:"required,oneof=gui uri"`
+	ConfigContent map[string]interface{} `validate:"required"`
+	SSL           SSLOptions             `validate:"required"`
+}
+
+type GUIOptions struct {
 	Host             string `validate:"required"`
 	ConnectionFormat string `validate:"required,oneof=standard mongodb+srv"`
 	Port             string `validate:"required_unless=ConnectionFormat mongodb+srv"`
 	DatabaseName     string
 	DatabaseUsername string
 	DatabasePassword string
-	SSL              SSLOptions `validate:"required,omitempty"`
+}
+
+type URIOptions struct {
+	URI string `validate:"required"`
 }
 
 type SSLOptions struct {
-	SSL        bool
-	ServerCert string `validate:"required_unless=SSL false"`
-	ClientKey  string
-	ClientCert string
+	Open   bool
+	Client string
+	CA     string
 }
 
 type Query struct {
-	Mode  string `validate:"required,oneof=gui sql"`
+	ActionType  string `validate:"required"`
+	Collection  string
+	TypeContent map[string]interface{} `validate:"required"`
+}
+
+type AggregateContent struct {
+	Aggregation string
+	Options     string
+}
+
+type BulkWriteContent struct {
+	Operations string
+	Options    string
+}
+
+type CountContent struct {
 	Query string
+}
+
+type DeleteManyContent struct {
+	Filter string
+}
+
+type DeleteOneContent struct {
+	Filter string
+}
+
+type DistinctContent struct {
+	Query   string
+	Field   string
+	Options string
+}
+
+type FindContent struct {
+	Query      string
+	Projection string
+	SortBy     string
+	Limit      string
+	Skip       string
+}
+
+type FindOneContent struct {
+	Query      string
+	Projection string
+	Skip       string
+}
+
+type FindOneAndUpdateContent struct {
+	Filter  string
+	Update  string
+	Options string
+}
+
+type InsertOneContent struct {
+	Document string
+}
+
+type InsertManyContent struct {
+	Document string
+}
+
+type ListCollectionsContent struct {
+	Query string
+}
+
+type UpdateManyContent struct {
+	Filter  string
+	Update  string
+	Options string
+}
+
+type UpdateOneContent struct {
+	Filter  string
+	Update  string
+	Options string
+}
+
+type CommandContent struct {
+	Document string
 }
