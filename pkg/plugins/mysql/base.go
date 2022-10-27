@@ -75,7 +75,7 @@ func (m *MySQLConnector) connectViaSSL() (db *sql.DB, err error) {
 	}
 	mysql.RegisterTLSConfig("custom", &config)
 	dsn += "?tls=custom"
-	db, err = sql.Open("mysql", dsn+"?timeout=5s")
+	db, err = sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
 	}
