@@ -38,7 +38,7 @@ func (m *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 	uri := ""
 	if m.Resource.ConfigType == GUI_OPTIONS {
 		mOptions := GUIOptions{}
-		if err := mapstructure.Decode(m.Resource.ConfigContent, mOptions); err != nil {
+		if err := mapstructure.Decode(m.Resource.ConfigContent, &mOptions); err != nil {
 			return nil, err
 		}
 		if mOptions.DatabaseUsername != "" && mOptions.DatabasePassword != "" {
@@ -52,10 +52,13 @@ func (m *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 		}
 		if mOptions.DatabaseName != "" {
 			uri = uri + "/" + mOptions.DatabaseName
+			if mOptions.DatabaseName != "admin" {
+				uri += "?authSource=admin"
+			}
 		}
 	} else if m.Resource.ConfigType == URI_OPTIONS {
 		mOptions := URIOptions{}
-		if err := mapstructure.Decode(m.Resource.ConfigContent, mOptions); err != nil {
+		if err := mapstructure.Decode(m.Resource.ConfigContent, &mOptions); err != nil {
 			return nil, err
 		}
 		uri = mOptions.URI

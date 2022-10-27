@@ -108,5 +108,52 @@ func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	}
 	defer client.Disconnect(context.Background())
 
-	return common.RuntimeResult{Success: false}, nil
+	db := ""
+	if m.Resource.ConfigType == GUI_OPTIONS {
+		var mOptions GUIOptions
+		if err := mapstructure.Decode(m.Resource.ConfigContent, &mOptions); err != nil {
+			return common.RuntimeResult{Success: false}, err
+		}
+		db = mOptions.DatabaseName
+	}
+	if db == "" {
+		db = "admin"
+	}
+
+	var result common.RuntimeResult
+	queryRunner := QueryRunner{client: client, query: m.Action, db: db}
+	switch m.Action.ActionType {
+	case "aggregate":
+		result, err = queryRunner.aggregate()
+	case "bulkWrite":
+		result, err = queryRunner.bulkWrite()
+	case "count":
+		result, err = queryRunner.count()
+	case "deleteMany":
+		result, err = queryRunner.deleteMany()
+	case "deleteOne":
+		result, err = queryRunner.deleteOne()
+	case "distinct":
+		result, err = queryRunner.distinct()
+	case "find":
+		result, err = queryRunner.find()
+	case "findOne":
+		result, err = queryRunner.findOne()
+	case "findOneAndUpdate":
+		result, err = queryRunner.findOneAndUpdate()
+	case "insertOne":
+		result, err = queryRunner.insertOne()
+	case "insertMany":
+		result, err = queryRunner.insertMany()
+	case "listCollections":
+		result, err = queryRunner.listCollections()
+	case "updateMany":
+		result, err = queryRunner.updateMany()
+	case "updateOne":
+		result, err = queryRunner.updateOne()
+	case "command":
+		result, err = queryRunner.command()
+	}
+
+	return result, err
 }
