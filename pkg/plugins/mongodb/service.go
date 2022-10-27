@@ -15,7 +15,13 @@
 package mongodb
 
 import (
+	"context"
+
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/mitchellh/mapstructure"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 type Connector struct {
@@ -24,26 +30,65 @@ type Connector struct {
 }
 
 func (m *Connector) ValidateResourceOptions(resourceOptions map[string]interface{}) (common.ValidateResult, error) {
-	// format resource options
-	//if err := mapstructure.Decode(resourceOptions, &m.Resource); err != nil {
-	//	return common.ValidateResult{Valid: false}, err
-	//}
-	//
-	//// validate mysql options
-	//validate := validator.New()
-	//if err := validate.Struct(m.Resource); err != nil {
-	//	return common.ValidateResult{Valid: false}, err
-	//}
+	// format mongodb simple options
+	if err := mapstructure.Decode(resourceOptions, &m.Resource); err != nil {
+		return common.ValidateResult{Valid: false}, err
+	}
+
+	// validate simple options
+	validate := validator.New()
+	if err := validate.Struct(m.Resource); err != nil {
+		return common.ValidateResult{Valid: false}, err
+	}
+
+	// validate specific options
+	if m.Resource.ConfigType == GUI_OPTIONS {
+		var mOptions GUIOptions
+		if err := mapstructure.Decode(m.Resource.ConfigContent, &mOptions); err != nil {
+			return common.ValidateResult{Valid: false}, err
+		}
+		if err := validate.Struct(mOptions); err != nil {
+			return common.ValidateResult{Valid: false}, err
+		}
+	} else if m.Resource.ConfigType == URI_OPTIONS {
+		var mOptions URIOptions
+		if err := mapstructure.Decode(m.Resource.ConfigContent, &mOptions); err != nil {
+			return common.ValidateResult{Valid: false}, err
+		}
+		if err := validate.Struct(mOptions); err != nil {
+			return common.ValidateResult{Valid: false}, err
+		}
+	}
+
 	return common.ValidateResult{Valid: true}, nil
 }
 
 func (m *Connector) ValidateActionOptions(actionOptions map[string]interface{}) (common.ValidateResult, error) {
+	// format mongodb query options
+	if err := mapstructure.Decode(actionOptions, &m.Action); err != nil {
+		return common.ValidateResult{Valid: false}, err
+	}
 
+	// validate
+	validate := validator.New()
+	if err := validate.Struct(m.Action); err != nil {
+		return common.ValidateResult{Valid: false}, err
+	}
 	return common.ValidateResult{Valid: true}, nil
 }
 
 func (m *Connector) TestConnection(resourceOptions map[string]interface{}) (common.ConnectionResult, error) {
+	// get mongodb connection
+	client, err := m.getConnectionWithOptions(resourceOptions)
+	if err != nil {
+		return common.ConnectionResult{Success: false}, err
+	}
+	defer client.Disconnect(context.Background())
 
+	// test mongodb connection
+	if err := client.Ping(context.Background(), readpref.Primary()); err != nil {
+		return common.ConnectionResult{Success: false}, err
+	}
 	return common.ConnectionResult{Success: true}, nil
 }
 
@@ -56,6 +101,12 @@ func (m *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.
 }
 
 func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
+	// get mongodb connection
+	client, err := m.getConnectionWithOptions(resourceOptions)
+	if err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+	defer client.Disconnect(context.Background())
 
 	return common.RuntimeResult{Success: false}, nil
 }
