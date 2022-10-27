@@ -51,7 +51,7 @@ type SSLOptions struct {
 }
 
 type Query struct {
-	ActionType  string `validate:"required,oneof=aggregate, bulkWrite, count, deleteMany, deleteOne, distinct, find, findOne, findOneAndUpdate, insertOne, insertMany, listCollections, updateMany, updateOne, command"`
+	ActionType  string `validate:"required"`
 	Collection  string
 	TypeContent map[string]interface{} `validate:"required"`
 }
