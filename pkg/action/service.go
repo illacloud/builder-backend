@@ -84,7 +84,7 @@ func (impl *ActionServiceImpl) CreateAction(action ActionDto) (ActionDto, error)
 		return ActionDto{}, errors.New("app not found")
 	}
 	// validate resource
-	if _, err := impl.resourceRepository.RetrieveByID(action.Resource); err != nil {
+	if _, err := impl.resourceRepository.RetrieveByID(action.Resource); err != nil && action.Type != type_array[0] {
 		return ActionDto{}, errors.New("resource not found")
 	}
 
@@ -141,7 +141,7 @@ func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (ActionDto, error)
 		return ActionDto{}, errors.New("app not found")
 	}
 	// validate resource
-	if _, err := impl.resourceRepository.RetrieveByID(action.Resource); err != nil {
+	if _, err := impl.resourceRepository.RetrieveByID(action.Resource); err != nil && action.Type != type_array[0] {
 		return ActionDto{}, errors.New("resource not found")
 	}
 
