@@ -65,7 +65,8 @@ func Initialize() (*Server, error) {
 	resourceServiceImpl := resource.NewResourceServiceImpl(sugaredLogger, resourceRepositoryImpl)
 	resourceRestHandlerImpl := resthandler.NewResourceRestHandlerImpl(sugaredLogger, resourceServiceImpl)
 	resourceRouterImpl := router.NewResourceRouterImpl(resourceRestHandlerImpl)
-	restRouter := router.NewRESTRouter(sugaredLogger, userRouterImpl, appRouterImpl, roomRouterImpl, actionRouterImpl, resourceRouterImpl)
+	authenticatorImpl := user.NewAuthenticatorImpl(userRepositoryImpl, sugaredLogger)
+	restRouter := router.NewRESTRouter(sugaredLogger, userRouterImpl, appRouterImpl, roomRouterImpl, actionRouterImpl, resourceRouterImpl, authenticatorImpl)
 	server := NewServer(config, engine, restRouter, sugaredLogger)
 	return server, nil
 }

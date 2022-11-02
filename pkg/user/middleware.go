@@ -20,7 +20,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func JWTAuth() gin.HandlerFunc {
+func JWTAuth(authenticator Authenticator) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		accessToken := c.Request.Header["Authorization"]
 		var token string
@@ -29,10 +29,11 @@ func JWTAuth() gin.HandlerFunc {
 		} else {
 			token = accessToken[0]
 		}
-		userID, extractErr := ExtractUserIDFromToken(token)
-		validAccessToken, validaAccessErr := ValidateAccessToken(token)
+		userID, userUID, extractErr := authenticator.ExtractUserIDFromToken(token)
+		validAccessToken, validaAccessErr := authenticator.ValidateAccessToken(token)
+		validUser, validUserErr := authenticator.ValidateUser(userID, userUID)
 
-		if validAccessToken && validaAccessErr == nil && extractErr == nil {
+		if validAccessToken && validUser && validaAccessErr == nil && extractErr == nil && validUserErr == nil {
 			c.Set("userID", userID)
 		} else {
 			c.AbortWithStatus(http.StatusUnauthorized)

@@ -189,7 +189,7 @@ func (impl UserRestHandlerImpl) SignUp(c *gin.Context) {
 	}
 
 	// generate access token and refresh token
-	accessToken, _ := impl.userService.GetToken(userDto.ID)
+	accessToken, _ := impl.userService.GetToken(userDto.ID, userDto.UID)
 	c.Header("illa-token", accessToken)
 
 	c.JSON(http.StatusOK, userDto)
@@ -237,7 +237,7 @@ func (impl UserRestHandlerImpl) SignIn(c *gin.Context) {
 	}
 
 	// generate access token and refresh token
-	accessToken, _ := impl.userService.GetToken(userDto.ID)
+	accessToken, _ := impl.userService.GetToken(userDto.ID, userDto.UID)
 	c.Header("illa-token", accessToken)
 
 	c.JSON(http.StatusOK, userDto)
