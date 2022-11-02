@@ -21,7 +21,7 @@ import (
 	"github.com/illa-family/builder-backend/pkg/user"
 )
 
-func SignalEnter(hub *ws.Hub, message *ws.Message) error {
+func SignalEnter(hub *ws.Hub, message *ws.Message, ai *user.AuthenticatorImpl) error {
 	// init
 	currentClient := hub.Clients[message.ClientID]
 	var ok bool
@@ -39,17 +39,14 @@ func SignalEnter(hub *ws.Hub, message *ws.Message) error {
 	token, _ := authToken["authToken"].(string)
 
 	// convert authToken to uid
-	userID, extractErr := user.ExtractUserIDFromToken(token)
+	userID, userUID, extractErr := ai.ExtractUserIDFromToken(token)
 	if extractErr != nil {
 		return extractErr
 	}
-	validAccessToken, validaAccessErr := user.ValidateAccessToken(token)
-	if validaAccessErr != nil {
-		currentClient.Feedback(message, ws.ERROR_CODE_LOGIN_FAILED, validaAccessErr)
-		return validaAccessErr
-	}
-	if !validAccessToken {
-		err := errors.New("[websocket-server] access token invalied.")
+	validAccessToken, validaAccessErr := ai.ValidateAccessToken(token)
+	validUser, validUserErr := ai.ValidateUser(userID, userUID)
+	if validaAccessErr != nil || validUserErr != nil || !validAccessToken || !validUser {
+		err := errors.New("[websocket-server] access token invalid.")
 		currentClient.Feedback(message, ws.ERROR_CODE_LOGIN_FAILED, err)
 		return err
 	}

@@ -18,6 +18,7 @@ import (
 	"github.com/illa-family/builder-backend/pkg/app"
 	"github.com/illa-family/builder-backend/pkg/resource"
 	"github.com/illa-family/builder-backend/pkg/state"
+	"github.com/illa-family/builder-backend/pkg/user"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -45,6 +46,7 @@ type Hub struct {
 	SetStateServiceImpl  *state.SetStateServiceImpl
 	AppServiceImpl       *app.AppServiceImpl
 	ResourceServiceImpl  *resource.ResourceServiceImpl
+	AuthenticatorImpl    *user.AuthenticatorImpl
 }
 
 func NewHub() *Hub {
@@ -75,6 +77,10 @@ func (hub *Hub) SetAppServiceImpl(asi *app.AppServiceImpl) {
 
 func (hub *Hub) SetResourceServiceImpl(rsi *resource.ResourceServiceImpl) {
 	hub.ResourceServiceImpl = rsi
+}
+
+func (hub *Hub) SetAuthenticatorImpl(ai *user.AuthenticatorImpl) {
+	hub.AuthenticatorImpl = ai
 }
 
 func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client) {
