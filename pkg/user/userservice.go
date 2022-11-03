@@ -15,6 +15,7 @@
 package user
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -43,7 +44,8 @@ type UserService interface {
 }
 
 type UserDto struct {
-	ID           int       `json:"userId,omitempty"`
+	ID           int       `json:"-"`
+	SID          string    `json:"userId,omitempty"`
 	UID          uuid.UUID `json:"-"`
 	Nickname     string    `json:"nickname,omitempty"`
 	Password     string    `json:"-"`
@@ -91,6 +93,8 @@ func (impl *UserServiceImpl) CreateUser(userDto UserDto) (UserDto, error) {
 
 	userDto.ID = id
 	userDto.UID = uid
+	userDto.SID = strconv.Itoa(id)
+
 	return userDto, nil
 }
 
@@ -104,6 +108,8 @@ func (impl *UserServiceImpl) UpdateUser(userDto UserDto) (UserDto, error) {
 	}); err != nil {
 		return UserDto{}, err
 	}
+	userDto.SID = strconv.Itoa(userDto.ID)
+
 	return userDto, nil
 }
 
@@ -114,6 +120,7 @@ func (impl *UserServiceImpl) FindUserByEmail(email string) (UserDto, error) {
 	}
 	userDto := UserDto{
 		ID:           userRecord.ID,
+		SID:          strconv.Itoa(userRecord.ID),
 		UID:          userRecord.UID,
 		Nickname:     userRecord.Nickname,
 		Email:        userRecord.Email,
@@ -131,6 +138,7 @@ func (impl *UserServiceImpl) GetUser(id int) (UserDto, error) {
 	}
 	userDto := UserDto{
 		ID:           userRecord.ID,
+		SID:          strconv.Itoa(userRecord.ID),
 		Nickname:     userRecord.Nickname,
 		Email:        userRecord.Email,
 		Password:     userRecord.PasswordDigest,
