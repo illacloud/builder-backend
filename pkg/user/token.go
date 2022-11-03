@@ -53,7 +53,7 @@ func NewAuthenticatorImpl(userRepository repository.UserRepository, logger *zap.
 }
 
 func (impl *AuthenticatorImpl) ValidateAccessToken(accessToken string) (bool, error) {
-	_, err := ExtractUserIDFromToken(accessToken)
+	_, _, err := impl.ExtractUserIDFromToken(accessToken)
 	if err != nil {
 		return false, err
 	}
@@ -114,31 +114,4 @@ func CreateAccessToken(id int, uid uuid.UUID) (string, error) {
 	}
 
 	return accessToken, nil
-}
-
-func ValidateAccessToken(accessToken string) (bool, error) {
-	_, err := ExtractUserIDFromToken(accessToken)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
-func ExtractUserIDFromToken(accessToken string) (int, error) {
-	authClaims := &AuthClaims{}
-	token, err := jwt.ParseWithClaims(accessToken, authClaims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("ILLA_SECRET_KEY")), nil
-	})
-	if err != nil {
-		return 0, err
-	}
-
-	claims, ok := token.Claims.(*AuthClaims)
-	if !(ok && token.Valid) {
-		return 0, err
-	}
-
-	userID := claims.User
-
-	return userID, nil
 }
