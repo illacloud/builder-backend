@@ -29,11 +29,12 @@ import (
 type TreeStateService interface {
 	CreateTreeState(treestate TreeStateDto) (TreeStateDto, error)
 	DeleteTreeState(treestateId int) error
-	UpdateTreeState(treestate TreeStateDto) (TreeStateDto, error)
+	UpdateTreeState(treestate *TreeStateDto) (*TreeStateDto, error)
 	GetTreeStateByID(treestateID int) (TreeStateDto, error)
 	GetAllTypeTreeStateByApp(app *app.AppDto, version int) ([]*TreeStateDto, error)
 	GetTreeStateByApp(app *app.AppDto, statetype int, version int) ([]*TreeStateDto, error)
 	ReleaseTreeStateByApp(app *app.AppDto) error
+	CreateComponentTree(appDto *app.AppDto, parentNodeID int, componentNodeTree *repository.ComponentNode) error
 }
 
 type TreeStateDto struct {
