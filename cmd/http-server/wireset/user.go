@@ -28,6 +28,8 @@ var UserWireSet = wire.NewSet(
 	wire.Bind(new(repository.UserRepository), new(*repository.UserRepositoryImpl)),
 	user.NewUserServiceImpl,
 	wire.Bind(new(user.UserService), new(*user.UserServiceImpl)),
+	user.NewAuthenticatorImpl,
+	wire.Bind(new(user.Authenticator), new(*user.AuthenticatorImpl)),
 	resthandler.NewUserRestHandlerImpl,
 	wire.Bind(new(resthandler.UserRestHandler), new(*resthandler.UserRestHandlerImpl)),
 	router.NewUserRouterImpl,

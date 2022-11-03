@@ -15,14 +15,17 @@
 package repository
 
 import (
+	"errors"
 	"time"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type User struct {
-	ID             int       `gorm:"column:id;type:bigserial;primary_key"`
+	ID             int       `gorm:"column:id;type:bigserial;primary_key;index:users_ukey"`
+	UID            uuid.UUID `gorm:"column:uid;type:uuid;not null;index:users_ukey"`
 	Nickname       string    `gorm:"column:nickname;type:varchar;size:15;not null"`
 	PasswordDigest string    `gorm:"column:password_digest;type:varchar;size:60;not null"`
 	Email          string    `gorm:"column:email;type:varchar;size:255;not null"`
@@ -37,6 +40,7 @@ type UserRepository interface {
 	UpdateUser(user *User) error
 	FetchUserByEmail(email string) (*User, error)
 	RetrieveByID(id int) (*User, error)
+	FetchUserByUKey(id int, uid uuid.UUID) (*User, error)
 }
 
 type UserRepositoryImpl struct {
@@ -81,4 +85,16 @@ func (impl *UserRepositoryImpl) RetrieveByID(id int) (*User, error) {
 		return &User{}, err
 	}
 	return user, nil
+}
+
+func (impl *UserRepositoryImpl) FetchUserByUKey(id int, uid uuid.UUID) (*User, error) {
+	var users []User
+	if err := impl.db.Where("id = ? AND uid = ?", id, uid).Find(&users).Error; err != nil {
+		return &User{}, err
+	}
+
+	if len(users) != 1 {
+		return &User{}, errors.New("unable to get the corresponding record")
+	}
+	return &users[0], nil
 }

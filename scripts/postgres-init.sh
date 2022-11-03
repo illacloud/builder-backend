@@ -13,13 +13,16 @@ create table if not exists users
 (
     id                       bigserial                         not null
         primary key,
+    uid                      uuid    default gen_random_uuid() not null,
     nickname                 varchar(15)                       not null, /* 3-15 character */
     password_digest          varchar(60)                       not null,
     email                    varchar(255)                      not null,
     language                 smallint                          not null,
     is_subscribed            boolean default false             not null,
     created_at               timestamp                         not null,
-    updated_at               timestamp                         not null
+    updated_at               timestamp                         not null,
+    constraint users_ukey
+            unique (id, uid)
 );
 
 alter table users

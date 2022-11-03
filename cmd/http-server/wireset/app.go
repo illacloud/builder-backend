@@ -19,6 +19,7 @@ import (
 	"github.com/illa-family/builder-backend/api/router"
 	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/pkg/app"
+	"github.com/illa-family/builder-backend/pkg/state"
 
 	"github.com/google/wire"
 )
@@ -34,6 +35,8 @@ var AppWireSet = wire.NewSet(
 	wire.Bind(new(repository.AppRepository), new(*repository.AppRepositoryImpl)),
 	app.NewAppServiceImpl,
 	wire.Bind(new(app.AppService), new(*app.AppServiceImpl)),
+	state.NewTreeStateServiceImpl,
+	wire.Bind(new(state.TreeStateService), new(*state.TreeStateServiceImpl)),
 	resthandler.NewAppRestHandlerImpl,
 	wire.Bind(new(resthandler.AppRestHandler), new(*resthandler.AppRestHandlerImpl)),
 	router.NewAppRouterImpl,

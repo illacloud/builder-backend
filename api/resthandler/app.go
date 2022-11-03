@@ -21,12 +21,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/pkg/app"
+	"github.com/illa-family/builder-backend/pkg/state"
 	"go.uber.org/zap"
 )
 
 type AppRequest struct {
-	Name string `json:"appName" validate:"required"`
+	Name       string        `json:"appName" validate:"required"`
+	InitScheme []interface{} `json:"initScheme"`
 }
 
 type AppRestHandler interface {
@@ -40,14 +43,16 @@ type AppRestHandler interface {
 }
 
 type AppRestHandlerImpl struct {
-	logger     *zap.SugaredLogger
-	appService app.AppService
+	logger           *zap.SugaredLogger
+	appService       app.AppService
+	treeStateService state.TreeStateService
 }
 
-func NewAppRestHandlerImpl(logger *zap.SugaredLogger, appService app.AppService) *AppRestHandlerImpl {
+func NewAppRestHandlerImpl(logger *zap.SugaredLogger, appService app.AppService, treeStateService state.TreeStateService) *AppRestHandlerImpl {
 	return &AppRestHandlerImpl{
-		logger:     logger,
-		appService: appService,
+		logger:           logger,
+		appService:       appService,
+		treeStateService: treeStateService,
 	}
 }
 
@@ -64,8 +69,8 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 	}
 
 	// Parse request body
-	var app app.AppDto
-	if err := json.NewDecoder(c.Request.Body).Decode(&app); err != nil {
+	var payload AppRequest
+	if err := json.NewDecoder(c.Request.Body).Decode(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": "parse request body error: " + err.Error(),
@@ -75,7 +80,7 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 
 	// Validate request body
 	validate := validator.New()
-	if err := validate.Struct(app); err != nil {
+	if err := validate.Struct(payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": "parse request body error: " + err.Error(),
@@ -83,10 +88,14 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 		return
 	}
 
-	app.CreatedBy = user
-	app.UpdatedBy = user
+	appDto := app.AppDto{
+		Name:      payload.Name,
+		CreatedBy: user,
+		UpdatedBy: user,
+	}
+
 	// Call `app service` create app
-	res, err := impl.appService.CreateApp(app)
+	res, err := impl.appService.CreateApp(appDto)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
@@ -94,6 +103,14 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 		})
 		return
 	}
+
+	if len(payload.InitScheme) > 0 {
+		for _, v := range payload.InitScheme {
+			componentTree := repository.ConstructComponentNodeByMap(v)
+			_ = impl.treeStateService.CreateComponentTree(&res, 0, componentTree)
+		}
+	}
+
 	c.JSON(http.StatusOK, res)
 }
 
