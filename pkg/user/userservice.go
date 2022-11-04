@@ -15,8 +15,10 @@
 package user
 
 import (
+	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/illa-family/builder-backend/internal/repository"
 	"github.com/illa-family/builder-backend/pkg/smtp"
 	"golang.org/x/crypto/bcrypt"
@@ -35,14 +37,16 @@ type UserService interface {
 	UpdateUser(userDto UserDto) (UserDto, error)
 	FindUserByEmail(email string) (UserDto, error)
 	GetUser(id int) (UserDto, error)
-	GetToken(id int) (string, error)
+	GetToken(id int, uid uuid.UUID) (string, error)
 	GenerateVerificationCode(email, usage string) (string, error)
 	ValidateVerificationCode(vCode, vToken, email, usage string) (bool, error)
 	SendSubscriptionEmail(email string) error
 }
 
 type UserDto struct {
-	ID           int       `json:"userId,omitempty"`
+	ID           int       `json:"-"`
+	SID          string    `json:"userId,omitempty"`
+	UID          uuid.UUID `json:"-"`
 	Nickname     string    `json:"nickname,omitempty"`
 	Password     string    `json:"-"`
 	Email        string    `json:"email,omitempty"`
@@ -72,7 +76,9 @@ func (impl *UserServiceImpl) CreateUser(userDto UserDto) (UserDto, error) {
 	if err != nil {
 		return UserDto{}, err
 	}
+	uid := uuid.New()
 	id, err := impl.userRepository.CreateUser(&repository.User{
+		UID:            uid,
 		Nickname:       userDto.Nickname,
 		PasswordDigest: string(hashPwd),
 		Email:          userDto.Email,
@@ -86,6 +92,9 @@ func (impl *UserServiceImpl) CreateUser(userDto UserDto) (UserDto, error) {
 	}
 
 	userDto.ID = id
+	userDto.UID = uid
+	userDto.SID = strconv.Itoa(id)
+
 	return userDto, nil
 }
 
@@ -99,6 +108,8 @@ func (impl *UserServiceImpl) UpdateUser(userDto UserDto) (UserDto, error) {
 	}); err != nil {
 		return UserDto{}, err
 	}
+	userDto.SID = strconv.Itoa(userDto.ID)
+
 	return userDto, nil
 }
 
@@ -109,6 +120,8 @@ func (impl *UserServiceImpl) FindUserByEmail(email string) (UserDto, error) {
 	}
 	userDto := UserDto{
 		ID:           userRecord.ID,
+		SID:          strconv.Itoa(userRecord.ID),
+		UID:          userRecord.UID,
 		Nickname:     userRecord.Nickname,
 		Email:        userRecord.Email,
 		Password:     userRecord.PasswordDigest,
@@ -125,6 +138,7 @@ func (impl *UserServiceImpl) GetUser(id int) (UserDto, error) {
 	}
 	userDto := UserDto{
 		ID:           userRecord.ID,
+		SID:          strconv.Itoa(userRecord.ID),
 		Nickname:     userRecord.Nickname,
 		Email:        userRecord.Email,
 		Password:     userRecord.PasswordDigest,
@@ -136,8 +150,8 @@ func (impl *UserServiceImpl) GetUser(id int) (UserDto, error) {
 	return userDto, nil
 }
 
-func (impl *UserServiceImpl) GetToken(id int) (string, error) {
-	accessToken, err := CreateAccessToken(id)
+func (impl *UserServiceImpl) GetToken(id int, uid uuid.UUID) (string, error) {
+	accessToken, err := CreateAccessToken(id, uid)
 	if err != nil {
 		return "", nil
 	}

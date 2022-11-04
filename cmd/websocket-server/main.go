@@ -29,6 +29,7 @@ import (
 	"github.com/illa-family/builder-backend/pkg/db"
 	"github.com/illa-family/builder-backend/pkg/resource"
 	"github.com/illa-family/builder-backend/pkg/state"
+	"github.com/illa-family/builder-backend/pkg/user"
 	filter "github.com/illa-family/builder-backend/pkg/websocket-filter"
 
 	gws "github.com/gorilla/websocket"
@@ -42,6 +43,7 @@ var kvssi *state.KVStateServiceImpl
 var sssi *state.SetStateServiceImpl
 var asi *app.AppServiceImpl
 var rsi *resource.ResourceServiceImpl
+var ai *user.AuthenticatorImpl
 
 func initEnv() error {
 	sugaredLogger := util.NewSugardLogger()
@@ -67,6 +69,7 @@ func initEnv() error {
 	sssi = state.NewSetStateServiceImpl(sugaredLogger, setstateRepositoryImpl)
 	asi = app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, userRepositoryImpl, kvstateRepositoryImpl, treestateRepositoryImpl, setstateRepositoryImpl, actionRepositoryImpl)
 	rsi = resource.NewResourceServiceImpl(sugaredLogger, resourceRepositoryImpl)
+	ai = user.NewAuthenticatorImpl(userRepositoryImpl, sugaredLogger)
 	return nil
 }
 
@@ -79,6 +82,7 @@ func InitHub(asi *app.AppServiceImpl, rsi *resource.ResourceServiceImpl, tssi *s
 	hub.SetTreeStateServiceImpl(tssi)
 	hub.SetKVStateServiceImpl(kvssi)
 	hub.SetSetStateServiceImpl(sssi)
+	hub.SetAuthenticatorImpl(ai)
 	go filter.Run(hub)
 }
 
