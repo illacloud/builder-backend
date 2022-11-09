@@ -34,7 +34,7 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed from peer.
-	maxMessageSize = 102400 // 100 KiB
+	maxMessageSize = 1048576 // 1 MiB
 )
 
 const DEFAULT_INSTANCE_ID = "SELF_HOST"
@@ -47,8 +47,8 @@ var (
 )
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  102400,
-	WriteBufferSize: 102400,
+	ReadBufferSize:  1048576,
+	WriteBufferSize: 1048576,
 }
 
 // Client is a middleman between the websocket connection and the hub.
@@ -85,7 +85,7 @@ func NewClient(hub *Hub, conn *websocket.Conn, instanceID string, appID int) *Cl
 		IsLoggedIn:   false,
 		Hub:          hub,
 		Conn:         conn,
-		Send:         make(chan []byte, 256),
+		Send:         make(chan []byte, 1024),
 		InstanceID:   instanceID,
 		APPID:        appID}
 }
