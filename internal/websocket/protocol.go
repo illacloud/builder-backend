@@ -62,13 +62,14 @@ type Broadcast struct {
 }
 
 type Message struct {
-	ClientID  uuid.UUID     `json:"clientID"`
-	Signal    int           `json:"signal"`
-	APPID     int           `json:"appID"` // also as APP ID
-	Option    int           `json:"option"`
-	Target    int           `json:"target"`
-	Payload   []interface{} `json:"payload"`
-	Broadcast *Broadcast    `json:"broadcast"`
+	ClientID      uuid.UUID     `json:"clientID"`
+	Signal        int           `json:"signal"`
+	APPID         int           `json:"appID"` // also as APP ID
+	Option        int           `json:"option"`
+	Payload       []interface{} `json:"payload"`
+	Target        int           `json:"target"`
+	Broadcast     *Broadcast    `json:"broadcast"`
+	NeedBroadcast bool
 }
 
 func NewMessage(clientID uuid.UUID, appID int, rawMessage []byte) (*Message, error) {
@@ -79,9 +80,16 @@ func NewMessage(clientID uuid.UUID, appID int, rawMessage []byte) (*Message, err
 	}
 	message.ClientID = clientID
 	message.APPID = appID
+	if message.Broadcast == nil {
+		message.NeedBroadcast = false
+	} else {
+		message.NeedBroadcast = true
+	}
 	return &message, nil
 }
 
 func (m *Message) RewriteBroadcast() {
-	m.Broadcast.Type = m.Broadcast.Type + BROADCAST_TYPE_SUFFIX
+	if m.NeedBroadcast {
+		m.Broadcast.Type = m.Broadcast.Type + BROADCAST_TYPE_SUFFIX
+	}
 }
