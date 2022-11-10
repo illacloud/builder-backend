@@ -80,11 +80,11 @@ func NewActionServiceImpl(logger *zap.SugaredLogger, appRepository repository.Ap
 
 func (impl *ActionServiceImpl) CreateAction(action ActionDto) (ActionDto, error) {
 	// validate app
-	if _, err := impl.appRepository.RetrieveAppByID(action.App); err != nil {
+	if appDto, err := impl.appRepository.RetrieveAppByID(action.App); err != nil || appDto.ID != action.App {
 		return ActionDto{}, errors.New("app not found")
 	}
 	// validate resource
-	if _, err := impl.resourceRepository.RetrieveByID(action.Resource); err != nil && action.Type != type_array[0] {
+	if rscDto, err := impl.resourceRepository.RetrieveByID(action.Resource); (err != nil || rscDto.ID != action.Resource) && action.Type != type_array[0] {
 		return ActionDto{}, errors.New("resource not found")
 	}
 
@@ -137,11 +137,11 @@ func (impl *ActionServiceImpl) DeleteAction(id int) error {
 
 func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (ActionDto, error) {
 	// validate app
-	if _, err := impl.appRepository.RetrieveAppByID(action.App); err != nil {
+	if appDto, err := impl.appRepository.RetrieveAppByID(action.App); err != nil || appDto.ID != action.App {
 		return ActionDto{}, errors.New("app not found")
 	}
 	// validate resource
-	if _, err := impl.resourceRepository.RetrieveByID(action.Resource); err != nil && action.Type != type_array[0] {
+	if rscDto, err := impl.resourceRepository.RetrieveByID(action.Resource); (err != nil || rscDto.ID != action.Resource) && action.Type != type_array[0] {
 		return ActionDto{}, errors.New("resource not found")
 	}
 
@@ -221,7 +221,7 @@ func (impl *ActionServiceImpl) RunAction(action ActionDto) (interface{}, error) 
 	}
 	rsc, err := impl.resourceRepository.RetrieveByID(action.Resource)
 	if rsc.ID == 0 {
-		return nil, errors.New("no resource")
+		return nil, errors.New("resource not found")
 	}
 	if err != nil {
 		return nil, err
