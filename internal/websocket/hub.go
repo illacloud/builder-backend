@@ -84,6 +84,9 @@ func (hub *Hub) SetAuthenticatorImpl(ai *user.AuthenticatorImpl) {
 }
 
 func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client) {
+	if !message.NeedBroadcast {
+		return
+	}
 	feedOtherClient := Feedback{
 		ErrorCode:    ERROR_CODE_BROADCAST,
 		ErrorMessage: "",

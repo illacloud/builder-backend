@@ -95,13 +95,6 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 	act.UpdatedBy = user
 	res, err := impl.actionService.CreateAction(act)
 	if err != nil {
-		if err.Error() == "resource not found" {
-			c.JSON(http.StatusForbidden, gin.H{
-				"errorCode":    403,
-				"errorMessage": "create action error: " + err.Error(),
-			})
-			return
-		}
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": "create action error: " + err.Error(),
@@ -156,13 +149,6 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	act.UpdatedBy = user
 	res, err := impl.actionService.UpdateAction(act)
 	if err != nil {
-		if err.Error() == "resource not found" {
-			c.JSON(http.StatusForbidden, gin.H{
-				"errorCode":    403,
-				"errorMessage": "update action error: " + err.Error(),
-			})
-			return
-		}
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": "update action error: " + err.Error(),
@@ -249,13 +235,6 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 	}
 	res, err := impl.actionService.RunAction(act)
 	if err != nil {
-		if err.Error() == "resource not found" {
-			c.JSON(http.StatusForbidden, gin.H{
-				"errorCode":    403,
-				"errorMessage": "run action error: " + err.Error(),
-			})
-			return
-		}
 		if strings.HasPrefix(err.Error(), "Error 1064:") {
 			lineNumber, _ := strconv.Atoi(err.Error()[len(err.Error())-1:])
 			message := ""
@@ -295,13 +274,6 @@ func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 	}
 	res, err := impl.actionService.RunAction(act)
 	if err != nil {
-		if err.Error() == "resource not found" {
-			c.JSON(http.StatusForbidden, gin.H{
-				"errorCode":    403,
-				"errorMessage": "run action error: " + err.Error(),
-			})
-			return
-		}
 		if strings.HasPrefix(err.Error(), "Error 1064:") {
 			lineNumber, _ := strconv.Atoi(err.Error()[len(err.Error())-1:])
 			message := ""
