@@ -23,16 +23,17 @@ import (
 	"go.uber.org/zap"
 )
 
-var type_array = [8]string{"restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb", "tidb"}
+var type_array = [9]string{"restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb", "tidb", "elasticsearch"}
 var type_map = map[string]int{
-	"restapi":    1,
-	"graphql":    2,
-	"redis":      3,
-	"mysql":      4,
-	"mariadb":    5,
-	"postgresql": 6,
-	"mongodb":    7,
-	"tidb":       8,
+	"restapi":       1,
+	"graphql":       2,
+	"redis":         3,
+	"mysql":         4,
+	"mariadb":       5,
+	"postgresql":    6,
+	"mongodb":       7,
+	"tidb":          8,
+	"elasticsearch": 9,
 }
 
 type ResourceService interface {
@@ -49,7 +50,7 @@ type ResourceService interface {
 type ResourceDto struct {
 	ID        int                    `json:"resourceId"`
 	Name      string                 `json:"resourceName" validate:"required"`
-	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb"`
+	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch"`
 	Options   map[string]interface{} `json:"content" validate:"required"`
 	CreatedAt time.Time              `json:"createdAt,omitempty"`
 	CreatedBy int                    `json:"createdBy,omitempty"`
