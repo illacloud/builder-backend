@@ -14,6 +14,14 @@
 
 package elasticsearch
 
+const (
+	SEARCH_OPERATION = "search"
+	INSERT_OPERATION = "insert"
+	GET_OPERATION    = "get"
+	UPDATE_OPERATION = "update"
+	DELETE_OPERATION = "delete"
+)
+
 type Resource struct {
 	Host     string `validate:"required,url"`
 	Port     string `validate:"required"`
