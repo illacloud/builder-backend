@@ -16,6 +16,7 @@ package action
 
 import (
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
+	"github.com/illa-family/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illa-family/builder-backend/pkg/plugins/mongodb"
 	"github.com/illa-family/builder-backend/pkg/plugins/mysql"
 	"github.com/illa-family/builder-backend/pkg/plugins/postgresql"
@@ -24,14 +25,15 @@ import (
 )
 
 var (
-	REST_ACTION        = "restapi"
-	MYSQL_ACTION       = "mysql"
-	MARIADB_ACTION     = "mariadb"
-	TIDB_ACTION        = "tidb"
-	TRANSFORMER_ACTION = "transformer"
-	POSTGRESQL_ACTION  = "postgresql"
-	REDIS_ACTION       = "redis"
-	MONGODB_ACTION     = "mongodb"
+	REST_ACTION          = "restapi"
+	MYSQL_ACTION         = "mysql"
+	MARIADB_ACTION       = "mariadb"
+	TIDB_ACTION          = "tidb"
+	TRANSFORMER_ACTION   = "transformer"
+	POSTGRESQL_ACTION    = "postgresql"
+	REDIS_ACTION         = "redis"
+	MONGODB_ACTION       = "mongodb"
+	ELASTICSEARCH_ACTION = "elasticsearch"
 )
 
 type AbstractActionFactory interface {
@@ -59,6 +61,9 @@ func (f *Factory) Build() common.DataConnector {
 	case MONGODB_ACTION:
 		mongoAction := &mongodb.Connector{}
 		return mongoAction
+	case ELASTICSEARCH_ACTION:
+		esAction := &elasticsearch.Connector{}
+		return esAction
 	default:
 		return nil
 	}
