@@ -31,7 +31,7 @@ type Resource struct {
 
 type Action struct {
 	Operation string `validate:"required,oneof=search insert get update delete"`
-	Index     string `validate:"required"`
+	Index     string
 	ID        string
 	Body      string
 	Query     string

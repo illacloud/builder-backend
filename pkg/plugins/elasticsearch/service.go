@@ -67,9 +67,8 @@ func (e *Connector) TestConnection(resourceOptions map[string]interface{}) (comm
 
 	// test es connection
 	pingReq := esapi.PingRequest{
-		Pretty:     true,
-		Human:      true,
-		ErrorTrace: true,
+		Pretty: true,
+		Human:  true,
 	}
 	pingRes, err := pingReq.Do(context.TODO(), esClient)
 	if err != nil {
