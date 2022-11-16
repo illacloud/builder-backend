@@ -24,6 +24,24 @@ func TestSample(t *testing.T) {
 	assert.Nil(t, nil)
 }
 
+func TestGetProtocol(t *testing.T) {
+	os.Setenv("WEBSOCKET_SERVER_ADDRESS", "")
+	os.Setenv("WEBSOCKET_PORT", "")
+	os.Setenv("WSS_ENABLED", "")
+
+	protocol0 := getProtocol()
+	assert.Equal(t, "ws", protocol0, "the protcol should be ws")
+
+	os.Setenv("WSS_ENABLED", "true")
+	protocol1 := getProtocol()
+	assert.Equal(t, "wss", protocol1, "the protcol should be wss")
+
+	os.Setenv("WSS_ENABLED", "false")
+	protocol2 := getProtocol()
+	assert.Equal(t, "ws", protocol2, "the protcol should be ws")
+
+}
+
 func TestGetServerAddress(t *testing.T) {
 	os.Setenv("WEBSOCKET_SERVER_ADDRESS", "")
 	os.Setenv("WEBSOCKET_PORT", "")

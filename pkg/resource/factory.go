@@ -16,6 +16,7 @@ package resource
 
 import (
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
+	"github.com/illa-family/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illa-family/builder-backend/pkg/plugins/mongodb"
 	"github.com/illa-family/builder-backend/pkg/plugins/mysql"
 	"github.com/illa-family/builder-backend/pkg/plugins/postgresql"
@@ -24,13 +25,14 @@ import (
 )
 
 var (
-	REST_RESOURCE     = "restapi"
-	MYSQL_RESOURCE    = "mysql"
-	MARIADB_RESOURCE  = "mariadb"
-	TIDB_RESOURCE     = "tidb"
-	POSTGRES_RESOURCE = "postgresql"
-	REDIS_RESOURCE    = "redis"
-	MONGODB_RESOURCE  = "mongodb"
+	REST_RESOURCE          = "restapi"
+	MYSQL_RESOURCE         = "mysql"
+	MARIADB_RESOURCE       = "mariadb"
+	TIDB_RESOURCE          = "tidb"
+	POSTGRES_RESOURCE      = "postgresql"
+	REDIS_RESOURCE         = "redis"
+	MONGODB_RESOURCE       = "mongodb"
+	ELASTICSEARCH_RESOURCE = "elasticsearch"
 )
 
 type AbstractResourceFactory interface {
@@ -58,6 +60,9 @@ func (f *Factory) Generate() common.DataConnector {
 	case MONGODB_RESOURCE:
 		mongoRsc := &mongodb.Connector{}
 		return mongoRsc
+	case ELASTICSEARCH_RESOURCE:
+		esRsc := &elasticsearch.Connector{}
+		return esRsc
 	default:
 		return nil
 	}
