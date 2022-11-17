@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	BASEURL          = "http://k8s-producti-cloud-48ebc94d00-1633650720.ap-northeast-1.elb.amazonaws.com/v1/"
+	BASEURL          = "https://email.illasoft.com/v1/"
 	SUBSCRIBE        = "subscribe"
 	VERIFICATIONCODE = "code"
 )
