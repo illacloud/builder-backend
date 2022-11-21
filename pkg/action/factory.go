@@ -22,6 +22,7 @@ import (
 	"github.com/illa-family/builder-backend/pkg/plugins/postgresql"
 	"github.com/illa-family/builder-backend/pkg/plugins/redis"
 	"github.com/illa-family/builder-backend/pkg/plugins/restapi"
+	"github.com/illa-family/builder-backend/pkg/plugins/s3"
 )
 
 var (
@@ -34,6 +35,7 @@ var (
 	REDIS_ACTION         = "redis"
 	MONGODB_ACTION       = "mongodb"
 	ELASTICSEARCH_ACTION = "elasticsearch"
+	S3_ACTION            = "s3"
 )
 
 type AbstractActionFactory interface {
@@ -64,6 +66,9 @@ func (f *Factory) Build() common.DataConnector {
 	case ELASTICSEARCH_ACTION:
 		esAction := &elasticsearch.Connector{}
 		return esAction
+	case S3_ACTION:
+		s3Action := &s3.Connector{}
+		return s3Action
 	default:
 		return nil
 	}
