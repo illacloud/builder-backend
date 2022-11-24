@@ -22,6 +22,7 @@ import (
 	"github.com/illa-family/builder-backend/pkg/plugins/postgresql"
 	"github.com/illa-family/builder-backend/pkg/plugins/redis"
 	"github.com/illa-family/builder-backend/pkg/plugins/restapi"
+	"github.com/illa-family/builder-backend/pkg/plugins/s3"
 )
 
 var (
@@ -33,6 +34,7 @@ var (
 	REDIS_RESOURCE         = "redis"
 	MONGODB_RESOURCE       = "mongodb"
 	ELASTICSEARCH_RESOURCE = "elasticsearch"
+	S3_RESOURCE            = "s3"
 )
 
 type AbstractResourceFactory interface {
@@ -63,6 +65,9 @@ func (f *Factory) Generate() common.DataConnector {
 	case ELASTICSEARCH_RESOURCE:
 		esRsc := &elasticsearch.Connector{}
 		return esRsc
+	case S3_RESOURCE:
+		s3Rsc := &s3.Connector{}
+		return s3Rsc
 	default:
 		return nil
 	}
