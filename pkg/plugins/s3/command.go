@@ -27,7 +27,6 @@ import (
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
 )
@@ -239,27 +238,29 @@ func (c *CommandExecutor) deleteMultipleObjects() (common.RuntimeResult, error) 
 		batchDeleteCommandArgs.BucketName = c.bucket
 	}
 
-	// build DeleteObjectsInput
-	var deleteObjects types.Delete
-	objects := make([]types.ObjectIdentifier, 0, len(batchDeleteCommandArgs.ObjectKeyList))
-	for _, key := range batchDeleteCommandArgs.ObjectKeyList {
-		objIdent := types.ObjectIdentifier{Key: &key}
-		objects = append(objects, objIdent)
-	}
-	deleteObjects.Objects = objects
-	params := s3.DeleteObjectsInput{
-		Bucket: &batchDeleteCommandArgs.BucketName,
-		Delete: &deleteObjects,
-	}
+	// run PutObject for BatchUpload
+	batchN := len(batchDeleteCommandArgs.ObjectKeyList)
+	failedKeys := make([]string, 0, batchN)
+	successN := 0
+	for i := 0; i < batchN; i++ {
+		// build DeleteObjectInput
+		params := s3.DeleteObjectInput{
+			Bucket: &batchDeleteCommandArgs.BucketName,
+			Key:    &batchDeleteCommandArgs.ObjectKeyList[i],
+		}
 
-	res, err := c.client.DeleteObjects(context.TODO(), &params)
-	if err != nil {
-		return common.RuntimeResult{Success: false}, err
+		_, err := c.client.DeleteObject(context.TODO(), &params)
+		if err != nil {
+			failedKeys = append(failedKeys, batchDeleteCommandArgs.ObjectKeyList[i])
+			continue
+		}
+
+		successN += 1
 	}
 
 	return common.RuntimeResult{
 		Success: true,
-		Rows:    []map[string]interface{}{{"deleted": res.Deleted, "errors": res.Errors}},
+		Rows:    []map[string]interface{}{{"count": batchN, "success": successN, "failure": failedKeys}},
 		Extra:   nil,
 	}, nil
 }
