@@ -23,6 +23,7 @@ import (
 	"github.com/illa-family/builder-backend/pkg/plugins/redis"
 	"github.com/illa-family/builder-backend/pkg/plugins/restapi"
 	"github.com/illa-family/builder-backend/pkg/plugins/s3"
+	"github.com/illa-family/builder-backend/pkg/plugins/smtp"
 )
 
 var (
@@ -36,6 +37,7 @@ var (
 	MONGODB_ACTION       = "mongodb"
 	ELASTICSEARCH_ACTION = "elasticsearch"
 	S3_ACTION            = "s3"
+	SMTP_ACTION          = "smtp"
 )
 
 type AbstractActionFactory interface {
@@ -69,6 +71,9 @@ func (f *Factory) Build() common.DataConnector {
 	case S3_ACTION:
 		s3Action := &s3.Connector{}
 		return s3Action
+	case SMTP_ACTION:
+		smtpAction := &smtp.Connector{}
+		return smtpAction
 	default:
 		return nil
 	}
