@@ -20,6 +20,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
@@ -285,14 +287,18 @@ func (c *CommandExecutor) uploadAnObject() (common.RuntimeResult, error) {
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
-	contentLength := len(objectDataBytes)
+	decodedObjectDataString, err := url.QueryUnescape(string(objectDataBytes))
+	if err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+	contentLength := len(decodedObjectDataString)
 	if objectSizeLimiter(int64(contentLength)) {
 		return common.RuntimeResult{Success: false}, errors.New("oversize object")
 	}
 	params := s3.PutObjectInput{
 		Bucket:        &uploadCommandArgs.BucketName,
 		Key:           &uploadCommandArgs.ObjectKey,
-		Body:          bytes.NewReader(objectDataBytes),
+		Body:          strings.NewReader(decodedObjectDataString),
 		ContentLength: int64(contentLength),
 	}
 	if uploadCommandArgs.ContentType != "" {
@@ -344,7 +350,12 @@ func (c *CommandExecutor) uploadMultipleObjects() (common.RuntimeResult, error) 
 			failedKeys = append(failedKeys, batchUploadCommandArgs.ObjectKeyList[i])
 			continue
 		}
-		contentLength := len(objectDataBytes)
+		decodedObjectDataString, err := url.QueryUnescape(string(objectDataBytes))
+		if err != nil {
+			failedKeys = append(failedKeys, batchUploadCommandArgs.ObjectKeyList[i])
+			continue
+		}
+		contentLength := len(decodedObjectDataString)
 		if objectSizeLimiter(int64(contentLength)) {
 			failedKeys = append(failedKeys, batchUploadCommandArgs.ObjectKeyList[i])
 			continue
@@ -352,7 +363,7 @@ func (c *CommandExecutor) uploadMultipleObjects() (common.RuntimeResult, error) 
 		params := s3.PutObjectInput{
 			Bucket:        &batchUploadCommandArgs.BucketName,
 			Key:           &batchUploadCommandArgs.ObjectKeyList[i],
-			Body:          bytes.NewReader(objectDataBytes),
+			Body:          strings.NewReader(decodedObjectDataString),
 			ContentLength: int64(contentLength),
 		}
 		if batchUploadCommandArgs.ContentType != "" {
