@@ -40,7 +40,7 @@ type Action struct {
 
 type ListCommandArgs struct {
 	BucketName string `json:"bucketName"`
-	Pre        string `json:"prefix"`
+	Prefix     string `json:"prefix"`
 	Delimiter  string `json:"delimiter"`
 	SignedURL  bool   `json:"signedURL"`
 	Expiry     int64  `json:"expiry" validate:"required_unless=SignedURL false"`

@@ -6,7 +6,6 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.17.1
 	github.com/aws/aws-sdk-go-v2/config v1.18.1
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.1
-	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.40
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.29.3
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/elastic/go-elasticsearch/v8 v8.4.0
@@ -64,7 +63,6 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.4 // indirect
-	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect

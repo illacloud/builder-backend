@@ -53,12 +53,15 @@ func (c *CommandExecutor) listObjects() (common.RuntimeResult, error) {
 	if listCommandArgs.BucketName == "" {
 		listCommandArgs.BucketName = c.bucket
 	}
+	if listCommandArgs.MaxKeys == 0 {
+		listCommandArgs.MaxKeys = 100
+	}
 
 	// build listObjectInput
 	params := s3.ListObjectsV2Input{
 		Bucket:    &listCommandArgs.BucketName,
 		Delimiter: &listCommandArgs.Delimiter,
-		Prefix:    &listCommandArgs.Pre,
+		Prefix:    &listCommandArgs.Prefix,
 		MaxKeys:   listCommandArgs.MaxKeys,
 	}
 
