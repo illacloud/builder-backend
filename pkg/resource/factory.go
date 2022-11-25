@@ -23,6 +23,7 @@ import (
 	"github.com/illa-family/builder-backend/pkg/plugins/redis"
 	"github.com/illa-family/builder-backend/pkg/plugins/restapi"
 	"github.com/illa-family/builder-backend/pkg/plugins/s3"
+	"github.com/illa-family/builder-backend/pkg/plugins/smtp"
 )
 
 var (
@@ -35,6 +36,7 @@ var (
 	MONGODB_RESOURCE       = "mongodb"
 	ELASTICSEARCH_RESOURCE = "elasticsearch"
 	S3_RESOURCE            = "s3"
+	SMTP_RESOURCE          = "smtp"
 )
 
 type AbstractResourceFactory interface {
@@ -68,6 +70,9 @@ func (f *Factory) Generate() common.DataConnector {
 	case S3_RESOURCE:
 		s3Rsc := &s3.Connector{}
 		return s3Rsc
+	case SMTP_RESOURCE:
+		smtpRsc := &smtp.Connector{}
+		return smtpRsc
 	default:
 		return nil
 	}
