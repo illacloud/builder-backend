@@ -15,6 +15,8 @@
 package main
 
 import (
+	"context"
+	"net/http"
 	"os"
 
 	"github.com/illa-family/builder-backend/api/router"
@@ -33,6 +35,7 @@ type Config struct {
 }
 
 type Server struct {
+	svr        *http.Server
 	engine     *gin.Engine
 	restRouter *router.RESTRouter
 	logger     *zap.SugaredLogger
@@ -50,8 +53,12 @@ func GetAppConfig() (*Config, error) {
 
 func NewServer(cfg *Config, engine *gin.Engine, restRouter *router.RESTRouter, logger *zap.SugaredLogger) *Server {
 	return &Server{
-		engine:     engine,
-		cfg:        cfg,
+		engine: engine,
+		cfg:    cfg,
+		svr: &http.Server{
+			Addr:    cfg.ILLA_SERVER_HOST + ":" + cfg.ILLA_SERVER_PORT,
+			Handler: engine,
+		},
 		restRouter: restRouter,
 		logger:     logger,
 	}
@@ -66,9 +73,12 @@ func (server *Server) Start() {
 	server.engine.Use(cors.Cors())
 	server.restRouter.InitRouter(server.engine.Group("/api"))
 
-	err := server.engine.Run(server.cfg.ILLA_SERVER_HOST + ":" + server.cfg.ILLA_SERVER_PORT)
-	if err != nil {
+	if err := server.svr.ListenAndServe(); err != nil {
 		server.logger.Errorw("Error in startup", "err", err)
 		os.Exit(2)
 	}
+}
+
+func (server *Server) Stop(ctx context.Context) error {
+	return server.svr.Shutdown(ctx)
 }
