@@ -85,6 +85,12 @@ func (s *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		return common.RuntimeResult{Success: false}, err
 	}
 
+	// validate smtp options
+	validate := validator.New()
+	if err := validate.Struct(s.ActionOpts); err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+
 	// build message
 	emailMessage := gomail.NewMessage()
 
@@ -114,6 +120,10 @@ func (s *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			}
 			decodedAttachDataString, err := url.QueryUnescape(string(attachDataBytes))
 			if err != nil {
+				continue
+			}
+			contentLength := len(decodedAttachDataString)
+			if attachSizeLimiter(int64(contentLength)) {
 				continue
 			}
 			emailMessage.Attach(attach.Name, gomail.SetCopyFunc(func(w io.Writer) error {
