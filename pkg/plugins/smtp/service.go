@@ -46,16 +46,6 @@ func (s *Connector) ValidateResourceOptions(resourceOptions map[string]interface
 }
 
 func (s *Connector) ValidateActionOptions(actionOptions map[string]interface{}) (common.ValidateResult, error) {
-	// format action options
-	if err := mapstructure.Decode(actionOptions, &s.ActionOpts); err != nil {
-		return common.ValidateResult{Valid: false}, err
-	}
-
-	// validate smtp options
-	validate := validator.New()
-	if err := validate.Struct(s.ActionOpts); err != nil {
-		return common.ValidateResult{Valid: false}, err
-	}
 	return common.ValidateResult{Valid: true}, nil
 }
 
