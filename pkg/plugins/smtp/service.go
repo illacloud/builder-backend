@@ -58,10 +58,10 @@ func (s *Connector) TestConnection(resourceOptions map[string]interface{}) (comm
 
 	// Dial dials and authenticates to an SMTP server
 	sendCloser, err := smtpDialer.Dial()
-	defer sendCloser.Close()
 	if err != nil {
 		return common.ConnectionResult{Success: false}, err
 	}
+	defer sendCloser.Close()
 
 	return common.ConnectionResult{Success: true}, nil
 }
