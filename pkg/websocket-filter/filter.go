@@ -75,9 +75,7 @@ func SignalFilter(hub *ws.Hub, message *ws.Message, ai *user.AuthenticatorImpl) 
 		return SignalGlobalBroadcastOnly(hub, message)
 	default:
 		return nil
-
 	}
-	return nil
 }
 
 func OptionFilter(hub *ws.Hub, client *ws.Client, message *ws.Message) error {
