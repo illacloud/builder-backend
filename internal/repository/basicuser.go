@@ -15,7 +15,6 @@
 package repository
 
 import (
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -88,13 +87,10 @@ func (impl *UserRepositoryImpl) RetrieveByID(id int) (*User, error) {
 }
 
 func (impl *UserRepositoryImpl) FetchUserByUKey(id int, uid uuid.UUID) (*User, error) {
-	var users []User
-	if err := impl.db.Where("id = ? AND uid = ?", id, uid).Find(&users).Error; err != nil {
+	var user User
+	if err := impl.db.Where("uid = ? AND id = ?", uid, id).First(&user).Error; err != nil {
 		return &User{}, err
 	}
 
-	if len(users) != 1 {
-		return &User{}, errors.New("unable to get the corresponding record")
-	}
-	return &users[0], nil
+	return &user, nil
 }
