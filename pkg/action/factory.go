@@ -22,6 +22,8 @@ import (
 	"github.com/illa-family/builder-backend/pkg/plugins/postgresql"
 	"github.com/illa-family/builder-backend/pkg/plugins/redis"
 	"github.com/illa-family/builder-backend/pkg/plugins/restapi"
+	"github.com/illa-family/builder-backend/pkg/plugins/s3"
+	"github.com/illa-family/builder-backend/pkg/plugins/smtp"
 )
 
 var (
@@ -34,6 +36,9 @@ var (
 	REDIS_ACTION         = "redis"
 	MONGODB_ACTION       = "mongodb"
 	ELASTICSEARCH_ACTION = "elasticsearch"
+	S3_ACTION            = "s3"
+	SMTP_ACTION          = "smtp"
+	SUPABASEDB_ACTION    = "supabasedb"
 )
 
 type AbstractActionFactory interface {
@@ -52,7 +57,7 @@ func (f *Factory) Build() common.DataConnector {
 	case MYSQL_ACTION, MARIADB_ACTION, TIDB_ACTION:
 		sqlAction := &mysql.MySQLConnector{}
 		return sqlAction
-	case POSTGRESQL_ACTION:
+	case POSTGRESQL_ACTION, SUPABASEDB_ACTION:
 		pgsAction := &postgresql.Connector{}
 		return pgsAction
 	case REDIS_ACTION:
@@ -64,6 +69,12 @@ func (f *Factory) Build() common.DataConnector {
 	case ELASTICSEARCH_ACTION:
 		esAction := &elasticsearch.Connector{}
 		return esAction
+	case S3_ACTION:
+		s3Action := &s3.Connector{}
+		return s3Action
+	case SMTP_ACTION:
+		smtpAction := &smtp.Connector{}
+		return smtpAction
 	default:
 		return nil
 	}
