@@ -38,6 +38,7 @@ var (
 	ELASTICSEARCH_ACTION = "elasticsearch"
 	S3_ACTION            = "s3"
 	SMTP_ACTION          = "smtp"
+	SUPABASEDB_ACTION    = "supabasedb"
 )
 
 type AbstractActionFactory interface {
@@ -56,7 +57,7 @@ func (f *Factory) Build() common.DataConnector {
 	case MYSQL_ACTION, MARIADB_ACTION, TIDB_ACTION:
 		sqlAction := &mysql.MySQLConnector{}
 		return sqlAction
-	case POSTGRESQL_ACTION:
+	case POSTGRESQL_ACTION, SUPABASEDB_ACTION:
 		pgsAction := &postgresql.Connector{}
 		return pgsAction
 	case REDIS_ACTION:

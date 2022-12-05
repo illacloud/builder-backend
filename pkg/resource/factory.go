@@ -37,6 +37,7 @@ var (
 	ELASTICSEARCH_RESOURCE = "elasticsearch"
 	S3_RESOURCE            = "s3"
 	SMTP_RESOURCE          = "smtp"
+	SUPABASEDB_RESOURCE    = "supabasedb"
 )
 
 type AbstractResourceFactory interface {
@@ -55,7 +56,7 @@ func (f *Factory) Generate() common.DataConnector {
 	case MYSQL_RESOURCE, MARIADB_RESOURCE, TIDB_RESOURCE:
 		sqlRsc := &mysql.MySQLConnector{}
 		return sqlRsc
-	case POSTGRES_RESOURCE:
+	case POSTGRES_RESOURCE, SUPABASEDB_RESOURCE:
 		pgsRsc := &postgresql.Connector{}
 		return pgsRsc
 	case REDIS_RESOURCE:
