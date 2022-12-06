@@ -17,6 +17,7 @@ package resource
 import (
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
 	"github.com/illa-family/builder-backend/pkg/plugins/elasticsearch"
+	"github.com/illa-family/builder-backend/pkg/plugins/firebase"
 	"github.com/illa-family/builder-backend/pkg/plugins/mongodb"
 	"github.com/illa-family/builder-backend/pkg/plugins/mysql"
 	"github.com/illa-family/builder-backend/pkg/plugins/postgresql"
@@ -38,6 +39,7 @@ var (
 	S3_RESOURCE            = "s3"
 	SMTP_RESOURCE          = "smtp"
 	SUPABASEDB_RESOURCE    = "supabasedb"
+	FIREBASE_RESOURCE      = "firebase"
 )
 
 type AbstractResourceFactory interface {
@@ -74,6 +76,9 @@ func (f *Factory) Generate() common.DataConnector {
 	case SMTP_RESOURCE:
 		smtpRsc := &smtp.Connector{}
 		return smtpRsc
+	case FIREBASE_RESOURCE:
+		firebaseRsc := &firebase.Connector{}
+		return firebaseRsc
 	default:
 		return nil
 	}
