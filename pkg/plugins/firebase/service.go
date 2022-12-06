@@ -14,7 +14,12 @@
 
 package firebase
 
-import "github.com/illa-family/builder-backend/pkg/plugins/common"
+import (
+	"github.com/illa-family/builder-backend/pkg/plugins/common"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/mitchellh/mapstructure"
+)
 
 type Connector struct {
 	ResourceOpts Resource
@@ -22,10 +27,30 @@ type Connector struct {
 }
 
 func (f *Connector) ValidateResourceOptions(resourceOptions map[string]interface{}) (common.ValidateResult, error) {
+	// format resource options
+	if err := mapstructure.Decode(resourceOptions, &f.ResourceOpts); err != nil {
+		return common.ValidateResult{Valid: false}, err
+	}
+
+	// validate firebase options
+	validate := validator.New()
+	if err := validate.Struct(f.ResourceOpts); err != nil {
+		return common.ValidateResult{Valid: false}, err
+	}
 	return common.ValidateResult{Valid: true}, nil
 }
 
 func (f *Connector) ValidateActionOptions(actionOptions map[string]interface{}) (common.ValidateResult, error) {
+	// format action options
+	if err := mapstructure.Decode(actionOptions, &f.ActionOpts); err != nil {
+		return common.ValidateResult{Valid: false}, err
+	}
+
+	// validate firebase options
+	validate := validator.New()
+	if err := validate.Struct(f.ActionOpts); err != nil {
+		return common.ValidateResult{Valid: false}, err
+	}
 	return common.ValidateResult{Valid: true}, nil
 }
 
