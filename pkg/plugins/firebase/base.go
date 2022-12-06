@@ -13,3 +13,33 @@
 // limitations under the License.
 
 package firebase
+
+import (
+	"context"
+	"encoding/base64"
+
+	firebase "firebase.google.com/go/v4"
+	"github.com/mitchellh/mapstructure"
+	"google.golang.org/api/option"
+)
+
+func (f *Connector) getConnectionWithOptions(resourceOptions map[string]interface{}) (*firebase.App, error) {
+	if err := mapstructure.Decode(resourceOptions, &f.ResourceOpts); err != nil {
+		return nil, err
+	}
+
+	// build firebase service account
+	saBytes, err := base64.StdEncoding.DecodeString(f.ResourceOpts.PrivateKey)
+	if err != nil {
+		return nil, err
+	}
+	sa := option.WithCredentialsJSON(saBytes)
+
+	// new firebase app
+	app, err := firebase.NewApp(context.Background(), nil, sa)
+	if err != nil {
+		return nil, err
+	}
+
+	return app, nil
+}

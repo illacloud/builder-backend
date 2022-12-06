@@ -15,6 +15,8 @@
 package firebase
 
 import (
+	"context"
+
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
 
 	"github.com/go-playground/validator/v10"
@@ -55,13 +57,55 @@ func (f *Connector) ValidateActionOptions(actionOptions map[string]interface{}) 
 }
 
 func (f *Connector) TestConnection(resourceOptions map[string]interface{}) (common.ConnectionResult, error) {
+	// get firebase app
+	app, err := f.getConnectionWithOptions(resourceOptions)
+	if err != nil {
+		return common.ConnectionResult{Success: false}, err
+	}
+
+	// test connection
+	ctx := context.TODO()
+	firestoreClient, errF := app.Firestore(ctx)
+	_, errA := app.Auth(ctx)
+	_, errD := app.Database(ctx)
+	if errF != nil && errA != nil && errD != nil {
+		return common.ConnectionResult{Success: false}, err
+	}
+	defer firestoreClient.Close()
+
 	return common.ConnectionResult{Success: true}, nil
 }
 
+// GetMetaInfo get the collections in firestore
 func (f *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.MetaInfoResult, error) {
+	// get firebase app
+	app, err := f.getConnectionWithOptions(resourceOptions)
+	if err != nil {
+		return common.MetaInfoResult{Success: false}, err
+	}
+
+	// get firestore client
+	ctx := context.TODO()
+	firestoreClient, err := app.Firestore(ctx)
+	if err != nil {
+		return common.MetaInfoResult{Success: false}, err
+	}
+	defer firestoreClient.Close()
+
+	// get collections
+	collsIter := firestoreClient.Collections(ctx)
+	colls, err := collsIter.GetAll()
+	if err != nil {
+		return common.MetaInfoResult{Success: false}, err
+	}
+	res := make([]string, 0, len(colls))
+	for _, coll := range colls {
+		res = append(res, coll.ID)
+	}
+
 	return common.MetaInfoResult{
 		Success: true,
-		Schema:  nil,
+		Schema:  map[string]interface{}{"collections": res},
 	}, nil
 }
 
