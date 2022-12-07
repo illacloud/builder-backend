@@ -16,6 +16,7 @@ package firebase
 
 import (
 	"context"
+	"errors"
 
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
 
@@ -110,7 +111,32 @@ func (f *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.
 }
 
 func (f *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
-	return common.RuntimeResult{
-		Success: true,
-	}, nil
+	// get firebase app
+	app, err := f.getConnectionWithOptions(resourceOptions)
+	if err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+
+	// format firebase operation
+	if err := mapstructure.Decode(actionOptions, &f.ActionOpts); err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+
+	var result common.RuntimeResult
+	switch f.ActionOpts.Service {
+	case AUTH_SERVICE:
+		operationRunner := &AuthOperationRunner{client: app, operation: f.ActionOpts.Operation, options: f.ActionOpts.Options}
+		result, err = operationRunner.run()
+	case DATABASE_SERVICE:
+		operationRunner := &DBOperationRunner{client: app, operation: f.ActionOpts.Operation, options: f.ActionOpts.Options}
+		result, err = operationRunner.run()
+	case FIRESTORE_SERVICE:
+		operationRunner := &FirestoreOperationRunner{client: app, operation: f.ActionOpts.Operation, options: f.ActionOpts.Options}
+		result, err = operationRunner.run()
+	default:
+		result.Success = false
+		err = errors.New("unsupported operation")
+	}
+
+	return result, err
 }
