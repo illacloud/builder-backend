@@ -35,8 +35,11 @@ func (f *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 	}
 	sa := option.WithCredentialsJSON(saBytes)
 
+	// build firebase config for realtime database
+	config := &firebase.Config{DatabaseURL: f.ResourceOpts.DatabaseURL}
+
 	// new firebase app
-	app, err := firebase.NewApp(context.Background(), nil, sa)
+	app, err := firebase.NewApp(context.Background(), config, sa)
 	if err != nil {
 		return nil, err
 	}
