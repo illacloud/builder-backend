@@ -18,8 +18,8 @@ type Options struct {
 	Host             string `validate:"required"`
 	Port             string `validate:"required"`
 	DatabaseIndex    int    `validate:"gte=0,lte=16"`
-	DatabaseUsername string `validate:"required"`
-	DatabasePassword string `validate:"required"`
+	DatabaseUsername string
+	DatabasePassword string
 	SSL              bool
 }
 
