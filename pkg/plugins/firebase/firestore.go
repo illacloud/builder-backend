@@ -45,12 +45,19 @@ type FirestoreOperationRunner struct {
 
 type FSQueryOptions struct {
 	Collection     string `validate:"required"`
-	Where          [][]interface{}
+	CollectionType string `validate:"oneof=select, input"`
+	Where          []QueryCondition
 	Limit          int
 	OrderBy        string
 	OrderDirection string
 	StartAt        SimpleCursor `validate:"required"`
 	EndAt          SimpleCursor `validate:"required"`
+}
+
+type QueryCondition struct {
+	Field     string
+	Condition string
+	Value     interface{}
 }
 
 type SimpleCursor struct {
@@ -120,10 +127,7 @@ func (f *FirestoreOperationRunner) queryFirestore() (common.RuntimeResult, error
 
 	conditionN := len(queryFSOptions.Where)
 	for i := 0; i < conditionN; i++ {
-		if len(queryFSOptions.Where[i]) != 3 {
-			break
-		}
-		query = query.Where(queryFSOptions.Where[i][0].(string), queryFSOptions.Where[i][1].(string), queryFSOptions.Where[i][2])
+		query = query.Where(queryFSOptions.Where[i].Field, queryFSOptions.Where[i].Condition, queryFSOptions.Where[i].Value)
 	}
 
 	if queryFSOptions.Limit > 0 {
@@ -328,10 +332,7 @@ func (f *FirestoreOperationRunner) queryCollectionGroup() (common.RuntimeResult,
 
 	conditionN := len(queryCGOptions.Where)
 	for i := 0; i < conditionN; i++ {
-		if len(queryCGOptions.Where[i]) != 3 {
-			break
-		}
-		query = query.Where(queryCGOptions.Where[i][0].(string), queryCGOptions.Where[i][1].(string), queryCGOptions.Where[i][2])
+		query = query.Where(queryCGOptions.Where[i].Field, queryCGOptions.Where[i].Condition, queryCGOptions.Where[i].Value)
 	}
 
 	if queryCGOptions.Limit > 0 {
