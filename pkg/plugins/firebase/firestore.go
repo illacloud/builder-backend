@@ -127,6 +127,9 @@ func (f *FirestoreOperationRunner) queryFirestore() (common.RuntimeResult, error
 
 	conditionN := len(queryFSOptions.Where)
 	for i := 0; i < conditionN; i++ {
+		if queryFSOptions.Where[i].Field == "" {
+			break
+		}
 		query = query.Where(queryFSOptions.Where[i].Field, queryFSOptions.Where[i].Condition, queryFSOptions.Where[i].Value)
 	}
 
@@ -332,6 +335,9 @@ func (f *FirestoreOperationRunner) queryCollectionGroup() (common.RuntimeResult,
 
 	conditionN := len(queryCGOptions.Where)
 	for i := 0; i < conditionN; i++ {
+		if queryCGOptions.Where[i].Field == "" {
+			break
+		}
 		query = query.Where(queryCGOptions.Where[i].Field, queryCGOptions.Where[i].Condition, queryCGOptions.Where[i].Value)
 	}
 
