@@ -44,33 +44,33 @@ type FirestoreOperationRunner struct {
 }
 
 type FSQueryOptions struct {
-	collection     string `validate:"required"`
-	where          [][]interface{}
-	limit          int
-	orderBy        string
-	orderDirection string
-	startAt        SimpleCursor `validate:"required"`
-	endAt          SimpleCursor `validate:"required"`
+	Collection     string `validate:"required"`
+	Where          [][]interface{}
+	Limit          int
+	OrderBy        string
+	OrderDirection string
+	StartAt        SimpleCursor `validate:"required"`
+	EndAt          SimpleCursor `validate:"required"`
 }
 
 type SimpleCursor struct {
-	trigger bool
-	value   interface{}
+	Trigger bool
+	Value   interface{}
 }
 
 type FSDocValueOptions struct {
-	collection string `validate:"required"`
-	id         string
-	value      map[string]interface{} `validate:"required"`
+	Collection string `validate:"required"`
+	ID         string
+	Value      map[string]interface{} `validate:"required"`
 }
 
 type FSDocIDOptions struct {
-	collection string `validate:"required"`
-	id         string `validate:"required"`
+	Collection string `validate:"required"`
+	ID         string `validate:"required"`
 }
 
 type FSGetCollsOptions struct {
-	parent string
+	Parent string
 }
 
 func (f *FirestoreOperationRunner) run() (common.RuntimeResult, error) {
@@ -115,35 +115,35 @@ func (f *FirestoreOperationRunner) queryFirestore() (common.RuntimeResult, error
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
-	collRef := client.Collection(queryFSOptions.collection)
+	collRef := client.Collection(queryFSOptions.Collection)
 	query := collRef.Query
 
-	conditionN := len(queryFSOptions.where)
+	conditionN := len(queryFSOptions.Where)
 	for i := 0; i < conditionN; i++ {
-		if len(queryFSOptions.where[i]) != 3 {
+		if len(queryFSOptions.Where[i]) != 3 {
 			break
 		}
-		query = query.Where(queryFSOptions.where[i][0].(string), queryFSOptions.where[i][1].(string), queryFSOptions.where[i][2])
+		query = query.Where(queryFSOptions.Where[i][0].(string), queryFSOptions.Where[i][1].(string), queryFSOptions.Where[i][2])
 	}
 
-	if queryFSOptions.limit > 0 {
-		query = query.Limit(queryFSOptions.limit)
+	if queryFSOptions.Limit > 0 {
+		query = query.Limit(queryFSOptions.Limit)
 	}
 
-	if queryFSOptions.orderBy != "" {
+	if queryFSOptions.OrderBy != "" {
 		direct := firestore.Asc
-		if queryFSOptions.orderDirection == "desc" {
+		if queryFSOptions.OrderDirection == "desc" {
 			direct = firestore.Desc
 		}
-		query = query.OrderBy(queryFSOptions.orderBy, direct)
+		query = query.OrderBy(queryFSOptions.OrderBy, direct)
 	}
 
-	if queryFSOptions.startAt.trigger {
-		query = query.EndAt(queryFSOptions.startAt.value)
+	if queryFSOptions.StartAt.Trigger {
+		query = query.EndAt(queryFSOptions.StartAt.Value)
 	}
 
-	if queryFSOptions.endAt.trigger {
-		query = query.EndAt(queryFSOptions.endAt.value)
+	if queryFSOptions.EndAt.Trigger {
+		query = query.EndAt(queryFSOptions.EndAt.Value)
 	}
 
 	docs, err := query.Documents(ctx).GetAll()
@@ -176,10 +176,10 @@ func (f *FirestoreOperationRunner) insertDoc() (common.RuntimeResult, error) {
 		return common.RuntimeResult{Success: false}, err
 	}
 
-	if insertDocOptions.id != "" {
-		_, err = client.Collection(insertDocOptions.collection).Doc(insertDocOptions.id).Set(ctx, insertDocOptions.value)
+	if insertDocOptions.ID != "" {
+		_, err = client.Collection(insertDocOptions.Collection).Doc(insertDocOptions.ID).Set(ctx, insertDocOptions.Value)
 	} else {
-		_, _, err = client.Collection(insertDocOptions.collection).Add(ctx, insertDocOptions.value)
+		_, _, err = client.Collection(insertDocOptions.Collection).Add(ctx, insertDocOptions.Value)
 	}
 
 	return common.RuntimeResult{Success: true}, err
@@ -203,11 +203,11 @@ func (f *FirestoreOperationRunner) updateDoc() (common.RuntimeResult, error) {
 		return common.RuntimeResult{Success: false}, err
 	}
 
-	if updateDocOptions.id == "" {
+	if updateDocOptions.ID == "" {
 		return common.RuntimeResult{Success: false}, errors.New("document id required")
 	}
 
-	_, err = client.Collection(updateDocOptions.collection).Doc(updateDocOptions.id).Set(ctx, updateDocOptions.value, firestore.MergeAll)
+	_, err = client.Collection(updateDocOptions.Collection).Doc(updateDocOptions.ID).Set(ctx, updateDocOptions.Value, firestore.MergeAll)
 
 	return common.RuntimeResult{Success: true}, err
 }
@@ -230,7 +230,7 @@ func (f *FirestoreOperationRunner) getDocByID() (common.RuntimeResult, error) {
 		return common.RuntimeResult{Success: false}, err
 	}
 
-	doc, err := client.Collection(getDocByIDOptions.collection).Doc(getDocByIDOptions.id).Get(ctx)
+	doc, err := client.Collection(getDocByIDOptions.Collection).Doc(getDocByIDOptions.ID).Get(ctx)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
@@ -256,7 +256,7 @@ func (f *FirestoreOperationRunner) deleteDoc() (common.RuntimeResult, error) {
 		return common.RuntimeResult{Success: false}, err
 	}
 
-	_, err = client.Collection(deleteDocOptions.collection).Doc(deleteDocOptions.id).Delete(ctx)
+	_, err = client.Collection(deleteDocOptions.Collection).Doc(deleteDocOptions.ID).Delete(ctx)
 
 	return common.RuntimeResult{Success: true}, nil
 }
@@ -281,12 +281,12 @@ func (f *FirestoreOperationRunner) getCollections() (common.RuntimeResult, error
 
 	var collsIter *firestore.CollectionIterator
 
-	if getCollsOptions.parent != "" {
+	if getCollsOptions.Parent != "" {
 		documentPath := ""
-		if getCollsOptions.parent[0] == '/' {
-			documentPath = getCollsOptions.parent[1:]
+		if getCollsOptions.Parent[0] == '/' {
+			documentPath = getCollsOptions.Parent[1:]
 		} else {
-			documentPath = getCollsOptions.parent
+			documentPath = getCollsOptions.Parent
 		}
 		docPaths := strings.Split(documentPath, "/")
 		collsIter = client.Collection(docPaths[0]).Doc(documentPath[len(docPaths[0]):]).Collections(ctx)
@@ -323,35 +323,35 @@ func (f *FirestoreOperationRunner) queryCollectionGroup() (common.RuntimeResult,
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
-	collRef := client.CollectionGroup(queryCGOptions.collection)
+	collRef := client.CollectionGroup(queryCGOptions.Collection)
 	query := collRef.Query
 
-	conditionN := len(queryCGOptions.where)
+	conditionN := len(queryCGOptions.Where)
 	for i := 0; i < conditionN; i++ {
-		if len(queryCGOptions.where[i]) != 3 {
+		if len(queryCGOptions.Where[i]) != 3 {
 			break
 		}
-		query = query.Where(queryCGOptions.where[i][0].(string), queryCGOptions.where[i][1].(string), queryCGOptions.where[i][2])
+		query = query.Where(queryCGOptions.Where[i][0].(string), queryCGOptions.Where[i][1].(string), queryCGOptions.Where[i][2])
 	}
 
-	if queryCGOptions.limit > 0 {
-		query = query.Limit(queryCGOptions.limit)
+	if queryCGOptions.Limit > 0 {
+		query = query.Limit(queryCGOptions.Limit)
 	}
 
-	if queryCGOptions.orderBy != "" {
+	if queryCGOptions.OrderBy != "" {
 		direct := firestore.Asc
-		if queryCGOptions.orderDirection == "desc" {
+		if queryCGOptions.OrderDirection == "desc" {
 			direct = firestore.Desc
 		}
-		query = query.OrderBy(queryCGOptions.orderBy, direct)
+		query = query.OrderBy(queryCGOptions.OrderBy, direct)
 	}
 
-	if queryCGOptions.startAt.trigger {
-		query = query.EndAt(queryCGOptions.startAt.value)
+	if queryCGOptions.StartAt.Trigger {
+		query = query.EndAt(queryCGOptions.StartAt.Value)
 	}
 
-	if queryCGOptions.endAt.trigger {
-		query = query.EndAt(queryCGOptions.endAt.value)
+	if queryCGOptions.EndAt.Trigger {
+		query = query.EndAt(queryCGOptions.EndAt.Value)
 	}
 
 	docs, err := query.Documents(ctx).GetAll()

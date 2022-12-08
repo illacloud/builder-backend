@@ -44,32 +44,32 @@ type AuthOperationRunner struct {
 }
 
 type AuthBaseOptions struct {
-	filter string `validate:"required"`
+	Filter string `validate:"required"`
 }
 
 type AuthCreateOptions struct {
-	object UserObject `validate:"required"`
+	Object UserObject `validate:"required"`
 }
 
 type AuthUpdateOptions struct {
-	uid    string     `validate:"required"`
-	object UserObject `validate:"required"`
+	UID    string     `validate:"required"`
+	Object UserObject `validate:"required"`
 }
 
 type AuthListOptions struct {
-	number int
-	token  string
+	Number int
+	Token  string
 }
 
 type UserObject struct {
-	uid           string
-	email         string
-	emailVerified bool
-	phoneNumber   string
-	password      string
-	displayName   string
-	photoURL      string
-	disabled      bool
+	UID           string
+	Email         string
+	EmailVerified bool
+	PhoneNumber   string
+	Password      string
+	DisplayName   string
+	PhotoURL      string
+	Disabled      bool
 }
 
 func (a *AuthOperationRunner) run() (common.RuntimeResult, error) {
@@ -115,11 +115,11 @@ func (a *AuthOperationRunner) query() (common.RuntimeResult, error) {
 	var user *auth.UserRecord
 	switch a.operation {
 	case AUTH_UID_OP:
-		user, err = client.GetUser(ctx, queryOptions.filter)
+		user, err = client.GetUser(ctx, queryOptions.Filter)
 	case AUTH_EMAIL_OP:
-		user, err = client.GetUserByEmail(ctx, queryOptions.filter)
+		user, err = client.GetUserByEmail(ctx, queryOptions.Filter)
 	case AUTH_PHOME_OP:
-		user, err = client.GetUserByPhoneNumber(ctx, queryOptions.filter)
+		user, err = client.GetUserByPhoneNumber(ctx, queryOptions.Filter)
 	default:
 		err = errors.New("unsupported operation")
 	}
@@ -145,17 +145,17 @@ func (a *AuthOperationRunner) create() (common.RuntimeResult, error) {
 		return common.RuntimeResult{Success: false}, err
 	}
 	params := &auth.UserToCreate{}
-	if createOptions.object.uid != "" {
-		params.UID(createOptions.object.uid)
+	if createOptions.Object.UID != "" {
+		params.UID(createOptions.Object.UID)
 	}
 	params.
-		Email(createOptions.object.email).
-		EmailVerified(createOptions.object.emailVerified).
-		PhoneNumber(createOptions.object.phoneNumber).
-		Password(createOptions.object.password).
-		DisplayName(createOptions.object.displayName).
-		PhotoURL(createOptions.object.photoURL).
-		Disabled(createOptions.object.disabled)
+		Email(createOptions.Object.Email).
+		EmailVerified(createOptions.Object.EmailVerified).
+		PhoneNumber(createOptions.Object.PhoneNumber).
+		Password(createOptions.Object.Password).
+		DisplayName(createOptions.Object.DisplayName).
+		PhotoURL(createOptions.Object.PhotoURL).
+		Disabled(createOptions.Object.Disabled)
 
 	user, err := client.CreateUser(ctx, params)
 
@@ -181,15 +181,15 @@ func (a *AuthOperationRunner) update() (common.RuntimeResult, error) {
 	}
 	params := &auth.UserToUpdate{}
 	params.
-		Email(updateOptions.object.email).
-		EmailVerified(updateOptions.object.emailVerified).
-		PhoneNumber(updateOptions.object.phoneNumber).
-		Password(updateOptions.object.password).
-		DisplayName(updateOptions.object.displayName).
-		PhotoURL(updateOptions.object.photoURL).
-		Disabled(updateOptions.object.disabled)
+		Email(updateOptions.Object.Email).
+		EmailVerified(updateOptions.Object.EmailVerified).
+		PhoneNumber(updateOptions.Object.PhoneNumber).
+		Password(updateOptions.Object.Password).
+		DisplayName(updateOptions.Object.DisplayName).
+		PhotoURL(updateOptions.Object.PhotoURL).
+		Disabled(updateOptions.Object.Disabled)
 
-	user, err := client.UpdateUser(ctx, updateOptions.uid, params)
+	user, err := client.UpdateUser(ctx, updateOptions.UID, params)
 
 	return common.RuntimeResult{Success: true, Rows: []map[string]interface{}{{"user": user}}}, err
 }
@@ -212,7 +212,7 @@ func (a *AuthOperationRunner) delete() (common.RuntimeResult, error) {
 		return common.RuntimeResult{Success: false}, err
 	}
 
-	err = client.DeleteUser(ctx, deleteOptions.filter)
+	err = client.DeleteUser(ctx, deleteOptions.Filter)
 
 	return common.RuntimeResult{Success: true}, err
 }
@@ -236,9 +236,9 @@ func (a *AuthOperationRunner) list() (common.RuntimeResult, error) {
 	}
 
 	pageSize := 1000
-	iter := client.Users(ctx, listOptions.token)
-	if listOptions.number > 0 {
-		pageSize = listOptions.number
+	iter := client.Users(ctx, listOptions.Token)
+	if listOptions.Number > 0 {
+		pageSize = listOptions.Number
 	}
 	pager := iterator.NewPager(iter, pageSize, "")
 	var users []*auth.ExportedUserRecord
