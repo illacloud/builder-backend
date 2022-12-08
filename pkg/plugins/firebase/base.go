@@ -16,7 +16,7 @@ package firebase
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/json"
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/mitchellh/mapstructure"
@@ -29,11 +29,11 @@ func (f *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 	}
 
 	// build firebase service account
-	saBytes, err := base64.StdEncoding.DecodeString(f.ResourceOpts.PrivateKey)
+	privateKey, err := json.Marshal(f.ResourceOpts.PrivateKey)
 	if err != nil {
 		return nil, err
 	}
-	sa := option.WithCredentialsJSON(saBytes)
+	sa := option.WithCredentialsJSON(privateKey)
 
 	// build firebase config for realtime database
 	config := &firebase.Config{DatabaseURL: f.ResourceOpts.DatabaseURL}
