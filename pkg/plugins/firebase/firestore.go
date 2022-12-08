@@ -19,12 +19,12 @@ import (
 	"errors"
 	"strings"
 
-	"cloud.google.com/go/firestore"
-	"github.com/go-playground/validator/v10"
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
-	"github.com/mitchellh/mapstructure"
 
+	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go/v4"
+	"github.com/go-playground/validator/v10"
+	"github.com/mitchellh/mapstructure"
 )
 
 const (
@@ -45,7 +45,7 @@ type FirestoreOperationRunner struct {
 
 type FSQueryOptions struct {
 	Collection     string `validate:"required"`
-	CollectionType string `validate:"oneof=select, input"`
+	CollectionType string `validate:"oneof=select input"`
 	Where          []QueryCondition
 	Limit          int
 	OrderBy        string

@@ -16,7 +16,6 @@ package firebase
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
@@ -40,8 +39,8 @@ type DBOperationRunner struct {
 }
 
 type DBOptions struct {
-	Ref    string `validate:"required"`
-	Object string
+	Ref    string
+	Object map[string]interface{}
 }
 
 func (d *DBOperationRunner) run() (common.RuntimeResult, error) {
@@ -82,12 +81,12 @@ func (d *DBOperationRunner) query() (common.RuntimeResult, error) {
 	}
 	ref := client.NewRef(queryOptions.Ref)
 
-	res := make(map[string]interface{})
+	var res interface{}
 	if err := ref.Get(ctx, &res); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 
-	return common.RuntimeResult{Success: true, Rows: []map[string]interface{}{res}}, nil
+	return common.RuntimeResult{Success: true, Rows: []map[string]interface{}{{"result": res}}}, nil
 }
 
 func (d *DBOperationRunner) set() (common.RuntimeResult, error) {
@@ -109,11 +108,7 @@ func (d *DBOperationRunner) set() (common.RuntimeResult, error) {
 	}
 	ref := client.NewRef(setOptions.Ref)
 
-	res := make(map[string]interface{})
-	if err := json.Unmarshal([]byte(setOptions.Object), &res); err != nil {
-		return common.RuntimeResult{Success: false}, err
-	}
-	if err := ref.Set(ctx, &res); err != nil {
+	if err := ref.Set(ctx, &setOptions.Object); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 
@@ -139,11 +134,7 @@ func (d *DBOperationRunner) update() (common.RuntimeResult, error) {
 	}
 	ref := client.NewRef(updateOptions.Ref)
 
-	res := make(map[string]interface{})
-	if err := json.Unmarshal([]byte(updateOptions.Object), &res); err != nil {
-		return common.RuntimeResult{Success: false}, err
-	}
-	if err := ref.Update(ctx, res); err != nil {
+	if err := ref.Update(ctx, updateOptions.Object); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 
@@ -172,11 +163,8 @@ func (d *DBOperationRunner) append() (common.RuntimeResult, error) {
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
-	res := make(map[string]interface{})
-	if err := json.Unmarshal([]byte(appendOptions.Object), &res); err != nil {
-		return common.RuntimeResult{Success: false}, err
-	}
-	if err := newRef.Set(ctx, &res); err != nil {
+
+	if err := newRef.Set(ctx, &appendOptions.Object); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 
