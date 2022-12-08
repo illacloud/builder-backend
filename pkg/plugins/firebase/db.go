@@ -40,8 +40,8 @@ type DBOperationRunner struct {
 }
 
 type DBOptions struct {
-	ref    string `validate:"required"`
-	object string
+	Ref    string `validate:"required"`
+	Object string
 }
 
 func (d *DBOperationRunner) run() (common.RuntimeResult, error) {
@@ -80,7 +80,7 @@ func (d *DBOperationRunner) query() (common.RuntimeResult, error) {
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
-	ref := client.NewRef(queryOptions.ref)
+	ref := client.NewRef(queryOptions.Ref)
 
 	res := make(map[string]interface{})
 	if err := ref.Get(ctx, &res); err != nil {
@@ -107,10 +107,10 @@ func (d *DBOperationRunner) set() (common.RuntimeResult, error) {
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
-	ref := client.NewRef(setOptions.ref)
+	ref := client.NewRef(setOptions.Ref)
 
 	res := make(map[string]interface{})
-	if err := json.Unmarshal([]byte(setOptions.object), &res); err != nil {
+	if err := json.Unmarshal([]byte(setOptions.Object), &res); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 	if err := ref.Set(ctx, &res); err != nil {
@@ -137,10 +137,10 @@ func (d *DBOperationRunner) update() (common.RuntimeResult, error) {
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
-	ref := client.NewRef(updateOptions.ref)
+	ref := client.NewRef(updateOptions.Ref)
 
 	res := make(map[string]interface{})
-	if err := json.Unmarshal([]byte(updateOptions.object), &res); err != nil {
+	if err := json.Unmarshal([]byte(updateOptions.Object), &res); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 	if err := ref.Update(ctx, res); err != nil {
@@ -167,13 +167,13 @@ func (d *DBOperationRunner) append() (common.RuntimeResult, error) {
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
-	ref := client.NewRef(appendOptions.ref)
+	ref := client.NewRef(appendOptions.Ref)
 	newRef, err := ref.Push(ctx, nil)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 	res := make(map[string]interface{})
-	if err := json.Unmarshal([]byte(appendOptions.object), &res); err != nil {
+	if err := json.Unmarshal([]byte(appendOptions.Object), &res); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 	if err := newRef.Set(ctx, &res); err != nil {
