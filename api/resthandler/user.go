@@ -51,7 +51,7 @@ type SignUpRequest struct {
 	Nickname          string `json:"nickname" validate:"required"`
 	Email             string `json:"email" validate:"required"`
 	Password          string `json:"password" validate:"required"`
-	Language          string `json:"language" validate:"oneof=zh-CN en-US"`
+	Language          string `json:"language" validate:"oneof=zh-CN en-US ko-KR ja-JP"`
 	IsSubscribed      bool   `json:"isSubscribed"`
 	VerificationCode  string `json:"verificationCode"`
 	VerificationToken string `json:"verificationToken"`
