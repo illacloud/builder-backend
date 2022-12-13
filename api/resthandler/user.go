@@ -157,7 +157,7 @@ func (impl UserRestHandlerImpl) SignUp(c *gin.Context) {
 	}
 
 	// validate verification code
-	if os.Getenv("ILLA_DEPLOY_MODE") != "self-host" {
+	if os.Getenv("ILLA_DEPLOY_MODE") == "cloud" {
 		validCode, err := impl.userService.ValidateVerificationCode(payload.VerificationCode, payload.VerificationToken,
 			payload.Email, "signup")
 		if err != nil || !validCode {
