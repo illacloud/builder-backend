@@ -21,9 +21,9 @@ const (
 )
 
 type Resource struct {
-	DatabaseURL string `validate:"required,url"`
-	ProjectID   string `validate:"required"`
-	PrivateKey  string `validate:"required"`
+	DatabaseURL string                 `validate:"required,url"`
+	ProjectID   string                 `validate:"required"`
+	PrivateKey  map[string]interface{} `validate:"required"`
 }
 
 type Action struct {

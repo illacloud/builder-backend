@@ -51,7 +51,7 @@ type SignUpRequest struct {
 	Nickname          string `json:"nickname" validate:"required"`
 	Email             string `json:"email" validate:"required"`
 	Password          string `json:"password" validate:"required"`
-	Language          string `json:"language" validate:"oneof=zh-CN en-US"`
+	Language          string `json:"language" validate:"oneof=zh-CN en-US ko-KR ja-JP"`
 	IsSubscribed      bool   `json:"isSubscribed"`
 	VerificationCode  string `json:"verificationCode"`
 	VerificationToken string `json:"verificationToken"`
@@ -157,7 +157,7 @@ func (impl UserRestHandlerImpl) SignUp(c *gin.Context) {
 	}
 
 	// validate verification code
-	if os.Getenv("ILLA_DEPLOY_MODE") != "self-host" {
+	if os.Getenv("ILLA_DEPLOY_MODE") == "cloud" {
 		validCode, err := impl.userService.ValidateVerificationCode(payload.VerificationCode, payload.VerificationToken,
 			payload.Email, "signup")
 		if err != nil || !validCode {

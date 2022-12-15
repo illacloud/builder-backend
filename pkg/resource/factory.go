@@ -15,6 +15,7 @@
 package resource
 
 import (
+	"github.com/illa-family/builder-backend/pkg/plugins/clickhouse"
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
 	"github.com/illa-family/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illa-family/builder-backend/pkg/plugins/firebase"
@@ -40,6 +41,7 @@ var (
 	SMTP_RESOURCE          = "smtp"
 	SUPABASEDB_RESOURCE    = "supabasedb"
 	FIREBASE_RESOURCE      = "firebase"
+	CLICKHOUSE_RESOURCE    = "clickhouse"
 )
 
 type AbstractResourceFactory interface {
@@ -79,6 +81,9 @@ func (f *Factory) Generate() common.DataConnector {
 	case FIREBASE_RESOURCE:
 		firebaseRsc := &firebase.Connector{}
 		return firebaseRsc
+	case CLICKHOUSE_RESOURCE:
+		clickhouseRsc := &clickhouse.Connector{}
+		return clickhouseRsc
 	default:
 		return nil
 	}
