@@ -15,6 +15,7 @@
 package action
 
 import (
+	"github.com/illa-family/builder-backend/pkg/plugins/clickhouse"
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
 	"github.com/illa-family/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illa-family/builder-backend/pkg/plugins/firebase"
@@ -41,6 +42,7 @@ var (
 	SMTP_ACTION          = "smtp"
 	SUPABASEDB_ACTION    = "supabasedb"
 	FIREBASE_ACTION      = "firebase"
+	CLICKHOUSE_ACTION    = "clickhouse"
 )
 
 type AbstractActionFactory interface {
@@ -80,6 +82,9 @@ func (f *Factory) Build() common.DataConnector {
 	case FIREBASE_ACTION:
 		firebaseAction := &firebase.Connector{}
 		return firebaseAction
+	case CLICKHOUSE_ACTION:
+		clickhouseAction := &clickhouse.Connector{}
+		return clickhouseAction
 	default:
 		return nil
 	}
