@@ -19,6 +19,7 @@ import (
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
 	"github.com/illa-family/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illa-family/builder-backend/pkg/plugins/firebase"
+	"github.com/illa-family/builder-backend/pkg/plugins/graphql"
 	"github.com/illa-family/builder-backend/pkg/plugins/mongodb"
 	"github.com/illa-family/builder-backend/pkg/plugins/mysql"
 	"github.com/illa-family/builder-backend/pkg/plugins/postgresql"
@@ -43,6 +44,7 @@ var (
 	SUPABASEDB_ACTION    = "supabasedb"
 	FIREBASE_ACTION      = "firebase"
 	CLICKHOUSE_ACTION    = "clickhouse"
+	GRAPHQL_ACTION       = "graphql"
 )
 
 type AbstractActionFactory interface {
@@ -85,6 +87,9 @@ func (f *Factory) Build() common.DataConnector {
 	case CLICKHOUSE_ACTION:
 		clickhouseAction := &clickhouse.Connector{}
 		return clickhouseAction
+	case GRAPHQL_ACTION:
+		graphqlAction := &graphql.Connector{}
+		return graphqlAction
 	default:
 		return nil
 	}
