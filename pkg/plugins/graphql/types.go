@@ -15,11 +15,11 @@
 package graphql
 
 type Resource struct {
-	BaseURL              string
+	BaseURL              string `validate:"required"`
 	URLParams            []map[string]string
 	Headers              []map[string]string
 	Cookies              []map[string]string
-	Authentication       string
+	Authentication       string `validate:"required,oneof=none basic bearer apiKey"`
 	AuthContent          map[string]string
 	DisableIntrospection bool
 }

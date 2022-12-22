@@ -65,7 +65,9 @@ func (g *Connector) TestConnection(resourceOptions map[string]interface{}) (comm
 		return common.ConnectionResult{Success: false}, err
 	}
 
-	var queryParams, headers, cookies map[string]string
+	queryParams := make(map[string]string)
+	headers := make(map[string]string)
+	cookies := make(map[string]string)
 	for _, param := range g.ResourceOpts.URLParams {
 		if param["key"] != "" {
 			queryParams[param["key"]] = param["value"]
@@ -115,7 +117,9 @@ func (g *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		return common.RuntimeResult{Success: false}, err
 	}
 
-	var queryParams, headers, cookies map[string]string
+	queryParams := make(map[string]string)
+	headers := make(map[string]string)
+	cookies := make(map[string]string)
 	for _, param := range g.ResourceOpts.URLParams {
 		if param["key"] != "" {
 			queryParams[param["key"]] = param["value"]
@@ -139,7 +143,7 @@ func (g *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		}
 	}
 
-	var vars map[string]interface{}
+	vars := make(map[string]interface{})
 	for _, variable := range g.ActionOpts.Variables {
 		if variable["key"] != "" {
 			vars[variable["key"].(string)] = variable["value"]
