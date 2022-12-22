@@ -12,18 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package redis
+package graphql
 
-type Options struct {
-	Host             string `validate:"required"`
-	Port             string `validate:"required"`
-	DatabaseIndex    int    `validate:"gte=0"`
-	DatabaseUsername string
-	DatabasePassword string
-	SSL              bool
+type Resource struct {
+	BaseURL              string
+	URLParams            []map[string]string
+	Headers              []map[string]string
+	Cookies              []map[string]string
+	Authentication       string
+	AuthContent          map[string]string
+	DisableIntrospection bool
 }
 
-type Command struct {
-	Mode  string `validate:"required,oneof=select raw"`
-	Query string
+type Action struct {
+	Query     string
+	Variables []map[string]interface{}
+	Headers   []map[string]string
 }

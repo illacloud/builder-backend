@@ -12,18 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package redis
+package firebase
 
-type Options struct {
-	Host             string `validate:"required"`
-	Port             string `validate:"required"`
-	DatabaseIndex    int    `validate:"gte=0"`
-	DatabaseUsername string
-	DatabasePassword string
-	SSL              bool
+const (
+	AUTH_SERVICE      = "auth"
+	DATABASE_SERVICE  = "database"
+	FIRESTORE_SERVICE = "firestore"
+)
+
+type Resource struct {
+	DatabaseURL string                 `validate:"required,url"`
+	ProjectID   string                 `validate:"required"`
+	PrivateKey  map[string]interface{} `validate:"required"`
 }
 
-type Command struct {
-	Mode  string `validate:"required,oneof=select raw"`
-	Query string
+type Action struct {
+	Service   string                 `validate:"required,oneof=firestore database auth"`
+	Operation string                 `validate:"required"`
+	Options   map[string]interface{} `validate:"required"`
 }

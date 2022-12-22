@@ -12,18 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package redis
+package clickhouse
 
-type Options struct {
-	Host             string `validate:"required"`
-	Port             string `validate:"required"`
-	DatabaseIndex    int    `validate:"gte=0"`
-	DatabaseUsername string
-	DatabasePassword string
-	SSL              bool
+type Resource struct {
+	Host         string `validate:"required"`
+	Port         int    `validate:"gt=0"`
+	DatabaseName string `validate:"required"`
+	Username     string
+	Password     string
+	SSL          SSLOptions `validate:"required"`
 }
 
-type Command struct {
-	Mode  string `validate:"required,oneof=select raw"`
+type SSLOptions struct {
+	SSL        bool
+	SelfSigned bool
+	CACert     string `validate:"required_unless=SelfSigned false"`
+	PrivateKey string
+	ClientCert string
+}
+
+type Action struct {
 	Query string
+	Mode  string `validate:"required,oneof=gui sql"`
 }
