@@ -19,6 +19,7 @@ import (
 	"github.com/illa-family/builder-backend/pkg/plugins/common"
 	"github.com/illa-family/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illa-family/builder-backend/pkg/plugins/firebase"
+	"github.com/illa-family/builder-backend/pkg/plugins/graphql"
 	"github.com/illa-family/builder-backend/pkg/plugins/mongodb"
 	"github.com/illa-family/builder-backend/pkg/plugins/mysql"
 	"github.com/illa-family/builder-backend/pkg/plugins/postgresql"
@@ -42,6 +43,7 @@ var (
 	SUPABASEDB_RESOURCE    = "supabasedb"
 	FIREBASE_RESOURCE      = "firebase"
 	CLICKHOUSE_RESOURCE    = "clickhouse"
+	GRAPHQL_RESOURCE       = "graphql"
 )
 
 type AbstractResourceFactory interface {
@@ -84,6 +86,9 @@ func (f *Factory) Generate() common.DataConnector {
 	case CLICKHOUSE_RESOURCE:
 		clickhouseRsc := &clickhouse.Connector{}
 		return clickhouseRsc
+	case GRAPHQL_RESOURCE:
+		graphqlRsc := &graphql.Connector{}
+		return graphqlRsc
 	default:
 		return nil
 	}
