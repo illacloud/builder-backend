@@ -17,10 +17,10 @@ package wireset
 import (
 	"github.com/google/wire"
 
-	"github.com/illa-family/builder-backend/api/resthandler"
-	"github.com/illa-family/builder-backend/api/router"
-	"github.com/illa-family/builder-backend/internal/repository"
-	"github.com/illa-family/builder-backend/pkg/user"
+	"github.com/illacloud/builder-backend/api/resthandler"
+	"github.com/illacloud/builder-backend/api/router"
+	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/builder-backend/pkg/user"
 )
 
 var UserWireSet = wire.NewSet(
