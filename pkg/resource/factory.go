@@ -15,18 +15,18 @@
 package resource
 
 import (
-	"github.com/illa-family/builder-backend/pkg/plugins/clickhouse"
-	"github.com/illa-family/builder-backend/pkg/plugins/common"
-	"github.com/illa-family/builder-backend/pkg/plugins/elasticsearch"
-	"github.com/illa-family/builder-backend/pkg/plugins/firebase"
-	"github.com/illa-family/builder-backend/pkg/plugins/graphql"
-	"github.com/illa-family/builder-backend/pkg/plugins/mongodb"
-	"github.com/illa-family/builder-backend/pkg/plugins/mysql"
-	"github.com/illa-family/builder-backend/pkg/plugins/postgresql"
-	"github.com/illa-family/builder-backend/pkg/plugins/redis"
-	"github.com/illa-family/builder-backend/pkg/plugins/restapi"
-	"github.com/illa-family/builder-backend/pkg/plugins/s3"
-	"github.com/illa-family/builder-backend/pkg/plugins/smtp"
+	"github.com/illacloud/builder-backend/pkg/plugins/clickhouse"
+	"github.com/illacloud/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/builder-backend/pkg/plugins/elasticsearch"
+	"github.com/illacloud/builder-backend/pkg/plugins/firebase"
+	"github.com/illacloud/builder-backend/pkg/plugins/graphql"
+	"github.com/illacloud/builder-backend/pkg/plugins/mongodb"
+	"github.com/illacloud/builder-backend/pkg/plugins/mysql"
+	"github.com/illacloud/builder-backend/pkg/plugins/postgresql"
+	"github.com/illacloud/builder-backend/pkg/plugins/redis"
+	"github.com/illacloud/builder-backend/pkg/plugins/restapi"
+	"github.com/illacloud/builder-backend/pkg/plugins/s3"
+	"github.com/illacloud/builder-backend/pkg/plugins/smtp"
 )
 
 var (

@@ -15,7 +15,7 @@
 package filter
 
 import (
-	ws "github.com/illa-family/builder-backend/internal/websocket"
+	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
 
 func SignalGlobalBroadcastOnly(hub *ws.Hub, message *ws.Message) error {
