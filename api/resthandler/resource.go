@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/illa-family/builder-backend/pkg/resource"
+	"github.com/illacloud/builder-backend/pkg/resource"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
