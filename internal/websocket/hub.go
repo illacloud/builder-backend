@@ -19,7 +19,7 @@ import (
 	"github.com/illacloud/builder-backend/pkg/resource"
 	"github.com/illacloud/builder-backend/pkg/state"
 	"github.com/illacloud/builder-backend/pkg/user"
-	
+
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -41,6 +41,9 @@ type Hub struct {
 	// unregister requests from the clients.
 	Unregister chan *Client
 
+	// InRoomUsers
+	InRoomUsersMap map[int]*InRoomUsers // map[roomID]*InRoomUsers
+
 	// impl
 	TreeStateServiceImpl *state.TreeStateServiceImpl
 	KVStateServiceImpl   *state.KVStateServiceImpl
@@ -52,11 +55,12 @@ type Hub struct {
 
 func NewHub() *Hub {
 	return &Hub{
-		Clients:    make(map[uuid.UUID]*Client),
-		Broadcast:  make(chan []byte),
-		OnMessage:  make(chan *Message),
-		Register:   make(chan *Client),
-		Unregister: make(chan *Client),
+		Clients:        make(map[uuid.UUID]*Client),
+		Broadcast:      make(chan []byte),
+		OnMessage:      make(chan *Message),
+		Register:       make(chan *Client),
+		Unregister:     make(chan *Client),
+		InRoomUsersMap: make(map[int]*InRoomUsers),
 	}
 }
 
@@ -84,6 +88,15 @@ func (hub *Hub) SetAuthenticatorImpl(ai *user.AuthenticatorImpl) {
 	hub.AuthenticatorImpl = ai
 }
 
+func (hub *Hub) GetInRoomUsersByRoomID(roomID int) *InRoomUsers {
+	inRoomUsers, hit := hub.InRoomUsersMap[roomID]
+	if !hit {
+		hub.InRoomUsersMap[roomID] = NewInRoomUsers(roomID)
+		return hub.InRoomUsersMap[roomID]
+	}
+	return inRoomUsers
+}
+
 func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client) {
 	if !message.NeedBroadcast {
 		return
@@ -95,10 +108,31 @@ func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client)
 		Data:         nil,
 	}
 	feedbyte, _ := feedOtherClient.Serialization()
+
 	for clientid, client := range hub.Clients {
 		if clientid == currentClient.ID {
 			continue
 		}
+		if client.APPID != currentClient.APPID {
+			continue
+		}
+		client.Send <- feedbyte
+	}
+}
+
+func (hub *Hub) BroadcastToRoomAllClients(message *Message, currentClient *Client) {
+	if !message.NeedBroadcast {
+		return
+	}
+	feedOtherClient := Feedback{
+		ErrorCode:    ERROR_CODE_BROADCAST,
+		ErrorMessage: "",
+		Broadcast:    message.Broadcast,
+		Data:         nil,
+	}
+	feedbyte, _ := feedOtherClient.Serialization()
+
+	for _, client := range hub.Clients {
 		if client.APPID != currentClient.APPID {
 			continue
 		}
