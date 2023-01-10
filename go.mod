@@ -24,6 +24,7 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/jackc/pgtype v1.13.0
 	github.com/jackc/pgx/v5 v5.2.0
+	github.com/microsoft/go-mssqldb v0.19.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.8.1
@@ -70,6 +71,8 @@ require (
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
+	github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe // indirect
+	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
@@ -91,7 +94,7 @@ require (
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
+	github.com/montanaflynn/stats v0.6.6 // indirect
 	github.com/paulmach/orb v0.7.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
