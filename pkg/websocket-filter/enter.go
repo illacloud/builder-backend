@@ -16,7 +16,6 @@ package filter
 
 import (
 	"errors"
-
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 	"github.com/illacloud/builder-backend/pkg/user"
 )
@@ -37,7 +36,7 @@ func SignalEnter(hub *ws.Hub, message *ws.Message, ai *user.AuthenticatorImpl) e
 		return err
 	}
 	token, _ := authToken["authToken"].(string)
-
+	
 	// convert authToken to uid
 	userID, userUID, extractErr := ai.ExtractUserIDFromToken(token)
 	if extractErr != nil {
@@ -54,21 +53,19 @@ func SignalEnter(hub *ws.Hub, message *ws.Message, ai *user.AuthenticatorImpl) e
 	// assign logged in and mapped user id
 	currentClient.IsLoggedIn = true
 	currentClient.MappedUserID = userID
-	currentClient.Feedback(message, ws.ERROR_CODE_LOGGEDIN, nil)
 
 	// broadcast in room users
 	inRoomUsers := hub.GetInRoomUsersByRoomID(currentClient.APPID)
 	inRoomUsers.EnterRoom(nowUser)
 	message.SetBroadcastPayload(inRoomUsers.FetchAllInRoomUsers())
 	message.RewriteBroadcast()
-	hub.BroadcastToOtherClients(message, currentClient)
+	hub.BroadcastToRoomAllClients(message, currentClient)
 
-	// broadcast attachedn components users
+	// broadcast attached components users
 	message.SetBroadcastType(ws.BROADCAST_TYPE_ATTACH_COMPONENT)
 	message.SetBroadcastPayload(inRoomUsers.FetchAllAttachedUsers())
 	message.RewriteBroadcast()
-	hub.BroadcastToOtherClients(message, currentClient)
-
+	hub.BroadcastToRoomAllClients(message, currentClient)
 	return nil
 
 }

@@ -108,10 +108,31 @@ func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client)
 		Data:         nil,
 	}
 	feedbyte, _ := feedOtherClient.Serialization()
+
 	for clientid, client := range hub.Clients {
 		if clientid == currentClient.ID {
 			continue
 		}
+		if client.APPID != currentClient.APPID {
+			continue
+		}
+		client.Send <- feedbyte
+	}
+}
+
+func (hub *Hub) BroadcastToRoomAllClients(message *Message, currentClient *Client) {
+	if !message.NeedBroadcast {
+		return
+	}
+	feedOtherClient := Feedback{
+		ErrorCode:    ERROR_CODE_BROADCAST,
+		ErrorMessage: "",
+		Broadcast:    message.Broadcast,
+		Data:         nil,
+	}
+	feedbyte, _ := feedOtherClient.Serialization()
+
+	for _, client := range hub.Clients {
 		if client.APPID != currentClient.APPID {
 			continue
 		}

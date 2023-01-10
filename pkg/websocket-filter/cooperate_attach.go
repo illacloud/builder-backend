@@ -23,18 +23,22 @@ import (
 func SignalCooperateAttach(hub *ws.Hub, message *ws.Message) error {
 	currentClient := hub.Clients[message.ClientID]
 
-	// broadcast in room users
+	// attach components
 	inRoomUsers := hub.GetInRoomUsersByRoomID(currentClient.APPID)
-	displayNames, assertCorrectly := message.Broadcast.Payload.([]string)
-	if !assertCorrectly {
-		return errors.New("user input assert failed with signal cooperate attach.")
+	displayNames := make([]string, 0)
+	for _, displayNameInterface := range message.Payload {
+		displayName, assertCorrectly := displayNameInterface.(string)
+		if !assertCorrectly {
+			return errors.New("user input assert failed with signal cooperate attach.")
+		}
+		displayNames = append(displayNames, displayName)
 	}
 	inRoomUsers.AttachComponent(currentClient.MappedUserID, displayNames)
 
-	// broadcast attachedn components users
+	// broadcast attached components users
 	message.SetBroadcastType(ws.BROADCAST_TYPE_ATTACH_COMPONENT)
-	message.SetBroadcastPayload(inRoomUsers.FetchAllAttachedUsers())
 	message.RewriteBroadcast()
+	message.SetBroadcastPayload(inRoomUsers.FetchAllAttachedUsers())
 	hub.BroadcastToOtherClients(message, currentClient)
 
 	return nil

@@ -4,12 +4,12 @@ import (
 	"github.com/illacloud/builder-backend/internal/repository"
 )
 
-const DEFAULT_ROOM_SLOT = 4
+const DEFAULT_ROOM_SLOT = 0
 
 type InRoomUsers struct {
 	RoomID           int
-	All              []*UserForCooperateFeedback // []*UserForCooperateFeedback
-	AllUsers         map[int]*UserForCooperateFeedback
+	All              []*UserForCooperateFeedback            // []*UserForCooperateFeedback
+	AllUsers         map[int]*UserForCooperateFeedback      // map[user.ID]*UserForCooperateFeedback
 	AttachedUserList map[string][]*UserForCooperateFeedback // map[component.DisplayName][]*UserForCooperateFeedback
 }
 
@@ -17,13 +17,19 @@ func NewInRoomUsers(roomID int) *InRoomUsers {
 	iru := &InRoomUsers{}
 	iru.All = make([]*UserForCooperateFeedback, DEFAULT_ROOM_SLOT)
 	iru.AllUsers = make(map[int]*UserForCooperateFeedback)
+	iru.AttachedUserList = make(map[string][]*UserForCooperateFeedback)
 	return iru
 }
 
 func (iru *InRoomUsers) EnterRoom(user *repository.User) {
 	fuser := NewUserForCooperateFeedbackByUser(user)
+	// check if user already in room
+	if _, hit := iru.AllUsers[fuser.ID]; hit {
+		return
+	}
 	iru.All = append(iru.All, fuser)
 	iru.AllUsers[fuser.ID] = fuser
+
 }
 
 func (iru *InRoomUsers) LeaveRoom(userID int) {
@@ -51,16 +57,19 @@ func (iru *InRoomUsers) AttachComponent(userID int, componentDisplayNames []stri
 	}
 	for _, displayName := range componentDisplayNames {
 		// check if components not recorded, insert it
-		if _, hit := iru.AttachedUserList[displayName]; !hit {
-			iru.AttachedUserList[displayName] = make([]*UserForCooperateFeedback, DEFAULT_ROOM_SLOT)
+		if _, alreadyAttached := fuser.AttachedComponents[displayName]; !alreadyAttached {
+			iru.AttachedUserList[displayName] = append(iru.AttachedUserList[displayName], fuser)
 		}
-		iru.AttachedUserList[displayName] = append(iru.AttachedUserList[displayName], fuser)
 		// record user attached components
 		fuser.AttachedComponents[displayName] = displayName
 	}
 }
 
 func (iru *InRoomUsers) DisattachComponent(userID int, componentDisplayNames []string) {
+	fuser, hit := iru.AllUsers[userID]
+	if !hit { // invalied user input, just ignore
+		return
+	}
 	for _, displayName := range componentDisplayNames {
 		if _, hit := iru.AttachedUserList[displayName]; !hit { // skip user unavaliable input
 			continue
@@ -72,15 +81,30 @@ func (iru *InRoomUsers) DisattachComponent(userID int, componentDisplayNames []s
 				break
 			}
 		}
+		// remove fuser attached components
+		delete(fuser.AttachedComponents, displayName)
 	}
 }
 
-func (iru *InRoomUsers) FetchAllInRoomUsers() []*UserForCooperateFeedback {
-	return iru.All
+type InRoomUsersFeedback struct {
+	InRoomUsers []*UserForCooperateFeedback `json:"inRoomUsers"`
 }
 
-func (iru *InRoomUsers) FetchAllAttachedUsers() map[string][]*UserForCooperateFeedback {
-	return iru.AttachedUserList
+func (iru *InRoomUsers) FetchAllInRoomUsers() *InRoomUsersFeedback {
+	return &InRoomUsersFeedback{
+		InRoomUsers: iru.All,
+	}
+}
+
+type ComponentAttachedUsers struct {
+	ComponentAttachedUsers map[string][]*UserForCooperateFeedback `json:"componentAttachedUsers"`
+}
+
+func (iru *InRoomUsers) FetchAllAttachedUsers() *ComponentAttachedUsers {
+	return &ComponentAttachedUsers{
+		ComponentAttachedUsers: iru.AttachedUserList,
+	}
+	
 }
 
 type UserForCooperateFeedback struct {

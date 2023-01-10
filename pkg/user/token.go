@@ -38,7 +38,7 @@ type Authenticator interface {
 	ValidateAccessToken(accessToken string) (bool, error)
 	ExtractUserIDFromToken(accessToken string) (int, uuid.UUID, error)
 	ValidateUser(id int, uid uuid.UUID) (bool, error)
-	ValidateUserAndGetDetail(id int, uid uuid.UUID) (bool, error, *repository.User)
+	ValidateUserAndGetDetail(id int, uid uuid.UUID) (bool, *repository.User, error)
 }
 
 type AuthenticatorImpl struct {

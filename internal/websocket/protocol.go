@@ -16,7 +16,6 @@ package ws
 
 import (
 	"encoding/json"
-
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -57,6 +56,7 @@ const TARGET_ACTION = 8             // only for broadcast
 
 // for broadcast rewrite
 const BROADCAST_TYPE_SUFFIX = "/remote"
+const BROADCAST_TYPE_ENTER = "enter"
 const BROADCAST_TYPE_ATTACH_COMPONENT = "attachComponent"
 
 type Broadcast struct {
@@ -96,11 +96,15 @@ func (m *Message) SetSignal(s int) {
 }
 
 func (m *Message) SetBroadcastType(t string) {
-	m.Broadcast.Type = t
+	if m.Broadcast != nil {
+		m.Broadcast.Type = t
+	}
 }
 
 func (m *Message) SetBroadcastPayload(any interface{}) {
-	m.Broadcast.Payload = any
+	if m.Broadcast != nil {
+		m.Broadcast.Payload = any
+	}
 }
 
 func (m *Message) RewriteBroadcast() {
