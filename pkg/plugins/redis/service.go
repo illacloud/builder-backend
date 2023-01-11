@@ -21,7 +21,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/illa-family/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/builder-backend/pkg/plugins/common"
 )
 
 type Connector struct {

@@ -17,7 +17,7 @@ package repository
 import (
 	"time"
 
-	"github.com/illa-family/builder-backend/pkg/db"
+	"github.com/illacloud/builder-backend/pkg/db"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"

@@ -17,9 +17,9 @@ package main
 import (
 	"os"
 
-	"github.com/illa-family/builder-backend/api/router"
-	"github.com/illa-family/builder-backend/pkg/cors"
-	"github.com/illa-family/builder-backend/pkg/recovery"
+	"github.com/illacloud/builder-backend/api/router"
+	"github.com/illacloud/builder-backend/pkg/cors"
+	"github.com/illacloud/builder-backend/pkg/recovery"
 
 	"github.com/caarlos0/env"
 	"github.com/gin-gonic/gin"
@@ -62,7 +62,8 @@ func (server *Server) Start() {
 
 	gin.SetMode(server.cfg.ILLA_SERVER_MODE)
 
-	server.engine.Use(gin.CustomRecovery(recovery.CorsHandleRecovery))
+	corsHandleRecovery := recovery.CorsHandleRecovery()
+	server.engine.Use(gin.CustomRecovery(corsHandleRecovery))
 	server.engine.Use(cors.Cors())
 	server.restRouter.InitRouter(server.engine.Group("/api"))
 

@@ -22,7 +22,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
-	"github.com/illa-family/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/builder-backend/pkg/plugins/common"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -194,8 +194,12 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	case METHOD_GET:
 		resp, err := actionClient.SetQueryParams(actionURLParams).Get(baseURL + r.Action.URL)
 		body := make(map[string]interface{})
+		listBody := make([]map[string]interface{}, 0)
 		if err := json.Unmarshal(resp.Body(), &body); err == nil {
 			res.Rows = append(res.Rows, body)
+		}
+		if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
+			res.Rows = listBody
 		}
 		res.Extra["raw"] = resp.Body()
 		res.Extra["headers"] = resp.Header()
@@ -207,8 +211,12 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	case METHOD_POST:
 		resp, err := actionClient.SetQueryParams(actionURLParams).Post(baseURL + r.Action.URL)
 		body := make(map[string]interface{})
+		listBody := make([]map[string]interface{}, 0)
 		if err := json.Unmarshal(resp.Body(), &body); err == nil {
 			res.Rows = append(res.Rows, body)
+		}
+		if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
+			res.Rows = listBody
 		}
 		res.Extra["raw"] = resp.Body()
 		res.Extra["headers"] = resp.Header()
@@ -220,8 +228,12 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	case METHOD_PUT:
 		resp, err := actionClient.SetQueryParams(actionURLParams).Put(baseURL + r.Action.URL)
 		body := make(map[string]interface{})
+		listBody := make([]map[string]interface{}, 0)
 		if err := json.Unmarshal(resp.Body(), &body); err == nil {
 			res.Rows = append(res.Rows, body)
+		}
+		if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
+			res.Rows = listBody
 		}
 		res.Extra["raw"] = resp.Body()
 		res.Extra["headers"] = resp.Header()
@@ -233,8 +245,12 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	case METHOD_PATCH:
 		resp, err := actionClient.SetQueryParams(actionURLParams).Patch(baseURL + r.Action.URL)
 		body := make(map[string]interface{})
+		listBody := make([]map[string]interface{}, 0)
 		if err := json.Unmarshal(resp.Body(), &body); err == nil {
 			res.Rows = append(res.Rows, body)
+		}
+		if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
+			res.Rows = listBody
 		}
 		res.Extra["raw"] = resp.Body()
 		res.Extra["headers"] = resp.Header()
@@ -246,8 +262,12 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	case METHOD_DELETE:
 		resp, err := actionClient.SetQueryParams(actionURLParams).Delete(baseURL + r.Action.URL)
 		body := make(map[string]interface{})
+		listBody := make([]map[string]interface{}, 0)
 		if err := json.Unmarshal(resp.Body(), &body); err == nil {
 			res.Rows = append(res.Rows, body)
+		}
+		if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
+			res.Rows = listBody
 		}
 		res.Extra["raw"] = resp.Body()
 		res.Extra["headers"] = resp.Header()
