@@ -18,10 +18,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	cloudsdk "github.com/illacloud/builder-backend/internal/util/illacloudbackendsdk"
 )
 
 func JWTAuth(authenticator Authenticator) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// fetch content
 		accessToken := c.Request.Header["Authorization"]
 		var token string
 		if len(accessToken) != 1 {
@@ -29,6 +31,25 @@ func JWTAuth(authenticator Authenticator) gin.HandlerFunc {
 		} else {
 			token = accessToken[0]
 		}
+
+		// init deploy mode
+		deployMode := os.Getenv("ILLA_DEPLOY_MODE")
+		if deployMode == const.DEPLOY_MODE_CLOUD {
+			sdk, err := cloudsdk.NewIllaCloudSDK()
+			if err != nil {
+				c.AbortWithStatus(http.StatusInternalServerError)
+			}
+			validated, errInValidate := sdk.ValidateUserAccount(token)
+			if errInValidate != nil {
+				c.AbortWithStatus(http.StatusInternalServerError)
+			}
+			if !validated {
+				c.AbortWithStatus(http.StatusUnauthorized)
+			}
+			c.Next()
+		}
+
+		// local auth method
 		userID, userUID, extractErr := authenticator.ExtractUserIDFromToken(token)
 		validAccessToken, validaAccessErr := authenticator.ValidateAccessToken(token)
 		validUser, validUserErr := authenticator.ValidateUser(userID, userUID)
