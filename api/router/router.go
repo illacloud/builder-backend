@@ -50,10 +50,10 @@ func (r RESTRouter) InitRouter(router *gin.RouterGroup) {
 
 	authRouter := v1.Group("/auth")
 	userRouter := v1.Group("/users")
-	appRouter := v1.Group("/apps")
+	appRouter := v1.Group("/teams/:teamID/apps")
 	roomRouter := v1.Group("/room")
-	actionRouter := v1.Group("/apps/:app")
-	resourceRouter := v1.Group("/resources")
+	actionRouter := v1.Group("/teams/:teamID/apps/:app")
+	resourceRouter := v1.Group("/teams/:teamID/resources")
 
 	userRouter.Use(user.JWTAuth(r.Authenticator))
 	appRouter.Use(user.JWTAuth(r.Authenticator))
