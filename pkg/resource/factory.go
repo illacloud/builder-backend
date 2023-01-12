@@ -20,7 +20,9 @@ import (
 	"github.com/illacloud/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illacloud/builder-backend/pkg/plugins/firebase"
 	"github.com/illacloud/builder-backend/pkg/plugins/graphql"
+	"github.com/illacloud/builder-backend/pkg/plugins/huggingface"
 	"github.com/illacloud/builder-backend/pkg/plugins/mongodb"
+	"github.com/illacloud/builder-backend/pkg/plugins/mssql"
 	"github.com/illacloud/builder-backend/pkg/plugins/mysql"
 	"github.com/illacloud/builder-backend/pkg/plugins/postgresql"
 	"github.com/illacloud/builder-backend/pkg/plugins/redis"
@@ -44,6 +46,8 @@ var (
 	FIREBASE_RESOURCE      = "firebase"
 	CLICKHOUSE_RESOURCE    = "clickhouse"
 	GRAPHQL_RESOURCE       = "graphql"
+	MSSQL_RESOURCE         = "mssql"
+	HUGGINGFACE_RESOURCE   = "huggingface"
 )
 
 type AbstractResourceFactory interface {
@@ -89,6 +93,12 @@ func (f *Factory) Generate() common.DataConnector {
 	case GRAPHQL_RESOURCE:
 		graphqlRsc := &graphql.Connector{}
 		return graphqlRsc
+	case MSSQL_RESOURCE:
+		mssqlRsc := &mssql.Connector{}
+		return mssqlRsc
+	case HUGGINGFACE_RESOURCE:
+		hfRsc := &huggingface.Connector{}
+		return hfRsc
 	default:
 		return nil
 	}

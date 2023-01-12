@@ -15,28 +15,31 @@
 package filter
 
 import (
+	"errors"
+
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
 
-func SignalLeave(hub *ws.Hub, message *ws.Message) error {
+func SignalCooperateAttach(hub *ws.Hub, message *ws.Message) error {
 	currentClient := hub.Clients[message.ClientID]
 
-	// broadcast in room users
+	// attach components
 	inRoomUsers := hub.GetInRoomUsersByRoomID(currentClient.APPID)
-	inRoomUsers.LeaveRoom(currentClient.MappedUserID)
-	message.SetBroadcastType(ws.BROADCAST_TYPE_ENTER)
-	message.RewriteBroadcast()
-	message.SetBroadcastPayload(inRoomUsers.FetchAllInRoomUsers())
-	hub.BroadcastToOtherClients(message, currentClient)
+	displayNames := make([]string, 0)
+	for _, displayNameInterface := range message.Payload {
+		displayName, assertCorrectly := displayNameInterface.(string)
+		if !assertCorrectly {
+			return errors.New("user input assert failed with signal cooperate attach.")
+		}
+		displayNames = append(displayNames, displayName)
+	}
+	inRoomUsers.AttachComponent(currentClient.MappedUserID, displayNames)
 
-	
 	// broadcast attached components users
 	message.SetBroadcastType(ws.BROADCAST_TYPE_ATTACH_COMPONENT)
 	message.RewriteBroadcast()
 	message.SetBroadcastPayload(inRoomUsers.FetchAllAttachedUsers())
 	hub.BroadcastToOtherClients(message, currentClient)
 
-	// kick leaved user
-	ws.KickClient(hub, currentClient)
 	return nil
 }

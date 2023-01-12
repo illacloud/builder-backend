@@ -22,6 +22,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const USER_DEFAULT_AVATAR = ""
+
 type User struct {
 	ID             int       `gorm:"column:id;type:bigserial;primary_key;index:users_ukey"`
 	UID            uuid.UUID `gorm:"column:uid;type:uuid;not null;index:users_ukey"`

@@ -20,7 +20,9 @@ import (
 	"github.com/illacloud/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illacloud/builder-backend/pkg/plugins/firebase"
 	"github.com/illacloud/builder-backend/pkg/plugins/graphql"
+	"github.com/illacloud/builder-backend/pkg/plugins/huggingface"
 	"github.com/illacloud/builder-backend/pkg/plugins/mongodb"
+	"github.com/illacloud/builder-backend/pkg/plugins/mssql"
 	"github.com/illacloud/builder-backend/pkg/plugins/mysql"
 	"github.com/illacloud/builder-backend/pkg/plugins/postgresql"
 	"github.com/illacloud/builder-backend/pkg/plugins/redis"
@@ -45,6 +47,8 @@ var (
 	FIREBASE_ACTION      = "firebase"
 	CLICKHOUSE_ACTION    = "clickhouse"
 	GRAPHQL_ACTION       = "graphql"
+	MSSQL_ACTION         = "mssql"
+	HUGGINGFACE_ACTION   = "huggingface"
 )
 
 type AbstractActionFactory interface {
@@ -90,6 +94,12 @@ func (f *Factory) Build() common.DataConnector {
 	case GRAPHQL_ACTION:
 		graphqlAction := &graphql.Connector{}
 		return graphqlAction
+	case MSSQL_ACTION:
+		mssqlAction := &mssql.Connector{}
+		return mssqlAction
+	case HUGGINGFACE_ACTION:
+		hfAction := &huggingface.Connector{}
+		return hfAction
 	default:
 		return nil
 	}
