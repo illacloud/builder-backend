@@ -96,9 +96,9 @@ func (sdk *IllaCloudSDK) CanAccess(token string, teamID int, unitType int, unitI
 		Get(BASEURL + fmt.Sprintf(CAN_ACCESS, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
-			return false, errors.New("request illa cloud failed.")
+			return false, errors.New("request illa cloud failed: " + err.Error())
 		}
-		return false, errors.New("validate failed.")
+		return false, nil
 	}
 	return true, nil
 }
@@ -116,9 +116,9 @@ func (sdk *IllaCloudSDK) CanManage(token string, teamID int, unitType int, unitI
 		Get(BASEURL + fmt.Sprintf(CAN_MANAGE, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
-			return false, errors.New("request illa cloud failed.")
+			return false, errors.New("request illa cloud failed: " + err.Error())
 		}
-		return false, errors.New("validate failed.")
+		return false, nil
 	}
 	return true, nil
 }
@@ -136,9 +136,9 @@ func (sdk *IllaCloudSDK) CanManageSpecial(token string, teamID int, unitType int
 		Get(BASEURL + fmt.Sprintf(CAN_MANAGE_SPECIAL, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
-			return false, errors.New("request illa cloud failed.")
+			return false, errors.New("request illa cloud failed: " + err.Error())
 		}
-		return false, errors.New("validate failed.")
+		return false, nil
 	}
 	return true, nil
 }
@@ -156,9 +156,9 @@ func (sdk *IllaCloudSDK) CanModify(token string, teamID int, unitType int, unitI
 		Get(BASEURL + fmt.Sprintf(CAN_MODIFY, teamIDString, unitTypeString, unitIDString, attributeIDString, fromID, toID))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
-			return false, errors.New("request illa cloud failed.")
+			return false, errors.New("request illa cloud failed: " + err.Error())
 		}
-		return false, errors.New("validate failed.")
+		return false, nil
 	}
 	return true, nil
 }
@@ -176,9 +176,9 @@ func (sdk *IllaCloudSDK) CanDelete(token string, teamID int, unitType int, unitI
 		Get(BASEURL + fmt.Sprintf(CAN_DELETE, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
-			return false, errors.New("request illa cloud failed.")
+			return false, errors.New("request illa cloud failed: " + err.Error())
 		}
-		return false, errors.New("validate failed.")
+		return false, nil
 	}
 	return true, nil
 }
