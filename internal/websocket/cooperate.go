@@ -50,6 +50,10 @@ func (iru *InRoomUsers) LeaveRoom(userID int) {
 	delete(iru.AllUsers, userID)
 }
 
+func (iru *InRoomUsers) Count() int {
+	return len(iru.AllUsers)
+}
+
 func (iru *InRoomUsers) AttachComponent(userID int, componentDisplayNames []string) {
 	fuser, hit := iru.AllUsers[userID]
 	if !hit { // invalied user input, just ignore

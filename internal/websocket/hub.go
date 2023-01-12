@@ -19,7 +19,6 @@ import (
 	"github.com/illacloud/builder-backend/pkg/resource"
 	"github.com/illacloud/builder-backend/pkg/state"
 	"github.com/illacloud/builder-backend/pkg/user"
-
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -95,6 +94,14 @@ func (hub *Hub) GetInRoomUsersByRoomID(roomID int) *InRoomUsers {
 		return hub.InRoomUsersMap[roomID]
 	}
 	return inRoomUsers
+}
+
+func (hub *Hub) CleanRoom(roomID int) {
+	inRoomUsers, hit := hub.InRoomUsersMap[roomID]
+	if inRoomUsers.Count() != 0 || !hit {
+		return
+	}
+	delete(hub.InRoomUsersMap, roomID)
 }
 
 func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client) {
