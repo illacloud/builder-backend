@@ -1,9 +1,12 @@
 package accesscontrol
 
 import (
-	"github.com/illacloud/builder-backend/internal/const"
-	cloudsdk "github.com/illacloud/builder-backend/internal/util/illacloudbackendsdk"
+	supervisior "github.com/illacloud/builder-backend/internal/util/supervisior"
 )
+
+// default
+const DEFAULT_TEAM_ID = 0
+const DEFAULT_UNIT_ID = 0
 
 // user status in team
 const STATUS_OK = 1
@@ -12,18 +15,19 @@ const STATUS_SUSPEND = 3
 
 // Attirbute Unit List
 const (
-	UNIT_TYPE_TEAM        = 1  // cloud team
-	UNIT_TYPE_TEAM_MEMBER = 2  // cloud team member
-	UNIT_TYPE_USER        = 3  // cloud user
-	UNIT_TYPE_INVITE      = 4  // cloud invite
-	UNIT_TYPE_DOMAIN      = 5  // cloud domain
-	UNIT_TYPE_BILLING     = 6  // cloud billing
-	UNIT_TYPE_APP         = 7  // builder app
-	UNIT_TYPE_COMPONENTS  = 8  // builder components
-	UNIT_TYPE_RESOURCE    = 9  // resource resource
-	UNIT_TYPE_ACTION      = 10 // resource action
-	UNIT_TYPE_TRANSFORMER = 11 // resource transformer
-	UNIT_TYPE_JOB         = 12 // hub job
+	UNIT_TYPE_TEAM              = 1  // cloud team
+	UNIT_TYPE_TEAM_MEMBER       = 2  // cloud team member
+	UNIT_TYPE_USER              = 3  // cloud user
+	UNIT_TYPE_INVITE            = 4  // cloud invite
+	UNIT_TYPE_DOMAIN            = 5  // cloud domain
+	UNIT_TYPE_BILLING           = 6  // cloud billing
+	UNIT_TYPE_BUILDER_DASHBOARD = 7  // builder dabshboard for websocket
+	UNIT_TYPE_APP               = 7  // builder app
+	UNIT_TYPE_COMPONENTS        = 8  // builder components
+	UNIT_TYPE_RESOURCE          = 9  // resource resource
+	UNIT_TYPE_ACTION            = 10 // resource action
+	UNIT_TYPE_TRANSFORMER       = 11 // resource transformer
+	UNIT_TYPE_JOB               = 12 // hub job
 )
 
 // User Role ID in Team
@@ -56,75 +60,85 @@ var MadifyRoleToAttributeMap = map[int]int{
 	USER_ROLE_OWNER: ACTION_MANAGE_ROLE_TO_OWNER, USER_ROLE_ADMIN: ACTION_MANAGE_ROLE_TO_ADMIN, USER_ROLE_EDITOR: ACTION_MANAGE_ROLE_TO_EDITOR, USER_ROLE_VIEWER: ACTION_MANAGE_ROLE_TO_VIEWER,
 }
 
-const (
-	ATTRIBUTE_CATEGORY_ACCESS  = 1
-	ATTRIBUTE_CATEGORY_DELETE  = 2
-	ATTRIBUTE_CATEGORY_MANAGE  = 3
-	ATTRIBUTE_CATEGORY_SPECIAL = 4
-)
-
 // Attribute List
 // action access
 const (
 	// Basic Attribute
 	ACTION_ACCESS_VIEW = iota + 1 // 访问 Attribute
 	// Invite Attribute
-	ACTION_ACCESS_INVITE_BY_LINK  // 使用链接邀请用户
-	ACTION_ACCESS_INVITE_BY_EMAIL // 使用邮件邀请用户
-	ACTION_ACCESS_INVITE_OWNER
-	ACTION_ACCESS_INVITE_ADMIN
-	ACTION_ACCESS_INVITE_EDITOR
-	ACTION_ACCESS_INVITE_VIEWER
+	ACTION_ACCESS_INVITE_BY_LINK  // invite team member by link
+	ACTION_ACCESS_INVITE_BY_EMAIL // invite team member by email
+	ACTION_ACCESS_INVITE_OWNER    // can invite team member as an owner
+	ACTION_ACCESS_INVITE_ADMIN    // can invite team member as an admin
+	ACTION_ACCESS_INVITE_EDITOR   // can invite team member as an editor
+	ACTION_ACCESS_INVITE_VIEWER   // can invite team member as a viewer
 )
 
 // action manage
 const (
 	// Team Attribute
-	ACTION_MANAGE_TEAM_NAME          = iota + 1 // 重命名 Team Attribute
-	ACTION_MANAGE_TEAM_ICON                     // 更新 icon
-	ACTION_MANAGE_TEAM_CONFIG                   // 更新 team 设置
-	ACTION_MANAGE_UPDATE_TEAM_DOMAIN            // 更新 team domain
+	ACTION_MANAGE_TEAM_NAME          = iota + 1 // rename Team Attribute
+	ACTION_MANAGE_TEAM_ICON                     // update icon
+	ACTION_MANAGE_TEAM_CONFIG                   // update team config
+	ACTION_MANAGE_UPDATE_TEAM_DOMAIN            // update team domain
+
 	// Team Member Attribute
-	ACTION_MANAGE_REMOVE_MEMBER    // 移除团队成员的 Attribute
-	ACTION_MANAGE_ROLE             // 修改团队成员角色的 Attribute
-	ACTION_MANAGE_ROLE_FROM_OWNER  // 将用户角色修改为 owner
-	ACTION_MANAGE_ROLE_FROM_ADMIN  // 将用户角色修改为 admin
-	ACTION_MANAGE_ROLE_FROM_EDITOR // 将用户角色修改为 editor
-	ACTION_MANAGE_ROLE_FROM_VIEWER // 将用户角色修改为 viewer
-	ACTION_MANAGE_ROLE_TO_OWNER    // 将用户角色修改为 owner
-	ACTION_MANAGE_ROLE_TO_ADMIN    // 将用户角色修改为 admin
-	ACTION_MANAGE_ROLE_TO_EDITOR   // 将用户角色修改为 editor
-	ACTION_MANAGE_ROLE_TO_VIEWER   // 将用户角色修改为 viewer
+	ACTION_MANAGE_REMOVE_MEMBER    // remove member from a team
+	ACTION_MANAGE_ROLE             // manage role of team member
+	ACTION_MANAGE_ROLE_FROM_OWNER  // modify team member role from owner ..
+	ACTION_MANAGE_ROLE_FROM_ADMIN  // modify team member role from admin ..
+	ACTION_MANAGE_ROLE_FROM_EDITOR // modify team member role from editor ..
+	ACTION_MANAGE_ROLE_FROM_VIEWER // modify team member role from viewer ..
+	ACTION_MANAGE_ROLE_TO_OWNER    // modify team member role to owner
+	ACTION_MANAGE_ROLE_TO_ADMIN    // modify team member role to admin
+	ACTION_MANAGE_ROLE_TO_EDITOR   // modify team member role to editor
+	ACTION_MANAGE_ROLE_TO_VIEWER   // modify team member role to viewer
+
 	// User Attribute
-	ACTION_MANAGE_RENAME_USER        // 重命名用户
-	ACTION_MANAGE_UPDATE_USER_AVATAR // 更新 avatar
+	ACTION_MANAGE_RENAME_USER        // rename
+	ACTION_MANAGE_UPDATE_USER_AVATAR // update avatar
+
 	// Invite Attribute
-	ACTION_MANAGE_CONFIG_INVITE // 配置邀请选项和参数
-	ACTION_MANAGE_INVITE_LINK   // 配置 invite link
+	ACTION_MANAGE_CONFIG_INVITE // config invite
+	ACTION_MANAGE_INVITE_LINK   // config invite link, open, close and renew
+
 	// Domain Attribute
-	ACTION_MANAGE_TEAM_DOMAIN // 更新 Team Domain
-	ACTION_MANAGE_APP_DOMAIN  // 更新 App domain
+	ACTION_MANAGE_TEAM_DOMAIN // update team domain
+	ACTION_MANAGE_APP_DOMAIN  // update app domain
+
 	// Billing Attribute
-	ACTION_MANAGE_PAYMENT_INFO // 编辑付款信息
+	ACTION_MANAGE_PAYMENT_INFO // manage team payment info
+
+	// Dashboard Attribute
+	ACTION_MANAGE_DASHBOARD_BROADCAST
+
 	// App Attribute
-	ACTION_MANAGE_CREATE_APP // 创建 APP
-	ACTION_MANAGE_EDIT_APP   // 编辑 APP
+	ACTION_MANAGE_CREATE_APP // create APP
+	ACTION_MANAGE_EDIT_APP   // edit APP
+
 	// Resource Attribute
-	ACTION_MANAGE_CREATE_RESOURCE // 创建 Resource
-	ACTION_MANAGE_EDIT_RESOURCE   // 编辑 Resource
+	ACTION_MANAGE_CREATE_RESOURCE // create resource
+	ACTION_MANAGE_EDIT_RESOURCE   // edit resource
+
+	// Action Attribute
+	ACTION_MANAGE_CREATE_ACTION  // create action
+	ACTION_MANAGE_EDIT_ACTION    // edit action
+	ACTION_MANAGE_PREVIEW_ACTION // preview action
+	ACTION_MANAGE_RUN_ACTION     // run action
 )
 
 // action delete
 const (
 	// Basic Attribute
 	ACTION_DELETE = iota + 1 // 删除 Attribute
+
 	// Domain Attribute
 	ACTION_DELETE_TEAM_DOMAIN // 删除 Team Domain
 	ACTION_DELETE_APP_DOMAIN  // 删除 App Domain
 
 )
 
-// action special
+// action manage special (only owner and admin can access by default)
 const (
 	// Team Attribute
 	ACTION_SPECIAL_EDITOR_AND_VIEWER_CAN_INVITE_BY_LINK_SW = iota + 1 // editor 和 viewer 可以使用链接邀请的 Attribute
@@ -132,157 +146,26 @@ const (
 	ACTION_SPECIAL_TRANSFER_OWNER // 转移 owner 的 Attribute
 	// Invite Attribute
 	ACTION_SPECIAL_INVITE_LINK_RENEW // 更新邀请链接
+	// APP Attribute
+	ACTION_SPECIAL_RELEASE_APP // release APP
+
 )
 
-// Attribute Config List
-// Only define avaliable attribute here
-// map[AttributeCategory][role][unitType][Attribute]status
-var AttributeConfigList = map[int]map[int]map[int]map[int]bool{
-	ATTRIBUTE_CATEGORY_ACCESS: {
-		USER_ROLE_OWNER: {
-			UNIT_TYPE_TEAM:        {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_TEAM_MEMBER: {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_USER:        {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_INVITE:      {ACTION_ACCESS_VIEW: true, ACTION_ACCESS_INVITE_BY_LINK: true, ACTION_ACCESS_INVITE_BY_EMAIL: true, ACTION_ACCESS_INVITE_ADMIN: true, ACTION_ACCESS_INVITE_EDITOR: true, ACTION_ACCESS_INVITE_VIEWER: true},
-			UNIT_TYPE_DOMAIN:      {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_BILLING:     {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_APP:         {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_RESOURCE:    {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_JOB:         {ACTION_ACCESS_VIEW: true},
-		},
-		USER_ROLE_ADMIN: {
-			UNIT_TYPE_TEAM:        {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_TEAM_MEMBER: {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_USER:        {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_INVITE:      {ACTION_ACCESS_VIEW: true, ACTION_ACCESS_INVITE_BY_LINK: true, ACTION_ACCESS_INVITE_BY_EMAIL: true, ACTION_ACCESS_INVITE_ADMIN: true, ACTION_ACCESS_INVITE_EDITOR: true, ACTION_ACCESS_INVITE_VIEWER: true},
-			UNIT_TYPE_DOMAIN:      {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_APP:         {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_RESOURCE:    {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_JOB:         {ACTION_ACCESS_VIEW: true},
-		},
-		USER_ROLE_EDITOR: {
-			UNIT_TYPE_TEAM_MEMBER: {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_USER:        {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_INVITE:      {ACTION_ACCESS_VIEW: true, ACTION_ACCESS_INVITE_BY_LINK: true, ACTION_ACCESS_INVITE_BY_EMAIL: true, ACTION_ACCESS_INVITE_EDITOR: true, ACTION_ACCESS_INVITE_VIEWER: true},
-			UNIT_TYPE_APP:         {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_RESOURCE:    {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_JOB:         {ACTION_ACCESS_VIEW: true},
-		},
-		USER_ROLE_VIEWER: {
-			UNIT_TYPE_TEAM_MEMBER: {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_USER:        {ACTION_ACCESS_VIEW: true},
-			UNIT_TYPE_INVITE:      {ACTION_ACCESS_VIEW: true, ACTION_ACCESS_INVITE_BY_LINK: true, ACTION_ACCESS_INVITE_BY_EMAIL: true, ACTION_ACCESS_INVITE_VIEWER: true},
-			UNIT_TYPE_APP:         {ACTION_ACCESS_VIEW: true},
-		},
-	},
-	ATTRIBUTE_CATEGORY_DELETE: {
-		USER_ROLE_OWNER: {
-			UNIT_TYPE_TEAM:        {ACTION_DELETE: true},
-			UNIT_TYPE_TEAM_MEMBER: {ACTION_DELETE: true},
-			UNIT_TYPE_USER:        {ACTION_DELETE: true},
-			UNIT_TYPE_INVITE:      {ACTION_DELETE: true},
-			UNIT_TYPE_DOMAIN:      {ACTION_DELETE_TEAM_DOMAIN: true, ACTION_DELETE_APP_DOMAIN: true},
-			UNIT_TYPE_BILLING:     {ACTION_DELETE: true},
-			UNIT_TYPE_APP:         {ACTION_DELETE: true},
-			UNIT_TYPE_RESOURCE:    {ACTION_DELETE: true},
-			UNIT_TYPE_JOB:         {ACTION_DELETE: true},
-		},
-		USER_ROLE_ADMIN: {
-			UNIT_TYPE_TEAM:        {ACTION_DELETE: true},
-			UNIT_TYPE_TEAM_MEMBER: {ACTION_DELETE: true},
-			UNIT_TYPE_USER:        {ACTION_DELETE: true},
-			UNIT_TYPE_INVITE:      {ACTION_DELETE: true},
-			UNIT_TYPE_DOMAIN:      {ACTION_DELETE_TEAM_DOMAIN: true, ACTION_DELETE_APP_DOMAIN: true},
-			UNIT_TYPE_APP:         {ACTION_DELETE: true},
-			UNIT_TYPE_RESOURCE:    {ACTION_DELETE: true},
-			UNIT_TYPE_JOB:         {ACTION_DELETE: true},
-		},
-		USER_ROLE_EDITOR: {
-			UNIT_TYPE_USER:     {ACTION_DELETE: true},
-			UNIT_TYPE_APP:      {ACTION_DELETE: true},
-			UNIT_TYPE_RESOURCE: {ACTION_DELETE: true},
-			UNIT_TYPE_JOB:      {ACTION_DELETE: true},
-		},
-		USER_ROLE_VIEWER: {
-			UNIT_TYPE_USER: {ACTION_DELETE: true},
-		},
-	},
-	ATTRIBUTE_CATEGORY_MANAGE: {
-		USER_ROLE_OWNER: {
-			UNIT_TYPE_TEAM:        {ACTION_MANAGE_TEAM_NAME: true, ACTION_MANAGE_TEAM_ICON: true, ACTION_MANAGE_UPDATE_TEAM_DOMAIN: true, ACTION_MANAGE_TEAM_CONFIG: true},
-			UNIT_TYPE_TEAM_MEMBER: {ACTION_MANAGE_REMOVE_MEMBER: true, ACTION_MANAGE_ROLE: true, ACTION_MANAGE_ROLE_FROM_OWNER: true, ACTION_MANAGE_ROLE_FROM_ADMIN: true, ACTION_MANAGE_ROLE_FROM_EDITOR: true, ACTION_MANAGE_ROLE_FROM_VIEWER: true, ACTION_MANAGE_ROLE_TO_OWNER: true, ACTION_MANAGE_ROLE_TO_ADMIN: true, ACTION_MANAGE_ROLE_TO_EDITOR: true, ACTION_MANAGE_ROLE_TO_VIEWER: true},
-			UNIT_TYPE_USER:        {ACTION_MANAGE_RENAME_USER: true, ACTION_MANAGE_UPDATE_USER_AVATAR: true},
-			UNIT_TYPE_INVITE:      {ACTION_MANAGE_CONFIG_INVITE: true, ACTION_MANAGE_INVITE_LINK: true},
-			UNIT_TYPE_DOMAIN:      {ACTION_MANAGE_TEAM_DOMAIN: true, ACTION_MANAGE_APP_DOMAIN: true},
-			UNIT_TYPE_BILLING:     {ACTION_MANAGE_PAYMENT_INFO: true},
-			UNIT_TYPE_APP:         {ACTION_MANAGE_CREATE_APP: true, ACTION_MANAGE_EDIT_APP: true},
-			UNIT_TYPE_RESOURCE:    {ACTION_MANAGE_CREATE_RESOURCE: true, ACTION_MANAGE_EDIT_RESOURCE: true},
-			UNIT_TYPE_JOB:         {},
-		},
-		USER_ROLE_ADMIN: {
-			UNIT_TYPE_TEAM:        {ACTION_MANAGE_TEAM_NAME: true, ACTION_MANAGE_TEAM_ICON: true, ACTION_MANAGE_UPDATE_TEAM_DOMAIN: true, ACTION_MANAGE_TEAM_CONFIG: true},
-			UNIT_TYPE_TEAM_MEMBER: {ACTION_MANAGE_REMOVE_MEMBER: true, ACTION_MANAGE_ROLE: true, ACTION_MANAGE_ROLE_FROM_ADMIN: true, ACTION_MANAGE_ROLE_FROM_EDITOR: true, ACTION_MANAGE_ROLE_FROM_VIEWER: true, ACTION_MANAGE_ROLE_TO_ADMIN: true, ACTION_MANAGE_ROLE_TO_EDITOR: true, ACTION_MANAGE_ROLE_TO_VIEWER: true},
-			UNIT_TYPE_USER:        {ACTION_MANAGE_RENAME_USER: true, ACTION_MANAGE_UPDATE_USER_AVATAR: true},
-			UNIT_TYPE_INVITE:      {ACTION_MANAGE_CONFIG_INVITE: true, ACTION_MANAGE_INVITE_LINK: true},
-			UNIT_TYPE_DOMAIN:      {ACTION_MANAGE_TEAM_DOMAIN: true, ACTION_MANAGE_APP_DOMAIN: true},
-			UNIT_TYPE_APP:         {ACTION_MANAGE_CREATE_APP: true, ACTION_MANAGE_EDIT_APP: true},
-			UNIT_TYPE_RESOURCE:    {ACTION_MANAGE_CREATE_RESOURCE: true, ACTION_MANAGE_EDIT_RESOURCE: true},
-			UNIT_TYPE_JOB:         {},
-		},
-		USER_ROLE_EDITOR: {
-			UNIT_TYPE_TEAM_MEMBER: {ACTION_MANAGE_REMOVE_MEMBER: true, ACTION_MANAGE_ROLE: true, ACTION_MANAGE_ROLE_FROM_EDITOR: true, ACTION_MANAGE_ROLE_FROM_VIEWER: true, ACTION_MANAGE_ROLE_TO_EDITOR: true, ACTION_MANAGE_ROLE_TO_VIEWER: true},
-			UNIT_TYPE_USER:        {ACTION_MANAGE_RENAME_USER: true, ACTION_MANAGE_UPDATE_USER_AVATAR: true},
-			UNIT_TYPE_APP:         {ACTION_MANAGE_CREATE_APP: true, ACTION_MANAGE_EDIT_APP: true},
-			UNIT_TYPE_RESOURCE:    {ACTION_MANAGE_CREATE_RESOURCE: true, ACTION_MANAGE_EDIT_RESOURCE: true},
-			UNIT_TYPE_JOB:         {},
-		},
-		USER_ROLE_VIEWER: {
-			UNIT_TYPE_TEAM_MEMBER: {ACTION_MANAGE_REMOVE_MEMBER: true, ACTION_MANAGE_ROLE: true, ACTION_MANAGE_ROLE_FROM_VIEWER: true, ACTION_MANAGE_ROLE_TO_VIEWER: true},
-			UNIT_TYPE_USER:        {ACTION_MANAGE_RENAME_USER: true, ACTION_MANAGE_UPDATE_USER_AVATAR: true},
-			UNIT_TYPE_JOB:         {},
-		},
-	},
-	ATTRIBUTE_CATEGORY_SPECIAL: {
-		USER_ROLE_OWNER: {
-			UNIT_TYPE_TEAM:        {ACTION_SPECIAL_EDITOR_AND_VIEWER_CAN_INVITE_BY_LINK_SW: true},
-			UNIT_TYPE_TEAM_MEMBER: {ACTION_SPECIAL_TRANSFER_OWNER: true},
-			UNIT_TYPE_INVITE:      {ACTION_SPECIAL_INVITE_LINK_RENEW: true},
-		},
-		USER_ROLE_ADMIN: {
-			UNIT_TYPE_TEAM:   {ACTION_SPECIAL_EDITOR_AND_VIEWER_CAN_INVITE_BY_LINK_SW: true},
-			UNIT_TYPE_INVITE: {ACTION_SPECIAL_INVITE_LINK_RENEW: true},
-		},
-		USER_ROLE_EDITOR: {},
-		USER_ROLE_VIEWER: {},
-	},
-}
-
-type Attribute struct {
-	Access  map[int]bool
-	Delete  map[int]bool
-	Manage  map[int]bool
-	Special map[int]bool
-}
-
-func NewAttribute(userRole int, unitType int) *Attribute {
-	attr := &Attribute{
-		Access:  AttributeConfigList[ATTRIBUTE_CATEGORY_ACCESS][userRole][unitType],
-		Delete:  AttributeConfigList[ATTRIBUTE_CATEGORY_DELETE][userRole][unitType],
-		Manage:  AttributeConfigList[ATTRIBUTE_CATEGORY_MANAGE][userRole][unitType],
-		Special: AttributeConfigList[ATTRIBUTE_CATEGORY_SPECIAL][userRole][unitType],
-	}
-	return attr
-}
-
 type AttributeGroup struct {
-	TeamID 	      int
+	TeamID        int
 	UserAuthToken string
 	UserRole      int
 	UnitType      int
 	UnitID        int
-	Attribute     *Attribute
-	Remote        *IllaCloudSDK
-	DeployMode    string
+	Remote        *supervisior.Supervisior
+}
+
+func (attrg *AttributeGroup) Init() {
+	attrg.TeamID = 0
+	attrg.UserAuthToken = ""
+	attrg.UserRole = 0
+	attrg.UnitType = 0
+	attrg.UnitID = 0
 }
 
 func (attrg *AttributeGroup) SetTeamID(teamID int) {
@@ -307,87 +190,43 @@ func (attrg *AttributeGroup) SetUnitID(unitID int) {
 
 func (attrg *AttributeGroup) CanAccess(attribute int) (bool, error) {
 	// remote method
-	if attrg.DeployMode == const.DEPLOY_MODE_CLOUD {
-		req, errInRemote := attrg.Remote.CanAccess(attrg.UserAuthToken, attrg.TeamID, attrg.UnitType, attrg.UnitID, attribute)
-		if errInRemote != nil {
-			return false, errInRemote
-		}
-		return req
+	req, errInRemote := attrg.Remote.CanAccess(attrg.UserAuthToken, attrg.TeamID, attrg.UnitType, attrg.UnitID, attribute)
+	if errInRemote != nil {
+		return false, errInRemote
 	}
-	// local method
-	r, match := attrg.Attribute.Access[attribute]
-	if !match {
-		return false
-	}
-	return r
+	return req
 }
 
 func (attrg *AttributeGroup) CanDelete(attribute int) (bool, error) {
-	// remote method
-	if attrg.DeployMode == const.DEPLOY_MODE_CLOUD {
-		req, errInRemote := attrg.Remote.CanDelete(attrg.UserAuthToken, attrg.TeamID, attrg.UnitType, attrg.UnitID, attribute)
-		if errInRemote != nil {
-			return false, errInRemote
-		}
-		return req
+	req, errInRemote := attrg.Remote.CanDelete(attrg.UserAuthToken, attrg.TeamID, attrg.UnitType, attrg.UnitID, attribute)
+	if errInRemote != nil {
+		return false, errInRemote
 	}
-	// local method
-	r, match := attrg.Attribute.Delete[attribute]
-	if !match {
-		return false
-	}
-	return r
+	return req
 }
 
 func (attrg *AttributeGroup) CanManage(attribute int) (bool, error) {
-	// remote method
-	if attrg.DeployMode == const.DEPLOY_MODE_CLOUD {
-		req, errInRemote := attrg.Remote.CanManage(attrg.UserAuthToken, attrg.TeamID, attrg.UnitType, attrg.UnitID, attribute)
-		if errInRemote != nil {
-			return false, errInRemote
-		}
-		return req
+	req, errInRemote := attrg.Remote.CanManage(attrg.UserAuthToken, attrg.TeamID, attrg.UnitType, attrg.UnitID, attribute)
+	if errInRemote != nil {
+		return false, errInRemote
 	}
-	// local method
-	r, match := attrg.Attribute.Manage[attribute]
-	if !match {
-		return false
-	}
-	return r
+	return req
 }
 
 func (attrg *AttributeGroup) CanManageSpecial(attribute int) (bool, error) {
-	// remote method
-	if attrg.DeployMode == const.DEPLOY_MODE_CLOUD {
-		req, errInRemote := attrg.Remote.CanManageSpecial(attrg.UserAuthToken, attrg.TeamID, attrg.UnitType, attrg.UnitID, attribute)
-		if errInRemote != nil {
-			return false, errInRemote
-		}
-		return req
+	req, errInRemote := attrg.Remote.CanManageSpecial(attrg.UserAuthToken, attrg.TeamID, attrg.UnitType, attrg.UnitID, attribute)
+	if errInRemote != nil {
+		return false, errInRemote
 	}
-	// local method
-	r, match := attrg.Attribute.Special[attribute]
-	if !match {
-		return false
-	}
-	return r
+	return req
 }
 
 func (attrg *AttributeGroup) CanModify(attribute, fromID, toID int) (bool, error) {
-	// remote method
-	if attrg.DeployMode == const.DEPLOY_MODE_CLOUD {
-		req, errInRemote := attrg.Remote.CanModify(attrg.UserAuthToken, attrg.TeamID, attrg.UnitType, attrg.UnitID, attribute, fromID, toID)
-		if errInRemote != nil {
-			return false, errInRemote
-		}
-		return req
+	req, errInRemote := attrg.Remote.CanModify(attrg.UserAuthToken, attrg.TeamID, attrg.UnitType, attrg.UnitID, attribute, fromID, toID)
+	if errInRemote != nil {
+		return false, errInRemote
 	}
-	// local method
-	// @todo: extend this method, now only support modify user role check.
-	if attribute == ACTION_MANAGE_ROLE {
-		return attrg.canModifyRoleFromTo(fromID, toID)
-	}
-	return false
+	return req
 }
 
 func (attrg *AttributeGroup) CanInvite(userRole int) (bool, error) {
@@ -400,23 +239,6 @@ func (attrg *AttributeGroup) CanInvite(userRole int) (bool, error) {
 	return attrg.CanAccess(attribute)
 }
 
-// @note: this is private method, does not include remote call.
-func (attrg *AttributeGroup) canModifyRoleFromTo(fromRole, toRole int) bool {
-	// convert to attribute
-	fromRoleAttribute, fromHit := ModifyRoleFromAttributeMap[fromRole]
-	toRoleAttribute, toHit := MadifyRoleToAttributeMap[toRole]
-	if !fromHit || !toHit {
-		return false
-	}
-	// check attirbute
-	fromResult, fromMatch := attrg.Attribute.Manage[fromRoleAttribute]
-	toResult, toMatch := attrg.Attribute.Manage[toRoleAttribute]
-	if !fromMatch || !toMatch {
-		return false
-	}
-	return fromResult && toResult
-}
-
 func (attrg *AttributeGroup) DoesNowUserAreEditorOrViewer() bool {
 	if attrg.UserRole == USER_ROLE_EDITOR || attrg.UserRole == USER_ROLE_VIEWER {
 		return true
@@ -424,28 +246,49 @@ func (attrg *AttributeGroup) DoesNowUserAreEditorOrViewer() bool {
 	return false
 }
 
-func NewAttributeGroup(userRole int, unitType int) (*AttributeGroup, error) {
+func NewAttributeGroup(teamID int, userAuthToken string, userRole int, unitType int, unitID int) (*AttributeGroup, error) {
 	// init sdk
-	sdk, err := cloudsdk.NewIllaCloudSDK()
+	instance, err := supervisior.NewSupervisior()
 	if err != nil {
 		return nil, err
 	}
 	// init
-	attr := NewAttribute(userRole, unitType)
 	attrg := &AttributeGroup{
-		TeamID:    0, // 0 for self-host mode by default
-		UserRole:  userRole,
-		UnitType:  unitType,
-		UnitID:    0, // 0 for placeholder, this feature has not implemented.
-		Attribute: attr,
-		Remote:    sdk,
+		TeamID:        teamID, // 0 for self-host mode by default
+		UserRole:      userRole,
+		UserAuthToken: userAuthToken,
+		UnitType:      unitType,
+		UnitID:        unitID,
+		Remote:        instance,
 	}
-	// init deploy mode
-	deployMode := os.Getenv("ILLA_DEPLOY_MODE")
-	if deployMode != const.DEPLOY_MODE_CLOUD {
-		attrg.DeployMode =const.DEPLOY_MODE_SELF_HOST
-	} else {
-		attrg.DeployMode =const.DEPLOY_MODE_CLOUD
+	return attrg, nil
+}
+
+func NewAttributeGroupForController(teamID int, userAuthToken string, unitType int) (*AttributeGroup, error) {
+	// init sdk
+	instance, err := supervisior.NewSupervisior()
+	if err != nil {
+		return nil, err
+	}
+	// init
+	attrg := &AttributeGroup{
+		TeamID:        teamID, // 0 for self-host mode by default
+		UserAuthToken: userAuthToken,
+		UnitType:      unitType,
+		Remote:        instance,
+	}
+	return attrg, nil
+}
+
+func NewRawAttributeGroup() (*AttributeGroup, error) {
+	// init sdk
+	instance, err := supervisior.NewSupervisior()
+	if err != nil {
+		return nil, err
+	}
+	// init
+	attrg := &AttributeGroup{
+		Remote: instance,
 	}
 	return attrg, nil
 }

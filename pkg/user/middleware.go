@@ -18,7 +18,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	cloudsdk "github.com/illacloud/builder-backend/internal/util/illacloudbackendsdk"
+	supervisior "github.com/illacloud/builder-backend/internal/util/supervisior"
 )
 
 func JWTAuth(authenticator Authenticator) gin.HandlerFunc {
@@ -32,31 +32,15 @@ func JWTAuth(authenticator Authenticator) gin.HandlerFunc {
 			token = accessToken[0]
 		}
 
-		// init deploy mode
-		deployMode := os.Getenv("ILLA_DEPLOY_MODE")
-		if deployMode == const.DEPLOY_MODE_CLOUD {
-			sdk, err := cloudsdk.NewIllaCloudSDK()
-			if err != nil {
-				c.AbortWithStatus(http.StatusInternalServerError)
-			}
-			validated, errInValidate := sdk.ValidateUserAccount(token)
-			if errInValidate != nil {
-				c.AbortWithStatus(http.StatusInternalServerError)
-			}
-			if !validated {
-				c.AbortWithStatus(http.StatusUnauthorized)
-			}
-			c.Next()
+		sv, err := supervisior.NewSupervisior()
+		if err != nil {
+			c.AbortWithStatus(http.StatusInternalServerError)
 		}
-
-		// local auth method
-		userID, userUID, extractErr := authenticator.ExtractUserIDFromToken(token)
-		validAccessToken, validaAccessErr := authenticator.ValidateAccessToken(token)
-		validUser, validUserErr := authenticator.ValidateUser(userID, userUID)
-
-		if validAccessToken && validUser && validaAccessErr == nil && extractErr == nil && validUserErr == nil {
-			c.Set("userID", userID)
-		} else {
+		validated, errInValidate := sv.ValidateUserAccount(token)
+		if errInValidate != nil {
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
+		if !validated {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
 		c.Next()

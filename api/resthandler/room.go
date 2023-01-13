@@ -15,10 +15,9 @@
 package resthandler
 
 import (
-	"log"
 	"net/http"
-	"strconv"
 
+	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/pkg/room"
 
 	"github.com/gin-gonic/gin"
@@ -35,42 +34,86 @@ type RoomRestHandler interface {
 }
 
 type RoomRestHandlerImpl struct {
-	logger      *zap.SugaredLogger
-	RoomService room.RoomService
+	logger         *zap.SugaredLogger
+	RoomService    room.RoomService
+	AttributeGroup *ac.AttributeGroup
 }
 
-func NewRoomRestHandlerImpl(logger *zap.SugaredLogger, RoomService room.RoomService) *RoomRestHandlerImpl {
+func NewRoomRestHandlerImpl(logger *zap.SugaredLogger, RoomService room.RoomService, attrg *ac.AttributeGroup) *RoomRestHandlerImpl {
 	return &RoomRestHandlerImpl{
-		logger:      logger,
-		RoomService: RoomService,
+		logger:         logger,
+		RoomService:    RoomService,
+		AttributeGroup: attrg,
 	}
 }
 
 func (impl RoomRestHandlerImpl) GetDashboardRoomConn(c *gin.Context) {
-	// Get User from auth middleware
-	instanceID := c.Param("instanceID")
-	log.Printf("[DUMP] instanceID: %v\n", instanceID)
+	// fetch needed param
+	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetAuthToken != nil {
+		return
+	}
 
-	roomData, _ := impl.RoomService.GetDashboardConn(instanceID)
-
-	c.JSON(http.StatusOK, roomData)
-}
-
-func (impl RoomRestHandlerImpl) GetAppRoomConn(c *gin.Context) {
-	// Get User from auth middleware
-	instanceID := c.Param("instanceID")
-	roomID := c.Param("roomID")
-
-	rid, err := strconv.Atoi(roomID)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"errorCode":    401,
-			"errorMessage": "unauthorized",
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_BUILDER_DASHBOARD)
+	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
+	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	if errInCheckAttr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    500,
+			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
+		})
+		return
+	}
+	if !canAccess {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": "you can not access this attribute due to access control policy.",
 		})
 		return
 	}
 
-	roomData, _ := impl.RoomService.GetAppRoomConn(instanceID, rid)
+	// fetch data
+	roomData, _ := impl.RoomService.GetDashboardConn(teamID)
+	c.JSON(http.StatusOK, roomData)
+}
+
+func (impl RoomRestHandlerImpl) GetAppRoomConn(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetIntParamFromRequest(PARAM_APP_ID)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
+		return
+	}
+
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_APP)
+	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
+	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	if errInCheckAttr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    500,
+			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
+		})
+		return
+	}
+	if !canAccess {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": "you can not access this attribute due to access control policy.",
+		})
+		return
+	}
+
+	roomData, _ := impl.RoomService.GetAppRoomConn(teamID, appID)
 
 	c.JSON(http.StatusOK, roomData)
 }

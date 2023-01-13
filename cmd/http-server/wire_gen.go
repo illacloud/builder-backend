@@ -12,6 +12,7 @@ import (
 	"github.com/illacloud/builder-backend/api/router"
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/internal/util"
+	"github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/pkg/action"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/db"
@@ -39,6 +40,13 @@ func Initialize() (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	
+	// init supervisior
+	attrg, err := accesscontrol.NewRawAttributeGroup()
+	if err != nil {
+		return nil, err
+	}
+	// 
 	userRepositoryImpl := repository.NewUserRepositoryImpl(gormDB, sugaredLogger)
 	smtpConfig, err := smtp.GetConfig()
 	if err != nil {
@@ -55,17 +63,17 @@ func Initialize() (*Server, error) {
 	actionRepositoryImpl := repository.NewActionRepositoryImpl(sugaredLogger, gormDB)
 	appServiceImpl := app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, userRepositoryImpl, kvStateRepositoryImpl, treeStateRepositoryImpl, setStateRepositoryImpl, actionRepositoryImpl)
 	treeStateServiceImpl := state.NewTreeStateServiceImpl(sugaredLogger, treeStateRepositoryImpl)
-	appRestHandlerImpl := resthandler.NewAppRestHandlerImpl(sugaredLogger, appServiceImpl, treeStateServiceImpl)
+	appRestHandlerImpl := resthandler.NewAppRestHandlerImpl(sugaredLogger, appServiceImpl, attrg, treeStateServiceImpl)
 	appRouterImpl := router.NewAppRouterImpl(appRestHandlerImpl)
 	roomServiceImpl := room.NewRoomServiceImpl(sugaredLogger)
-	roomRestHandlerImpl := resthandler.NewRoomRestHandlerImpl(sugaredLogger, roomServiceImpl)
+	roomRestHandlerImpl := resthandler.NewRoomRestHandlerImpl(sugaredLogger, roomServiceImpl, attrg)
 	roomRouterImpl := router.NewRoomRouterImpl(roomRestHandlerImpl)
 	resourceRepositoryImpl := repository.NewResourceRepositoryImpl(sugaredLogger, gormDB)
 	actionServiceImpl := action.NewActionServiceImpl(sugaredLogger, appRepositoryImpl, actionRepositoryImpl, resourceRepositoryImpl)
-	actionRestHandlerImpl := resthandler.NewActionRestHandlerImpl(sugaredLogger, actionServiceImpl)
+	actionRestHandlerImpl := resthandler.NewActionRestHandlerImpl(sugaredLogger, actionServiceImpl, attrg)
 	actionRouterImpl := router.NewActionRouterImpl(actionRestHandlerImpl)
 	resourceServiceImpl := resource.NewResourceServiceImpl(sugaredLogger, resourceRepositoryImpl)
-	resourceRestHandlerImpl := resthandler.NewResourceRestHandlerImpl(sugaredLogger, resourceServiceImpl)
+	resourceRestHandlerImpl := resthandler.NewResourceRestHandlerImpl(sugaredLogger, resourceServiceImpl, attrg)
 	resourceRouterImpl := router.NewResourceRouterImpl(resourceRestHandlerImpl)
 	authenticatorImpl := user.NewAuthenticatorImpl(userRepositoryImpl, sugaredLogger)
 	restRouter := router.NewRESTRouter(sugaredLogger, userRouterImpl, appRouterImpl, roomRouterImpl, actionRouterImpl, resourceRouterImpl, authenticatorImpl)

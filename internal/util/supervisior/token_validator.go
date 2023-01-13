@@ -1,4 +1,4 @@
-package illacloudbackendsdk
+package supervisior
 
 import (
 	"encoding/base64"

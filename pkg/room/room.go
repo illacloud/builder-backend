@@ -25,12 +25,12 @@ const DEFAULT_SERVER_ADDRESS = "localhost"
 const DEFAULT_WEBSOCKET_PORT = "8000"
 const PROTOCOL_WEBSOCKET = "ws"
 const PROTOCOL_WEBSOCKET_OVER_TLS = "wss"
-const DASHBOARD_WS_URL = "%s://%s:%s/room/%s/dashboard"
-const ROOM_WS_URL = "%s://%s:%s/room/%s/app/%d"
+const DASHBOARD_WS_URL = "%s://%s:%s/builder/teams/%s/dashboard"
+const ROOM_WS_URL = "%s://%s:%s/builder/teams/%s/app/%d"
 
 type RoomService interface {
-	GetDashboardConn(instanceID string) (WSURLResponse, error)
-	GetAppRoomConn(instanceID string, roomID int) (WSURLResponse, error)
+	GetDashboardConn(teamID int) (WSURLResponse, error)
+	GetAppRoomConn(teamID int, roomID int) (WSURLResponse, error)
 }
 
 type RoomServiceImpl struct {
@@ -71,14 +71,14 @@ func getWebSocketPort() string {
 	return webSockerPort
 }
 
-func (impl *RoomServiceImpl) GetDashboardConn(instanceID string) (WSURLResponse, error) {
+func (impl *RoomServiceImpl) GetDashboardConn(teamID int) (WSURLResponse, error) {
 	var r WSURLResponse
-	r.WSURL = fmt.Sprintf(DASHBOARD_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), instanceID)
+	r.WSURL = fmt.Sprintf(DASHBOARD_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), teamID)
 	return r, nil
 }
 
-func (impl *RoomServiceImpl) GetAppRoomConn(instanceID string, roomID int) (WSURLResponse, error) {
+func (impl *RoomServiceImpl) GetAppRoomConn(teamID int, roomID int) (WSURLResponse, error) {
 	var r WSURLResponse
-	r.WSURL = fmt.Sprintf(ROOM_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), instanceID, roomID)
+	r.WSURL = fmt.Sprintf(ROOM_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), teamID, roomID)
 	return r, nil
 }

@@ -12,48 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package illacloudbackendsdk
+package supervisior
 
 import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
-	"github.com/go-resty/resty/v2"
+	resty "github.com/go-resty/resty/v2"
 )
 
 const (
-	BASEURL          	  = "http://127.0.0.1:9001/api/v1"
+	BASEURL               = "http://127.0.0.1:9001/api/v1"
 	VALIDATE_USER_ACCOUNT = "/accessControl/account/validateResult"
 	GET_TEAM_PERMISSIONS  = "/accessControl/team/%s/permissions"
-	CAN_ACCESS 			  = "/accessControl/team/%s/unitType/%s/unitID/%s/attribute/canAccess/%s"
-	CAN_MANAGE 			  = "/accessControl/team/%s/unitType/%s/unitID/%s/attribute/canManage/%s"
+	CAN_ACCESS            = "/accessControl/team/%s/unitType/%s/unitID/%s/attribute/canAccess/%s"
+	CAN_MANAGE            = "/accessControl/team/%s/unitType/%s/unitID/%s/attribute/canManage/%s"
 	CAN_MANAGE_SPECIAL    = "/accessControl/team/%s/unitType/%s/unitID/%s/attribute/canManageSpecial/%s"
-	CAN_MODIFY 			  = "/accessControl/team/%s/unitType/%s/unitID/%s/attribute/canModify/%s/from/%s/to/%s"
-	CAN_DELETE 			  = "/accessControl/team/%s/unitType/%s/unitID/%s/attribute/canDelete/%s"
+	CAN_MODIFY            = "/accessControl/team/%s/unitType/%s/unitID/%s/attribute/canModify/%s/from/%s/to/%s"
+	CAN_DELETE            = "/accessControl/team/%s/unitType/%s/unitID/%s/attribute/canDelete/%s"
 )
 
-type IllaCloudSDK struct {
-	Validator: *RequestTokenValidator, 
+type Supervisior struct {
+	Validator *RequestTokenValidator
 }
 
-
-func NewIllaCloudSDK() (*IllaCloudSDK, error) {
+func NewSupervisior() (*Supervisior, error) {
 	v, err := NewRequestTokenValidator()
 	if err != nil {
 		return nil, err
 	}
-	return &IllaCloudSDK{
-		Validator: v
+	return &Supervisior{
+		Validator: v,
 	}, nil
 }
 
-
-func (sdk *IllaCloudSDK) ValidateUserAccount(token string) (bool, error) {
+func (supervisior *Supervisior) ValidateUserAccount(token string) (bool, error) {
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Authorization-Token", token).
-		SetHeader("Request-Token", sdk.Validator.GenerateValidateToken(token)).
+		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(token)).
 		Get(BASEURL + VALIDATE_USER_ACCOUNT)
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
@@ -65,12 +64,11 @@ func (sdk *IllaCloudSDK) ValidateUserAccount(token string) (bool, error) {
 	return true, nil
 }
 
-
-func (sdk *IllaCloudSDK) GetTeamPermissions(teamID int) (string, error) {
+func (supervisior *Supervisior) GetTeamPermissions(teamID int) (string, error) {
 	teamIDString := strconv.Itoa(teamID)
 	client := resty.New()
 	resp, err := client.R().
-		SetHeader("Request-Token", sdk.Validator.GenerateValidateToken(teamIDString)).
+		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(teamIDString)).
 		Get(BASEURL + fmt.Sprintf(GET_TEAM_PERMISSIONS, teamIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
@@ -82,8 +80,7 @@ func (sdk *IllaCloudSDK) GetTeamPermissions(teamID int) (string, error) {
 	return resp, nil
 }
 
-
-func (sdk *IllaCloudSDK) CanAccess(token string, teamID int, unitType int, unitID int, attributeID int) (bool, error) {
+func (supervisior *Supervisior) CanAccess(token string, teamID int, unitType int, unitID int, attributeID int) (bool, error) {
 	teamIDString := strconv.Itoa(teamID)
 	unitTypeString := strconv.Itoa(unitType)
 	unitIDString := strconv.Itoa(unitID)
@@ -92,7 +89,7 @@ func (sdk *IllaCloudSDK) CanAccess(token string, teamID int, unitType int, unitI
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Authorization-Token", token).
-		SetHeader("Request-Token", sdk.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString)).
+		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString)).
 		Get(BASEURL + fmt.Sprintf(CAN_ACCESS, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
@@ -103,7 +100,7 @@ func (sdk *IllaCloudSDK) CanAccess(token string, teamID int, unitType int, unitI
 	return true, nil
 }
 
-func (sdk *IllaCloudSDK) CanManage(token string, teamID int, unitType int, unitID int, attributeID int) (bool, error) {
+func (supervisior *Supervisior) CanManage(token string, teamID int, unitType int, unitID int, attributeID int) (bool, error) {
 	teamIDString := strconv.Itoa(teamID)
 	unitTypeString := strconv.Itoa(unitType)
 	unitIDString := strconv.Itoa(unitID)
@@ -112,7 +109,7 @@ func (sdk *IllaCloudSDK) CanManage(token string, teamID int, unitType int, unitI
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Authorization-Token", token).
-		SetHeader("Request-Token", sdk.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString)).
+		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString)).
 		Get(BASEURL + fmt.Sprintf(CAN_MANAGE, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
@@ -123,7 +120,7 @@ func (sdk *IllaCloudSDK) CanManage(token string, teamID int, unitType int, unitI
 	return true, nil
 }
 
-func (sdk *IllaCloudSDK) CanManageSpecial(token string, teamID int, unitType int, unitID int, attributeID int) (bool, error) {
+func (supervisior *Supervisior) CanManageSpecial(token string, teamID int, unitType int, unitID int, attributeID int) (bool, error) {
 	teamIDString := strconv.Itoa(teamID)
 	unitTypeString := strconv.Itoa(unitType)
 	unitIDString := strconv.Itoa(unitID)
@@ -132,7 +129,7 @@ func (sdk *IllaCloudSDK) CanManageSpecial(token string, teamID int, unitType int
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Authorization-Token", token).
-		SetHeader("Request-Token", sdk.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString)).
+		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString)).
 		Get(BASEURL + fmt.Sprintf(CAN_MANAGE_SPECIAL, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
@@ -143,7 +140,7 @@ func (sdk *IllaCloudSDK) CanManageSpecial(token string, teamID int, unitType int
 	return true, nil
 }
 
-func (sdk *IllaCloudSDK) CanModify(token string, teamID int, unitType int, unitID int, attributeID int, fromID int, toID int) (bool, error) {
+func (supervisior *Supervisior) CanModify(token string, teamID int, unitType int, unitID int, attributeID int, fromID int, toID int) (bool, error) {
 	teamIDString := strconv.Itoa(teamID)
 	unitTypeString := strconv.Itoa(unitType)
 	unitIDString := strconv.Itoa(unitID)
@@ -152,7 +149,7 @@ func (sdk *IllaCloudSDK) CanModify(token string, teamID int, unitType int, unitI
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Authorization-Token", token).
-		SetHeader("Request-Token", sdk.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString, fromID, toID)).
+		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString, fromID, toID)).
 		Get(BASEURL + fmt.Sprintf(CAN_MODIFY, teamIDString, unitTypeString, unitIDString, attributeIDString, fromID, toID))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
@@ -163,7 +160,7 @@ func (sdk *IllaCloudSDK) CanModify(token string, teamID int, unitType int, unitI
 	return true, nil
 }
 
-func (sdk *IllaCloudSDK) CanDelete(token string, teamID int, unitType int, unitID int, attributeID int) (bool, error) {
+func (supervisior *Supervisior) CanDelete(token string, teamID int, unitType int, unitID int, attributeID int) (bool, error) {
 	teamIDString := strconv.Itoa(teamID)
 	unitTypeString := strconv.Itoa(unitType)
 	unitIDString := strconv.Itoa(unitID)
@@ -172,7 +169,7 @@ func (sdk *IllaCloudSDK) CanDelete(token string, teamID int, unitType int, unitI
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Authorization-Token", token).
-		SetHeader("Request-Token", sdk.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString)).
+		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString)).
 		Get(BASEURL + fmt.Sprintf(CAN_DELETE, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
