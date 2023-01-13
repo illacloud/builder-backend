@@ -123,8 +123,8 @@ func (impl *TreeStateRepositoryImpl) Create(treestate *TreeState) (int, error) {
 	return treestate.ID, nil
 }
 
-func (impl *TreeStateRepositoryImpl) Delete(treestateID int) error {
-	if err := impl.db.Delete(&TreeState{}, treestateID).Error; err != nil {
+func (impl *TreeStateRepositoryImpl) Delete(teamID int, treestateID int) error {
+	if err := impl.db.Delete(&TreeState{}).Where("id = ? AND team_id = ?", treestateID, teamID).Error; err != nil {
 		return err
 	}
 	return nil
@@ -148,56 +148,56 @@ func (impl *TreeStateRepositoryImpl) Update(treestate *TreeState) error {
 	return nil
 }
 
-func (impl *TreeStateRepositoryImpl) RetrieveByID(treestateID int) (*TreeState, error) {
+func (impl *TreeStateRepositoryImpl) RetrieveByID(teamID int, treestateID int) (*TreeState, error) {
 	treestate := &TreeState{}
-	if err := impl.db.First(treestate, treestateID).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND id = ?", treestateID, teamID).First(treestate, treestateID).Error; err != nil {
 		return &TreeState{}, err
 	}
 	return treestate, nil
 }
 
-func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByVersion(version int) ([]*TreeState, error) {
+func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByVersion(teamID int, version int) ([]*TreeState, error) {
 	var treestates []*TreeState
-	if err := impl.db.Where("version = ?", version).Find(&treestates).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND version = ?", teamID, version).Find(&treestates).Error; err != nil {
 		return nil, err
 	}
 	return treestates, nil
 }
 
-func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByName(name string) ([]*TreeState, error) {
+func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByName(teamID int, name string) ([]*TreeState, error) {
 	var treestates []*TreeState
-	if err := impl.db.Where("name = ?", name).Find(&treestates).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND name = ?", teamID, name).Find(&treestates).Error; err != nil {
 		return nil, err
 	}
 	return treestates, nil
 }
 
-func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByApp(apprefid int, statetype int, version int) ([]*TreeState, error) {
+func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByApp(teamID int, apprefid int, statetype int, version int) ([]*TreeState, error) {
 	var treestates []*TreeState
-	if err := impl.db.Where("app_ref_id = ? AND state_type = ? AND version = ?", apprefid, statetype, version).Find(&treestates).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ?", teamID, apprefid, statetype, version).Find(&treestates).Error; err != nil {
 		return nil, err
 	}
 	return treestates, nil
 }
 
-func (impl *TreeStateRepositoryImpl) RetrieveEditVersionByAppAndName(apprefid int, statetype int, name string) (*TreeState, error) {
+func (impl *TreeStateRepositoryImpl) RetrieveEditVersionByAppAndName(teamID int, apprefid int, statetype int, name string) (*TreeState, error) {
 	var treestate *TreeState
-	if err := impl.db.Where("app_ref_id = ? AND state_type = ? AND version = ? AND name = ?", apprefid, statetype, APP_EDIT_VERSION, name).First(&treestate).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ? AND name = ?", teamID, apprefid, statetype, APP_EDIT_VERSION, name).First(&treestate).Error; err != nil {
 		return nil, err
 	}
 	return treestate, nil
 }
 
-func (impl *TreeStateRepositoryImpl) RetrieveAllTypeTreeStatesByApp(apprefid int, version int) ([]*TreeState, error) {
+func (impl *TreeStateRepositoryImpl) RetrieveAllTypeTreeStatesByApp(teamID int, apprefid int, version int) ([]*TreeState, error) {
 	var treestates []*TreeState
-	if err := impl.db.Where("app_ref_id = ? AND version = ?", apprefid, version).Find(&treestates).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, apprefid, version).Find(&treestates).Error; err != nil {
 		return nil, err
 	}
 	return treestates, nil
 }
 
-func (impl *TreeStateRepositoryImpl) DeleteAllTypeTreeStatesByApp(apprefid int) error {
-	if err := impl.db.Where("app_ref_id = ?", apprefid).Delete(&TreeState{}).Error; err != nil {
+func (impl *TreeStateRepositoryImpl) DeleteAllTypeTreeStatesByApp(teamID int, apprefid int) error {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, apprefid).Delete(&TreeState{}).Error; err != nil {
 		return err
 	}
 	return nil
