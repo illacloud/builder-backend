@@ -194,7 +194,7 @@ func (attrg *AttributeGroup) CanAccess(attribute int) (bool, error) {
 	if errInRemote != nil {
 		return false, errInRemote
 	}
-	return req
+	return req, nil
 }
 
 func (attrg *AttributeGroup) CanDelete(attribute int) (bool, error) {
@@ -202,7 +202,7 @@ func (attrg *AttributeGroup) CanDelete(attribute int) (bool, error) {
 	if errInRemote != nil {
 		return false, errInRemote
 	}
-	return req
+	return req, nil
 }
 
 func (attrg *AttributeGroup) CanManage(attribute int) (bool, error) {
@@ -210,7 +210,7 @@ func (attrg *AttributeGroup) CanManage(attribute int) (bool, error) {
 	if errInRemote != nil {
 		return false, errInRemote
 	}
-	return req
+	return req, nil
 }
 
 func (attrg *AttributeGroup) CanManageSpecial(attribute int) (bool, error) {
@@ -218,7 +218,7 @@ func (attrg *AttributeGroup) CanManageSpecial(attribute int) (bool, error) {
 	if errInRemote != nil {
 		return false, errInRemote
 	}
-	return req
+	return req, nil
 }
 
 func (attrg *AttributeGroup) CanModify(attribute, fromID, toID int) (bool, error) {
@@ -226,7 +226,7 @@ func (attrg *AttributeGroup) CanModify(attribute, fromID, toID int) (bool, error
 	if errInRemote != nil {
 		return false, errInRemote
 	}
-	return req
+	return req, nil
 }
 
 func (attrg *AttributeGroup) CanInvite(userRole int) (bool, error) {

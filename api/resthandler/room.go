@@ -49,7 +49,7 @@ func NewRoomRestHandlerImpl(logger *zap.SugaredLogger, RoomService room.RoomServ
 
 func (impl RoomRestHandlerImpl) GetDashboardRoomConn(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
@@ -84,8 +84,8 @@ func (impl RoomRestHandlerImpl) GetDashboardRoomConn(c *gin.Context) {
 
 func (impl RoomRestHandlerImpl) GetAppRoomConn(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(PARAM_APP_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
 		return

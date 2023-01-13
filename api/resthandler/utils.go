@@ -19,7 +19,10 @@ const PARAM_UNIT_ID = "unitID"
 const PARAM_ATTRIBUTE_ID = "attributeID"
 const PARAM_FROM_ID = "fromID"
 const PARAM_TO_ID = "toID"
-const PARAM_ACTION_ID = "action"
+const PARAM_ACTION_ID = "actionID"
+const PARAM_APP_ID = "appID"
+const PARAM_VERSION = "version"
+const PARAM_RESOURCE_ID = "resourceID"
 
 func GetUserAuthTokenFromHeader(c *gin.Context) (string, error) {
 	// fetch token

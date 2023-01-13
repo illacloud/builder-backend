@@ -77,7 +77,7 @@ func (supervisior *Supervisior) GetTeamPermissions(teamID int) (string, error) {
 		return "", errors.New("validate failed.")
 	}
 	fmt.Printf("response: %+v, err: %+v", resp, err)
-	return resp, nil
+	return resp.String(), nil
 }
 
 func (supervisior *Supervisior) CanAccess(token string, teamID int, unitType int, unitID int, attributeID int) (bool, error) {
@@ -145,11 +145,13 @@ func (supervisior *Supervisior) CanModify(token string, teamID int, unitType int
 	unitTypeString := strconv.Itoa(unitType)
 	unitIDString := strconv.Itoa(unitID)
 	attributeIDString := strconv.Itoa(attributeID)
+	fromIDString := strconv.Itoa(fromID)
+	toIDString := strconv.Itoa(toID)
 
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Authorization-Token", token).
-		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString, fromID, toID)).
+		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString, fromIDString, toIDString)).
 		Get(BASEURL + fmt.Sprintf(CAN_MODIFY, teamIDString, unitTypeString, unitIDString, attributeIDString, fromID, toID))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {

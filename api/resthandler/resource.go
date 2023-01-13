@@ -53,7 +53,7 @@ func NewResourceRestHandlerImpl(logger *zap.SugaredLogger, resourceService resou
 
 func (impl ResourceRestHandlerImpl) FindAllResources(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
@@ -95,7 +95,7 @@ func (impl ResourceRestHandlerImpl) FindAllResources(c *gin.Context) {
 
 func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
@@ -167,8 +167,8 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 
 func (impl ResourceRestHandlerImpl) GetResource(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	resourceID, errInGetResourceID := GetIntParamFromRequest(PARAM_RESOURCE_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := GetIntParamFromRequest(c, PARAM_RESOURCE_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetAuthToken != nil {
 		return
@@ -210,8 +210,8 @@ func (impl ResourceRestHandlerImpl) GetResource(c *gin.Context) {
 
 func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	resourceID, errInGetResourceID := GetIntParamFromRequest(PARAM_RESOURCE_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := GetIntParamFromRequest(c, PARAM_RESOURCE_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
@@ -288,11 +288,10 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 
 func (impl ResourceRestHandlerImpl) DeleteResource(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	resourceID, errInGetResourceID := GetIntParamFromRequest(PARAM_RESOURCE_ID)
-	userID, errInGetUserID := GetUserIDFromAuth(c)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := GetIntParamFromRequest(c, PARAM_RESOURCE_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
+	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetAuthToken != nil {
 		return
 	}
 
@@ -326,16 +325,15 @@ func (impl ResourceRestHandlerImpl) DeleteResource(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"resourceId": id,
+		"resourceId": resourceID,
 	})
 }
 
 func (impl ResourceRestHandlerImpl) TestConnection(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	userID, errInGetUserID := GetUserIDFromAuth(c)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
+	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
 	}
 
@@ -397,8 +395,8 @@ func (impl ResourceRestHandlerImpl) TestConnection(c *gin.Context) {
 
 func (impl ResourceRestHandlerImpl) GetMetaInfo(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	resourceID, errInGetResourceID := GetIntParamFromRequest(PARAM_RESOURCE_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := GetIntParamFromRequest(c, PARAM_RESOURCE_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetAuthToken != nil {
 		return

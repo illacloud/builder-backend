@@ -81,7 +81,7 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 	}
 
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
@@ -138,8 +138,8 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 
 func (impl AppRestHandlerImpl) DeleteApp(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(PARAM_APP_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
 		return
@@ -182,8 +182,8 @@ func (impl AppRestHandlerImpl) DeleteApp(c *gin.Context) {
 
 func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(PARAM_APP_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
@@ -256,7 +256,7 @@ func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
 
 func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
@@ -298,9 +298,9 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 
 func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(PARAM_APP_ID)
-	version, errInGetVersion := GetIntParamFromRequest(PARAM_VERSION)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
+	version, errInGetVersion := GetIntParamFromRequest(c, PARAM_VERSION)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetVersion != nil || errInGetAuthToken != nil {
 		return
@@ -349,8 +349,8 @@ func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 
 func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(PARAM_APP_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
@@ -413,8 +413,8 @@ func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
 
 func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(PARAM_APP_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
 		return

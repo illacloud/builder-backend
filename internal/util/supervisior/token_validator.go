@@ -3,6 +3,7 @@ package supervisior
 import (
 	"encoding/base64"
 	"sort"
+	"errors"
 	
 	"crypto/md5"
 	"github.com/caarlos0/env"
@@ -20,21 +21,21 @@ func GetConfig() (*Config, error) {
 }
 
 type RequestTokenValidator struct {
-	Config: *Config
+	Config *Config
 }
 
 func NewRequestTokenValidator() (*RequestTokenValidator, error) {
 	cfg, err := GetConfig()
 	if err != nil {
-		return nil errors.New("can not get config.")
+		return nil, errors.New("can not get config.")
 	}
 	return &RequestTokenValidator{
-		Config: cfg
+		Config: cfg,
 	}, nil
 }
 
 func (r *RequestTokenValidator)GenerateValidateToken(input ...string) string {
-	return GenerateValidateTokenBySliceParam(input)
+	return r.GenerateValidateTokenBySliceParam(input)
 }
 
 func (r *RequestTokenValidator)GenerateValidateTokenBySliceParam(input []string) string {

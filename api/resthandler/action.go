@@ -73,8 +73,8 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 	}
 
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(PARAM_APP_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
@@ -140,10 +140,10 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	}
 
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(PARAM_APP_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
-	actionID, errInGetActionID := GetIntParamFromRequest(PARAM_ACTION_ID)
+	actionID, errInGetActionID := GetIntParamFromRequest(c, PARAM_ACTION_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
 		return
@@ -195,8 +195,8 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 
 func (impl ActionRestHandlerImpl) DeleteAction(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	actionID, errInGetActionID := GetIntParamFromRequest(PARAM_ACTION_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	actionID, errInGetActionID := GetIntParamFromRequest(c, PARAM_ACTION_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
 		return
@@ -233,14 +233,14 @@ func (impl ActionRestHandlerImpl) DeleteAction(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"actionId": id,
+		"actionId": actionID,
 	})
 }
 
 func (impl ActionRestHandlerImpl) GetAction(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	actionID, errInGetActionID := GetIntParamFromRequest(PARAM_ACTION_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	actionID, errInGetActionID := GetIntParamFromRequest(c, PARAM_ACTION_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
 		return
@@ -282,8 +282,8 @@ func (impl ActionRestHandlerImpl) GetAction(c *gin.Context) {
 
 func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(PARAM_APP_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
 		return
@@ -325,7 +325,7 @@ func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 
 func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
@@ -394,8 +394,8 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 
 func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(PARAM_TEAM_ID)
-	actionID, errInGetActionID := GetIntParamFromRequest(PARAM_ACTION_ID)
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	actionID, errInGetActionID := GetIntParamFromRequest(c, PARAM_ACTION_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
 		return
