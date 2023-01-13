@@ -23,6 +23,8 @@ import (
 
 type KVState struct {
 	ID        int       `json:"id" 		   gorm:"column:id;type:bigserial"`
+	UID       uuid.UUID `json:"uid" 	   gorm:"column:uid;type:uuid;not null"`
+	TeamID    int       `json:"team_id"    gorm:"column:team_id;type:bigserial"`
 	StateType int       `json:"state_type" gorm:"column:state_type;type:bigint"`
 	AppRefID  int       `json:"app_ref_id" gorm:"column:app_ref_id;type:bigint"`
 	Version   int       `json:"version"    gorm:"column:version;type:bigint"`
@@ -36,16 +38,16 @@ type KVState struct {
 
 type KVStateRepository interface {
 	Create(kvstate *KVState) error
-	Delete(kvstateID int) error
+	Delete(teamID int, kvstateID int) error
 	Update(kvstate *KVState) error
-	RetrieveByID(kvstateID int) (*KVState, error)
-	RetrieveKVStatesByVersion(versionID int) ([]*KVState, error)
-	RetrieveKVStatesByKey(key string) ([]*KVState, error)
-	RetrieveKVStatesByApp(apprefid int, statetype int, version int) ([]*KVState, error)
-	RetrieveEditVersionByAppAndKey(apprefid int, statetype int, key string) (*KVState, error)
-	RetrieveAllTypeKVStatesByApp(apprefid int, version int) ([]*KVState, error)
-	DeleteAllTypeKVStatesByApp(apprefid int) error
-	DeleteAllKVStatesByAppVersionAndType(apprefid int, version int, stateType int) error
+	RetrieveByID(teamID int, kvstateID int) (*KVState, error)
+	RetrieveKVStatesByVersion(teamID int, versionID int) ([]*KVState, error)
+	RetrieveKVStatesByKey(teamID int, key string) ([]*KVState, error)
+	RetrieveKVStatesByApp(teamID int, apprefid int, statetype int, version int) ([]*KVState, error)
+	RetrieveEditVersionByAppAndKey(teamID int, apprefid int, statetype int, key string) (*KVState, error)
+	RetrieveAllTypeKVStatesByApp(teamID int, apprefid int, version int) ([]*KVState, error)
+	DeleteAllTypeKVStatesByApp(teamID int, apprefid int) error
+	DeleteAllKVStatesByAppVersionAndType(teamID int, apprefid int, version int, stateType int) error
 }
 
 type KVStateRepositoryImpl struct {

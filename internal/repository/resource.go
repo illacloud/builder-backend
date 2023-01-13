@@ -25,6 +25,8 @@ import (
 
 type Resource struct {
 	ID        int       `gorm:"column:id;type:bigserial;primary_key"`
+	UID       uuid.UUID `gorm:"column:uid;type:uuid;not null"`
+	TeamID    int       `gorm:"column:team_id;type:bigserial"`
 	Name      string    `gorm:"column:name;type:varchar;size:200;not null"`
 	Type      int       `gorm:"column:type;type:smallint;not null"`
 	Options   db.JSONB  `gorm:"column:options;type:jsonb"`
@@ -36,11 +38,12 @@ type Resource struct {
 
 type ResourceRepository interface {
 	Create(resource *Resource) (int, error)
-	Delete(id int) error
+	Delete(teamID int, resourceID int) error
 	Update(resource *Resource) error
-	RetrieveByID(id int) (*Resource, error)
-	RetrieveAll() ([]*Resource, error)
-	RetrieveAllByUpdatedTime() ([]*Resource, error)
+	RetrieveByID(teamID int, resourceID int) (*Resource, error)
+	RetrieveAll(teamID int) ([]*Resource, error)
+	RetrieveAllByUpdatedTime(teamID int) ([]*Resource, error)
+	CountResourceByTeamID(teamID int) (int, error)
 }
 
 type ResourceRepositoryImpl struct {
@@ -62,8 +65,8 @@ func (impl *ResourceRepositoryImpl) Create(resource *Resource) (int, error) {
 	return resource.ID, nil
 }
 
-func (impl *ResourceRepositoryImpl) Delete(id int) error {
-	if err := impl.db.Delete(&Resource{}, id).Error; err != nil {
+func (impl *ResourceRepositoryImpl) Delete(teamID int,resourceID int) error {
+	if err := impl.db.Delete(&Resource{}).Where("id = ? AND team_id = ?", resourceID, teamID).Error; err != nil {
 		return err
 	}
 	return nil
@@ -81,26 +84,34 @@ func (impl *ResourceRepositoryImpl) Update(resource *Resource) error {
 	return nil
 }
 
-func (impl *ResourceRepositoryImpl) RetrieveByID(id int) (*Resource, error) {
-	resource := &Resource{}
-	if err := impl.db.First(resource, id).Error; err != nil {
+func (impl *ResourceRepositoryImpl) RetrieveByID(teamID int, resourceID int) (*Resource, error) {
+	var resource *Resource
+	if err := impl.db.Where("id = ? AND team_id = ?", resourceID, teamID).First(&resource).Error; err != nil {
 		return &Resource{}, err
 	}
 	return resource, nil
 }
 
-func (impl *ResourceRepositoryImpl) RetrieveAll() ([]*Resource, error) {
+func (impl *ResourceRepositoryImpl) RetrieveAll(teamID int) ([]*Resource, error) {
 	var resources []*Resource
-	if err := impl.db.Find(&resources).Error; err != nil {
+	if err := impl.db.Where("team_id = ?", teamID).Find(&resources).Error; err != nil {
 		return nil, err
 	}
 	return resources, nil
 }
 
-func (impl *ResourceRepositoryImpl) RetrieveAllByUpdatedTime() ([]*Resource, error) {
+func (impl *ResourceRepositoryImpl) RetrieveAllByUpdatedTime(teamID int) ([]*Resource, error) {
 	var resources []*Resource
-	if err := impl.db.Order("updated_at desc").Find(&resources).Error; err != nil {
+	if err := impl.db.Where("team_id = ?", teamID).Order("updated_at desc").Find(&resources).Error; err != nil {
 		return nil, err
 	}
 	return resources, nil
+}
+
+func (impl *ResourceRepositoryImpl) CountResourceByTeamID(teamID int) (int, error) {
+	var count int64
+	if err := impl.db.Where("team_id = ?", teamID).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
 }

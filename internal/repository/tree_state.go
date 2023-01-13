@@ -28,6 +28,8 @@ const TREE_STATE_SUMMIT_NAME = "root"
 
 type TreeState struct {
 	ID                 int       `json:"id" 							 gorm:"column:id;type:bigserial"`
+	UID       		   uuid.UUID `json:"uid" 							 gorm:"column:uid;type:uuid;not null"`
+	TeamID    		   int       `json:"team_id" 						 gorm:"column:team_id;type:bigserial"`
 	StateType          int       `json:"state_type" 					 gorm:"column:state_type;type:bigint"`
 	ParentNodeRefID    int       `json:"parent_node_ref_id" 			 gorm:"column:parent_node_ref_id;type:bigint"`
 	ChildrenNodeRefIDs string    `json:"children_node_ref_ids" 		     gorm:"column:children_node_ref_ids;type:jsonb"`
@@ -43,15 +45,15 @@ type TreeState struct {
 
 type TreeStateRepository interface {
 	Create(treestate *TreeState) (int, error)
-	Delete(treestateID int) error
+	Delete(teamID int, treestateID int) error
 	Update(treestate *TreeState) error
-	RetrieveByID(treestateID int) (*TreeState, error)
-	RetrieveTreeStatesByVersion(versionID int) ([]*TreeState, error)
-	RetrieveTreeStatesByName(name string) ([]*TreeState, error)
-	RetrieveTreeStatesByApp(apprefid int, statetype int, version int) ([]*TreeState, error)
-	RetrieveEditVersionByAppAndName(apprefid int, statetype int, name string) (*TreeState, error)
-	RetrieveAllTypeTreeStatesByApp(apprefid int, version int) ([]*TreeState, error)
-	DeleteAllTypeTreeStatesByApp(apprefid int) error
+	RetrieveByID(teamID int, treestateID int) (*TreeState, error)
+	RetrieveTreeStatesByVersion(teamID int, versionID int) ([]*TreeState, error)
+	RetrieveTreeStatesByName(teamID int, name string) ([]*TreeState, error)
+	RetrieveTreeStatesByApp(teamID int, apprefid int, statetype int, version int) ([]*TreeState, error)
+	RetrieveEditVersionByAppAndName(teamID int, apprefid int, statetype int, name string) (*TreeState, error)
+	RetrieveAllTypeTreeStatesByApp(teamID int, apprefid int, version int) ([]*TreeState, error)
+	DeleteAllTypeTreeStatesByApp(teamID int, apprefid int) error
 }
 
 type TreeStateRepositoryImpl struct {

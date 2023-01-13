@@ -25,6 +25,8 @@ import (
 
 type Action struct {
 	ID          int       `gorm:"column:id;type:bigserial;primary_key"`
+	UID         uuid.UUID `gorm:"column:uid;type:uuid;not null"`
+	TeamID      int       `gorm:"column:team_id;type:bigserial"`
 	App         int       `gorm:"column:app_ref_id;type:bigint;not null"`
 	Version     int       `gorm:"column:version;type:bigint;not null"`
 	Resource    int       `gorm:"column:resource_ref_id;type:bigint;not null"`
@@ -41,11 +43,12 @@ type Action struct {
 
 type ActionRepository interface {
 	Create(action *Action) (int, error)
-	Delete(id int) error
+	Delete(teamID int, appID int) error
 	Update(action *Action) error
-	RetrieveByID(id int) (*Action, error)
-	RetrieveActionsByAppVersion(app, version int) ([]*Action, error)
-	DeleteActionsByApp(appID int) error
+	RetrieveByID(teamID int, appID int) (*Action, error)
+	RetrieveActionsByAppVersion(teamID int appID int, version int) ([]*Action, error)
+	DeleteActionsByApp(teamID int, appID int) error
+	CountActionByTeamID(teamID int) (int, error) 
 }
 
 type ActionRepositoryImpl struct {
@@ -67,8 +70,8 @@ func (impl *ActionRepositoryImpl) Create(action *Action) (int, error) {
 	return action.ID, nil
 }
 
-func (impl *ActionRepositoryImpl) Delete(id int) error {
-	if err := impl.db.Delete(&Action{}, id).Error; err != nil {
+func (impl *ActionRepositoryImpl) Delete(teamID int, appID int) error {
+	if err := impl.db.Delete(&Action{}).Where("id = ? AND team_id = ?", appID, teamID).Error; err != nil {
 		return err
 	}
 	return nil
@@ -90,25 +93,34 @@ func (impl *ActionRepositoryImpl) Update(action *Action) error {
 	return nil
 }
 
-func (impl *ActionRepositoryImpl) RetrieveByID(id int) (*Action, error) {
-	action := &Action{}
-	if err := impl.db.First(action, id).Error; err != nil {
+func (impl *ActionRepositoryImpl) RetrieveByID(teamID int, appID int) (*Action, error) {
+	var action *Action
+	if err := impl.db.Where("id = ? AND team_id = ?", appID, teamID).First(&action).Error; err != nil {
 		return &Action{}, err
 	}
 	return action, nil
 }
 
-func (impl *ActionRepositoryImpl) RetrieveActionsByAppVersion(app, version int) ([]*Action, error) {
+func (impl *ActionRepositoryImpl) RetrieveActionsByAppVersion(teamID int, appID int, version int) ([]*Action, error) {
 	var actions []*Action
-	if err := impl.db.Where("app_ref_id = ? AND version = ?", app, version).Find(&actions).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID appID, version).Find(&actions).Error; err != nil {
 		return nil, err
 	}
 	return actions, nil
 }
 
-func (impl *ActionRepositoryImpl) DeleteActionsByApp(appID int) error {
-	if err := impl.db.Where("app_ref_id = ?", appID).Delete(&Action{}).Error; err != nil {
+func (impl *ActionRepositoryImpl) DeleteActionsByApp(teamID int, appID int) error {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, appID).Delete(&Action{}).Error; err != nil {
 		return err
 	}
 	return nil
 }
+
+func (impl *ActionRepositoryImpl) CountActionByTeamID(teamID int) (int, error) {
+	var count int64
+	if err := impl.db.Where("team_id = ?", teamID).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+

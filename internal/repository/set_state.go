@@ -23,6 +23,8 @@ import (
 
 type SetState struct {
 	ID        int       `json:"id" 		   gorm:"column:id;type:bigserial"`
+	UID       uuid.UUID `json:"uid" 	   gorm:"column:uid;type:uuid;not null"`
+	TeamID    int       `json:"team_id"    gorm:"column:team_id;type:bigserial"`
 	StateType int       `json:"state_type" gorm:"column:state_type;type:bigint"`
 	AppRefID  int       `json:"app_ref_id" gorm:"column:app_ref_id;type:bigint"`
 	Version   int       `json:"version"    gorm:"column:version;type:bigint"`
@@ -35,15 +37,15 @@ type SetState struct {
 
 type SetStateRepository interface {
 	Create(setState *SetState) error
-	Delete(setStateID int) error
+	Delete(teamID int, setStateID int) error
 	DeleteByValue(setState *SetState) error
 	Update(setState *SetState) error
 	UpdateByValue(beforeSetState *SetState, afterSetState *SetState) error
-	RetrieveByID(setStateID int) (*SetState, error)
-	RetrieveSetStatesByVersion(version int) ([]*SetState, error)
+	RetrieveByID(teamID int, setStateID int) (*SetState, error)
+	RetrieveSetStatesByVersion(teamID int, version int) ([]*SetState, error)
 	RetrieveByValue(setState *SetState) (*SetState, error)
-	RetrieveSetStatesByApp(apprefid int, statetype int, version int) ([]*SetState, error)
-	DeleteAllTypeSetStatesByApp(apprefid int) error
+	RetrieveSetStatesByApp(teamID int, apprefid int, statetype int, version int) ([]*SetState, error)
+	DeleteAllTypeSetStatesByApp(teamID int, apprefid int) error
 }
 
 type SetStateRepositoryImpl struct {

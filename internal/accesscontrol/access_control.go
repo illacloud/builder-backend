@@ -15,19 +15,19 @@ const STATUS_SUSPEND = 3
 
 // Attirbute Unit List
 const (
-	UNIT_TYPE_TEAM              = 1  // cloud team
-	UNIT_TYPE_TEAM_MEMBER       = 2  // cloud team member
-	UNIT_TYPE_USER              = 3  // cloud user
-	UNIT_TYPE_INVITE            = 4  // cloud invite
-	UNIT_TYPE_DOMAIN            = 5  // cloud domain
-	UNIT_TYPE_BILLING           = 6  // cloud billing
-	UNIT_TYPE_BUILDER_DASHBOARD = 7  // builder dabshboard for websocket
-	UNIT_TYPE_APP               = 7  // builder app
-	UNIT_TYPE_COMPONENTS        = 8  // builder components
-	UNIT_TYPE_RESOURCE          = 9  // resource resource
-	UNIT_TYPE_ACTION            = 10 // resource action
-	UNIT_TYPE_TRANSFORMER       = 11 // resource transformer
-	UNIT_TYPE_JOB               = 12 // hub job
+	UNIT_TYPE_TEAM    = iota + 1  // cloud team
+	UNIT_TYPE_TEAM_MEMBER         // cloud team member
+	UNIT_TYPE_USER                // cloud user
+	UNIT_TYPE_INVITE              // cloud invite
+	UNIT_TYPE_DOMAIN              // cloud domain
+	UNIT_TYPE_BILLING             // cloud billing
+	UNIT_TYPE_BUILDER_DASHBOARD   // builder dabshboard
+	UNIT_TYPE_APP                 // builder app
+	UNIT_TYPE_COMPONENTS          // builder components
+	UNIT_TYPE_RESOURCE            // resource resource
+	UNIT_TYPE_ACTION              // resource action
+	UNIT_TYPE_TRANSFORMER         // resource transformer
+	UNIT_TYPE_JOB                 // hub job
 )
 
 // User Role ID in Team

@@ -25,6 +25,7 @@ type RESTRouter struct {
 	logger         *zap.SugaredLogger
 	Router         *gin.RouterGroup
 	UserRouter     UserRouter
+	BuilderRouter  BuilderRouter
 	AppRouter      AppRouter
 	RoomRouter     RoomRouter
 	ActionRouter   ActionRouter
@@ -32,11 +33,12 @@ type RESTRouter struct {
 	Authenticator  user.Authenticator
 }
 
-func NewRESTRouter(logger *zap.SugaredLogger, userRouter UserRouter, appRouter AppRouter, roomRouter RoomRouter,
+func NewRESTRouter(logger *zap.SugaredLogger, userRouter UserRouter, builderRouter BuilderRouter, appRouter AppRouter, roomRouter RoomRouter,
 	actionRouter ActionRouter, resourceRouter ResourceRouter, authenticator user.Authenticator) *RESTRouter {
 	return &RESTRouter{
 		logger:         logger,
 		UserRouter:     userRouter,
+		BuilderRouter:  builderRouter,
 		AppRouter:      appRouter,
 		RoomRouter:     roomRouter,
 		ActionRouter:   actionRouter,
@@ -50,12 +52,14 @@ func (r RESTRouter) InitRouter(router *gin.RouterGroup) {
 
 	authRouter := v1.Group("/auth")
 	userRouter := v1.Group("/users")
+	builderRouter := v1.Group("/teams/:teamID/builder")
 	appRouter := v1.Group("/teams/:teamID/apps")
-	roomRouter := v1.Group("/room")
-	actionRouter := v1.Group("/teams/:teamID/apps/:app")
 	resourceRouter := v1.Group("/teams/:teamID/resources")
+	actionRouter := v1.Group("/teams/:teamID/apps/:app")
+	roomRouter := v1.Group("/teams/:teamID/room")
 
 	userRouter.Use(user.JWTAuth(r.Authenticator))
+	builderRouter.Use(user.JWTAuth(r.Authenticator))
 	appRouter.Use(user.JWTAuth(r.Authenticator))
 	roomRouter.Use(user.JWTAuth(r.Authenticator))
 	actionRouter.Use(user.JWTAuth(r.Authenticator))
@@ -63,6 +67,7 @@ func (r RESTRouter) InitRouter(router *gin.RouterGroup) {
 
 	r.UserRouter.InitAuthRouter(authRouter)
 	r.UserRouter.InitUserRouter(userRouter)
+	r.BuilderRouter.InitBuilderRouter(builderRouter)
 	r.AppRouter.InitAppRouter(appRouter)
 	r.RoomRouter.InitRoomRouter(roomRouter)
 	r.ActionRouter.InitActionRouter(actionRouter)

@@ -14,6 +14,7 @@ import (
 	"github.com/illacloud/builder-backend/internal/util"
 	"github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/pkg/action"
+	"github.com/illacloud/builder-backend/pkg/builder"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/db"
 	"github.com/illacloud/builder-backend/pkg/resource"
@@ -60,7 +61,7 @@ func Initialize() (*Server, error) {
 	kvStateRepositoryImpl := repository.NewKVStateRepositoryImpl(sugaredLogger, gormDB)
 	treeStateRepositoryImpl := repository.NewTreeStateRepositoryImpl(sugaredLogger, gormDB)
 	setStateRepositoryImpl := repository.NewSetStateRepositoryImpl(sugaredLogger, gormDB)
-	actionRepositoryImpl := repository.NewActionRepositoryImpl(sugaredLogger, gormDB)
+	actionRepositoryImpl := repository.NewActionRepositoryImpl(sugaredLogger, gormDB)	
 	appServiceImpl := app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, userRepositoryImpl, kvStateRepositoryImpl, treeStateRepositoryImpl, setStateRepositoryImpl, actionRepositoryImpl)
 	treeStateServiceImpl := state.NewTreeStateServiceImpl(sugaredLogger, treeStateRepositoryImpl)
 	appRestHandlerImpl := resthandler.NewAppRestHandlerImpl(sugaredLogger, appServiceImpl, attrg, treeStateServiceImpl)
@@ -76,7 +77,10 @@ func Initialize() (*Server, error) {
 	resourceRestHandlerImpl := resthandler.NewResourceRestHandlerImpl(sugaredLogger, resourceServiceImpl, attrg)
 	resourceRouterImpl := router.NewResourceRouterImpl(resourceRestHandlerImpl)
 	authenticatorImpl := user.NewAuthenticatorImpl(userRepositoryImpl, sugaredLogger)
-	restRouter := router.NewRESTRouter(sugaredLogger, userRouterImpl, appRouterImpl, roomRouterImpl, actionRouterImpl, resourceRouterImpl, authenticatorImpl)
+	builderServiceImpl := builder.NewBuilderServiceImpl(sugaredLogger, appRepositoryImpl, resourceRepositoryImpl, actionRepositoryImpl)
+	builderRestHandlerImpl := resthandler.NewBuilderRestHandlerImpl(sugaredLogger, builderServiceImpl, attrg)
+	builderRouterImpl := router.NewBuilderRouterImpl(builderRestHandlerImpl)
+	restRouter := router.NewRESTRouter(sugaredLogger, userRouterImpl, builderRouterImpl, appRouterImpl, roomRouterImpl, actionRouterImpl, resourceRouterImpl, authenticatorImpl)
 	server := NewServer(config, engine, restRouter, sugaredLogger)
 	return server, nil
 }
