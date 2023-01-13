@@ -17,6 +17,7 @@ package action
 import (
 	"github.com/illacloud/builder-backend/pkg/plugins/clickhouse"
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/builder-backend/pkg/plugins/dynamodb"
 	"github.com/illacloud/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illacloud/builder-backend/pkg/plugins/firebase"
 	"github.com/illacloud/builder-backend/pkg/plugins/graphql"
@@ -49,6 +50,7 @@ var (
 	GRAPHQL_ACTION       = "graphql"
 	MSSQL_ACTION         = "mssql"
 	HUGGINGFACE_ACTION   = "huggingface"
+	DYNAMODB_ACTION      = "dynamodb"
 )
 
 type AbstractActionFactory interface {
@@ -100,6 +102,9 @@ func (f *Factory) Build() common.DataConnector {
 	case HUGGINGFACE_ACTION:
 		hfAction := &huggingface.Connector{}
 		return hfAction
+	case DYNAMODB_ACTION:
+		dynamodbAction := &dynamodb.Connector{}
+		return dynamodbAction
 	default:
 		return nil
 	}
