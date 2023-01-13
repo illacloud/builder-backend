@@ -17,6 +17,7 @@ package resource
 import (
 	"github.com/illacloud/builder-backend/pkg/plugins/clickhouse"
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/builder-backend/pkg/plugins/dynamodb"
 	"github.com/illacloud/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illacloud/builder-backend/pkg/plugins/firebase"
 	"github.com/illacloud/builder-backend/pkg/plugins/graphql"
@@ -48,6 +49,7 @@ var (
 	GRAPHQL_RESOURCE       = "graphql"
 	MSSQL_RESOURCE         = "mssql"
 	HUGGINGFACE_RESOURCE   = "huggingface"
+	DYNAMODB_RESOURCE      = "dynamodb"
 )
 
 type AbstractResourceFactory interface {
@@ -99,6 +101,9 @@ func (f *Factory) Generate() common.DataConnector {
 	case HUGGINGFACE_RESOURCE:
 		hfRsc := &huggingface.Connector{}
 		return hfRsc
+	case DYNAMODB_RESOURCE:
+		dynamodbRsc := &dynamodb.Connector{}
+		return dynamodbRsc
 	default:
 		return nil
 	}
