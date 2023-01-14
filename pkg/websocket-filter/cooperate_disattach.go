@@ -39,7 +39,7 @@ func SignalCooperateDisattach(hub *ws.Hub, message *ws.Message) error {
 	message.SetBroadcastType(ws.BROADCAST_TYPE_ATTACH_COMPONENT)
 	message.SetBroadcastPayload(inRoomUsers.FetchAllAttachedUsers())
 	message.RewriteBroadcast()
-	hub.BroadcastToOtherClients(message, currentClient)
+	hub.BroadcastToRoomAllClients(message, currentClient)
 
 	return nil
 }
