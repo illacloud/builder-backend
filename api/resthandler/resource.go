@@ -82,7 +82,7 @@ func (impl ResourceRestHandlerImpl) FindAllResources(c *gin.Context) {
 	}
 
 	// fetch data
-	res, err := impl.resourceService.FindAllResources()
+	res, err := impl.resourceService.FindAllResources(teamID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
@@ -125,6 +125,7 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 	}
 
 	var rsc resource.ResourceDto
+	rsc.InitUID()
 	if err := json.NewDecoder(c.Request.Body).Decode(&rsc); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
@@ -150,6 +151,7 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 		return
 	}
 
+	rsc.SetTeamID(teamID)
 	rsc.CreatedAt = time.Now().UTC()
 	rsc.CreatedBy = userID
 	rsc.UpdatedAt = time.Now().UTC()
@@ -197,7 +199,7 @@ func (impl ResourceRestHandlerImpl) GetResource(c *gin.Context) {
 	}
 
 	// fetch data
-	res, err := impl.resourceService.GetResource(resourceID)
+	res, err := impl.resourceService.GetResource(teamID, resourceID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
@@ -279,7 +281,7 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 		})
 		return
 	}
-	originInfo, _ := impl.resourceService.GetResource(rsc.ID)
+	originInfo, _ := impl.resourceService.GetResource(teamID, rsc.ID)
 	res.CreatedAt = originInfo.CreatedAt
 	res.CreatedBy = originInfo.CreatedBy
 
@@ -317,7 +319,7 @@ func (impl ResourceRestHandlerImpl) DeleteResource(c *gin.Context) {
 		return
 	}
 
-	if err := impl.resourceService.DeleteResource(resourceID); err != nil {
+	if err := impl.resourceService.DeleteResource(teamID, resourceID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": "delete resource error: " + err.Error(),
@@ -425,7 +427,7 @@ func (impl ResourceRestHandlerImpl) GetMetaInfo(c *gin.Context) {
 	}
 
 	// detch data
-	res, err := impl.resourceService.GetMetaInfo(resourceID)
+	res, err := impl.resourceService.GetMetaInfo(teamID, resourceID)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{})
 		return

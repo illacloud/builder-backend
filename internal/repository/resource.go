@@ -17,6 +17,7 @@ package repository
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/pkg/db"
 
 	"go.uber.org/zap"
@@ -65,7 +66,7 @@ func (impl *ResourceRepositoryImpl) Create(resource *Resource) (int, error) {
 	return resource.ID, nil
 }
 
-func (impl *ResourceRepositoryImpl) Delete(teamID int,resourceID int) error {
+func (impl *ResourceRepositoryImpl) Delete(teamID int, resourceID int) error {
 	if err := impl.db.Delete(&Resource{}).Where("id = ? AND team_id = ?", resourceID, teamID).Error; err != nil {
 		return err
 	}

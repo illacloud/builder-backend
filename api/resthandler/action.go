@@ -57,6 +57,7 @@ func NewActionRestHandlerImpl(logger *zap.SugaredLogger, actionService action.Ac
 func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 	// fetch payload
 	var act action.ActionDto
+	act.InitUID()
 	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
@@ -104,6 +105,7 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 	}
 
 	// create
+	act.SetTeamID(teamID)
 	act.App = appID
 	act.Version = 0
 	act.CreatedAt = time.Now().UTC()
@@ -124,6 +126,7 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	// fetch payload
 	var act action.ActionDto
+	act.InitUID()
 	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
@@ -173,6 +176,7 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 
 	// update
 	act.ID = actionID
+	act.SetTeamID(teamID)
 	act.UpdatedBy = userID
 	act.App = appID
 	act.Version = 0
@@ -186,7 +190,7 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 		})
 		return
 	}
-	originInfo, _ := impl.actionService.GetAction(act.ID)
+	originInfo, _ := impl.actionService.GetAction(teamID, act.ID)
 	res.CreatedBy = originInfo.CreatedBy
 	res.CreatedAt = originInfo.CreatedAt
 
@@ -225,7 +229,7 @@ func (impl ActionRestHandlerImpl) DeleteAction(c *gin.Context) {
 	}
 
 	// delete
-	if err := impl.actionService.DeleteAction(actionID); err != nil {
+	if err := impl.actionService.DeleteAction(teamID, actionID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": "delete action error: " + err.Error(),
@@ -269,7 +273,7 @@ func (impl ActionRestHandlerImpl) GetAction(c *gin.Context) {
 	}
 
 	// fetch data
-	res, err := impl.actionService.GetAction(actionID)
+	res, err := impl.actionService.GetAction(teamID, actionID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
@@ -312,7 +316,7 @@ func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 	}
 
 	// fetch data
-	res, err := impl.actionService.FindActionsByAppVersion(appID, 0)
+	res, err := impl.actionService.FindActionsByAppVersion(teamID, appID, 0)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
@@ -363,7 +367,7 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 		})
 		return
 	}
-	res, err := impl.actionService.RunAction(act)
+	res, err := impl.actionService.RunAction(teamID, act)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Error 1064:") {
 			lineNumber, _ := strconv.Atoi(err.Error()[len(err.Error())-1:])
@@ -433,7 +437,7 @@ func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 		})
 		return
 	}
-	res, err := impl.actionService.RunAction(act)
+	res, err := impl.actionService.RunAction(teamID, act)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Error 1064:") {
 			lineNumber, _ := strconv.Atoi(err.Error()[len(err.Error())-1:])

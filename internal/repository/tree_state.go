@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/internal/util"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -28,8 +29,8 @@ const TREE_STATE_SUMMIT_NAME = "root"
 
 type TreeState struct {
 	ID                 int       `json:"id" 							 gorm:"column:id;type:bigserial"`
-	UID       		   uuid.UUID `json:"uid" 							 gorm:"column:uid;type:uuid;not null"`
-	TeamID    		   int       `json:"team_id" 						 gorm:"column:team_id;type:bigserial"`
+	UID                uuid.UUID `json:"uid" 							 gorm:"column:uid;type:uuid;not null"`
+	TeamID             int       `json:"teamID" 						 gorm:"column:team_id;type:bigserial"`
 	StateType          int       `json:"state_type" 					 gorm:"column:state_type;type:bigint"`
 	ParentNodeRefID    int       `json:"parent_node_ref_id" 			 gorm:"column:parent_node_ref_id;type:bigint"`
 	ChildrenNodeRefIDs string    `json:"children_node_ref_ids" 		     gorm:"column:children_node_ref_ids;type:jsonb"`

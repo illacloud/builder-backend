@@ -17,6 +17,7 @@ package repository
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -24,7 +25,7 @@ import (
 type KVState struct {
 	ID        int       `json:"id" 		   gorm:"column:id;type:bigserial"`
 	UID       uuid.UUID `json:"uid" 	   gorm:"column:uid;type:uuid;not null"`
-	TeamID    int       `json:"team_id"    gorm:"column:team_id;type:bigserial"`
+	TeamID    int       `json:"teamID"    gorm:"column:team_id;type:bigserial"`
 	StateType int       `json:"state_type" gorm:"column:state_type;type:bigint"`
 	AppRefID  int       `json:"app_ref_id" gorm:"column:app_ref_id;type:bigint"`
 	Version   int       `json:"version"    gorm:"column:version;type:bigint"`

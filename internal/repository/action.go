@@ -17,6 +17,7 @@ package repository
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/pkg/db"
 
 	"go.uber.org/zap"
@@ -46,9 +47,9 @@ type ActionRepository interface {
 	Delete(teamID int, appID int) error
 	Update(action *Action) error
 	RetrieveByID(teamID int, appID int) (*Action, error)
-	RetrieveActionsByAppVersion(teamID int appID int, version int) ([]*Action, error)
+	RetrieveActionsByAppVersion(teamID int, appID int, version int) ([]*Action, error)
 	DeleteActionsByApp(teamID int, appID int) error
-	CountActionByTeamID(teamID int) (int, error) 
+	CountActionByTeamID(teamID int) (int, error)
 }
 
 type ActionRepositoryImpl struct {
@@ -103,7 +104,7 @@ func (impl *ActionRepositoryImpl) RetrieveByID(teamID int, appID int) (*Action, 
 
 func (impl *ActionRepositoryImpl) RetrieveActionsByAppVersion(teamID int, appID int, version int) ([]*Action, error) {
 	var actions []*Action
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID appID, version).Find(&actions).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, appID, version).Find(&actions).Error; err != nil {
 		return nil, err
 	}
 	return actions, nil
@@ -123,4 +124,3 @@ func (impl *ActionRepositoryImpl) CountActionByTeamID(teamID int) (int, error) {
 	}
 	return int(count), nil
 }
-

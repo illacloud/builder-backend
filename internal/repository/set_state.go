@@ -17,6 +17,7 @@ package repository
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -24,7 +25,7 @@ import (
 type SetState struct {
 	ID        int       `json:"id" 		   gorm:"column:id;type:bigserial"`
 	UID       uuid.UUID `json:"uid" 	   gorm:"column:uid;type:uuid;not null"`
-	TeamID    int       `json:"team_id"    gorm:"column:team_id;type:bigserial"`
+	TeamID    int       `json:"teamID"    gorm:"column:team_id;type:bigserial"`
 	StateType int       `json:"state_type" gorm:"column:state_type;type:bigint"`
 	AppRefID  int       `json:"app_ref_id" gorm:"column:app_ref_id;type:bigint"`
 	Version   int       `json:"version"    gorm:"column:version;type:bigint"`
@@ -74,8 +75,8 @@ func (impl *SetStateRepositoryImpl) Delete(teamID int, setStateID int) error {
 	return nil
 }
 
-func (impl *SetStateRepositoryImpl) DeleteByValue(teamID int, setState *SetState) error {
-	if err := impl.db.Where("team_id = ? AND value = ?", teamID, setState.Value).Delete(&SetState{}).Error; err != nil {
+func (impl *SetStateRepositoryImpl) DeleteByValue(setState *SetState) error {
+	if err := impl.db.Where("team_id = ? AND value = ?", setState.TeamID, setState.Value).Delete(&SetState{}).Error; err != nil {
 		return err
 	}
 	return nil
@@ -128,7 +129,8 @@ func (impl *SetStateRepositoryImpl) RetrieveSetStatesByVersion(teamID int, versi
 func (impl *SetStateRepositoryImpl) RetrieveByValue(setState *SetState) (*SetState, error) {
 	var ret *SetState
 	if err := impl.db.Where(
-		"app_ref_id = ? AND state_type = ? AND version = ? AND value = ?",
+		"team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ? AND value = ?",
+		setState.TeamID,
 		setState.AppRefID,
 		setState.StateType,
 		setState.Version,

@@ -168,7 +168,7 @@ func (impl AppRestHandlerImpl) DeleteApp(c *gin.Context) {
 	}
 
 	// Call `app service` delete app
-	if err := impl.appService.DeleteApp(appID); err != nil {
+	if err := impl.appService.DeleteApp(teamID, appID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
 			"errorMessage": "delete app error: " + err.Error(),
@@ -233,7 +233,7 @@ func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
 	}
 
 	// Call `app service` update app
-	appDTO, err := impl.appService.FetchAppByID(appID)
+	appDTO, err := impl.appService.FetchAppByID(teamID, appID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
@@ -285,7 +285,7 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 	}
 
 	// Call `app service` get all apps
-	res, err := impl.appService.GetAllApps()
+	res, err := impl.appService.GetAllApps(teamID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
@@ -329,7 +329,7 @@ func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 	}
 
 	// Fetch Mega data via `app` and `version`
-	res, err := impl.appService.GetMegaData(appID, version)
+	res, err := impl.appService.GetMegaData(teamID, appID, version)
 	if err != nil {
 		if err.Error() == "content not found" {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -400,7 +400,7 @@ func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
 	}
 
 	// Call `app service` to duplicate app
-	res, err := impl.appService.DuplicateApp(appID, userID, payload.Name)
+	res, err := impl.appService.DuplicateApp(teamID, appID, userID, payload.Name)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
@@ -443,7 +443,7 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	}
 
 	// Call `app service` to release app
-	version, err := impl.appService.ReleaseApp(appID)
+	version, err := impl.appService.ReleaseApp(teamID, appID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,

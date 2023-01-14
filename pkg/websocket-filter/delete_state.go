@@ -27,6 +27,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
+	teamID := currentClient.TeamID
 	appDto := app.NewAppDto()
 	appDto.ConstructWithID(currentClient.APPID)
 	appDto.ConstructWithUpdateBy(currentClient.MappedUserID)
@@ -39,6 +40,8 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 	case ws.TARGET_COMPONENTS:
 		for _, v := range message.Payload {
 			currentNode := state.NewTreeStateDto()
+			currentNode.InitUID()
+			currentNode.SetTeamID(teamID)
 			currentNode.ConstructWithDisplayNameForDelete(v) // set Name
 			currentNode.ConstructByApp(appDto)               // set AppRefID
 			currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS)
@@ -66,6 +69,8 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 		for _, v := range message.Payload {
 			// fill KVStateDto
 			kvStateDto := state.NewKVStateDto()
+			kvStateDto.InitUID()
+			kvStateDto.SetTeamID(teamID)
 			kvStateDto.ConstructWithDisplayNameForDelete(v)
 			kvStateDto.ConstructByApp(appDto) // set AppRefID
 			kvStateDto.ConstructWithType(stateType)
@@ -83,6 +88,8 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 
 			// init
 			setStateDto := state.NewSetStateDto()
+			setStateDto.InitUID()
+			setStateDto.SetTeamID(teamID)
 			setStateDto.ConstructWithDisplayNameForDelete(v)
 			setStateDto.ConstructWithType(stateType)
 			setStateDto.ConstructByApp(appDto)

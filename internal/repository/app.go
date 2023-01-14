@@ -17,6 +17,7 @@ package repository
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -26,7 +27,7 @@ const APP_EDIT_VERSION = 0 // the editable version app ID always be 0
 type App struct {
 	ID              int       `json:"id" 				gorm:"column:id;type:bigserial;primary_key;unique"`
 	UID             uuid.UUID `json:"uid"   		    gorm:"column:uid;type:uuid;not null"`
-	TeamID          int       `json:"team_id" 		    gorm:"column:team_id;type:bigserial"`
+	TeamID          int       `json:"teamID" 		    gorm:"column:team_id;type:bigserial"`
 	Name            string    `json:"name" 				gorm:"column:name;type:varchar"`
 	ReleaseVersion  int       `json:"release_version" 	gorm:"column:release_version;type:bigserial"`
 	MainlineVersion int       `json:"mainline_version" 	gorm:"column:mainline_version;type:bigserial"`
@@ -72,7 +73,7 @@ func (impl *AppRepositoryImpl) Create(app *App) (int, error) {
 }
 
 func (impl *AppRepositoryImpl) Delete(teamID int, appID int) error {
-	if err := impl.db.Delete(&App{}).Where("id = ? AND team_id = ?", app, teamID).Error; err != nil {
+	if err := impl.db.Delete(&App{}).Where("team_id = ? AND id = ?", teamID, appID).Error; err != nil {
 		return err
 	}
 	return nil
@@ -99,7 +100,7 @@ func (impl *AppRepositoryImpl) RetrieveAll(teamID int) ([]*App, error) {
 	return apps, nil
 }
 
-func (impl *AppRepositoryImpl) RetrieveAppByID(teamID int,appID int) (*App, error) {
+func (impl *AppRepositoryImpl) RetrieveAppByID(teamID int, appID int) (*App, error) {
 	var app *App
 	if err := impl.db.Where("id = ? AND team_id = ?", appID, teamID).Find(&app).Error; err != nil {
 		return nil, err
@@ -127,7 +128,7 @@ func (impl *AppRepositoryImpl) UpdateUpdatedAt(app *App) error {
 
 func (impl *AppRepositoryImpl) CountAPPByTeamID(teamID int) (int, error) {
 	var count int64
-	if err := impl.db.Where("team_id = ?", teamID).Count(&count).Error; err !=nil {
+	if err := impl.db.Where("team_id = ?", teamID).Count(&count).Error; err != nil {
 		return 0, err
 	}
 	return int(count), nil

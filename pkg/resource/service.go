@@ -18,6 +18,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/internal/repository"
 
 	"go.uber.org/zap"
@@ -46,17 +47,19 @@ var type_map = map[string]int{
 
 type ResourceService interface {
 	CreateResource(resource ResourceDto) (ResourceDto, error)
-	DeleteResource(id int) error
+	DeleteResource(teamID int, id int) error
 	UpdateResource(resource ResourceDto) (ResourceDto, error)
-	GetResource(id int) (ResourceDto, error)
-	FindAllResources() ([]ResourceDto, error)
+	GetResource(teamID int, id int) (ResourceDto, error)
+	FindAllResources(teamID int) ([]ResourceDto, error)
 	TestConnection(resource ResourceDto) (bool, error)
 	ValidateResourceOptions(resourceType string, options map[string]interface{}) error
-	GetMetaInfo(id int) (map[string]interface{}, error)
+	GetMetaInfo(teamID int, id int) (map[string]interface{}, error)
 }
 
 type ResourceDto struct {
 	ID        int                    `json:"resourceId"`
+	UID       uuid.UUID              `json:"uid"`
+	TeamID    int                    `json:"teamID"`
 	Name      string                 `json:"resourceName" validate:"required"`
 	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface"`
 	Options   map[string]interface{} `json:"content" validate:"required"`
@@ -66,8 +69,15 @@ type ResourceDto struct {
 	UpdatedBy int                    `json:"updatedBy,omitempty"`
 }
 
-func (resourced *ResourceDto) ConstructByMap(data interface{}) {
+func (r *ResourceDto) InitUID() {
+	r.UID = uuid.New()
+}
 
+func (r *ResourceDto) SetTeamID(teamID int) {
+	r.TeamID = teamID
+}
+
+func (resourced *ResourceDto) ConstructByMap(data interface{}) {
 	udata, ok := data.(map[string]interface{})
 	if !ok {
 		return
@@ -101,6 +111,8 @@ func NewResourceServiceImpl(logger *zap.SugaredLogger, resourceRepository reposi
 
 func (impl *ResourceServiceImpl) CreateResource(resource ResourceDto) (ResourceDto, error) {
 	ID, err := impl.resourceRepository.Create(&repository.Resource{
+		UID:       resource.UID,
+		TeamID:    resource.TeamID,
 		Name:      resource.Name,
 		Type:      type_map[resource.Type],
 		Options:   resource.Options,
@@ -116,8 +128,8 @@ func (impl *ResourceServiceImpl) CreateResource(resource ResourceDto) (ResourceD
 	return resource, nil
 }
 
-func (impl *ResourceServiceImpl) DeleteResource(id int) error {
-	if err := impl.resourceRepository.Delete(id); err != nil {
+func (impl *ResourceServiceImpl) DeleteResource(teamID, id int) error {
+	if err := impl.resourceRepository.Delete(teamID, id); err != nil {
 		return err
 	}
 	return nil
@@ -137,13 +149,15 @@ func (impl *ResourceServiceImpl) UpdateResource(resource ResourceDto) (ResourceD
 	return resource, nil
 }
 
-func (impl *ResourceServiceImpl) GetResource(id int) (ResourceDto, error) {
-	res, err := impl.resourceRepository.RetrieveByID(id)
+func (impl *ResourceServiceImpl) GetResource(teamID, id int) (ResourceDto, error) {
+	res, err := impl.resourceRepository.RetrieveByID(teamID, id)
 	if err != nil {
 		return ResourceDto{}, err
 	}
 	resDto := ResourceDto{
 		ID:        res.ID,
+		UID:       res.UID,
+		TeamID:    res.TeamID,
 		Name:      res.Name,
 		Type:      type_array[res.Type-1],
 		Options:   res.Options,
@@ -155,8 +169,8 @@ func (impl *ResourceServiceImpl) GetResource(id int) (ResourceDto, error) {
 	return resDto, nil
 }
 
-func (impl *ResourceServiceImpl) FindAllResources() ([]ResourceDto, error) {
-	res, err := impl.resourceRepository.RetrieveAllByUpdatedTime()
+func (impl *ResourceServiceImpl) FindAllResources(teamID int) ([]ResourceDto, error) {
+	res, err := impl.resourceRepository.RetrieveAllByUpdatedTime(teamID)
 	if err != nil {
 		return nil, err
 	}
@@ -164,6 +178,8 @@ func (impl *ResourceServiceImpl) FindAllResources() ([]ResourceDto, error) {
 	for _, value := range res {
 		resDtoSlice = append(resDtoSlice, ResourceDto{
 			ID:        value.ID,
+			UID:       value.UID,
+			TeamID:    value.TeamID,
 			Name:      value.Name,
 			Type:      type_array[value.Type-1],
 			Options:   value.Options,
@@ -204,8 +220,8 @@ func (impl *ResourceServiceImpl) ValidateResourceOptions(resourceType string, op
 	return nil
 }
 
-func (impl *ResourceServiceImpl) GetMetaInfo(id int) (map[string]interface{}, error) {
-	rsc, err := impl.resourceRepository.RetrieveByID(id)
+func (impl *ResourceServiceImpl) GetMetaInfo(teamID int, id int) (map[string]interface{}, error) {
+	rsc, err := impl.resourceRepository.RetrieveByID(teamID, id)
 	if err != nil {
 		return map[string]interface{}{}, err
 	}

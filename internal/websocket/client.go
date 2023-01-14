@@ -67,8 +67,8 @@ type Client struct {
 	// Buffered channel of outbound messages.
 	Send chan []byte
 
-	// instanceID, SELF_HOST by default
-	InstanceID string
+	// teamID, SELF_HOST by default
+	TeamID int // TeamID
 
 	// appID, 0 by default, -1 for dashboard
 	APPID int
@@ -78,7 +78,7 @@ func (c *Client) GetAPPID() int {
 	return c.APPID
 }
 
-func NewClient(hub *Hub, conn *websocket.Conn, instanceID string, appID int) *Client {
+func NewClient(hub *Hub, conn *websocket.Conn, teamID int, appID int) *Client {
 	return &Client{
 		ID:           uuid.Must(uuid.NewV4(), nil),
 		MappedUserID: 0,
@@ -86,7 +86,7 @@ func NewClient(hub *Hub, conn *websocket.Conn, instanceID string, appID int) *Cl
 		Hub:          hub,
 		Conn:         conn,
 		Send:         make(chan []byte, 1024),
-		InstanceID:   instanceID,
+		TeamID:       teamID,
 		APPID:        appID}
 }
 
