@@ -119,7 +119,7 @@ func (impl *ActionRepositoryImpl) DeleteActionsByApp(teamID int, appID int) erro
 
 func (impl *ActionRepositoryImpl) CountActionByTeamID(teamID int) (int, error) {
 	var count int64
-	if err := impl.db.Where("team_id = ?", teamID).Count(&count).Error; err != nil {
+	if err := impl.db.Model(&Action{}).Where("team_id = ?", teamID).Count(&count).Error; err != nil {
 		return 0, err
 	}
 	return int(count), nil

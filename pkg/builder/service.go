@@ -25,12 +25,11 @@ type BuilderService interface {
 }
 
 type BuilderServiceImpl struct {
-	logger               *zap.SugaredLogger
-	appRepository         repository.AppRepository
-	resourceRepository    repository.ResourceRepository
-	actionRepository      repository.ActionRepository
+	logger             *zap.SugaredLogger
+	appRepository      repository.AppRepository
+	resourceRepository repository.ResourceRepository
+	actionRepository   repository.ActionRepository
 }
-
 
 func NewBuilderServiceImpl(logger *zap.SugaredLogger, appRepository repository.AppRepository, resourceRepository repository.ResourceRepository,
 	actionRepository repository.ActionRepository) *BuilderServiceImpl {
@@ -60,6 +59,6 @@ func (impl *BuilderServiceImpl) GetTeamBuilderDesc(teamID int) (*GetBuilderDescR
 		return nil, errInFetchAppModifyTime
 	}
 
-	ret := NewGetBuilderDescResponse(appNum, resourceNum, actionNum, appLastModifyedAt)	
+	ret := NewGetBuilderDescResponse(appNum, resourceNum, actionNum, appLastModifyedAt)
 	return ret, nil
 }

@@ -111,7 +111,7 @@ func (impl *ResourceRepositoryImpl) RetrieveAllByUpdatedTime(teamID int) ([]*Res
 
 func (impl *ResourceRepositoryImpl) CountResourceByTeamID(teamID int) (int, error) {
 	var count int64
-	if err := impl.db.Where("team_id = ?", teamID).Count(&count).Error; err != nil {
+	if err := impl.db.Model(&Resource{}).Where("team_id = ?", teamID).Count(&count).Error; err != nil {
 		return 0, err
 	}
 	return int(count), nil
