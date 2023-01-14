@@ -30,4 +30,11 @@ const (
 	AUTH_NONE   = "none"
 	AUTH_BASIC  = "basic"
 	AUTH_BEARER = "bearer"
+
+	HF_API_ADDRESS = "https://api-inference.huggingface.co/models/"
+
+	INPUT_PAIRS_MODE  = "pairs"
+	INPUT_TEXT_MODE   = "text"
+	INPUT_JSON_MODE   = "json"
+	INPUT_BINARY_MODE = "binary"
 )

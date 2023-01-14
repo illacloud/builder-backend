@@ -14,93 +14,95 @@
 
 package huggingface
 
-import "encoding/base64"
+import "reflect"
 
 type Resource struct {
-	BaseURL        string `validate:"required"`
-	URLParams      []map[string]string
-	Headers        []map[string]string
-	Cookies        []map[string]string
-	Authentication string            `validate:"oneof=none basic bearer"`
-	AuthContent    map[string]string `validate:"required_unless=Authentication none"`
+	Token string `validate:"required"`
 }
 
 type Action struct {
-	URL       string
-	Method    string `validate:"oneof=GET POST PUT PATCH DELETE"`
-	URLParams []map[string]string
-	Headers   []map[string]string
-	Cookies   []map[string]string
-	BodyType  string      `validate:"oneof=none form-data x-www-form-urlencoded raw json binary"`
-	Body      interface{} `validate:"required_unless=BodyType none"`
+	ModelID string
+	Params  Parameters
 }
 
-type RawBody struct {
-	Type    string `json:"type"`
-	Content string `json:"content"`
+type Parameters struct {
+	Inputs           Inputs
+	WithDetailParams bool
+	DetailParams     []Pairs
 }
 
-type BinaryBody string
+type Inputs struct {
+	Type    string
+	Content interface{}
+}
 
-type RecordBody struct {
+type Pairs struct {
 	Key   string
-	Value string
+	Value interface{}
 }
 
-func (h *Action) ReflectBodyToRaw() *RawBody {
-	rbd := &RawBody{}
-	rb, _ := h.Body.(map[string]interface{})
-	for k, v := range rb {
-		switch k {
-		case "type":
-			rbd.Type, _ = v.(string)
-		case "content":
-			rbd.Content, _ = v.(string)
-		}
-	}
-	return rbd
-}
-
-func (h *Action) ReflectBodyToBinary() []byte {
-	bs, _ := h.Body.(string)
-	sdec, _ := base64.StdEncoding.DecodeString(bs)
-	return sdec
-}
-
-func (h *Action) ReflectBodyToRecord() []*RecordBody {
-	rs := make([]*RecordBody, 0)
-	objs, _ := h.Body.([]interface{})
-	for _, v := range objs {
-		obj, _ := v.(map[string]interface{})
-		record := &RecordBody{}
-		for k, v2 := range obj {
-			switch k {
-			case "key":
-				record.Key, _ = v2.(string)
-			case "value":
-				record.Value, _ = v2.(string)
+func buildDetailedParams(pairs []Pairs) map[string]interface{} {
+	res := make(map[string]interface{})
+	for _, pair := range pairs {
+		switch pair.Key {
+		case "useCache":
+			vT := reflect.TypeOf(pair.Value)
+			value := reflect.ValueOf(pair.Value)
+			if vT.Kind() == reflect.Bool {
+				res["use_cache"] = value
 			}
-		}
-		rs = append(rs, record)
-	}
-	return rs
-}
-
-func (h *Action) ReflectBodyToMap() map[string]string {
-	rs := make(map[string]string)
-	objs, _ := h.Body.([]interface{})
-	for _, v := range objs {
-		obj, _ := v.(map[string]interface{})
-		record := &RecordBody{}
-		for k, v2 := range obj {
-			switch k {
-			case "key":
-				record.Key, _ = v2.(string)
-			case "value":
-				record.Value, _ = v2.(string)
+		case "waitForModel":
+			vT := reflect.TypeOf(pair.Value)
+			value := reflect.ValueOf(pair.Value)
+			if vT.Kind() == reflect.Bool {
+				res["wait_for_model"] = value
 			}
+		case "minLength":
+			vT := reflect.TypeOf(pair.Value)
+			value := reflect.ValueOf(pair.Value)
+			if vT.Kind() == reflect.Int && !value.IsNil() {
+				res["min_length"] = value
+			}
+		case "maxLength":
+			vT := reflect.TypeOf(pair.Value)
+			value := reflect.ValueOf(pair.Value)
+			if vT.Kind() == reflect.Int && !value.IsNil() {
+				res["max_length"] = value
+			}
+		case "topK":
+			vT := reflect.TypeOf(pair.Value)
+			value := reflect.ValueOf(pair.Value)
+			if vT.Kind() == reflect.Int && !value.IsNil() {
+				res["top_k"] = value
+			}
+		case "topP":
+			vT := reflect.TypeOf(pair.Value)
+			value := reflect.ValueOf(pair.Value)
+			if vT.Kind() == reflect.Float64 && !value.IsNil() {
+				res["top_p"] = value
+			}
+		case "temperature":
+			vT := reflect.TypeOf(pair.Value)
+			value := reflect.ValueOf(pair.Value)
+			if vT.Kind() == reflect.Float64 && !value.IsNil() {
+				res["temperature"] = value
+			}
+		case "repetitionPenalty":
+			vT := reflect.TypeOf(pair.Value)
+			value := reflect.ValueOf(pair.Value)
+			if vT.Kind() == reflect.Float64 && !value.IsNil() {
+				res["repetition_penalty"] = value
+			}
+		case "maxTime":
+			vT := reflect.TypeOf(pair.Value)
+			value := reflect.ValueOf(pair.Value)
+			if vT.Kind() == reflect.Float64 && !value.IsNil() {
+				res["max_time"] = value
+			}
+		default:
+			break
 		}
-		rs[record.Key] = record.Value
 	}
-	return rs
+
+	return res
 }
