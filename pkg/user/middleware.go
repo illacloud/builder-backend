@@ -15,6 +15,7 @@
 package user
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -33,15 +34,21 @@ func JWTAuth(authenticator Authenticator) gin.HandlerFunc {
 		}
 
 		sv, err := supervisior.NewSupervisior()
+		fmt.Printf("err: %v\n", err)
 		if err != nil {
 			c.AbortWithStatus(http.StatusInternalServerError)
+			c.Next()
 		}
 		validated, errInValidate := sv.ValidateUserAccount(token)
+		fmt.Printf("token: %v\n", token)
+		fmt.Printf("errInValidate: %v\n", errInValidate)
 		if errInValidate != nil {
 			c.AbortWithStatus(http.StatusInternalServerError)
+			c.Next()
 		}
 		if !validated {
 			c.AbortWithStatus(http.StatusUnauthorized)
+			c.Next()
 		}
 		c.Next()
 	}

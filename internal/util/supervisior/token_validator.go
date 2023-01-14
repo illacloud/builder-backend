@@ -2,16 +2,16 @@ package supervisior
 
 import (
 	"encoding/base64"
-	"sort"
 	"errors"
-	
-	"crypto/md5"
-	"github.com/caarlos0/env"
+	"sort"
 
+	"crypto/md5"
+
+	"github.com/caarlos0/env"
 )
 
 type Config struct {
-	Secret string `env:"ILLA_SECRET_KEY"`
+	Secret string `env:"ILLA_SECRET_KEY" envDefault:"8xEMrWkBARcDDYQ`
 }
 
 func GetConfig() (*Config, error) {
@@ -34,11 +34,11 @@ func NewRequestTokenValidator() (*RequestTokenValidator, error) {
 	}, nil
 }
 
-func (r *RequestTokenValidator)GenerateValidateToken(input ...string) string {
+func (r *RequestTokenValidator) GenerateValidateToken(input ...string) string {
 	return r.GenerateValidateTokenBySliceParam(input)
 }
 
-func (r *RequestTokenValidator)GenerateValidateTokenBySliceParam(input []string) string {
+func (r *RequestTokenValidator) GenerateValidateTokenBySliceParam(input []string) string {
 	var concatr string
 	sort.Strings(input)
 	for _, str := range input {

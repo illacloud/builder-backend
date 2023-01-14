@@ -54,13 +54,13 @@ func (supervisior *Supervisior) ValidateUserAccount(token string) (bool, error) 
 		SetHeader("Authorization-Token", token).
 		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(token)).
 		Get(BASEURL + VALIDATE_USER_ACCOUNT)
+	fmt.Printf("response: %+v, err: %+v", resp, err)
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
-			return false, errors.New("request illa cloud failed.")
+			return false, errors.New("request illa supervisior failed.")
 		}
-		return false, errors.New("validate failed.")
+		return false, nil
 	}
-	fmt.Printf("response: %+v, err: %+v", resp, err)
 	return true, nil
 }
 
@@ -72,7 +72,7 @@ func (supervisior *Supervisior) GetTeamPermissions(teamID int) (string, error) {
 		Get(BASEURL + fmt.Sprintf(GET_TEAM_PERMISSIONS, teamIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
-			return "", errors.New("request illa cloud failed.")
+			return "", errors.New("request illa supervisior failed.")
 		}
 		return "", errors.New("validate failed.")
 	}
@@ -93,7 +93,7 @@ func (supervisior *Supervisior) CanAccess(token string, teamID int, unitType int
 		Get(BASEURL + fmt.Sprintf(CAN_ACCESS, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
-			return false, errors.New("request illa cloud failed: " + err.Error())
+			return false, errors.New("request illa supervisior failed: " + err.Error())
 		}
 		return false, nil
 	}
@@ -113,7 +113,7 @@ func (supervisior *Supervisior) CanManage(token string, teamID int, unitType int
 		Get(BASEURL + fmt.Sprintf(CAN_MANAGE, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
-			return false, errors.New("request illa cloud failed: " + err.Error())
+			return false, errors.New("request illa supervisior failed: " + err.Error())
 		}
 		return false, nil
 	}
@@ -133,7 +133,7 @@ func (supervisior *Supervisior) CanManageSpecial(token string, teamID int, unitT
 		Get(BASEURL + fmt.Sprintf(CAN_MANAGE_SPECIAL, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
-			return false, errors.New("request illa cloud failed: " + err.Error())
+			return false, errors.New("request illa supervisior failed: " + err.Error())
 		}
 		return false, nil
 	}
@@ -155,7 +155,7 @@ func (supervisior *Supervisior) CanModify(token string, teamID int, unitType int
 		Get(BASEURL + fmt.Sprintf(CAN_MODIFY, teamIDString, unitTypeString, unitIDString, attributeIDString, fromID, toID))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
-			return false, errors.New("request illa cloud failed: " + err.Error())
+			return false, errors.New("request illa supervisior failed: " + err.Error())
 		}
 		return false, nil
 	}
@@ -175,7 +175,7 @@ func (supervisior *Supervisior) CanDelete(token string, teamID int, unitType int
 		Get(BASEURL + fmt.Sprintf(CAN_DELETE, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
-			return false, errors.New("request illa cloud failed: " + err.Error())
+			return false, errors.New("request illa supervisior failed: " + err.Error())
 		}
 		return false, nil
 	}

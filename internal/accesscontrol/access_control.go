@@ -15,19 +15,19 @@ const STATUS_SUSPEND = 3
 
 // Attirbute Unit List
 const (
-	UNIT_TYPE_TEAM    = iota + 1  // cloud team
-	UNIT_TYPE_TEAM_MEMBER         // cloud team member
-	UNIT_TYPE_USER                // cloud user
-	UNIT_TYPE_INVITE              // cloud invite
-	UNIT_TYPE_DOMAIN              // cloud domain
-	UNIT_TYPE_BILLING             // cloud billing
-	UNIT_TYPE_BUILDER_DASHBOARD   // builder dabshboard
-	UNIT_TYPE_APP                 // builder app
-	UNIT_TYPE_COMPONENTS          // builder components
-	UNIT_TYPE_RESOURCE            // resource resource
-	UNIT_TYPE_ACTION              // resource action
-	UNIT_TYPE_TRANSFORMER         // resource transformer
-	UNIT_TYPE_JOB                 // hub job
+	UNIT_TYPE_TEAM              = iota + 1 // cloud team
+	UNIT_TYPE_TEAM_MEMBER                  // cloud team member
+	UNIT_TYPE_USER                         // cloud user
+	UNIT_TYPE_INVITE                       // cloud invite
+	UNIT_TYPE_DOMAIN                       // cloud domain
+	UNIT_TYPE_BILLING                      // cloud billing
+	UNIT_TYPE_BUILDER_DASHBOARD            // builder dabshboard
+	UNIT_TYPE_APP                          // builder app
+	UNIT_TYPE_COMPONENTS                   // builder components
+	UNIT_TYPE_RESOURCE                     // resource resource
+	UNIT_TYPE_ACTION                       // resource action
+	UNIT_TYPE_TRANSFORMER                  // resource transformer
+	UNIT_TYPE_JOB                          // hub job
 )
 
 // User Role ID in Team
@@ -130,22 +130,22 @@ const (
 // action delete
 const (
 	// Basic Attribute
-	ACTION_DELETE = iota + 1 // 删除 Attribute
+	ACTION_DELETE = iota + 1 // delete Attribute
 
 	// Domain Attribute
-	ACTION_DELETE_TEAM_DOMAIN // 删除 Team Domain
-	ACTION_DELETE_APP_DOMAIN  // 删除 App Domain
+	ACTION_DELETE_TEAM_DOMAIN // delete Team Domain
+	ACTION_DELETE_APP_DOMAIN  // delete App Domain
 
 )
 
 // action manage special (only owner and admin can access by default)
 const (
 	// Team Attribute
-	ACTION_SPECIAL_EDITOR_AND_VIEWER_CAN_INVITE_BY_LINK_SW = iota + 1 // editor 和 viewer 可以使用链接邀请的 Attribute
+	ACTION_SPECIAL_EDITOR_AND_VIEWER_CAN_INVITE_BY_LINK_SW = iota + 1 // the "editor and viewer can invite" switch
 	// Team Member Attribute
-	ACTION_SPECIAL_TRANSFER_OWNER // 转移 owner 的 Attribute
+	ACTION_SPECIAL_TRANSFER_OWNER // transfer team owner to others
 	// Invite Attribute
-	ACTION_SPECIAL_INVITE_LINK_RENEW // 更新邀请链接
+	ACTION_SPECIAL_INVITE_LINK_RENEW // renew the invite link
 	// APP Attribute
 	ACTION_SPECIAL_RELEASE_APP // release APP
 

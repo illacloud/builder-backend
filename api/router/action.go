@@ -33,11 +33,11 @@ func NewActionRouterImpl(actionRestHandler resthandler.ActionRestHandler) *Actio
 }
 
 func (impl ActionRouterImpl) InitActionRouter(actionRouter *gin.RouterGroup) {
-	actionRouter.GET("/actions", impl.actionRestHandler.FindActions)
-	actionRouter.POST("/actions", impl.actionRestHandler.CreateAction)
-	actionRouter.GET("/actions/:actionID", impl.actionRestHandler.GetAction)
-	actionRouter.PUT("/actions/:actionID", impl.actionRestHandler.UpdateAction)
-	actionRouter.DELETE("/actions/:actionID", impl.actionRestHandler.DeleteAction)
-	actionRouter.POST("/actions/preview", impl.actionRestHandler.PreviewAction)
-	actionRouter.POST("/actions/:actionID/run", impl.actionRestHandler.RunAction)
+	actionRouter.GET("", impl.actionRestHandler.FindActions)
+	actionRouter.POST("", impl.actionRestHandler.CreateAction)
+	actionRouter.GET("/:actionID", impl.actionRestHandler.GetAction)
+	actionRouter.PUT("/:actionID", impl.actionRestHandler.UpdateAction)
+	actionRouter.DELETE("/:actionID", impl.actionRestHandler.DeleteAction)
+	actionRouter.POST("/preview", impl.actionRestHandler.PreviewAction)
+	actionRouter.POST("/:actionID/run", impl.actionRestHandler.RunAction)
 }
