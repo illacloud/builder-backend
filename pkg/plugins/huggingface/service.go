@@ -15,10 +15,9 @@
 package huggingface
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"net/http"
-	"net/url"
 
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
 
@@ -44,20 +43,6 @@ func (h *Connector) ValidateResourceOptions(resourceOptions map[string]interface
 		return common.ValidateResult{Valid: false}, err
 	}
 
-	// validate Hugging Face token
-	switch h.ResourceOpts.Authentication {
-	case AUTH_NONE:
-		return common.ValidateResult{Valid: false}, errors.New("authentication error")
-	case AUTH_BASIC:
-		return common.ValidateResult{Valid: false}, errors.New("unsupported authentication")
-	case AUTH_BEARER:
-		bearerToken, ok := h.ResourceOpts.AuthContent["token"]
-		if !ok || bearerToken == "" {
-			return common.ValidateResult{Valid: false}, errors.New("missing Hugging Face token")
-		}
-	default:
-		return common.ValidateResult{Valid: false}, errors.New("authentication error")
-	}
 	return common.ValidateResult{Valid: true}, nil
 }
 
@@ -85,133 +70,94 @@ func (h *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.
 }
 
 func (h *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
+	// format resource options
+	if err := mapstructure.Decode(resourceOptions, &h.ResourceOpts); err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+
+	// format action options
+	if err := mapstructure.Decode(actionOptions, &h.ActionOpts); err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+
+	// Create a Resty Client
+	client := resty.New().R()
+	// set Hugging Face token
+	client.SetAuthToken(h.ResourceOpts.Token)
+	// build Hugging Face request
+	switch h.ActionOpts.Params.Inputs.Type {
+	case INPUT_PAIRS_MODE:
+		pairs := make([]Pairs, 0)
+		if err := mapstructure.Decode(h.ActionOpts.Params.Inputs.Content, &pairs); err != nil {
+			return common.RuntimeResult{Success: false}, err
+		}
+		inputs := make(map[string]interface{})
+		for _, pair := range pairs {
+			if pair.Key != "" {
+				inputs[pair.Key] = pair.Value
+			}
+		}
+		params := make(map[string]interface{})
+		if h.ActionOpts.Params.WithDetailParams {
+			params = buildDetailedParams(h.ActionOpts.Params.DetailParams)
+		}
+		reqBody := make(map[string]interface{}, 2)
+		reqBody["inputs"] = inputs
+		if len(params) > 0 {
+			reqBody["parameters"] = params
+		}
+		client.SetBody(reqBody)
+		client.SetHeader("Content-Type", "application/json")
+		break
+	case INPUT_TEXT_MODE, INPUT_JSON_MODE:
+		reqBody := make(map[string]interface{})
+		reqBody["inputs"] = h.ActionOpts.Params.Inputs.Content
+		params := make(map[string]interface{})
+		if h.ActionOpts.Params.WithDetailParams {
+			params = buildDetailedParams(h.ActionOpts.Params.DetailParams)
+		}
+		if len(params) > 0 {
+			reqBody["parameters"] = params
+		}
+		client.SetBody(reqBody)
+		client.SetHeader("Content-Type", "application/json")
+		break
+	case INPUT_BINARY_MODE:
+		bs, _ := h.ActionOpts.Params.Inputs.Content.(string)
+		binaryBytes, err := base64.StdEncoding.DecodeString(bs)
+		if err != nil {
+			return common.RuntimeResult{Success: false}, err
+		}
+		// decodedBinaryString, err := url.QueryUnescape(string(binaryBytes))
+		if err != nil {
+			return common.RuntimeResult{Success: false}, err
+		}
+		client.SetBody(binaryBytes)
+		break
+	default:
+		return common.RuntimeResult{}, errors.New("unsupported input parameters")
+	}
+
+	resp, err := client.Post(HF_API_ADDRESS + h.ActionOpts.ModelID)
 	res := common.RuntimeResult{
 		Success: false,
 		Rows:    []map[string]interface{}{},
 		Extra:   map[string]interface{}{},
 	}
-	var err error
-
-	actionURLParams := map[string]string{}
-	for _, param := range h.ActionOpts.URLParams {
-		if param["key"] != "" {
-			actionURLParams[param["key"]] = param["value"]
-		}
+	body := make(map[string]interface{})
+	listBody := make([]map[string]interface{}, 0)
+	if err := json.Unmarshal(resp.Body(), &body); err == nil {
+		res.Rows = append(res.Rows, body)
 	}
-
-	headers := map[string]string{}
-	for _, header := range h.ResourceOpts.Headers {
-		if header["key"] != "" {
-			headers[header["key"]] = header["value"]
-		}
+	if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
+		res.Rows = listBody
 	}
-	for _, header := range h.ActionOpts.Headers {
-		if header["key"] != "" {
-			headers[header["key"]] = header["value"]
-		}
-	}
-
-	cookies := map[string]string{}
-	for _, cookie := range h.ResourceOpts.Cookies {
-		if cookie["key"] != "" {
-			cookies[cookie["key"]] = cookie["value"]
-		}
-	}
-	for _, cookie := range h.ActionOpts.Cookies {
-		if cookie["key"] != "" {
-			cookies[cookie["key"]] = cookie["value"]
-		}
-	}
-
-	client := resty.New()
-
-	// get baseurl
-	uri, err := url.Parse(h.ResourceOpts.BaseURL)
+	res.Extra["raw"] = resp.Body()
+	res.Extra["headers"] = resp.Header()
 	if err != nil {
 		res.Success = false
 		return res, err
 	}
-	params := url.Values{}
-	for _, v := range h.ResourceOpts.URLParams {
-		if v["key"] != "" {
-			params.Set(v["key"], v["value"])
-		}
-	}
-	uri.RawQuery = params.Encode()
-	baseURL := uri.String()
 
-	// resty client set `resource` options
-	// set auth
-	switch h.ResourceOpts.Authentication {
-	case AUTH_BASIC:
-		break
-	case AUTH_BEARER:
-		client.SetAuthToken(h.ResourceOpts.AuthContent["token"])
-	default:
-		break
-	}
-
-	// resty client instance set `action` options
-	actionClient := client.R()
-	// set headers, will override `resource` headers
-	actionClient.SetHeaders(headers)
-	// set cookies, will override `resource` cookies
-	actionCookies := make([]*http.Cookie, 0, len(h.ActionOpts.Cookies))
-	for k, v := range cookies {
-		actionCookies = append(actionCookies, &http.Cookie{Name: k, Value: v})
-	}
-	actionClient.SetCookies(actionCookies)
-
-	// set body for action client
-	switch h.ActionOpts.BodyType {
-	case BODY_RAW:
-		b := h.ActionOpts.ReflectBodyToRaw()
-		actionClient.SetBody(b.Content)
-		break
-	case BODY_BINARY:
-		b := h.ActionOpts.ReflectBodyToBinary()
-		actionClient.SetBody(b)
-		break
-	case BODY_FORM:
-		b := h.ActionOpts.ReflectBodyToMap()
-		actionClient.SetBody(b)
-		break
-	case BODY_XWFU:
-		b := h.ActionOpts.ReflectBodyToMap()
-		actionClient.SetFormData(b)
-		break
-	case BODY_NONE:
-		break
-	}
-
-	switch h.ActionOpts.Method {
-	case METHOD_GET:
-		break
-	case METHOD_POST:
-		resp, err := actionClient.SetQueryParams(actionURLParams).Post(baseURL + h.ActionOpts.URL)
-		body := make(map[string]interface{})
-		listBody := make([]map[string]interface{}, 0)
-		if err := json.Unmarshal(resp.Body(), &body); err == nil {
-			res.Rows = append(res.Rows, body)
-		}
-		if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
-			res.Rows = listBody
-		}
-		res.Extra["raw"] = resp.Body()
-		res.Extra["headers"] = resp.Header()
-		if err != nil {
-			res.Success = false
-			return res, err
-		}
-		break
-	case METHOD_PUT:
-		break
-	case METHOD_PATCH:
-		break
-	case METHOD_DELETE:
-		break
-	}
-
-	res.Success = true
 	return res, nil
 }
