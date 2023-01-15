@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/builder-backend/internal/datacontrol"
 
 	"go.uber.org/zap"
 )
@@ -39,7 +40,6 @@ type AppService interface {
 type AppServiceImpl struct {
 	logger              *zap.SugaredLogger
 	appRepository       repository.AppRepository
-	userRepository      repository.UserRepository
 	kvstateRepository   repository.KVStateRepository
 	treestateRepository repository.TreeStateRepository
 	setstateRepository  repository.SetStateRepository
@@ -134,13 +134,12 @@ type Action struct {
 }
 
 func NewAppServiceImpl(logger *zap.SugaredLogger, appRepository repository.AppRepository,
-	userRepository repository.UserRepository, kvstateRepository repository.KVStateRepository,
+	kvstateRepository repository.KVStateRepository,
 	treestateRepository repository.TreeStateRepository, setstateRepository repository.SetStateRepository,
 	actionRepository repository.ActionRepository) *AppServiceImpl {
 	return &AppServiceImpl{
 		logger:              logger,
 		appRepository:       appRepository,
-		userRepository:      userRepository,
 		kvstateRepository:   kvstateRepository,
 		treestateRepository: treestateRepository,
 		setstateRepository:  setstateRepository,
@@ -168,16 +167,21 @@ func (impl *AppServiceImpl) CreateApp(app AppDto) (AppDto, error) {
 	if err != nil {
 		return AppDto{}, err
 	}
+	// fetch user
+	user, errInGetUserInfo := datacontrol.GetUserInfo(app.UpdatedBy)
+	if errInGetUserInfo != nil {
+		return AppDto{}, errInGetUserInfo
+	}
+	// fill data
 	app.ID = id
-	userRecord, _ := impl.userRepository.RetrieveByID(app.CreatedBy)
-	app.AppActivity.Modifier = userRecord.Nickname
+	app.AppActivity.Modifier = user.Nickname
 	app.AppActivity.ModifiedAt = app.UpdatedAt // TODO: find last modified time in another record with version 0
 	// create kv_states and tree_states for new app
 	_ = impl.initialAllTypeTreeStates(app.TeamID, app.ID, app.CreatedBy)
 	return app, nil
 }
 
-func (impl *AppServiceImpl) initialAllTypeTreeStates(teamID int, appID int, user int) error {
+func (impl *AppServiceImpl) initialAllTypeTreeStates(teamID int, appID int, userID int) error {
 	// create `root` component
 	if _, err := impl.treestateRepository.Create(&repository.TreeState{
 		StateType:          repository.TREE_STATE_TYPE_COMPONENTS,
@@ -190,9 +194,9 @@ func (impl *AppServiceImpl) initialAllTypeTreeStates(teamID int, appID int, user
 		Name:               "root",
 		Content:            initialComponet,
 		CreatedAt:          time.Now().UTC(),
-		CreatedBy:          user,
+		CreatedBy:          userID,
 		UpdatedAt:          time.Now().UTC(),
-		UpdatedBy:          user,
+		UpdatedBy:          userID,
 	}); err != nil {
 		return errors.New("initial tree state failed")
 	}
@@ -213,8 +217,13 @@ func (impl *AppServiceImpl) UpdateApp(app AppDto) (AppDto, error) {
 	}); err != nil {
 		return AppDto{}, err
 	}
-	userRecord, _ := impl.userRepository.RetrieveByID(app.UpdatedBy)
-	app.AppActivity.Modifier = userRecord.Nickname
+	// fetch user
+	user, errInGetUserInfo := datacontrol.GetUserInfo(app.UpdatedBy)
+	if errInGetUserInfo != nil {
+		return AppDto{}, errInGetUserInfo
+	}
+	// fill data
+	app.AppActivity.Modifier = user.Nickname
 	app.AppActivity.ModifiedAt = app.UpdatedAt // TODO: find last modified time in another record with version 0
 	return app, nil
 }
@@ -265,8 +274,12 @@ func (impl *AppServiceImpl) GetAllApps(teamID int) ([]AppDto, error) {
 	}
 	resDtoSlice := make([]AppDto, 0, len(res))
 	for _, value := range res {
-		// @todo: fetch user remote data
-		// userRecord, _ := impl.userRepository.RetrieveByID(value.UpdatedBy)
+		// fetch user remote data
+		user, errInGetUserInfo := datacontrol.GetUserInfo(value.UpdatedBy)
+		if errInGetUserInfo != nil {
+			return nil, errInGetUserInfo
+		}
+		// fill data
 		resDtoSlice = append(resDtoSlice, AppDto{
 			ID:              value.ID,
 			UID:             value.UID,
@@ -277,7 +290,7 @@ func (impl *AppServiceImpl) GetAllApps(teamID int) ([]AppDto, error) {
 			UpdatedAt:       value.UpdatedAt,
 			UpdatedBy:       value.UpdatedBy,
 			AppActivity: AppActivity{
-				Modifier:   "placeholder @todo",
+				Modifier:   user.Nickname,
 				ModifiedAt: value.UpdatedAt,
 			},
 		})
@@ -310,8 +323,12 @@ func (impl *AppServiceImpl) DuplicateApp(teamID int, appID int, userID int, name
 	if err != nil {
 		return AppDto{}, err
 	}
-	// @todo: fetch user remote data
-	// userRecord, _ := impl.userRepository.RetrieveByID(userID)
+	// fetch user remote data
+	user, errInGetUserInfo := datacontrol.GetUserInfo(appA.UpdatedBy)
+	if errInGetUserInfo != nil {
+		return AppDto{}, errInGetUserInfo
+	}
+	// fill data
 	appB := AppDto{
 		ID:              id,
 		Name:            name,
@@ -322,7 +339,7 @@ func (impl *AppServiceImpl) DuplicateApp(teamID int, appID int, userID int, name
 		UpdatedBy:       appA.UpdatedBy,
 		UpdatedAt:       appA.UpdatedAt,
 		AppActivity: AppActivity{
-			Modifier:   "placeholder @todo",
+			Modifier:   user.Nickname,
 			ModifiedAt: appA.UpdatedAt,
 		},
 	}
@@ -586,9 +603,12 @@ func (impl *AppServiceImpl) fetchEditor(teamID int, appID int, version int) (Edi
 	if app.ID == 0 || version > app.MainlineVersion {
 		return Editor{}, errors.New("content not found")
 	}
-	// @todo: fetch user remote data
-	// userRecord, _ := impl.userRepository.RetrieveByID(teamID, app.UpdatedBy)
-
+	// fetch user remote data
+	user, errInGetUserInfo := datacontrol.GetUserInfo(app.UpdatedBy)
+	if errInGetUserInfo != nil {
+		return Editor{}, errInGetUserInfo
+	}
+	// fill data
 	res := Editor{}
 	res.AppInfo = AppDto{
 		ID:              app.ID,
@@ -598,7 +618,7 @@ func (impl *AppServiceImpl) fetchEditor(teamID int, appID int, version int) (Edi
 		UpdatedAt:       app.UpdatedAt,
 		UpdatedBy:       app.UpdatedBy,
 		AppActivity: AppActivity{
-			Modifier:   "placeholder @todo",
+			Modifier:   user.Nickname,
 			ModifiedAt: app.UpdatedAt,
 		},
 	}

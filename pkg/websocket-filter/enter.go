@@ -16,11 +16,13 @@ package filter
 
 import (
 	"errors"
+	"github.com/illacloud/builder-backend/internal/util/supervisior"
+	"github.com/illacloud/builder-backend/internal/datacontrol"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 	"github.com/illacloud/builder-backend/pkg/user"
 )
 
-func SignalEnter(hub *ws.Hub, message *ws.Message, ai *user.AuthenticatorImpl) error {
+func SignalEnter(hub *ws.Hub, message *ws.Message) error {
 	// init
 	currentClient := hub.Clients[message.ClientID]
 	var ok bool
@@ -37,26 +39,47 @@ func SignalEnter(hub *ws.Hub, message *ws.Message, ai *user.AuthenticatorImpl) e
 	}
 	token, _ := authToken["authToken"].(string)
 	
-	// convert authToken to uid
-	userID, userUID, extractErr := ai.ExtractUserIDFromToken(token)
-	if extractErr != nil {
-		return extractErr
-	}
-	validAccessToken, validaAccessErr := ai.ValidateAccessToken(token)
-	isUserValid, nowUser, validUserErr := ai.ValidateUserAndGetDetail(userID, userUID)
-	if validaAccessErr != nil || validUserErr != nil || !validAccessToken || !isUserValid {
-		err := errors.New("[websocket-server] access token invalid.")
+	// init supervisior clienr
+	sv, err := supervisior.NewSupervisior()
+	if err != nil {
 		currentClient.Feedback(message, ws.ERROR_CODE_LOGIN_FAILED, err)
 		return err
+	}
+	// validate user token
+	validated, errInValidate := sv.ValidateUserAccount(token)
+	if errInValidate != nil {
+		currentClient.Feedback(message, ws.ERROR_CODE_LOGIN_FAILED, errInValidate)
+		return errInValidate
+	}
+	if !validated {
+		err := errors.New("access token invalid.")
+		currentClient.Feedback(message, ws.ERROR_CODE_LOGIN_FAILED, err)
+		return err
+	}
+
+	// extract userID
+	userID, userUID, errInExtract := user.ExtractUserIDFromToken(token)
+	if errInExtract != nil {
+		err := errors.New("access token extract failed.")
+		currentClient.Feedback(message, ws.ERROR_CODE_LOGIN_FAILED, err)
+		return err
+	}
+
+	// fetch user remote data
+	user, errInGetUserInfo := datacontrol.GetUserInfo(userID)
+	if errInGetUserInfo != nil {
+		currentClient.Feedback(message, ws.ERROR_CODE_LOGIN_FAILED, errInGetUserInfo)
+		return errInGetUserInfo
 	}
 
 	// assign logged in and mapped user id
 	currentClient.IsLoggedIn = true
 	currentClient.MappedUserID = userID
+	currentClient.MappedUserUID = userUID
 
 	// broadcast in room users
 	inRoomUsers := hub.GetInRoomUsersByRoomID(currentClient.APPID)
-	inRoomUsers.EnterRoom(nowUser)
+	inRoomUsers.EnterRoom(user)
 	message.SetBroadcastPayload(inRoomUsers.FetchAllInRoomUsers())
 	message.RewriteBroadcast()
 	hub.BroadcastToRoomAllClients(message, currentClient)

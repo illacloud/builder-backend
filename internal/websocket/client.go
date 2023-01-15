@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 )
 
 const (
@@ -55,7 +55,9 @@ var upgrader = websocket.Upgrader{
 type Client struct {
 	ID uuid.UUID
 
-	MappedUserID int
+	MappedUserID  int
+
+	MappedUserUID uuid.UUID
 
 	IsLoggedIn bool
 
@@ -80,7 +82,7 @@ func (c *Client) GetAPPID() int {
 
 func NewClient(hub *Hub, conn *websocket.Conn, teamID int, appID int) *Client {
 	return &Client{
-		ID:           uuid.Must(uuid.NewV4(), nil),
+		ID:           uuid.New(),
 		MappedUserID: 0,
 		IsLoggedIn:   false,
 		Hub:          hub,

@@ -25,13 +25,16 @@ import (
 
 const (
 	BASEURL               = "http://127.0.0.1:9001/api/v1"
+	// access control part
 	VALIDATE_USER_ACCOUNT = "/accessControl/account/validateResult"
-	GET_TEAM_PERMISSIONS  = "/accessControl/team/%s/permissions"
-	CAN_ACCESS            = "/accessControl/team/%s/unitType/%s/unitID/%s/attribute/canAccess/%s"
-	CAN_MANAGE            = "/accessControl/team/%s/unitType/%s/unitID/%s/attribute/canManage/%s"
-	CAN_MANAGE_SPECIAL    = "/accessControl/team/%s/unitType/%s/unitID/%s/attribute/canManageSpecial/%s"
-	CAN_MODIFY            = "/accessControl/team/%s/unitType/%s/unitID/%s/attribute/canModify/%s/from/%s/to/%s"
-	CAN_DELETE            = "/accessControl/team/%s/unitType/%s/unitID/%s/attribute/canDelete/%s"
+	GET_TEAM_PERMISSIONS  = "/accessControl/teams/%s/permissions"
+	CAN_ACCESS            = "/accessControl/teams/%s/unitType/%s/unitID/%s/attribute/canAccess/%s"
+	CAN_MANAGE            = "/accessControl/teams/%s/unitType/%s/unitID/%s/attribute/canManage/%s"
+	CAN_MANAGE_SPECIAL    = "/accessControl/teams/%s/unitType/%s/unitID/%s/attribute/canManageSpecial/%s"
+	CAN_MODIFY            = "/accessControl/teams/%s/unitType/%s/unitID/%s/attribute/canModify/%s/from/%s/to/%s"
+	CAN_DELETE            = "/accessControl/teams/%s/unitType/%s/unitID/%s/attribute/canDelete/%s"
+	// data control part
+	GET_USER 			  = "/dataControl/users/%s"
 )
 
 type Supervisior struct {
@@ -180,4 +183,20 @@ func (supervisior *Supervisior) CanDelete(token string, teamID int, unitType int
 		return false, nil
 	}
 	return true, nil
+}
+
+func (supervisior *Supervisior) GetUser(targetUserID int) (string, error) {
+	targetUserIDString := strconv.Itoa(targetUserID)
+	
+	client := resty.New()
+	resp, err := client.R().
+		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(targetUserIDString)).
+		Get(BASEURL + fmt.Sprintf(GET_USER, targetUserIDString))
+	if resp.StatusCode() != http.StatusOK {
+		if err != nil {
+			return "", errors.New("request illa supervisior failed.")
+		}
+		return "", errors.New("validate failed.")
+	}
+	return resp.String(), nil
 }

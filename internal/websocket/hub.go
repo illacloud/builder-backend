@@ -18,8 +18,7 @@ import (
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/resource"
 	"github.com/illacloud/builder-backend/pkg/state"
-	"github.com/illacloud/builder-backend/pkg/user"
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 )
 
 // clients hub, maintains active clients and broadcast messags.
@@ -49,7 +48,6 @@ type Hub struct {
 	SetStateServiceImpl  *state.SetStateServiceImpl
 	AppServiceImpl       *app.AppServiceImpl
 	ResourceServiceImpl  *resource.ResourceServiceImpl
-	AuthenticatorImpl    *user.AuthenticatorImpl
 }
 
 func NewHub() *Hub {
@@ -81,10 +79,6 @@ func (hub *Hub) SetAppServiceImpl(asi *app.AppServiceImpl) {
 
 func (hub *Hub) SetResourceServiceImpl(rsi *resource.ResourceServiceImpl) {
 	hub.ResourceServiceImpl = rsi
-}
-
-func (hub *Hub) SetAuthenticatorImpl(ai *user.AuthenticatorImpl) {
-	hub.AuthenticatorImpl = ai
 }
 
 func (hub *Hub) GetInRoomUsersByRoomID(roomID int) *InRoomUsers {

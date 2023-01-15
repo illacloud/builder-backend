@@ -15,14 +15,25 @@
 package user
 
 import (
+	"os"
 	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
+
 	supervisior "github.com/illacloud/builder-backend/internal/util/supervisior"
 )
 
-func JWTAuth(authenticator Authenticator) gin.HandlerFunc {
+type AuthClaims struct {
+	User   int       `json:"user"`
+	UUID   uuid.UUID `json:"uuid"`
+	Random string    `json:"rnd"`
+	jwt.RegisteredClaims
+}
+
+func RemoteJWTAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// fetch content
 		accessToken := c.Request.Header["Authorization"]
@@ -52,4 +63,22 @@ func JWTAuth(authenticator Authenticator) gin.HandlerFunc {
 		}
 		c.Next()
 	}
+}
+
+
+func ExtractUserIDFromToken(accessToken string) (int, uuid.UUID, error) {
+	authClaims := &AuthClaims{}
+	token, err := jwt.ParseWithClaims(accessToken, authClaims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("ILLA_SECRET_KEY")), nil
+	})
+	if err != nil {
+		return 0, uuid.Nil, err
+	}
+
+	claims, ok := token.Claims.(*AuthClaims)
+	if !(ok && token.Valid) {
+		return 0, uuid.Nil, err
+	}
+
+	return claims.User, claims.UUID, nil
 }
