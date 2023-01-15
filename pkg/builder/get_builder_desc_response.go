@@ -27,6 +27,12 @@ type GetBuilderDescResponse struct {
     AppLastModifyedAt time.Time `json:"appLastModifyedAt"` 
 }
 
+type EmptyBuilderDescResponse struct {
+	AppNum 			  int       `json:"appNum"` 
+    ResourceNum 	  int       `json:"resourceNum"` 
+    ActionNum   	  int       `json:"actionNum"` 
+    AppLastModifyedAt string    `json:"appLastModifyedAt"` // is "" by first time enter builder.
+}
 
 func NewGetBuilderDescResponse(appNum int, resourceNum int, actionNum int, appLastModifyedAt time.Time) *GetBuilderDescResponse {
 	return &GetBuilderDescResponse{
@@ -34,5 +40,13 @@ func NewGetBuilderDescResponse(appNum int, resourceNum int, actionNum int, appLa
 		ResourceNum: resourceNum,
 		ActionNum: actionNum,
 		AppLastModifyedAt: appLastModifyedAt,
+	}
+}
+
+func NewEmptyBuilderDescResponse(appNum int, resourceNum int, actionNum int) *EmptyBuilderDescResponse {
+	return &EmptyBuilderDescResponse{
+		AppNum: appNum,
+		ResourceNum: resourceNum,
+		ActionNum: actionNum,
 	}
 }

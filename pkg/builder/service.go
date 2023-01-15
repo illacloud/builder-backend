@@ -16,12 +16,11 @@ package builder
 
 import (
 	"github.com/illacloud/builder-backend/internal/repository"
-
 	"go.uber.org/zap"
 )
 
 type BuilderService interface {
-	GetTeamBuilderDesc(teamID int) (*GetBuilderDescResponse, error)
+	GetTeamBuilderDesc(teamID int) (interface{}, error)
 }
 
 type BuilderServiceImpl struct {
@@ -41,7 +40,7 @@ func NewBuilderServiceImpl(logger *zap.SugaredLogger, appRepository repository.A
 	}
 }
 
-func (impl *BuilderServiceImpl) GetTeamBuilderDesc(teamID int) (*GetBuilderDescResponse, error) {
+func (impl *BuilderServiceImpl) GetTeamBuilderDesc(teamID int) (interface{}, error) {
 	appNum, errInFetchAppNum := impl.appRepository.CountAPPByTeamID(teamID)
 	if errInFetchAppNum != nil {
 		return nil, errInFetchAppNum
@@ -56,7 +55,7 @@ func (impl *BuilderServiceImpl) GetTeamBuilderDesc(teamID int) (*GetBuilderDescR
 	}
 	appLastModifyedAt, errInFetchAppModifyTime := impl.appRepository.RetrieveAppLastModifiedTime(teamID)
 	if errInFetchAppModifyTime != nil {
-		return nil, errInFetchAppModifyTime
+		return NewEmptyBuilderDescResponse(appNum, resourceNum, actionNum), nil
 	}
 
 	ret := NewGetBuilderDescResponse(appNum, resourceNum, actionNum, appLastModifyedAt)
