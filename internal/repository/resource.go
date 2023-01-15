@@ -37,6 +37,10 @@ type Resource struct {
 	UpdatedBy int       `gorm:"column:updated_by;type:bigint;not null"`
 }
 
+func (resource *Resource) ExportUpdatedAt() time.Time {
+	return resource.UpdatedAt
+}
+
 type ResourceRepository interface {
 	Create(resource *Resource) (int, error)
 	Delete(teamID int, resourceID int) error
@@ -45,6 +49,7 @@ type ResourceRepository interface {
 	RetrieveAll(teamID int) ([]*Resource, error)
 	RetrieveAllByUpdatedTime(teamID int) ([]*Resource, error)
 	CountResourceByTeamID(teamID int) (int, error)
+	RetrieveResourceLastModifiedTime(teamID int) (time.Time, error)
 }
 
 type ResourceRepositoryImpl struct {
@@ -115,4 +120,12 @@ func (impl *ResourceRepositoryImpl) CountResourceByTeamID(teamID int) (int, erro
 		return 0, err
 	}
 	return int(count), nil
+}
+
+func (impl *ResourceRepositoryImpl) RetrieveResourceLastModifiedTime(teamID int) (time.Time, error) {
+	var resource *Resource
+	if err := impl.db.Where("team_id = ?", teamID).Order("updated_at desc").First(&resource).Error; err != nil {
+		return time.Time{}, err
+	}
+	return resource.ExportUpdatedAt(), nil
 }

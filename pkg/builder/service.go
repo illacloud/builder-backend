@@ -16,6 +16,7 @@ package builder
 
 import (
 	"github.com/illacloud/builder-backend/internal/repository"
+	"time"
 	"go.uber.org/zap"
 )
 
@@ -54,10 +55,26 @@ func (impl *BuilderServiceImpl) GetTeamBuilderDesc(teamID int) (interface{}, err
 		return nil, errInFetchAactionNum
 	}
 	appLastModifyedAt, errInFetchAppModifyTime := impl.appRepository.RetrieveAppLastModifiedTime(teamID)
-	if errInFetchAppModifyTime != nil {
-		return NewEmptyBuilderDescResponse(appNum, resourceNum, actionNum), nil
+	resourceLastModifyedAt, errInFetchResourceModifyTime := impl.resourceRepository.RetrieveResourceLastModifiedTime(teamID)
+
+	// compare time
+	var lastModifiedAt time.Time 
+	if errInFetchAppModifyTime == nil && errInFetchResourceModifyTime == nil {
+		if appLastModifyedAt.Before(resourceLastModifyedAt) {
+			lastModifiedAt = resourceLastModifyedAt
+		} else {
+			lastModifiedAt = appLastModifyedAt
+		}
+	} else if errInFetchResourceModifyTime != nil {
+			lastModifiedAt = appLastModifyedAt
+	} else if errInFetchAppModifyTime != nil {
+			lastModifiedAt = resourceLastModifyedAt
 	}
 
-	ret := NewGetBuilderDescResponse(appNum, resourceNum, actionNum, appLastModifyedAt)
+	if errInFetchAppModifyTime != nil && errInFetchResourceModifyTime != nil {
+		return NewEmptyBuilderDescResponse(resourceNum, resourceNum, actionNum), nil
+	}
+
+	ret := NewGetBuilderDescResponse(appNum, resourceNum, actionNum, lastModifiedAt)
 	return ret, nil
 }
