@@ -112,10 +112,12 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 	}
 
 	appDto := app.AppDto{
+		TeamID:    teamID,
 		Name:      payload.Name,
 		CreatedBy: userID,
 		UpdatedBy: userID,
 	}
+	appDto.InitUID()
 
 	// Call `app service` create app
 	res, err := impl.appService.CreateApp(appDto)
