@@ -91,7 +91,7 @@ func GetUserIDFromAuth(c *gin.Context) (int, error) {
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
-			"errorMessage": "please input user id for get team info.",
+			"errorMessage": "authorization missing.",
 		})
 		return 0, errors.New("input mission userID field.")
 	}
@@ -99,7 +99,7 @@ func GetUserIDFromAuth(c *gin.Context) (int, error) {
 	if !okAssert {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
-			"errorMessage": "please input team id in int format.",
+			"errorMessage": "assert authorization failed.",
 		})
 		return 0, errors.New("input userID in wrong format.")
 	}

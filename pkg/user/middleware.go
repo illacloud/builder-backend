@@ -15,13 +15,13 @@
 package user
 
 import (
-	"os"
 	"fmt"
 	"net/http"
+	"os"
 
-	"github.com/google/uuid"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 
 	supervisior "github.com/illacloud/builder-backend/internal/util/supervisior"
 )
@@ -61,10 +61,17 @@ func RemoteJWTAuth() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			c.Next()
 		}
+		// ok set userID
+		userID, userUID, errInExtractUserID := ExtractUserIDFromToken(token)
+		if errInExtractUserID != nil {
+			c.AbortWithStatus(http.StatusInternalServerError)
+			c.Next()
+		}
+		c.Set("userID", userID)
+		c.Set("userUID", userUID)
 		c.Next()
 	}
 }
-
 
 func ExtractUserIDFromToken(accessToken string) (int, uuid.UUID, error) {
 	authClaims := &AuthClaims{}
