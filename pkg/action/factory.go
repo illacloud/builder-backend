@@ -30,6 +30,7 @@ import (
 	"github.com/illacloud/builder-backend/pkg/plugins/restapi"
 	"github.com/illacloud/builder-backend/pkg/plugins/s3"
 	"github.com/illacloud/builder-backend/pkg/plugins/smtp"
+	"github.com/illacloud/builder-backend/pkg/plugins/snowflake"
 )
 
 var (
@@ -51,6 +52,7 @@ var (
 	MSSQL_ACTION         = "mssql"
 	HUGGINGFACE_ACTION   = "huggingface"
 	DYNAMODB_ACTION      = "dynamodb"
+	SNOWFLAKE_ACTION     = "snowflake"
 )
 
 type AbstractActionFactory interface {
@@ -105,6 +107,9 @@ func (f *Factory) Build() common.DataConnector {
 	case DYNAMODB_ACTION:
 		dynamodbAction := &dynamodb.Connector{}
 		return dynamodbAction
+	case SNOWFLAKE_ACTION:
+		snowflakeAction := &snowflake.Connector{}
+		return snowflakeAction
 	default:
 		return nil
 	}

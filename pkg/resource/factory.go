@@ -30,6 +30,7 @@ import (
 	"github.com/illacloud/builder-backend/pkg/plugins/restapi"
 	"github.com/illacloud/builder-backend/pkg/plugins/s3"
 	"github.com/illacloud/builder-backend/pkg/plugins/smtp"
+	"github.com/illacloud/builder-backend/pkg/plugins/snowflake"
 )
 
 var (
@@ -50,6 +51,7 @@ var (
 	MSSQL_RESOURCE         = "mssql"
 	HUGGINGFACE_RESOURCE   = "huggingface"
 	DYNAMODB_RESOURCE      = "dynamodb"
+	SNOWFLAKE_RESOURCE     = "snowflake"
 )
 
 type AbstractResourceFactory interface {
@@ -104,6 +106,9 @@ func (f *Factory) Generate() common.DataConnector {
 	case DYNAMODB_RESOURCE:
 		dynamodbRsc := &dynamodb.Connector{}
 		return dynamodbRsc
+	case SNOWFLAKE_RESOURCE:
+		snowflakeRsc := &snowflake.Connector{}
+		return snowflakeRsc
 	default:
 		return nil
 	}
