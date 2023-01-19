@@ -88,7 +88,7 @@ func (s *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.Met
 		return common.MetaInfoResult{Success: false}, err
 	}
 
-	columns := fieldsInfo(db, s.resourceOpts.Database, tablesInfo(db, s.resourceOpts.Database))
+	columns := fieldsInfo(db, tablesInfo(db, fmt.Sprintf("%s.%s", s.resourceOpts.Database, s.resourceOpts.Schema)))
 
 	return common.MetaInfoResult{
 		Success: true,

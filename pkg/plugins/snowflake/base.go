@@ -30,7 +30,7 @@ const (
 	BASIC_AUTH    = "basic"
 	KEY_PAIR_AUTH = "key"
 
-	tableSQLStr  = "SHOW TERSE TABLES IN DATABASE "
+	tableSQLStr  = "SHOW TERSE TABLES IN SCHEMA "
 	columnSQLStr = "DESCRIBE TABLE "
 )
 
@@ -88,6 +88,7 @@ func tablesInfo(db *sql.DB, dbName string) []map[string]string {
 	tableNames := make([]map[string]string, 0, 0)
 	queryStr := tableSQLStr + dbName
 	tableRows, err := db.Query(queryStr)
+	defer tableRows.Close()
 	if err != nil {
 		return nil
 	}
@@ -105,7 +106,7 @@ func tablesInfo(db *sql.DB, dbName string) []map[string]string {
 	return tableNames
 }
 
-func fieldsInfo(db *sql.DB, dbName string, tableNames []map[string]string) map[string]interface{} {
+func fieldsInfo(db *sql.DB, tableNames []map[string]string) map[string]interface{} {
 	columns := make(map[string]interface{})
 	for _, tableName := range tableNames {
 		queryStr := columnSQLStr + fmt.Sprintf("%s.%s", tableName["schema"], tableName["table"])
@@ -128,6 +129,6 @@ func fieldsInfo(db *sql.DB, dbName string, tableNames []map[string]string) map[s
 		tableStr := fmt.Sprintf("%s.%s", tableName["schema"], tableName["table"])
 		columns[tableStr] = tables
 	}
-	
+
 	return columns
 }
