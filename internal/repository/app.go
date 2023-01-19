@@ -47,7 +47,7 @@ type AppRepository interface {
 	Update(app *App) error
 	UpdateUpdatedAt(app *App) error
 	RetrieveAll(teamID int) ([]*App, error)
-	RetrieveAppByID(teamID int, appID int) (*App, error)
+	RetrieveAppByIDAndTeamID(appID int, teamID int) (*App, error)
 	RetrieveAllByUpdatedTime(teamID int) ([]*App, error)
 	CountAPPByTeamID(teamID int) (int, error)
 	RetrieveAppLastModifiedTime(teamID int) (time.Time, error)
@@ -73,7 +73,7 @@ func (impl *AppRepositoryImpl) Create(app *App) (int, error) {
 }
 
 func (impl *AppRepositoryImpl) Delete(teamID int, appID int) error {
-	if err := impl.db.Delete(&App{}).Where("team_id = ? AND id = ?", teamID, appID).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND id = ?", teamID, appID).Delete(&App{}).Error; err != nil {
 		return err
 	}
 	return nil
@@ -100,7 +100,7 @@ func (impl *AppRepositoryImpl) RetrieveAll(teamID int) ([]*App, error) {
 	return apps, nil
 }
 
-func (impl *AppRepositoryImpl) RetrieveAppByID(teamID int, appID int) (*App, error) {
+func (impl *AppRepositoryImpl) RetrieveAppByIDAndTeamID(appID int, teamID int) (*App, error) {
 	var app *App
 	if err := impl.db.Where("id = ? AND team_id = ?", appID, teamID).Find(&app).Error; err != nil {
 		return nil, err

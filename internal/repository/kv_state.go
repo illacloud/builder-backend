@@ -71,7 +71,7 @@ func (impl *KVStateRepositoryImpl) Create(kvstate *KVState) error {
 }
 
 func (impl *KVStateRepositoryImpl) Delete(teamID int, kvstateID int) error {
-	if err := impl.db.Delete(&KVState{}).Where("id = ? AND team_id = ?", kvstateID, teamID).Error; err != nil {
+	if err := impl.db.Where("id = ? AND team_id = ?", kvstateID, teamID).Delete(&KVState{}).Error; err != nil {
 		return err
 	}
 	return nil

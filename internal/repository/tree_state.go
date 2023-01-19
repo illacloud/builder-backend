@@ -125,7 +125,7 @@ func (impl *TreeStateRepositoryImpl) Create(treestate *TreeState) (int, error) {
 }
 
 func (impl *TreeStateRepositoryImpl) Delete(teamID int, treestateID int) error {
-	if err := impl.db.Delete(&TreeState{}).Where("id = ? AND team_id = ?", treestateID, teamID).Error; err != nil {
+	if err := impl.db.Where("id = ? AND team_id = ?", treestateID, teamID).Delete(&TreeState{}).Error; err != nil {
 		return err
 	}
 	return nil

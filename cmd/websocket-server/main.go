@@ -82,7 +82,7 @@ func InitHub(asi *app.AppServiceImpl, rsi *resource.ResourceServiceImpl, tssi *s
 }
 
 // ServeWebsocket handle websocket requests from the peer.
-func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, roomID int, appID int) {
+func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, teamID int, appID int) {
 	// init dashbroad websocket hub
 
 	// @todo: this CheckOrigin method for debug only, remove it for release.
@@ -105,7 +105,7 @@ func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, roomID 
 		log.Println(err)
 		return
 	}
-	client := ws.NewClient(hub, conn, roomID, appID)
+	client := ws.NewClient(hub, conn, teamID, appID)
 	client.Hub.Register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in
@@ -128,21 +128,21 @@ func main() {
 	r.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 	})
-	// handle ws://{ip:port}/room/{roomID}/dashboard
-	r.HandleFunc("/room/{roomID}/dashboard", func(w http.ResponseWriter, r *http.Request) {
-		roomID := mux.Vars(r)["roomID"]
-		roomIDInt, errorInConvert := strconv.Atoi(roomID)
+	// handle ws://{ip:port}/teams/{teamID}/room/websocketConnection/dashboard
+	r.HandleFunc("/teams/{teamID}/room/websocketConnection/dashboard", func(w http.ResponseWriter, r *http.Request) {
+		teamID := mux.Vars(r)["teamID"]
+		teamIDInt, errorInConvert := strconv.Atoi(teamID)
 		if errorInConvert != nil {
 			json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": errorInConvert.Error()})
 			return
 		}
-		log.Printf("[Connected] /room/%d/dashboard", roomIDInt)
-		ServeWebsocket(hub, w, r, roomIDInt, ws.DASHBOARD_APP_ID)
+		log.Printf("[Connected] /teams/%d/dashboard", teamIDInt)
+		ServeWebsocket(hub, w, r, teamIDInt, ws.DASHBOARD_APP_ID)
 	})
-	// handle ws://{ip:port}/room/{roomID}/app/{appID}
-	r.HandleFunc("/room/{roomID}/app/{appID}", func(w http.ResponseWriter, r *http.Request) {
-		roomID := mux.Vars(r)["roomID"]
-		roomIDInt, errorInConvert := strconv.Atoi(roomID)
+	// handle ws://{ip:port}/teams/{teamID}/room/websocketConnection/apps/{appID}
+	r.HandleFunc("/teams/{teamID}/room/websocketConnection/apps/{appID}", func(w http.ResponseWriter, r *http.Request) {
+		teamID := mux.Vars(r)["teamID"]
+		teamIDInt, errorInConvert := strconv.Atoi(teamID)
 		if errorInConvert != nil {
 			json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": errorInConvert.Error()})
 			return
@@ -151,8 +151,8 @@ func main() {
 		if err != nil {
 			appID = ws.DEFAULT_APP_ID
 		}
-		log.Printf("[Connected] /room/%d/app/%d", roomIDInt, appID)
-		ServeWebsocket(hub, w, r, roomIDInt, appID)
+		log.Printf("[Connected] /teams/%d/app/%d", teamIDInt, appID)
+		ServeWebsocket(hub, w, r, teamIDInt, appID)
 	})
 	srv := &http.Server{
 		Handler:      r,

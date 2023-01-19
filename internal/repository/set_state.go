@@ -69,7 +69,7 @@ func (impl *SetStateRepositoryImpl) Create(setState *SetState) error {
 }
 
 func (impl *SetStateRepositoryImpl) Delete(teamID int, setStateID int) error {
-	if err := impl.db.Delete(&SetState{}).Where("id = ? AND team_id = ?", setStateID, teamID).Error; err != nil {
+	if err := impl.db.Where("id = ? AND team_id = ?", setStateID, teamID).Delete(&SetState{}).Error; err != nil {
 		return err
 	}
 	return nil

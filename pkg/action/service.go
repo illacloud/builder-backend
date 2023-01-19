@@ -101,7 +101,7 @@ func NewActionServiceImpl(logger *zap.SugaredLogger, appRepository repository.Ap
 
 func (impl *ActionServiceImpl) CreateAction(action ActionDto) (ActionDto, error) {
 	// validate app
-	if appDto, err := impl.appRepository.RetrieveAppByID(action.TeamID, action.App); err != nil || appDto.ID != action.App {
+	if appDto, err := impl.appRepository.RetrieveAppByIDAndTeamID(action.App, action.TeamID); err != nil || appDto.ID != action.App {
 		return ActionDto{}, errors.New("app not found")
 	}
 	// validate resource
@@ -160,7 +160,7 @@ func (impl *ActionServiceImpl) DeleteAction(teamID int, actionID int) error {
 
 func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (ActionDto, error) {
 	// validate app
-	if appDto, err := impl.appRepository.RetrieveAppByID(action.TeamID, action.App); err != nil || appDto.ID != action.App {
+	if appDto, err := impl.appRepository.RetrieveAppByIDAndTeamID(action.App, action.TeamID); err != nil || appDto.ID != action.App {
 		return ActionDto{}, errors.New("app not found")
 	}
 	// validate resource

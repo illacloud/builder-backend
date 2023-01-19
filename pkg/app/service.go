@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/internal/datacontrol"
+	"github.com/illacloud/builder-backend/internal/repository"
 
 	"go.uber.org/zap"
 )
@@ -242,7 +242,7 @@ func (impl *AppServiceImpl) UpdateAppModifyTime(app *AppDto) error {
 }
 
 func (impl *AppServiceImpl) FetchAppByID(teamID int, appID int) (AppDto, error) {
-	app, err := impl.appRepository.RetrieveAppByID(teamID, appID)
+	app, err := impl.appRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if err != nil {
 		return AppDto{}, err
 	}
@@ -299,7 +299,7 @@ func (impl *AppServiceImpl) GetAllApps(teamID int) ([]AppDto, error) {
 }
 
 func (impl *AppServiceImpl) DuplicateApp(teamID int, appID int, userID int, name string) (AppDto, error) {
-	appA, err := impl.appRepository.RetrieveAppByID(teamID, appID)
+	appA, err := impl.appRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if err != nil {
 		return AppDto{}, err
 	}
@@ -473,7 +473,7 @@ func (impl *AppServiceImpl) copyActions(teamID, appA, appB, user int) error {
 }
 
 func (impl *AppServiceImpl) ReleaseApp(teamID int, appID int) (int, error) {
-	app, err := impl.appRepository.RetrieveAppByID(teamID, appID)
+	app, err := impl.appRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if err != nil {
 		return -1, nil
 	}
@@ -596,7 +596,7 @@ func (impl *AppServiceImpl) GetMegaData(teamID, appID, version int) (Editor, err
 }
 
 func (impl *AppServiceImpl) fetchEditor(teamID int, appID int, version int) (Editor, error) {
-	app, err := impl.appRepository.RetrieveAppByID(teamID, appID)
+	app, err := impl.appRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if err != nil {
 		return Editor{}, err
 	}

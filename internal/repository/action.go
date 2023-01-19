@@ -72,7 +72,7 @@ func (impl *ActionRepositoryImpl) Create(action *Action) (int, error) {
 }
 
 func (impl *ActionRepositoryImpl) Delete(teamID int, appID int) error {
-	if err := impl.db.Delete(&Action{}).Where("id = ? AND team_id = ?", appID, teamID).Error; err != nil {
+	if err := impl.db.Where("id = ? AND team_id = ?", appID, teamID).Delete(&Action{}).Error; err != nil {
 		return err
 	}
 	return nil
