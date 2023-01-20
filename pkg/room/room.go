@@ -25,7 +25,7 @@ const DEFAULT_SERVER_ADDRESS = "localhost"
 const DEFAULT_WEBSOCKET_PORT = "8000"
 const PROTOCOL_WEBSOCKET = "ws"
 const PROTOCOL_WEBSOCKET_OVER_TLS = "wss"
-const DASHBOARD_WS_URL = "%s://%s:%s/teams/%d/websocketConnection/dashboard"
+const DASHBOARD_WS_URL = "%s://%s:%s/teams/%d/room/websocketConnection/dashboard"
 const ROOM_WS_URL = "%s://%s:%s/teams/%d/room/websocketConnection/apps/%d"
 
 type RoomService interface {
