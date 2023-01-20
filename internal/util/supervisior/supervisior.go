@@ -38,15 +38,23 @@ const (
 )
 
 type Supervisior struct {
+	Config    *Config  
 	Validator *RequestTokenValidator
 }
 
 func NewSupervisior() (*Supervisior, error) {
+	// init config
+	cfg, err := GetConfig()
+	if err != nil {
+		return nil, errors.New("can not get config.")
+	}
+	// init token validator
 	v, err := NewRequestTokenValidator()
 	if err != nil {
 		return nil, err
 	}
 	return &Supervisior{
+		Config: cfg,
 		Validator: v,
 	}, nil
 }
@@ -56,7 +64,7 @@ func (supervisior *Supervisior) ValidateUserAccount(token string) (bool, error) 
 	resp, err := client.R().
 		SetHeader("Authorization-Token", token).
 		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(token)).
-		Get(BASEURL + VALIDATE_USER_ACCOUNT)
+		Get(supervisior.Config.SupervisiorInternalAPI + VALIDATE_USER_ACCOUNT)
 	fmt.Printf("response: %+v, err: %+v", resp, err)
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
@@ -72,7 +80,7 @@ func (supervisior *Supervisior) GetTeamPermissions(teamID int) (string, error) {
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(teamIDString)).
-		Get(BASEURL + fmt.Sprintf(GET_TEAM_PERMISSIONS, teamIDString))
+		Get(supervisior.Config.SupervisiorInternalAPI + fmt.Sprintf(GET_TEAM_PERMISSIONS, teamIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
 			return "", errors.New("request illa supervisior failed.")
@@ -93,7 +101,7 @@ func (supervisior *Supervisior) CanAccess(token string, teamID int, unitType int
 	resp, err := client.R().
 		SetHeader("Authorization-Token", token).
 		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString)).
-		Get(BASEURL + fmt.Sprintf(CAN_ACCESS, teamIDString, unitTypeString, unitIDString, attributeIDString))
+		Get(supervisior.Config.SupervisiorInternalAPI + fmt.Sprintf(CAN_ACCESS, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
 			return false, errors.New("request illa supervisior failed: " + err.Error())
@@ -113,7 +121,7 @@ func (supervisior *Supervisior) CanManage(token string, teamID int, unitType int
 	resp, err := client.R().
 		SetHeader("Authorization-Token", token).
 		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString)).
-		Get(BASEURL + fmt.Sprintf(CAN_MANAGE, teamIDString, unitTypeString, unitIDString, attributeIDString))
+		Get(supervisior.Config.SupervisiorInternalAPI + fmt.Sprintf(CAN_MANAGE, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
 			return false, errors.New("request illa supervisior failed: " + err.Error())
@@ -133,7 +141,7 @@ func (supervisior *Supervisior) CanManageSpecial(token string, teamID int, unitT
 	resp, err := client.R().
 		SetHeader("Authorization-Token", token).
 		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString)).
-		Get(BASEURL + fmt.Sprintf(CAN_MANAGE_SPECIAL, teamIDString, unitTypeString, unitIDString, attributeIDString))
+		Get(supervisior.Config.SupervisiorInternalAPI + fmt.Sprintf(CAN_MANAGE_SPECIAL, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
 			return false, errors.New("request illa supervisior failed: " + err.Error())
@@ -155,7 +163,7 @@ func (supervisior *Supervisior) CanModify(token string, teamID int, unitType int
 	resp, err := client.R().
 		SetHeader("Authorization-Token", token).
 		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString, fromIDString, toIDString)).
-		Get(BASEURL + fmt.Sprintf(CAN_MODIFY, teamIDString, unitTypeString, unitIDString, attributeIDString, fromID, toID))
+		Get(supervisior.Config.SupervisiorInternalAPI + fmt.Sprintf(CAN_MODIFY, teamIDString, unitTypeString, unitIDString, attributeIDString, fromID, toID))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
 			return false, errors.New("request illa supervisior failed: " + err.Error())
@@ -175,7 +183,7 @@ func (supervisior *Supervisior) CanDelete(token string, teamID int, unitType int
 	resp, err := client.R().
 		SetHeader("Authorization-Token", token).
 		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(token, teamIDString, unitTypeString, unitIDString, attributeIDString)).
-		Get(BASEURL + fmt.Sprintf(CAN_DELETE, teamIDString, unitTypeString, unitIDString, attributeIDString))
+		Get(supervisior.Config.SupervisiorInternalAPI + fmt.Sprintf(CAN_DELETE, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
 			return false, errors.New("request illa supervisior failed: " + err.Error())
@@ -187,11 +195,10 @@ func (supervisior *Supervisior) CanDelete(token string, teamID int, unitType int
 
 func (supervisior *Supervisior) GetUser(targetUserID int) (string, error) {
 	targetUserIDString := strconv.Itoa(targetUserID)
-	
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(targetUserIDString)).
-		Get(BASEURL + fmt.Sprintf(GET_USER, targetUserIDString))
+		Get(supervisior.Config.SupervisiorInternalAPI + fmt.Sprintf(GET_USER, targetUserIDString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
 			return "", errors.New("request illa supervisior failed.")

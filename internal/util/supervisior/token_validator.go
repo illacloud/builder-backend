@@ -11,7 +11,8 @@ import (
 )
 
 type Config struct {
-	Secret string `env:"ILLA_SECRET_KEY" envDefault:"8xEMrWkBARcDDYQ`
+	SupervisiorInternalAPI string `env:"ILLA_SUPERVISIOR_INTERNAL_API" envDefault:"http://127.0.0.1:9001/api/v1"`
+	Secret 				   string `env:"ILLA_SECRET_KEY" envDefault:"8xEMrWkBARcDDYQ`
 }
 
 func GetConfig() (*Config, error) {
