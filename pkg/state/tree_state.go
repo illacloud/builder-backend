@@ -487,6 +487,8 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 
 	// convert ComponentNode to TreeState
 	currentNode := NewTreeStateDto()
+	currentNode.SetTeamID(appDto.TeamID)
+	currentNode.InitUID()
 	currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS)
 	var err error
 	if currentNode, err = impl.NewTreeStateByComponentState(appDto, componentNodeTree); err != nil {
