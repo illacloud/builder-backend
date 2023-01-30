@@ -16,6 +16,7 @@ package repository
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -118,6 +119,7 @@ func NewTreeStateRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *TreeSta
 }
 
 func (impl *TreeStateRepositoryImpl) Create(treestate *TreeState) (int, error) {
+	fmt.Printf("Createing tree_state: uid: %v, team_id: %v, app_id: %v, name: %v. \n", treestate.UID, treestate.TeamID, treestate.AppRefID, treestate.Name)
 	if err := impl.db.Create(treestate).Error; err != nil {
 		return 0, err
 	}

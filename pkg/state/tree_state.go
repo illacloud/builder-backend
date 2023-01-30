@@ -28,7 +28,7 @@ import (
 )
 
 type TreeStateService interface {
-	CreateTreeState(treestate TreeStateDto) (TreeStateDto, error)
+	CreateTreeState(treestate *TreeStateDto) (*TreeStateDto, error)
 	DeleteTreeState(teamID int, treestateId int) error
 	UpdateTreeState(treestate *TreeStateDto) (*TreeStateDto, error)
 	GetTreeStateByID(teamID int, treestateID int) (TreeStateDto, error)
@@ -106,6 +106,8 @@ func (tsd *TreeStateDto) ConstructByTreeState(treeState *repository.TreeState) e
 		return err
 	}
 	tsd.ID = treeState.ID
+	tsd.UID = treeState.UID
+	tsd.TeamID = treeState.TeamID
 	tsd.StateType = treeState.StateType
 	tsd.ParentNodeRefID = treeState.ParentNodeRefID
 	tsd.ChildrenNodeRefIDs = cids
@@ -161,6 +163,8 @@ func (impl *TreeStateServiceImpl) NewTreeStateByComponentState(appDto *app.AppDt
 	}
 
 	treestatedto := &TreeStateDto{
+		UID:       uuid.New(),
+		TeamID:    appDto.TeamID,
 		StateType: repository.TREE_STATE_TYPE_COMPONENTS,
 		AppRefID:  appDto.ID,
 		Version:   repository.APP_EDIT_VERSION,
@@ -170,17 +174,17 @@ func (impl *TreeStateServiceImpl) NewTreeStateByComponentState(appDto *app.AppDt
 	return treestatedto, nil
 }
 
-func (impl *TreeStateServiceImpl) CreateTreeState(treestate TreeStateDto) (TreeStateDto, error) {
+func (impl *TreeStateServiceImpl) CreateTreeState(treestate *TreeStateDto) (*TreeStateDto, error) {
 	// TODO: validate the versionId
 	validate := validator.New()
 	if err := validate.Struct(treestate); err != nil {
-		return TreeStateDto{}, err
+		return &TreeStateDto{}, err
 	}
 	treestate.CreatedAt = time.Now().UTC()
 	treestate.UpdatedAt = time.Now().UTC()
 	treestateIDsJSON, err := json.Marshal(treestate.ChildrenNodeRefIDs)
 	if err != nil {
-		return TreeStateDto{}, err
+		return &TreeStateDto{}, err
 	}
 	treeStateForStorage := repository.TreeState{
 		UID:                treestate.UID,
@@ -198,7 +202,7 @@ func (impl *TreeStateServiceImpl) CreateTreeState(treestate TreeStateDto) (TreeS
 		UpdatedBy:          treestate.UpdatedBy,
 	}
 	if _, err := impl.treestateRepository.Create(&treeStateForStorage); err != nil {
-		return TreeStateDto{}, err
+		return &TreeStateDto{}, err
 	}
 	// fill created id
 
@@ -523,8 +527,8 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 	currentNode.ParentNodeRefID = parentTreeState.ID
 
 	// insert currentNode and get id
-	var treeStateDtoInDB TreeStateDto
-	if treeStateDtoInDB, err = impl.CreateTreeState(*currentNode); err != nil {
+	treeStateDtoInDB := &TreeStateDto{}
+	if treeStateDtoInDB, err = impl.CreateTreeState(currentNode); err != nil {
 		return err
 	}
 	currentNode.ID = treeStateDtoInDB.ID
@@ -539,8 +543,8 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 			return err
 		}
 	}
-	// create currentNode.ChildrenNode
 
+	// create currentNode.ChildrenNode
 	for _, childrenComponentNode := range componentNodeTree.ChildrenNode {
 		if err := impl.CreateComponentTree(appDto, currentNode.ID, childrenComponentNode); err != nil {
 			return err
