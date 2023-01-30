@@ -183,6 +183,8 @@ func (impl *TreeStateServiceImpl) CreateTreeState(treestate TreeStateDto) (TreeS
 		return TreeStateDto{}, err
 	}
 	treeStateForStorage := repository.TreeState{
+		UID:                treestate.UID,
+		TeamID:             treestate.TeamID,
 		StateType:          treestate.StateType,
 		ParentNodeRefID:    treestate.ParentNodeRefID,
 		ChildrenNodeRefIDs: string(treestateIDsJSON),
