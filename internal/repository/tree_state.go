@@ -153,7 +153,7 @@ func (impl *TreeStateRepositoryImpl) Update(treestate *TreeState) error {
 
 func (impl *TreeStateRepositoryImpl) RetrieveByID(teamID int, treestateID int) (*TreeState, error) {
 	treestate := &TreeState{}
-	if err := impl.db.Where("team_id = ? AND id = ?", treestateID, teamID).First(treestate, treestateID).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND id = ?", teamID, treestateID).First(&treestate).Error; err != nil {
 		return &TreeState{}, err
 	}
 	return treestate, nil
