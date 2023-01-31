@@ -31,6 +31,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 	appDto := app.NewAppDto()
 	appDto.ConstructWithID(currentClient.APPID)
 	appDto.ConstructWithUpdateBy(currentClient.MappedUserID)
+	appDto.SetTeamID(currentClient.TeamID)
 	message.RewriteBroadcast()
 
 	// target switch
