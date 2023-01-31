@@ -16,6 +16,7 @@ package filter
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/illacloud/builder-backend/internal/repository"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
@@ -29,6 +30,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
 	teamID := currentClient.TeamID
+	fmt.Printf("SignalUpdateState teamID(from currentClient.TeamID): %v\n", teamID)
 	appDto := app.NewAppDto()
 	appDto.ConstructWithID(currentClient.APPID)
 	appDto.ConstructWithUpdateBy(currentClient.MappedUserID)

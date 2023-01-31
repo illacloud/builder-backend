@@ -19,8 +19,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 )
 
 const (
@@ -55,7 +55,7 @@ var upgrader = websocket.Upgrader{
 type Client struct {
 	ID uuid.UUID
 
-	MappedUserID  int
+	MappedUserID int
 
 	MappedUserUID uuid.UUID
 
@@ -69,7 +69,7 @@ type Client struct {
 	// Buffered channel of outbound messages.
 	Send chan []byte
 
-	// teamID, SELF_HOST by default
+	// teamID, 0 by default in SELF_HOST mode
 	TeamID int // TeamID
 
 	// appID, 0 by default, -1 for dashboard
