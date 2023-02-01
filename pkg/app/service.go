@@ -603,6 +603,13 @@ func (impl *AppServiceImpl) fetchEditor(teamID int, appID int, version int) (Edi
 	if app.ID == 0 || version > app.MainlineVersion {
 		return Editor{}, errors.New("content not found")
 	}
+	if version == repository.APP_AUTO_MAINLINE_VERSION {
+		version = app.MainlineVersion
+	}
+	if version == repository.APP_AUTO_RELEASE_VERSION {
+		version = app.ReleaseVersion
+	}
+
 	// fetch user remote data
 	user, errInGetUserInfo := datacontrol.GetUserInfo(app.UpdatedBy)
 	if errInGetUserInfo != nil {

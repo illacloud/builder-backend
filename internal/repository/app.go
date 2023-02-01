@@ -22,8 +22,9 @@ import (
 	"gorm.io/gorm"
 )
 
-const APP_EDIT_VERSION = 0 // the editable version app ID always be 0
-
+const APP_EDIT_VERSION = 0           // the editable version app ID always be 0
+const APP_AUTO_MAINLINE_VERSION = -1 // -1 for get mainline version automatically
+const APP_AUTO_RELEASE_VERSION = -2  // -1 for get release version automatically
 type App struct {
 	ID              int       `json:"id" 				gorm:"column:id;type:bigserial;primary_key;unique"`
 	UID             uuid.UUID `json:"uid"   		    gorm:"column:uid;type:uuid;not null"`
