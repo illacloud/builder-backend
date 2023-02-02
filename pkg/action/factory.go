@@ -17,6 +17,7 @@ package action
 import (
 	"github.com/illacloud/builder-backend/pkg/plugins/clickhouse"
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/builder-backend/pkg/plugins/couchdb"
 	"github.com/illacloud/builder-backend/pkg/plugins/dynamodb"
 	"github.com/illacloud/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illacloud/builder-backend/pkg/plugins/firebase"
@@ -53,6 +54,7 @@ var (
 	HUGGINGFACE_ACTION   = "huggingface"
 	DYNAMODB_ACTION      = "dynamodb"
 	SNOWFLAKE_ACTION     = "snowflake"
+	COUCHDB_ACTION       = "couchdb"
 )
 
 type AbstractActionFactory interface {
@@ -110,6 +112,9 @@ func (f *Factory) Build() common.DataConnector {
 	case SNOWFLAKE_ACTION:
 		snowflakeAction := &snowflake.Connector{}
 		return snowflakeAction
+	case COUCHDB_ACTION:
+		couchdbAction := &couchdb.Connector{}
+		return couchdbAction
 	default:
 		return nil
 	}
