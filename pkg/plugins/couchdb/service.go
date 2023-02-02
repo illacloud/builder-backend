@@ -155,6 +155,10 @@ func (c *Connector) Run(resourceOpts, actionOpts map[string]interface{}) (common
 		}
 		resObj := make(map[string]interface{})
 		resMetadata, _ := resSet.Finish()
+		if resSet.Err() != nil {
+			res.Rows = append(res.Rows, map[string]interface{}{"error": resSet.Err().Error()})
+			return res, nil
+		}
 		resObj["rows"] = rows
 		resObj["total_rows"] = resMetadata.TotalRows
 		resObj["offset"] = resMetadata.Offset
@@ -169,6 +173,10 @@ func (c *Connector) Run(resourceOpts, actionOpts map[string]interface{}) (common
 		var doc map[string]interface{}
 		resSet.ScanDoc(&doc)
 		resSet.Close()
+		if resSet.Err() != nil {
+			res.Rows = append(res.Rows, map[string]interface{}{"error": resSet.Err().Error()})
+			return res, nil
+		}
 		res.Rows = append(res.Rows, doc)
 		res.Success = true
 	case CREATE_METHOD:
@@ -220,6 +228,10 @@ func (c *Connector) Run(resourceOpts, actionOpts map[string]interface{}) (common
 		}
 		resObj := make(map[string]interface{})
 		resMetadata, _ := resSet.Finish()
+		if resSet.Err() != nil {
+			res.Rows = append(res.Rows, map[string]interface{}{"error": resSet.Err().Error()})
+			return res, nil
+		}
 		resObj["docs"] = rows
 		resObj["bookmark"] = resMetadata.Bookmark
 		resObj["warning"] = resMetadata.Warning
@@ -277,6 +289,10 @@ func (c *Connector) Run(resourceOpts, actionOpts map[string]interface{}) (common
 		}
 		resObj := make(map[string]interface{})
 		resMetadata, _ := resSet.Finish()
+		if resSet.Err() != nil {
+			res.Rows = append(res.Rows, map[string]interface{}{"error": resSet.Err().Error()})
+			return res, nil
+		}
 		resObj["rows"] = rows
 		resObj["total_rows"] = resMetadata.TotalRows
 		resObj["offset"] = resMetadata.Offset
