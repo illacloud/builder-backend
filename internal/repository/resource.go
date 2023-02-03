@@ -72,7 +72,7 @@ func (impl *ResourceRepositoryImpl) Create(resource *Resource) (int, error) {
 }
 
 func (impl *ResourceRepositoryImpl) Delete(teamID int, resourceID int) error {
-	if err := impl.db.Delete(&Resource{}).Where("id = ? AND team_id = ?", resourceID, teamID).Error; err != nil {
+	if err := impl.db.Where("id = ? AND team_id = ?", resourceID, teamID).Delete(&Resource{}).Error; err != nil {
 		return err
 	}
 	return nil
