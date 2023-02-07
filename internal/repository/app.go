@@ -15,6 +15,7 @@
 package repository
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -32,14 +33,50 @@ type App struct {
 	Name            string    `json:"name" 				gorm:"column:name;type:varchar"`
 	ReleaseVersion  int       `json:"release_version" 	gorm:"column:release_version;type:bigserial"`
 	MainlineVersion int       `json:"mainline_version" 	gorm:"column:mainline_version;type:bigserial"`
+	Config          string    `json:"config" 	        gorm:"column:config;type:jsonb"`
 	CreatedAt       time.Time `json:"created_at" 		gorm:"column:created_at;type:timestamp"`
 	CreatedBy       int       `json:"created_by" 		gorm:"column:created_by;type:bigserial"`
 	UpdatedAt       time.Time `json:"updated_at" 		gorm:"column:updated_at;type:timestamp"`
 	UpdatedBy       int       `json:"updated_by" 		gorm:"column:updated_by;type:bigserial"`
 }
 
+func (app *App) UpdateAppConfig(userID int, appConfig *AppConfig) {
+	app.Config = appConfig.ExportForApp()
+	app.UpdatedBy = userID
+	app.InitUpdatedAt()
+}
+
+func (app *App) InitUpdatedAt() {
+	app.UpdatedAt = time.Now().UTC()
+}
+
 func (app *App) ExportUpdatedAt() time.Time {
 	return app.UpdatedAt
+}
+
+func (app *App) ExportConfig() *AppConfig {
+	ac := &AppConfig{}
+	json.Unmarshal([]byte(app.Config), ac)
+	return ac
+}
+
+func (app *App) IsPublic() bool {
+	ac := app.ExportConfig()
+	return ac.Public
+}
+
+func (app *App) SetPublic(userID int) {
+	ac := app.ExportConfig()
+	ac.Public = true
+	app.UpdatedBy = userID
+	app.InitUpdatedAt()
+}
+
+func (app *App) SetPrivate(userID int) {
+	ac := app.ExportConfig()
+	ac.Public = false
+	app.UpdatedBy = userID
+	app.InitUpdatedAt()
 }
 
 type AppRepository interface {
