@@ -36,6 +36,7 @@ func (impl AppRouterImpl) InitAppRouter(appRouter *gin.RouterGroup) {
 	appRouter.POST("", impl.appRestHandler.CreateApp)
 	appRouter.DELETE(":appID", impl.appRestHandler.DeleteApp)
 	appRouter.PUT(":appID", impl.appRestHandler.RenameApp)
+	appRouter.PATCH(":appID/config", impl.appRestHandler.ConfigApp)
 	appRouter.GET("", impl.appRestHandler.GetAllApps)
 	appRouter.GET(":appID/versions/:version", impl.appRestHandler.GetMegaData)
 	appRouter.POST(":appID/duplication", impl.appRestHandler.DuplicateApp)

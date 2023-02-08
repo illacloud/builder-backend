@@ -38,6 +38,7 @@ type AppRestHandler interface {
 	CreateApp(c *gin.Context)
 	DeleteApp(c *gin.Context)
 	RenameApp(c *gin.Context)
+	ConfigApp(c *gin.Context)
 	GetAllApps(c *gin.Context)
 	GetMegaData(c *gin.Context)
 	DuplicateApp(c *gin.Context)
@@ -240,7 +241,7 @@ func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    400,
-			"errorMessage": "rename app error: " + err.Error(),
+			"errorMessage": "fetch app error: " + err.Error(),
 		})
 		return
 	}
@@ -249,8 +250,81 @@ func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
 	res, err := impl.appService.UpdateApp(appDTO)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
+			"errorCode":    500,
 			"errorMessage": "rename app error: " + err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
+	userID, errInGetUserID := GetUserIDFromAuth(c)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
+		return
+	}
+
+	// get request body
+	var rawRequest map[string]interface{}
+	if err := json.NewDecoder(c.Request.Body).Decode(&rawRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": "parse request body error: " + err.Error(),
+		})
+		return
+	}
+
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_APP)
+	impl.AttributeGroup.SetUnitID(appID)
+	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_APP)
+	if errInCheckAttr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    500,
+			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
+		})
+		return
+	}
+	if !canManage {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": "you can not access this attribute due to access control policy.",
+		})
+		return
+	}
+
+	// update app config
+	appConfig, errInNewAppConfig := repository.NewAppConfigByConfigAppRawRequest(rawRequest)
+	if errInNewAppConfig != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": "new app config failed: " + errInNewAppConfig.Error(),
+		})
+		return
+	}
+
+	// Call `app service` update app
+	appDTO, err := impl.appService.FetchAppByID(teamID, appID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    400,
+			"errorMessage": "fetch app error: " + err.Error(),
+		})
+		return
+	}
+	appDTO.UpdateAppDTOConfig(appConfig, userID)
+	res, err := impl.appService.UpdateApp(appDTO)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errorCode":    500,
+			"errorMessage": "update app config error: " + err.Error(),
 		})
 		return
 	}

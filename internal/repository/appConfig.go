@@ -14,13 +14,34 @@
 
 package repository
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"errors"
+)
+
+const APP_CONFIG_FIELD_PUBLIC = "public"
 
 type AppConfig struct {
 	Public bool `json:"public"` // switch for public app (which can view by anonymous user)
 }
 
-func (ac *AppConfig) ExportForApp() string {
+func (ac *AppConfig) ExportToJSONString() string {
 	r, _ := json.Marshal(ac)
 	return string(r)
+}
+
+func NewAppConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*AppConfig, error) {
+	var assertPass bool
+	appConfig := &AppConfig{}
+	for key, value := range rawReq {
+		switch key {
+		case APP_CONFIG_FIELD_PUBLIC:
+			appConfig.Public, assertPass = value.(bool)
+			if !assertPass {
+				return nil, errors.New("update app config failed due to assert failed.")
+			}
+		default:
+		}
+	}
+	return appConfig, nil
 }

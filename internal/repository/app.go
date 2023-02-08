@@ -40,8 +40,8 @@ type App struct {
 	UpdatedBy       int       `json:"updated_by" 		gorm:"column:updated_by;type:bigserial"`
 }
 
-func (app *App) UpdateAppConfig(userID int, appConfig *AppConfig) {
-	app.Config = appConfig.ExportForApp()
+func (app *App) UpdateAppConfig(appConfig *AppConfig, userID int) {
+	app.Config = appConfig.ExportToJSONString()
 	app.UpdatedBy = userID
 	app.InitUpdatedAt()
 }
@@ -122,6 +122,7 @@ func (impl *AppRepositoryImpl) Update(app *App) error {
 		Name:            app.Name,
 		ReleaseVersion:  app.ReleaseVersion,
 		MainlineVersion: app.MainlineVersion,
+		Config:          app.Config,
 		UpdatedBy:       app.UpdatedBy,
 		UpdatedAt:       app.UpdatedAt,
 	}).Error; err != nil {
