@@ -20,7 +20,7 @@ type AppConfig struct {
 	Public bool `json:"public"` // switch for public app (which can view by anonymous user)
 }
 
-func (ac *AppConfig) ExportForTeam() string {
+func (ac *AppConfig) ExportForApp() string {
 	r, _ := json.Marshal(ac)
 	return string(r)
 }
