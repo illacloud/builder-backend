@@ -22,6 +22,7 @@ import (
 	"github.com/illacloud/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illacloud/builder-backend/pkg/plugins/firebase"
 	"github.com/illacloud/builder-backend/pkg/plugins/graphql"
+	"github.com/illacloud/builder-backend/pkg/plugins/hfendpoint"
 	"github.com/illacloud/builder-backend/pkg/plugins/huggingface"
 	"github.com/illacloud/builder-backend/pkg/plugins/mongodb"
 	"github.com/illacloud/builder-backend/pkg/plugins/mssql"
@@ -55,6 +56,7 @@ var (
 	DYNAMODB_ACTION      = "dynamodb"
 	SNOWFLAKE_ACTION     = "snowflake"
 	COUCHDB_ACTION       = "couchdb"
+	HFENDPOINT_ACTION    = "hfendpoint"
 )
 
 type AbstractActionFactory interface {
@@ -115,6 +117,9 @@ func (f *Factory) Build() common.DataConnector {
 	case COUCHDB_ACTION:
 		couchdbAction := &couchdb.Connector{}
 		return couchdbAction
+	case HFENDPOINT_ACTION:
+		hfendpointAction := &hfendpoint.Connector{}
+		return hfendpointAction
 	default:
 		return nil
 	}

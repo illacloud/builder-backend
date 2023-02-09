@@ -22,6 +22,7 @@ import (
 	"github.com/illacloud/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illacloud/builder-backend/pkg/plugins/firebase"
 	"github.com/illacloud/builder-backend/pkg/plugins/graphql"
+	"github.com/illacloud/builder-backend/pkg/plugins/hfendpoint"
 	"github.com/illacloud/builder-backend/pkg/plugins/huggingface"
 	"github.com/illacloud/builder-backend/pkg/plugins/mongodb"
 	"github.com/illacloud/builder-backend/pkg/plugins/mssql"
@@ -54,6 +55,7 @@ var (
 	DYNAMODB_RESOURCE      = "dynamodb"
 	SNOWFLAKE_RESOURCE     = "snowflake"
 	COUCHDB_RESOURCE       = "couchdb"
+	HFENDPOINT_RESOURCE    = "hfendpoint"
 )
 
 type AbstractResourceFactory interface {
@@ -114,6 +116,9 @@ func (f *Factory) Generate() common.DataConnector {
 	case COUCHDB_RESOURCE:
 		couchdbRsc := &couchdb.Connector{}
 		return couchdbRsc
+	case HFENDPOINT_RESOURCE:
+		hfendpointRsc := &hfendpoint.Connector{}
+		return hfendpointRsc
 	default:
 		return nil
 	}
