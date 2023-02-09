@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	parser_sql "github.com/illa-family/builder-backend/internal/parser/sql"
-	"github.com/illa-family/builder-backend/pkg/plugins/common"
+	parser_sql "github.com/illacloud/builder-backend/internal/parser/sql"
+	"github.com/illacloud/builder-backend/pkg/plugins/common"
 	"github.com/mitchellh/mapstructure"
 )
 

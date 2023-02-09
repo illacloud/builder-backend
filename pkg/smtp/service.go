@@ -26,7 +26,7 @@ import (
 
 	"github.com/caarlos0/env"
 	"github.com/golang-jwt/jwt/v4"
-	email_cloud "github.com/illa-family/builder-backend/pkg/email-cloud"
+	emailCloud "github.com/illacloud/builder-backend/pkg/email-cloud"
 )
 
 var (
@@ -35,19 +35,11 @@ var (
 )
 
 type Config struct {
-	Username string `env:"ILLA_MAIL_USERNAME" envDefault:"m17602200056@163.com"`
-	Password string `env:"ILLA_MAIL_PASSWORD" envDefault:"ESXNALKGBIAZCSYO"`
-	Host     string `env:"ILLA_MAIL_HOST" envDefault:"smtp.163.com"`
-	Port     string `env:"ILLA_MAIL_PORT" envDefault:"465"`
-	Secret   string `env:"ILLA_SECRET_KEY" envDefault:"ausNV5NJfVCrz3tPXtW2ZGGCpUuWFVQbikZ6d7FyOfpw9RcyLiNpqx4pJ6fSX9JXhMfmIupKKjQElURR"`
+	Secret string `env:"ILLA_SECRET_KEY" envDefault:"ausNV5NJfVCrz3tPXtW2ZGGCpUuWFVQbikZ6d7FyOfpw9RcyLiNpqx4pJ6fSX9JXhMfmIupKKjQElURR"`
 }
 
 type SMTPServer struct {
-	From     string
-	Password string
-	Host     string
-	Port     string
-	Secret   string
+	Secret string
 }
 
 type VCodeClaims struct {
@@ -65,39 +57,16 @@ func GetConfig() (*Config, error) {
 
 func NewSMTPServer(cfg *Config) SMTPServer {
 	return SMTPServer{
-		From:     cfg.Username,
-		Password: cfg.Password,
-		Host:     cfg.Host,
-		Port:     cfg.Port,
-		Secret:   cfg.Secret,
+		Secret: cfg.Secret,
 	}
 }
 
 func (s *SMTPServer) NewVerificationCode(email, usage string) (string, error) {
-	// Authentication.
-	//auth := smtp.PlainAuth("", s.From, s.Password, s.Host)
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	vCode := fmt.Sprintf("%06v", rnd.Int31n(1000000))
 
-	//header := make(map[string]string)
-	//header["From"] = "illa-builder" + "<" + s.From + ">"
-	//header["To"] = email
-	//header["Subject"] = "[ILLA]: Verification Code"
-	//body := "Verification Code: " + vCode
-	//message := ""
-	//for k, v := range header {
-	//	message += fmt.Sprintf("%s:%s\r\n", k, v)
-	//}
-	//message += "\r\n" + body
-	//
-	//// Sending email.
-	//err := SendMailUsingTLS(s.Host+":"+s.Port, auth, s.From, email, []byte(message))
-	//if err != nil {
-	//	return "", err
-	//}
-
-	if err := email_cloud.SendVerificationEmail(email, vCode, usage); err != nil {
+	if err := emailCloud.SendVerificationEmail(email, vCode, usage); err != nil {
 		return "", err
 	}
 
@@ -122,7 +91,7 @@ func (s *SMTPServer) NewVerificationCode(email, usage string) (string, error) {
 }
 
 func (s *SMTPServer) SendSubscriptionEmail(email string) error {
-	return email_cloud.SendSubscriptionEmail(email)
+	return emailCloud.SendSubscriptionEmail(email)
 }
 
 func (s *SMTPServer) ValidateVerificationCode(codeToken, vCode, email, usage string) (bool, error) {

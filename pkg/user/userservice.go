@@ -19,17 +19,19 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/illa-family/builder-backend/internal/repository"
-	"github.com/illa-family/builder-backend/pkg/smtp"
+	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/builder-backend/pkg/smtp"
 	"golang.org/x/crypto/bcrypt"
 
 	"go.uber.org/zap"
 )
 
-var language_array = []string{"", "en-US", "zh-CN"}
+var language_array = []string{"", "en-US", "zh-CN", "ko-KR", "ja-JP"}
 var language_map = map[string]int{
 	"en-US": 1,
 	"zh-CN": 2,
+	"ko-KR": 3,
+	"ja-JP": 4,
 }
 
 type UserService interface {
