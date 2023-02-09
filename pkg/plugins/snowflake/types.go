@@ -12,29 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package huggingface
+package snowflake
 
-const (
-	METHOD_GET    = "GET"
-	METHOD_POST   = "POST"
-	METHOD_PUT    = "PUT"
-	METHOD_DELETE = "DELETE"
-	METHOD_PATCH  = "PATCH"
+type Resource struct {
+	AccountName    string `validate:"required"`
+	Warehouse      string `validate:"required"`
+	Database       string `validate:"required"`
+	Schema         string
+	Role           string
+	Authentication string            `validate:"oneof=basic key"`
+	AuthContent    map[string]string `validate:"required"`
+}
 
-	BODY_NONE   = "none"
-	BODY_RAW    = "raw"
-	BODY_BINARY = "binary"
-	BODY_FORM   = "form-data"
-	BODY_XWFU   = "x-www-form-urlencoded"
-
-	AUTH_NONE   = "none"
-	AUTH_BASIC  = "basic"
-	AUTH_BEARER = "bearer"
-
-	HF_API_ADDRESS = "https://api-inference.huggingface.co/models/"
-
-	INPUT_PAIRS_MODE  = "pairs"
-	INPUT_TEXT_MODE   = "text"
-	INPUT_JSON_MODE   = "json"
-	INPUT_BINARY_MODE = "binary"
-)
+type Action struct {
+	Mode  string `validate:"oneof=gui sql"`
+	Query string
+}

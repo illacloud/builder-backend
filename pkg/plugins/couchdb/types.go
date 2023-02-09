@@ -12,29 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package huggingface
+package couchdb
 
-const (
-	METHOD_GET    = "GET"
-	METHOD_POST   = "POST"
-	METHOD_PUT    = "PUT"
-	METHOD_DELETE = "DELETE"
-	METHOD_PATCH  = "PATCH"
+type resource struct {
+	Host     string `validate:"required"`
+	Port     string `validate:"required"`
+	Username string
+	Password string
+	SSL      bool
+}
 
-	BODY_NONE   = "none"
-	BODY_RAW    = "raw"
-	BODY_BINARY = "binary"
-	BODY_FORM   = "form-data"
-	BODY_XWFU   = "x-www-form-urlencoded"
-
-	AUTH_NONE   = "none"
-	AUTH_BASIC  = "basic"
-	AUTH_BEARER = "bearer"
-
-	HF_API_ADDRESS = "https://api-inference.huggingface.co/models/"
-
-	INPUT_PAIRS_MODE  = "pairs"
-	INPUT_TEXT_MODE   = "text"
-	INPUT_JSON_MODE   = "json"
-	INPUT_BINARY_MODE = "binary"
-)
+type action struct {
+	Method   string `validate:"required,oneof=listRecords retrieveRecord createRecord updateRecord deleteRecord find getView"`
+	Database string
+	Opts     map[string]interface{}
+}

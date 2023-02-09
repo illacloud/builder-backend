@@ -17,6 +17,8 @@ package resource
 import (
 	"github.com/illacloud/builder-backend/pkg/plugins/clickhouse"
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/builder-backend/pkg/plugins/couchdb"
+	"github.com/illacloud/builder-backend/pkg/plugins/dynamodb"
 	"github.com/illacloud/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illacloud/builder-backend/pkg/plugins/firebase"
 	"github.com/illacloud/builder-backend/pkg/plugins/graphql"
@@ -29,6 +31,7 @@ import (
 	"github.com/illacloud/builder-backend/pkg/plugins/restapi"
 	"github.com/illacloud/builder-backend/pkg/plugins/s3"
 	"github.com/illacloud/builder-backend/pkg/plugins/smtp"
+	"github.com/illacloud/builder-backend/pkg/plugins/snowflake"
 )
 
 var (
@@ -48,6 +51,9 @@ var (
 	GRAPHQL_RESOURCE       = "graphql"
 	MSSQL_RESOURCE         = "mssql"
 	HUGGINGFACE_RESOURCE   = "huggingface"
+	DYNAMODB_RESOURCE      = "dynamodb"
+	SNOWFLAKE_RESOURCE     = "snowflake"
+	COUCHDB_RESOURCE       = "couchdb"
 )
 
 type AbstractResourceFactory interface {
@@ -99,6 +105,15 @@ func (f *Factory) Generate() common.DataConnector {
 	case HUGGINGFACE_RESOURCE:
 		hfRsc := &huggingface.Connector{}
 		return hfRsc
+	case DYNAMODB_RESOURCE:
+		dynamodbRsc := &dynamodb.Connector{}
+		return dynamodbRsc
+	case SNOWFLAKE_RESOURCE:
+		snowflakeRsc := &snowflake.Connector{}
+		return snowflakeRsc
+	case COUCHDB_RESOURCE:
+		couchdbRsc := &couchdb.Connector{}
+		return couchdbRsc
 	default:
 		return nil
 	}
