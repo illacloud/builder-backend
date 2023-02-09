@@ -26,6 +26,7 @@ const (
 	UNIT_TYPE_COMPONENTS                   // builder components
 	UNIT_TYPE_RESOURCE                     // resource resource
 	UNIT_TYPE_ACTION                       // resource action
+	UNIT_TYPE_INTERNAL_ACTION              // internal action
 	UNIT_TYPE_TRANSFORMER                  // resource transformer
 	UNIT_TYPE_JOB                          // hub job
 )

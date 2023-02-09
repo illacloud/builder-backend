@@ -426,7 +426,7 @@ func (impl ResourceRestHandlerImpl) GetMetaInfo(c *gin.Context) {
 		return
 	}
 
-	// detch data
+	// fetch data
 	res, err := impl.resourceService.GetMetaInfo(teamID, resourceID)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{})

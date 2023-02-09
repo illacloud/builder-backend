@@ -1,8 +1,7 @@
-package supervisior
+package tokenvalidator
 
 import (
 	"encoding/base64"
-	"errors"
 	"sort"
 
 	"crypto/md5"
@@ -11,8 +10,7 @@ import (
 )
 
 type Config struct {
-	SupervisiorInternalAPI string `env:"ILLA_SUPERVISIOR_INTERNAL_API" envDefault:"http://127.0.0.1:9001/api/v1"`
-	Secret                 string `env:"ILLA_SECRET_KEY" envDefault:""`
+	Secret string `env:"ILLA_SECRET_KEY" envDefault:""`
 }
 
 func GetConfig() (*Config, error) {
@@ -25,14 +23,14 @@ type RequestTokenValidator struct {
 	Config *Config
 }
 
-func NewRequestTokenValidator() (*RequestTokenValidator, error) {
+func NewRequestTokenValidator() *RequestTokenValidator {
 	cfg, err := GetConfig()
 	if err != nil {
-		return nil, errors.New("can not get config.")
+		panic("this environment param ILLA_SECRET_KEY must be setted.")
 	}
 	return &RequestTokenValidator{
 		Config: cfg,
-	}, nil
+	}
 }
 
 func (r *RequestTokenValidator) GenerateValidateToken(input ...string) string {

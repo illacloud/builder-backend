@@ -22,24 +22,26 @@ import (
 )
 
 type RESTRouter struct {
-	logger         *zap.SugaredLogger
-	Router         *gin.RouterGroup
-	BuilderRouter  BuilderRouter
-	AppRouter      AppRouter
-	RoomRouter     RoomRouter
-	ActionRouter   ActionRouter
-	ResourceRouter ResourceRouter
+	logger               *zap.SugaredLogger
+	Router               *gin.RouterGroup
+	BuilderRouter        BuilderRouter
+	AppRouter            AppRouter
+	RoomRouter           RoomRouter
+	ActionRouter         ActionRouter
+	InternalActionRouter InternalActionRouter
+	ResourceRouter       ResourceRouter
 }
 
 func NewRESTRouter(logger *zap.SugaredLogger, builderRouter BuilderRouter, appRouter AppRouter, roomRouter RoomRouter,
-	actionRouter ActionRouter, resourceRouter ResourceRouter) *RESTRouter {
+	actionRouter ActionRouter, internalActionRouter InternalActionRouter, resourceRouter ResourceRouter) *RESTRouter {
 	return &RESTRouter{
-		logger:         logger,
-		BuilderRouter:  builderRouter,
-		AppRouter:      appRouter,
-		RoomRouter:     roomRouter,
-		ActionRouter:   actionRouter,
-		ResourceRouter: resourceRouter,
+		logger:               logger,
+		BuilderRouter:        builderRouter,
+		AppRouter:            appRouter,
+		RoomRouter:           roomRouter,
+		ActionRouter:         actionRouter,
+		InternalActionRouter: internalActionRouter,
+		ResourceRouter:       resourceRouter,
 	}
 }
 
@@ -50,17 +52,20 @@ func (r RESTRouter) InitRouter(router *gin.RouterGroup) {
 	appRouter := v1.Group("/teams/:teamID/apps")
 	resourceRouter := v1.Group("/teams/:teamID/resources")
 	actionRouter := v1.Group("/teams/:teamID/apps/:appID/actions")
+	internalActionRouter := v1.Group("/teams/:teamID/apps/:appID/internalActions")
 	roomRouter := v1.Group("/teams/:teamID/room")
 
 	builderRouter.Use(user.RemoteJWTAuth())
 	appRouter.Use(user.RemoteJWTAuth())
 	roomRouter.Use(user.RemoteJWTAuth())
 	actionRouter.Use(user.RemoteJWTAuth())
+	internalActionRouter.Use(user.RemoteJWTAuth())
 	resourceRouter.Use(user.RemoteJWTAuth())
 
 	r.BuilderRouter.InitBuilderRouter(builderRouter)
 	r.AppRouter.InitAppRouter(appRouter)
 	r.RoomRouter.InitRoomRouter(roomRouter)
 	r.ActionRouter.InitActionRouter(actionRouter)
+	r.InternalActionRouter.InitInternalActionRouter(internalActionRouter)
 	r.ResourceRouter.InitResourceRouter(resourceRouter)
 }

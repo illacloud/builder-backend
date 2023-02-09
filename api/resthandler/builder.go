@@ -29,19 +29,18 @@ type BuilderRestHandler interface {
 }
 
 type BuilderRestHandlerImpl struct {
-	logger           *zap.SugaredLogger
-	builderService    builder.BuilderService
-	AttributeGroup   *ac.AttributeGroup
+	logger         *zap.SugaredLogger
+	builderService builder.BuilderService
+	AttributeGroup *ac.AttributeGroup
 }
 
 func NewBuilderRestHandlerImpl(logger *zap.SugaredLogger, builderService builder.BuilderService, attrg *ac.AttributeGroup) *BuilderRestHandlerImpl {
 	return &BuilderRestHandlerImpl{
-		logger:           logger,
-		builderService:   builderService,
-		AttributeGroup:   attrg,
+		logger:         logger,
+		builderService: builderService,
+		AttributeGroup: attrg,
 	}
 }
-
 
 func (impl BuilderRestHandlerImpl) GetTeamBuilderDesc(c *gin.Context) {
 	// fetch needed param

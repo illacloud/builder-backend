@@ -67,11 +67,14 @@ func Initialize() (*Server, error) {
 	actionServiceImpl := action.NewActionServiceImpl(sugaredLogger, appRepositoryImpl, actionRepositoryImpl, resourceRepositoryImpl)
 	actionRestHandlerImpl := resthandler.NewActionRestHandlerImpl(sugaredLogger, actionServiceImpl, attrg)
 	actionRouterImpl := router.NewActionRouterImpl(actionRestHandlerImpl)
+	// internalActions
+	internalActionRestHandlerImpl := resthandler.NewInternalActionRestHandlerImpl(sugaredLogger, resourceServiceImpl, attrg)
+	internalActionRouterImpl := router.NewInternalActionRouterImpl(internalActionRestHandlerImpl)
 	// builder
 	builderServiceImpl := builder.NewBuilderServiceImpl(sugaredLogger, appRepositoryImpl, resourceRepositoryImpl, actionRepositoryImpl)
 	builderRestHandlerImpl := resthandler.NewBuilderRestHandlerImpl(sugaredLogger, builderServiceImpl, attrg)
 	builderRouterImpl := router.NewBuilderRouterImpl(builderRestHandlerImpl)
-	restRouter := router.NewRESTRouter(sugaredLogger, builderRouterImpl, appRouterImpl, roomRouterImpl, actionRouterImpl, resourceRouterImpl)
+	restRouter := router.NewRESTRouter(sugaredLogger, builderRouterImpl, appRouterImpl, roomRouterImpl, actionRouterImpl, internalActionRouterImpl, resourceRouterImpl)
 	server := NewServer(config, engine, restRouter, sugaredLogger)
 	return server, nil
 }
