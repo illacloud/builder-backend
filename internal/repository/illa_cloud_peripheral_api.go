@@ -18,10 +18,6 @@ type GenerateSQLFeedback struct {
 	Payload string `json:"payload"`
 }
 
-func (f *GenerateSQLFeedback) AddSuffix() {
-	f.Payload = "SELECT " + f.Payload
-}
-
 func GenerateSQL(m *GenerateSQLPeripheralRequest, req *GenerateSQLRequest) (*GenerateSQLFeedback, error) {
 	fmt.Printf("%v\n", m)
 	payload := m.Export()
