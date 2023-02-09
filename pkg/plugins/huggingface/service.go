@@ -146,11 +146,15 @@ func (h *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	}
 	body := make(map[string]interface{})
 	listBody := make([]map[string]interface{}, 0)
+	matrixBody := make([][]map[string]interface{}, 0)
 	if err := json.Unmarshal(resp.Body(), &body); err == nil {
 		res.Rows = append(res.Rows, body)
 	}
 	if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
 		res.Rows = listBody
+	}
+	if err := json.Unmarshal(resp.Body(), &matrixBody); err == nil && len(matrixBody) == 1 {
+		res.Rows = matrixBody[0]
 	}
 	res.Extra["raw"] = resp.Body()
 	res.Extra["headers"] = resp.Header()
@@ -158,6 +162,7 @@ func (h *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		res.Success = false
 		return res, err
 	}
+	res.Success = true
 
 	return res, nil
 }
