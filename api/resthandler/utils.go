@@ -3,6 +3,7 @@ package resthandler
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/illacloud/builder-backend/internal/idconvertor"
@@ -143,6 +144,21 @@ func GetMagicIntParamFromRequest(c *gin.Context, paramName string) (int, error) 
 		return 0, errors.New("input mission " + paramName + " field.")
 	}
 	paramValueInt := idconvertor.ConvertStringToInt(paramValue)
+	return paramValueInt, nil
+}
+
+func GetIntParamFromRequest(c *gin.Context, paramName string) (int, error) {
+	// get request param
+	paramValue := c.Param(paramName)
+	if len(paramValue) == 0 {
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_PARAM_FAILED, "please input param for request.")
+		return 0, errors.New("input mission " + paramName + " field.")
+	}
+	paramValueInt, okAssert := strconv.Atoi(paramValue)
+	if okAssert != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_PARAM_FAILED, "please input param in int format.")
+		return 0, errors.New("input teamID in wrong format.")
+	}
 	return paramValueInt, nil
 }
 

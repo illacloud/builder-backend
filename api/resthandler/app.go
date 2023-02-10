@@ -322,7 +322,7 @@ func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
-	version, errInGetVersion := GetMagicIntParamFromRequest(c, PARAM_VERSION)
+	version, errInGetVersion := GetIntParamFromRequest(c, PARAM_VERSION)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetVersion != nil || errInGetAuthToken != nil {
 		return
