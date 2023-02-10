@@ -19,12 +19,13 @@ import (
 	"flag"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
+	"github.com/illacloud/builder-backend/internal/idconvertor"
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/internal/util"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
+
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/db"
 	"github.com/illacloud/builder-backend/pkg/resource"
@@ -131,28 +132,18 @@ func main() {
 	// handle ws://{ip:port}/teams/{teamID}/room/websocketConnection/dashboard
 	r.HandleFunc("/teams/{teamID}/room/websocketConnection/dashboard", func(w http.ResponseWriter, r *http.Request) {
 		teamID := mux.Vars(r)["teamID"]
-		teamIDInt, errorInConvert := strconv.Atoi(teamID)
-		if errorInConvert != nil {
-			json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": errorInConvert.Error()})
-			return
-		}
+		teamIDInt := idconvertor.ConvertStringToInt(teamID)
 		log.Printf("[Connected] /teams/%d/dashboard", teamIDInt)
 		ServeWebsocket(hub, w, r, teamIDInt, ws.DASHBOARD_APP_ID)
 	})
 	// handle ws://{ip:port}/teams/{teamID}/room/websocketConnection/apps/{appID}
 	r.HandleFunc("/teams/{teamID}/room/websocketConnection/apps/{appID}", func(w http.ResponseWriter, r *http.Request) {
 		teamID := mux.Vars(r)["teamID"]
-		teamIDInt, errorInConvert := strconv.Atoi(teamID)
-		if errorInConvert != nil {
-			json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": errorInConvert.Error()})
-			return
-		}
-		appID, err := strconv.Atoi(mux.Vars(r)["appID"])
-		if err != nil {
-			appID = ws.DEFAULT_APP_ID
-		}
-		log.Printf("[Connected] /teams/%d/app/%d", teamIDInt, appID)
-		ServeWebsocket(hub, w, r, teamIDInt, appID)
+		appID := mux.Vars(r)["appID"]
+		teamIDInt := idconvertor.ConvertStringToInt(teamID)
+		appIDInt := idconvertor.ConvertStringToInt(appID)
+		log.Printf("[Connected] /teams/%d/app/%d", teamIDInt, appIDInt)
+		ServeWebsocket(hub, w, r, teamIDInt, appIDInt)
 	})
 	srv := &http.Server{
 		Handler:      r,
