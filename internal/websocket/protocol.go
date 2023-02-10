@@ -16,7 +16,6 @@ package ws
 
 import (
 	"encoding/json"
-
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -40,6 +39,8 @@ const SIGNAL_CREATE_OR_UPDATE_STATE = 7
 const SIGNAL_BROADCAST_ONLY = 8
 const SIGNAL_PUT_STATE = 9
 const SIGNAL_GLOBAL_BROADCAST_ONLY = 10
+const SIGNAL_COOPERATE_ATTACH = 11
+const SIGNAL_COOPERATE_DISATTACH = 12
 
 const OPTION_BROADCAST_ROOM = 1 // 00000000000000000000000000000001; // use as signed int32 in typescript
 
@@ -55,6 +56,8 @@ const TARGET_ACTION = 8             // only for broadcast
 
 // for broadcast rewrite
 const BROADCAST_TYPE_SUFFIX = "/remote"
+const BROADCAST_TYPE_ENTER = "enter"
+const BROADCAST_TYPE_ATTACH_COMPONENT = "attachComponent"
 
 type Broadcast struct {
 	Type    string      `json:"type"`
@@ -86,6 +89,22 @@ func NewMessage(clientID uuid.UUID, appID int, rawMessage []byte) (*Message, err
 		message.NeedBroadcast = true
 	}
 	return &message, nil
+}
+
+func (m *Message) SetSignal(s int) {
+	m.Signal = SIGNAL_COOPERATE_ATTACH
+}
+
+func (m *Message) SetBroadcastType(t string) {
+	if m.Broadcast != nil {
+		m.Broadcast.Type = t
+	}
+}
+
+func (m *Message) SetBroadcastPayload(any interface{}) {
+	if m.Broadcast != nil {
+		m.Broadcast.Payload = any
+	}
 }
 
 func (m *Message) RewriteBroadcast() {

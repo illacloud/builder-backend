@@ -15,11 +15,29 @@
 package filter
 
 import (
-	ws "github.com/illa-family/builder-backend/internal/websocket"
+	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
 
 func SignalLeave(hub *ws.Hub, message *ws.Message) error {
 	currentClient := hub.Clients[message.ClientID]
+
+	// broadcast in room users
+	inRoomUsers := hub.GetInRoomUsersByRoomID(currentClient.APPID)
+	inRoomUsers.LeaveRoom(currentClient.MappedUserID)
+	message.SetBroadcastType(ws.BROADCAST_TYPE_ENTER)
+	message.RewriteBroadcast()
+	message.SetBroadcastPayload(inRoomUsers.FetchAllInRoomUsers())
+	hub.BroadcastToOtherClients(message, currentClient)
+
+	
+	// broadcast attached components users
+	message.SetBroadcastType(ws.BROADCAST_TYPE_ATTACH_COMPONENT)
+	message.RewriteBroadcast()
+	message.SetBroadcastPayload(inRoomUsers.FetchAllAttachedUsers())
+	hub.BroadcastToOtherClients(message, currentClient)
+
+	// kick leaved user
 	ws.KickClient(hub, currentClient)
+	hub.CleanRoom(currentClient.APPID)
 	return nil
 }

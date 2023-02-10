@@ -15,18 +15,23 @@
 package action
 
 import (
-	"github.com/illa-family/builder-backend/pkg/plugins/clickhouse"
-	"github.com/illa-family/builder-backend/pkg/plugins/common"
-	"github.com/illa-family/builder-backend/pkg/plugins/elasticsearch"
-	"github.com/illa-family/builder-backend/pkg/plugins/firebase"
-	"github.com/illa-family/builder-backend/pkg/plugins/graphql"
-	"github.com/illa-family/builder-backend/pkg/plugins/mongodb"
-	"github.com/illa-family/builder-backend/pkg/plugins/mysql"
-	"github.com/illa-family/builder-backend/pkg/plugins/postgresql"
-	"github.com/illa-family/builder-backend/pkg/plugins/redis"
-	"github.com/illa-family/builder-backend/pkg/plugins/restapi"
-	"github.com/illa-family/builder-backend/pkg/plugins/s3"
-	"github.com/illa-family/builder-backend/pkg/plugins/smtp"
+	"github.com/illacloud/builder-backend/pkg/plugins/clickhouse"
+	"github.com/illacloud/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/builder-backend/pkg/plugins/couchdb"
+	"github.com/illacloud/builder-backend/pkg/plugins/dynamodb"
+	"github.com/illacloud/builder-backend/pkg/plugins/elasticsearch"
+	"github.com/illacloud/builder-backend/pkg/plugins/firebase"
+	"github.com/illacloud/builder-backend/pkg/plugins/graphql"
+	"github.com/illacloud/builder-backend/pkg/plugins/huggingface"
+	"github.com/illacloud/builder-backend/pkg/plugins/mongodb"
+	"github.com/illacloud/builder-backend/pkg/plugins/mssql"
+	"github.com/illacloud/builder-backend/pkg/plugins/mysql"
+	"github.com/illacloud/builder-backend/pkg/plugins/postgresql"
+	"github.com/illacloud/builder-backend/pkg/plugins/redis"
+	"github.com/illacloud/builder-backend/pkg/plugins/restapi"
+	"github.com/illacloud/builder-backend/pkg/plugins/s3"
+	"github.com/illacloud/builder-backend/pkg/plugins/smtp"
+	"github.com/illacloud/builder-backend/pkg/plugins/snowflake"
 )
 
 var (
@@ -45,6 +50,11 @@ var (
 	FIREBASE_ACTION      = "firebase"
 	CLICKHOUSE_ACTION    = "clickhouse"
 	GRAPHQL_ACTION       = "graphql"
+	MSSQL_ACTION         = "mssql"
+	HUGGINGFACE_ACTION   = "huggingface"
+	DYNAMODB_ACTION      = "dynamodb"
+	SNOWFLAKE_ACTION     = "snowflake"
+	COUCHDB_ACTION       = "couchdb"
 )
 
 type AbstractActionFactory interface {
@@ -90,6 +100,21 @@ func (f *Factory) Build() common.DataConnector {
 	case GRAPHQL_ACTION:
 		graphqlAction := &graphql.Connector{}
 		return graphqlAction
+	case MSSQL_ACTION:
+		mssqlAction := &mssql.Connector{}
+		return mssqlAction
+	case HUGGINGFACE_ACTION:
+		hfAction := &huggingface.Connector{}
+		return hfAction
+	case DYNAMODB_ACTION:
+		dynamodbAction := &dynamodb.Connector{}
+		return dynamodbAction
+	case SNOWFLAKE_ACTION:
+		snowflakeAction := &snowflake.Connector{}
+		return snowflakeAction
+	case COUCHDB_ACTION:
+		couchdbAction := &couchdb.Connector{}
+		return couchdbAction
 	default:
 		return nil
 	}

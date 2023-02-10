@@ -23,7 +23,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
-	"github.com/illa-family/builder-backend/internal/repository"
+	"github.com/illacloud/builder-backend/internal/repository"
 	"go.uber.org/zap"
 )
 
@@ -38,6 +38,7 @@ type Authenticator interface {
 	ValidateAccessToken(accessToken string) (bool, error)
 	ExtractUserIDFromToken(accessToken string) (int, uuid.UUID, error)
 	ValidateUser(id int, uid uuid.UUID) (bool, error)
+	ValidateUserAndGetDetail(id int, uid uuid.UUID) (bool, *repository.User, error)
 }
 
 type AuthenticatorImpl struct {
@@ -87,6 +88,17 @@ func (impl *AuthenticatorImpl) ValidateUser(id int, uid uuid.UUID) (bool, error)
 	}
 
 	return true, nil
+}
+
+func (impl *AuthenticatorImpl) ValidateUserAndGetDetail(id int, uid uuid.UUID) (bool, *repository.User, error) {
+	userRecord, err := impl.userRepository.FetchUserByUKey(id, uid)
+	if err != nil {
+		return false, nil, err
+	}
+	if userRecord.ID != id || userRecord.UID != uid {
+		return false, nil, errors.New("no such user")
+	}
+	return true, userRecord, nil
 }
 
 func CreateAccessToken(id int, uid uuid.UUID) (string, error) {

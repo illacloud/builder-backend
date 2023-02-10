@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/illa-family/builder-backend/internal/repository"
-	"github.com/illa-family/builder-backend/pkg/smtp"
+	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/builder-backend/pkg/smtp"
 	"golang.org/x/crypto/bcrypt"
 
 	"go.uber.org/zap"
