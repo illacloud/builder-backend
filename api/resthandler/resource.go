@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
+	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/resource"
 
 	"github.com/gin-gonic/gin"
@@ -53,7 +54,7 @@ func NewResourceRestHandlerImpl(logger *zap.SugaredLogger, resourceService resou
 
 func (impl ResourceRestHandlerImpl) FindAllResources(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
@@ -90,12 +91,15 @@ func (impl ResourceRestHandlerImpl) FindAllResources(c *gin.Context) {
 		})
 		return
 	}
+
+	// feedback
 	c.JSON(http.StatusOK, res)
+	return
 }
 
 func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
@@ -164,13 +168,16 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, res)
+
+	// feedback
+	FeedbackOK(c, res)
+	return
 }
 
 func (impl ResourceRestHandlerImpl) GetResource(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	resourceID, errInGetResourceID := GetIntParamFromRequest(c, PARAM_RESOURCE_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetAuthToken != nil {
 		return
@@ -207,13 +214,16 @@ func (impl ResourceRestHandlerImpl) GetResource(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, res)
+
+	// feedback
+	FeedbackOK(c, res)
+	return
 }
 
 func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	resourceID, errInGetResourceID := GetIntParamFromRequest(c, PARAM_RESOURCE_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
@@ -285,13 +295,15 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 	res.CreatedAt = originInfo.CreatedAt
 	res.CreatedBy = originInfo.CreatedBy
 
-	c.JSON(http.StatusOK, res)
+	// feedback
+	FeedbackOK(c, res)
+	return
 }
 
 func (impl ResourceRestHandlerImpl) DeleteResource(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	resourceID, errInGetResourceID := GetIntParamFromRequest(c, PARAM_RESOURCE_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetAuthToken != nil {
 		return
@@ -326,14 +338,16 @@ func (impl ResourceRestHandlerImpl) DeleteResource(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"resourceId": resourceID,
-	})
+
+	// feedback
+	FeedbackOK(c, repository.NewDeleteResourceResponse(resourceID))
+	return
+
 }
 
 func (impl ResourceRestHandlerImpl) TestConnection(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
@@ -390,15 +404,15 @@ func (impl ResourceRestHandlerImpl) TestConnection(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "test connection successfully",
-	})
+	// feedback
+	FeedbackOK(c, nil)
+	return
 }
 
 func (impl ResourceRestHandlerImpl) GetMetaInfo(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	resourceID, errInGetResourceID := GetIntParamFromRequest(c, PARAM_RESOURCE_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetAuthToken != nil {
 		return

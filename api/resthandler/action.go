@@ -24,6 +24,7 @@ import (
 	"time"
 
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
+	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/action"
 
 	"github.com/gin-gonic/gin"
@@ -59,23 +60,17 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 	var act action.ActionDto
 	act.InitUID()
 	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 	if err := impl.actionService.ValidateActionOptions(act.Type, act.Template); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
@@ -90,17 +85,11 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
 	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_CREATE_ACTION)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
@@ -120,7 +109,7 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, res)
+	FeedbackOK(c, res)
 }
 
 func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
@@ -143,10 +132,10 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	}
 
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
-	actionID, errInGetActionID := GetIntParamFromRequest(c, PARAM_ACTION_ID)
+	actionID, errInGetActionID := GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
 		return
@@ -194,13 +183,13 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	res.CreatedBy = originInfo.CreatedBy
 	res.CreatedAt = originInfo.CreatedAt
 
-	c.JSON(http.StatusOK, res)
+	FeedbackOK(c, res)
 }
 
 func (impl ActionRestHandlerImpl) DeleteAction(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	actionID, errInGetActionID := GetIntParamFromRequest(c, PARAM_ACTION_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	actionID, errInGetActionID := GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
 		return
@@ -236,15 +225,16 @@ func (impl ActionRestHandlerImpl) DeleteAction(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"actionId": actionID,
-	})
+
+	// feedback
+	FeedbackOK(c, repository.NewDeleteActionResponse(actionID))
+	return
 }
 
 func (impl ActionRestHandlerImpl) GetAction(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	actionID, errInGetActionID := GetIntParamFromRequest(c, PARAM_ACTION_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	actionID, errInGetActionID := GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
 		return
@@ -281,13 +271,16 @@ func (impl ActionRestHandlerImpl) GetAction(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, res)
+
+	// feedback
+	FeedbackOK(c, res)
+	return
 }
 
 func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
 		return
@@ -324,12 +317,14 @@ func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 		})
 		return
 	}
+
+	// feedback
 	c.JSON(http.StatusOK, res)
 }
 
 func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
@@ -393,13 +388,15 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 		})
 		return
 	}
+
+	// feedback
 	c.JSON(http.StatusOK, res)
 }
 
 func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	actionID, errInGetActionID := GetIntParamFromRequest(c, PARAM_ACTION_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	actionID, errInGetActionID := GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
 		return

@@ -44,7 +44,7 @@ func NewBuilderRestHandlerImpl(logger *zap.SugaredLogger, builderService builder
 
 func (impl BuilderRestHandlerImpl) GetTeamBuilderDesc(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return

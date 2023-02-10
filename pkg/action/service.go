@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/illacloud/builder-backend/internal/idconvertor"
 	"github.com/illacloud/builder-backend/internal/repository"
 
 	"go.uber.org/zap"
@@ -51,11 +52,11 @@ var type_map = map[string]int{
 }
 
 type ActionService interface {
-	CreateAction(action ActionDto) (ActionDto, error)
+	CreateAction(action ActionDto) (*ActionDtoForExport, error)
 	DeleteAction(teamID int, id int) error
-	UpdateAction(action ActionDto) (ActionDto, error)
-	GetAction(teamID int, id int) (ActionDto, error)
-	FindActionsByAppVersion(teamID int, app, version int) ([]ActionDto, error)
+	UpdateAction(action ActionDto) (*ActionDtoForExport, error)
+	GetAction(teamID int, id int) (*ActionDtoForExport, error)
+	FindActionsByAppVersion(teamID int, app, version int) ([]*ActionDtoForExport, error)
 	RunAction(teamID int, action ActionDto) (interface{}, error)
 	ValidateActionOptions(actionType string, options map[string]interface{}) error
 }
@@ -76,6 +77,48 @@ type ActionDto struct {
 	CreatedBy   int                    `json:"createdBy,omitempty"`
 	UpdatedAt   time.Time              `json:"updatedAt,omitempty"`
 	UpdatedBy   int                    `json:"updatedBy,omitempty"`
+}
+
+type ActionDtoForExport struct {
+	ID          string                 `json:"actionId"`
+	UID         uuid.UUID              `json:"uid"`
+	TeamID      string                 `json:"teamID"`
+	App         string                 `json:"-"`
+	Version     int                    `json:"-"`
+	Resource    string                 `json:"resourceId,omitempty"`
+	DisplayName string                 `json:"displayName" validate:"required"`
+	Type        string                 `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb"`
+	Template    map[string]interface{} `json:"content" validate:"required"`
+	Transformer map[string]interface{} `json:"transformer" validate:"required"`
+	TriggerMode string                 `json:"triggerMode" validate:"oneof=manually automate"`
+	CreatedAt   time.Time              `json:"createdAt,omitempty"`
+	CreatedBy   string                 `json:"createdBy,omitempty"`
+	UpdatedAt   time.Time              `json:"updatedAt,omitempty"`
+	UpdatedBy   string                 `json:"updatedBy,omitempty"`
+}
+
+func NewActionDtoForExport(a *ActionDto) *ActionDtoForExport {
+	return &ActionDtoForExport{
+		ID:          idconvertor.ConvertIntToString(a.ID),
+		UID:         a.UID,
+		TeamID:      idconvertor.ConvertIntToString(a.TeamID),
+		App:         idconvertor.ConvertIntToString(a.App),
+		Version:     a.Version,
+		Resource:    idconvertor.ConvertIntToString(a.Resource),
+		DisplayName: a.DisplayName,
+		Type:        a.Type,
+		Template:    a.Template,
+		Transformer: a.Transformer,
+		TriggerMode: a.TriggerMode,
+		CreatedAt:   a.CreatedAt,
+		CreatedBy:   idconvertor.ConvertIntToString(a.CreatedBy),
+		UpdatedAt:   a.UpdatedAt,
+		UpdatedBy:   idconvertor.ConvertIntToString(a.UpdatedBy),
+	}
+}
+
+func (resp *ActionDtoForExport) ExportForFeedback() interface{} {
+	return resp
 }
 
 func (a *ActionDto) InitUID() {
@@ -103,14 +146,14 @@ func NewActionServiceImpl(logger *zap.SugaredLogger, appRepository repository.Ap
 	}
 }
 
-func (impl *ActionServiceImpl) CreateAction(action ActionDto) (ActionDto, error) {
+func (impl *ActionServiceImpl) CreateAction(action ActionDto) (*ActionDtoForExport, error) {
 	// validate app
 	if appDto, err := impl.appRepository.RetrieveAppByIDAndTeamID(action.App, action.TeamID); err != nil || appDto.ID != action.App {
-		return ActionDto{}, errors.New("app not found")
+		return nil, errors.New("app not found")
 	}
 	// validate resource
 	if rscDto, err := impl.resourceRepository.RetrieveByID(action.TeamID, action.Resource); (err != nil || rscDto.ID != action.Resource) && action.Type != type_array[0] {
-		return ActionDto{}, errors.New("resource not found")
+		return nil, errors.New("resource not found")
 	}
 
 	id, err := impl.actionRepository.Create(&repository.Action{
@@ -131,7 +174,7 @@ func (impl *ActionServiceImpl) CreateAction(action ActionDto) (ActionDto, error)
 		UpdatedBy:   action.UpdatedBy,
 	})
 	if err != nil {
-		return ActionDto{}, err
+		return nil, err
 	}
 	action.ID = id
 
@@ -142,7 +185,7 @@ func (impl *ActionServiceImpl) CreateAction(action ActionDto) (ActionDto, error)
 		UpdatedBy: action.UpdatedBy,
 	})
 
-	return action, nil
+	return NewActionDtoForExport(&action), nil
 }
 
 func (impl *ActionServiceImpl) DeleteAction(teamID int, actionID int) error {
@@ -162,14 +205,14 @@ func (impl *ActionServiceImpl) DeleteAction(teamID int, actionID int) error {
 	return nil
 }
 
-func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (ActionDto, error) {
+func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (*ActionDtoForExport, error) {
 	// validate app
 	if appDto, err := impl.appRepository.RetrieveAppByIDAndTeamID(action.App, action.TeamID); err != nil || appDto.ID != action.App {
-		return ActionDto{}, errors.New("app not found")
+		return nil, errors.New("app not found")
 	}
 	// validate resource
 	if rscDto, err := impl.resourceRepository.RetrieveByID(action.TeamID, action.Resource); (err != nil || rscDto.ID != action.Resource) && action.Type != type_array[0] {
-		return ActionDto{}, errors.New("resource not found")
+		return nil, errors.New("resource not found")
 	}
 
 	if err := impl.actionRepository.Update(&repository.Action{
@@ -185,7 +228,7 @@ func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (ActionDto, error)
 		UpdatedAt:   action.UpdatedAt,
 		UpdatedBy:   action.UpdatedBy,
 	}); err != nil {
-		return ActionDto{}, err
+		return nil, err
 	}
 
 	// update app `updatedAt` field
@@ -195,15 +238,15 @@ func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (ActionDto, error)
 		UpdatedBy: action.UpdatedBy,
 	})
 
-	return action, nil
+	return NewActionDtoForExport(&action), nil
 }
 
-func (impl *ActionServiceImpl) GetAction(teamID int, actionID int) (ActionDto, error) {
+func (impl *ActionServiceImpl) GetAction(teamID int, actionID int) (*ActionDtoForExport, error) {
 	res, err := impl.actionRepository.RetrieveByID(teamID, actionID)
 	if err != nil {
-		return ActionDto{}, err
+		return nil, err
 	}
-	resDto := ActionDto{
+	action := ActionDto{
 		ID:          res.ID,
 		UID:         res.UID,
 		TeamID:      res.TeamID,
@@ -218,18 +261,19 @@ func (impl *ActionServiceImpl) GetAction(teamID int, actionID int) (ActionDto, e
 		UpdatedBy:   res.UpdatedBy,
 		UpdatedAt:   res.UpdatedAt,
 	}
-	return resDto, nil
+	return NewActionDtoForExport(&action), nil
+
 }
 
-func (impl *ActionServiceImpl) FindActionsByAppVersion(teamID int, appID int, version int) ([]ActionDto, error) {
+func (impl *ActionServiceImpl) FindActionsByAppVersion(teamID int, appID int, version int) ([]*ActionDtoForExport, error) {
 	res, err := impl.actionRepository.RetrieveActionsByAppVersion(teamID, appID, version)
 	if err != nil {
 		return nil, err
 	}
 
-	resDtoSlice := make([]ActionDto, 0, len(res))
+	actionDtoForExportSlice := make([]*ActionDtoForExport, 0, len(res))
 	for _, value := range res {
-		resDtoSlice = append(resDtoSlice, ActionDto{
+		actionDto := ActionDto{
 			ID:          value.ID,
 			UID:         value.UID,
 			TeamID:      value.TeamID,
@@ -243,9 +287,10 @@ func (impl *ActionServiceImpl) FindActionsByAppVersion(teamID int, appID int, ve
 			CreatedAt:   value.CreatedAt,
 			UpdatedBy:   value.UpdatedBy,
 			UpdatedAt:   value.UpdatedAt,
-		})
+		}
+		actionDtoForExportSlice = append(actionDtoForExportSlice, NewActionDtoForExport(&actionDto))
 	}
-	return resDtoSlice, nil
+	return actionDtoForExportSlice, nil
 }
 
 func (impl *ActionServiceImpl) RunAction(teamID int, action ActionDto) (interface{}, error) {

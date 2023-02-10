@@ -83,7 +83,7 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 	}
 
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
@@ -137,13 +137,15 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, res)
+	// feedback
+	FeedbackOK(c, app.NewAppDtoForExport(&res))
+	return
 }
 
 func (impl AppRestHandlerImpl) DeleteApp(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
 		return
@@ -179,15 +181,16 @@ func (impl AppRestHandlerImpl) DeleteApp(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"appId": appID,
-	})
+
+	// feedback
+	FeedbackOK(c, repository.NewDeleteAppResponse(appID))
+	return
 }
 
 func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
@@ -255,13 +258,16 @@ func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, res)
+
+	// feedback
+	FeedbackOK(c, res)
+	return
 }
 
 func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
@@ -328,12 +334,15 @@ func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, res)
+
+	// feedback
+	FeedbackOK(c, res)
+	return
 }
 
 func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
@@ -373,14 +382,16 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 		})
 		return
 	}
+
+	// feedback
 	c.JSON(http.StatusOK, res)
 }
 
 func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
-	version, errInGetVersion := GetIntParamFromRequest(c, PARAM_VERSION)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	version, errInGetVersion := GetMagicIntParamFromRequest(c, PARAM_VERSION)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetVersion != nil || errInGetAuthToken != nil {
 		return
@@ -424,13 +435,16 @@ func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, res)
+
+	// feedback
+	FeedbackOK(c, res)
+	return
 }
 
 func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
@@ -488,13 +502,15 @@ func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, res)
+	// feedback
+	FeedbackOK(c, res)
+	return
 }
 
 func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetIntParamFromRequest(c, PARAM_APP_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
 		return
@@ -531,7 +547,8 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"version": version,
-	})
+
+	// feedback
+	FeedbackOK(c, repository.NewReleaseAppResponse(version))
+	return
 }

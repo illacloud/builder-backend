@@ -48,7 +48,7 @@ func NewInternalActionRestHandlerImpl(logger *zap.SugaredLogger, resourceService
 
 func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetIntParamFromRequest(c, PARAM_TEAM_ID)
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return

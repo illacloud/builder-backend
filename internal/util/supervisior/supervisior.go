@@ -18,13 +18,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	resty "github.com/go-resty/resty/v2"
+	"github.com/illacloud/builder-backend/internal/idconvertor"
 )
 
 const (
-	BASEURL               = "http://127.0.0.1:9001/api/v1"
+	BASEURL = "http://127.0.0.1:9001/api/v1"
 	// access control part
 	VALIDATE_USER_ACCOUNT = "/accessControl/account/validateResult"
 	GET_TEAM_PERMISSIONS  = "/accessControl/teams/%s/permissions"
@@ -34,11 +34,11 @@ const (
 	CAN_MODIFY            = "/accessControl/teams/%s/unitType/%s/unitID/%s/attribute/canModify/%s/from/%s/to/%s"
 	CAN_DELETE            = "/accessControl/teams/%s/unitType/%s/unitID/%s/attribute/canDelete/%s"
 	// data control part
-	GET_USER 			  = "/dataControl/users/%s"
+	GET_USER = "/dataControl/users/%s"
 )
 
 type Supervisior struct {
-	Config    *Config  
+	Config    *Config
 	Validator *RequestTokenValidator
 }
 
@@ -54,7 +54,7 @@ func NewSupervisior() (*Supervisior, error) {
 		return nil, err
 	}
 	return &Supervisior{
-		Config: cfg,
+		Config:    cfg,
 		Validator: v,
 	}, nil
 }
@@ -76,7 +76,7 @@ func (supervisior *Supervisior) ValidateUserAccount(token string) (bool, error) 
 }
 
 func (supervisior *Supervisior) GetTeamPermissions(teamID int) (string, error) {
-	teamIDString := strconv.Itoa(teamID)
+	teamIDString := idconvertor.ConvertIntToString(teamID)
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(teamIDString)).
@@ -92,11 +92,12 @@ func (supervisior *Supervisior) GetTeamPermissions(teamID int) (string, error) {
 }
 
 func (supervisior *Supervisior) CanAccess(token string, teamID int, unitType int, unitID int, attributeID int) (bool, error) {
-	teamIDString := strconv.Itoa(teamID)
-	unitTypeString := strconv.Itoa(unitType)
-	unitIDString := strconv.Itoa(unitID)
-	attributeIDString := strconv.Itoa(attributeID)
+	teamIDString := idconvertor.ConvertIntToString(teamID)
+	unitTypeString := idconvertor.ConvertIntToString(unitType)
+	unitIDString := idconvertor.ConvertIntToString(unitID)
+	attributeIDString := idconvertor.ConvertIntToString(attributeID)
 
+	fmt.Printf(fmt.Sprintf(CAN_ACCESS, teamIDString, unitTypeString, unitIDString, attributeIDString))
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Authorization-Token", token).
@@ -112,10 +113,10 @@ func (supervisior *Supervisior) CanAccess(token string, teamID int, unitType int
 }
 
 func (supervisior *Supervisior) CanManage(token string, teamID int, unitType int, unitID int, attributeID int) (bool, error) {
-	teamIDString := strconv.Itoa(teamID)
-	unitTypeString := strconv.Itoa(unitType)
-	unitIDString := strconv.Itoa(unitID)
-	attributeIDString := strconv.Itoa(attributeID)
+	teamIDString := idconvertor.ConvertIntToString(teamID)
+	unitTypeString := idconvertor.ConvertIntToString(unitType)
+	unitIDString := idconvertor.ConvertIntToString(unitID)
+	attributeIDString := idconvertor.ConvertIntToString(attributeID)
 
 	client := resty.New()
 	resp, err := client.R().
@@ -132,10 +133,10 @@ func (supervisior *Supervisior) CanManage(token string, teamID int, unitType int
 }
 
 func (supervisior *Supervisior) CanManageSpecial(token string, teamID int, unitType int, unitID int, attributeID int) (bool, error) {
-	teamIDString := strconv.Itoa(teamID)
-	unitTypeString := strconv.Itoa(unitType)
-	unitIDString := strconv.Itoa(unitID)
-	attributeIDString := strconv.Itoa(attributeID)
+	teamIDString := idconvertor.ConvertIntToString(teamID)
+	unitTypeString := idconvertor.ConvertIntToString(unitType)
+	unitIDString := idconvertor.ConvertIntToString(unitID)
+	attributeIDString := idconvertor.ConvertIntToString(attributeID)
 
 	client := resty.New()
 	resp, err := client.R().
@@ -152,12 +153,12 @@ func (supervisior *Supervisior) CanManageSpecial(token string, teamID int, unitT
 }
 
 func (supervisior *Supervisior) CanModify(token string, teamID int, unitType int, unitID int, attributeID int, fromID int, toID int) (bool, error) {
-	teamIDString := strconv.Itoa(teamID)
-	unitTypeString := strconv.Itoa(unitType)
-	unitIDString := strconv.Itoa(unitID)
-	attributeIDString := strconv.Itoa(attributeID)
-	fromIDString := strconv.Itoa(fromID)
-	toIDString := strconv.Itoa(toID)
+	teamIDString := idconvertor.ConvertIntToString(teamID)
+	unitTypeString := idconvertor.ConvertIntToString(unitType)
+	unitIDString := idconvertor.ConvertIntToString(unitID)
+	attributeIDString := idconvertor.ConvertIntToString(attributeID)
+	fromIDString := idconvertor.ConvertIntToString(fromID)
+	toIDString := idconvertor.ConvertIntToString(toID)
 
 	client := resty.New()
 	resp, err := client.R().
@@ -174,10 +175,10 @@ func (supervisior *Supervisior) CanModify(token string, teamID int, unitType int
 }
 
 func (supervisior *Supervisior) CanDelete(token string, teamID int, unitType int, unitID int, attributeID int) (bool, error) {
-	teamIDString := strconv.Itoa(teamID)
-	unitTypeString := strconv.Itoa(unitType)
-	unitIDString := strconv.Itoa(unitID)
-	attributeIDString := strconv.Itoa(attributeID)
+	teamIDString := idconvertor.ConvertIntToString(teamID)
+	unitTypeString := idconvertor.ConvertIntToString(unitType)
+	unitIDString := idconvertor.ConvertIntToString(unitID)
+	attributeIDString := idconvertor.ConvertIntToString(attributeID)
 
 	client := resty.New()
 	resp, err := client.R().
@@ -194,7 +195,7 @@ func (supervisior *Supervisior) CanDelete(token string, teamID int, unitType int
 }
 
 func (supervisior *Supervisior) GetUser(targetUserID int) (string, error) {
-	targetUserIDString := strconv.Itoa(targetUserID)
+	targetUserIDString := idconvertor.ConvertIntToString(targetUserID)
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(targetUserIDString)).
