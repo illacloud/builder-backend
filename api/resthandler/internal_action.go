@@ -57,20 +57,14 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 	// fetch payload
 	req := repository.NewGenerateSQLRequest()
 	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// validate payload required fields
 	validate := validator.New()
 	if err := validate.Struct(req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "validate request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 
@@ -82,17 +76,11 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
 	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
@@ -111,30 +99,21 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 		return
 	}
 	if !canAccessResource {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// fetch resource
 	resource, errInGetResource := impl.ResourceService.GetResource(teamID, req.ResourceID)
 	if errInGetResource != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in fetch resource: " + errInGetResource.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "error in fetch resource: "+errInGetResource.Error())
 		return
 	}
 
 	// fetch resource meta info
 	resourceMetaInfo, errInGetMetaInfo := impl.ResourceService.GetMetaInfo(teamID, req.ResourceID)
 	if errInGetMetaInfo != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in fetch resource meta info: " + errInGetMetaInfo.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE_META_INFO, "error in fetch resource meta info: "+errInGetMetaInfo.Error())
 		return
 	}
 
@@ -143,10 +122,7 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 	// form request payload
 	generateSQLPeriReq, errInNewReq := repository.NewGenerateSQLPeripheralRequest(resource.Type, resourceMetaInfo, req)
 	if errInNewReq != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "generate request failed: " + errInNewReq.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_GENERATE_SQL_FAILED, "generate request failed: "+errInNewReq.Error())
 		return
 	}
 	token := tokenValidator.GenerateValidateToken(generateSQLPeriReq.Description)
@@ -155,10 +131,7 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 	// call remote generate sql API
 	generateSQLResp, errInGGenerateSQL := repository.GenerateSQL(generateSQLPeriReq, req)
 	if errInGGenerateSQL != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "generate sql failed: " + errInGGenerateSQL.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_GENERATE_SQL_FAILED, "generate sql failed: "+errInGGenerateSQL.Error())
 		return
 	}
 

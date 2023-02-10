@@ -58,27 +58,18 @@ func (impl BuilderRestHandlerImpl) GetTeamBuilderDesc(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
 	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// fetch data
 	ret, err := impl.builderService.GetTeamBuilderDesc(teamID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "get all builders error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_BUILDER_DESCRIPTION, "get builder description error: "+err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, ret)

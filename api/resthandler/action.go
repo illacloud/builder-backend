@@ -103,10 +103,7 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 	act.UpdatedBy = userID
 	res, err := impl.actionService.CreateAction(act)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "create action error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "create action error: "+err.Error())
 		return
 	}
 	FeedbackOK(c, res)
@@ -117,17 +114,11 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	var act action.ActionDto
 	act.InitUID()
 	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error" + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 	if err := impl.actionService.ValidateActionOptions(act.Type, act.Template); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 
@@ -149,17 +140,11 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(actionID)
 	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_ACTION)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
@@ -173,10 +158,7 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	act.UpdatedBy = userID
 	res, err := impl.actionService.UpdateAction(act)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "update action error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "update action error: "+err.Error())
 		return
 	}
 	originInfo, _ := impl.actionService.GetAction(teamID, act.ID)
@@ -203,26 +185,17 @@ func (impl ActionRestHandlerImpl) DeleteAction(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(actionID)
 	canManage, errInCheckAttr := impl.AttributeGroup.CanDelete(ac.ACTION_DELETE)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// delete
 	if err := impl.actionService.DeleteAction(teamID, actionID); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "delete action error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_DELETE_ACTION, "delete action error: "+err.Error())
 		return
 	}
 
@@ -248,27 +221,18 @@ func (impl ActionRestHandlerImpl) GetAction(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(actionID)
 	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// fetch data
 	res, err := impl.actionService.GetAction(teamID, actionID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "get action error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action error: "+err.Error())
 		return
 	}
 
@@ -294,27 +258,18 @@ func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(appID)
 	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// fetch data
 	res, err := impl.actionService.FindActionsByAppVersion(teamID, appID, 0)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "get actions error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action error: "+err.Error())
 		return
 	}
 
@@ -338,17 +293,11 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
 	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_PREVIEW_ACTION)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
@@ -356,10 +305,7 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 	c.Header("Timing-Allow-Origin", "*")
 	var act action.ActionDto
 	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error" + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error"+err.Error())
 		return
 	}
 	res, err := impl.actionService.RunAction(teamID, act)
@@ -374,6 +320,7 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 			}
 			c.JSON(http.StatusBadRequest, gin.H{
 				"errorCode":    400,
+				"errorFlag":    ERROR_FLAG_EXECUTE_ACTION_FAILED,
 				"errorMessage": errors.New("SQL syntax error").Error(),
 				"errorData": map[string]interface{}{
 					"lineNumber": lineNumber,
@@ -382,10 +329,8 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 			})
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "run action error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_EXECUTE_ACTION_FAILED, "run action error: "+err.Error())
+
 		return
 	}
 
@@ -410,17 +355,11 @@ func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(actionID)
 	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_RUN_ACTION)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
@@ -428,10 +367,7 @@ func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 	c.Header("Timing-Allow-Origin", "*")
 	var act action.ActionDto
 	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error" + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error"+err.Error())
 		return
 	}
 	res, err := impl.actionService.RunAction(teamID, act)
@@ -446,6 +382,7 @@ func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 			}
 			c.JSON(http.StatusBadRequest, gin.H{
 				"errorCode":    400,
+				"errorFlag":    ERROR_FLAG_EXECUTE_ACTION_FAILED,
 				"errorMessage": errors.New("SQL syntax error").Error(),
 				"errorData": map[string]interface{}{
 					"lineNumber": lineNumber,
@@ -454,10 +391,7 @@ func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 			})
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "run action error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_EXECUTE_ACTION_FAILED, "run action error: "+err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, res)

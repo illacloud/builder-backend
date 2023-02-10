@@ -2,11 +2,9 @@ package datacontrol
 
 import (
 	"github.com/illacloud/builder-backend/internal/repository"
+
 	supervisior "github.com/illacloud/builder-backend/internal/util/supervisior"
 )
-
-
-
 
 func GetUserInfo(targetUserID int) (*repository.User, error) {
 	// init sdk

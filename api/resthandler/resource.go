@@ -68,27 +68,18 @@ func (impl ResourceRestHandlerImpl) FindAllResources(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
 	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// fetch data
 	res, err := impl.resourceService.FindAllResources(teamID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "get resources error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
 		return
 	}
 
@@ -114,44 +105,29 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
 	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_CREATE_RESOURCE)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	var rsc resource.ResourceDto
 	rsc.InitUID()
 	if err := json.NewDecoder(c.Request.Body).Decode(&rsc); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// validate `resource` valid required fields
 	validate := validator.New()
 	if err := validate.Struct(rsc); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 	if err := impl.resourceService.ValidateResourceOptions(rsc.Type, rsc.Options); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
@@ -162,10 +138,7 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 	rsc.UpdatedBy = userID
 	res, err := impl.resourceService.CreateResource(rsc)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "create resource error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_RESOURCE, "create resources error: "+err.Error())
 		return
 	}
 
@@ -191,27 +164,18 @@ func (impl ResourceRestHandlerImpl) GetResource(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(resourceID)
 	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// fetch data
 	res, err := impl.resourceService.GetResource(teamID, resourceID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "get resource error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
 		return
 	}
 
@@ -238,44 +202,29 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(resourceID)
 	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_RESOURCE)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// parse request body
 	var rsc resource.ResourceDto
 	if err := json.NewDecoder(c.Request.Body).Decode(&rsc); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// validate `resource` valid required fields
 	validate := validator.New()
 	if err := validate.Struct(rsc); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 	if err := impl.resourceService.ValidateResourceOptions(rsc.Type, rsc.Options); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 
@@ -285,10 +234,7 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 	rsc.UpdatedAt = time.Now().UTC()
 	res, err := impl.resourceService.UpdateResource(rsc)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "update resource error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_RESOURCE, "update resources error: "+err.Error())
 		return
 	}
 	originInfo, _ := impl.resourceService.GetResource(teamID, rsc.ID)
@@ -317,25 +263,16 @@ func (impl ResourceRestHandlerImpl) DeleteResource(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(resourceID)
 	canDelete, errInCheckAttr := impl.AttributeGroup.CanDelete(ac.ACTION_DELETE)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canDelete {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	if err := impl.resourceService.DeleteResource(teamID, resourceID); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "delete resource error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_DELETE_RESOURCE, "delete resources error: "+err.Error())
 		return
 	}
 
@@ -361,46 +298,31 @@ func (impl ResourceRestHandlerImpl) TestConnection(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
 	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_RESOURCE)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// format data to DTO struct
 	var rsc resource.ResourceDto
 	if err := json.NewDecoder(c.Request.Body).Decode(&rsc); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// validate `resource` valid required fields
 	validate := validator.New()
 	if err := validate.Struct(rsc); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 
 	connRes, err := impl.resourceService.TestConnection(rsc)
 	if err != nil || !connRes {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "test connection failed: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_TEST_RESOURCE_CONNECTION, "test connection failed: "+err.Error())
 		return
 	}
 
@@ -426,17 +348,11 @@ func (impl ResourceRestHandlerImpl) GetMetaInfo(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(resourceID)
 	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 

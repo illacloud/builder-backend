@@ -65,20 +65,14 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 	// Parse request body
 	var payload AppRequest
 	if err := json.NewDecoder(c.Request.Body).Decode(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// Validate request body
 	validate := validator.New()
 	if err := validate.Struct(payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 
@@ -98,17 +92,11 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
 	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_CREATE_APP)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
@@ -123,10 +111,7 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 	// Call `app service` create app
 	res, err := impl.appService.CreateApp(appDto)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "create app error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_APP, "create app error: "+err.Error())
 		return
 	}
 
@@ -159,26 +144,17 @@ func (impl AppRestHandlerImpl) DeleteApp(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(appID)
 	canDelete, errInCheckAttr := impl.AttributeGroup.CanDelete(ac.ACTION_DELETE)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canDelete {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// Call `app service` delete app
 	if err := impl.appService.DeleteApp(teamID, appID); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "delete app error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_DELETE_APP, "delete app error: "+err.Error())
 		return
 	}
 
@@ -205,57 +181,39 @@ func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(appID)
 	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_APP)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// Parse request body
 	var payload AppRequest
 	if err := json.NewDecoder(c.Request.Body).Decode(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// Validate request body
 	validate := validator.New()
 	if err := validate.Struct(payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 
 	// Call `app service` update app
 	appDTO, err := impl.appService.FetchAppByID(teamID, appID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "fetch app error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+err.Error())
 		return
 	}
 	appDTO.Name = payload.Name
 	appDTO.UpdatedBy = userID
 	res, err := impl.appService.UpdateApp(appDTO)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "rename app error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "rename app error: "+err.Error())
 		return
 	}
 
@@ -277,10 +235,7 @@ func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 	// get request body
 	var rawRequest map[string]interface{}
 	if err := json.NewDecoder(c.Request.Body).Decode(&rawRequest); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
@@ -292,46 +247,31 @@ func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(appID)
 	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_APP)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// update app config
 	appConfig, errInNewAppConfig := repository.NewAppConfigByConfigAppRawRequest(rawRequest)
 	if errInNewAppConfig != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "new app config failed: " + errInNewAppConfig.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_BUILD_APP_CONFIG_FAILED, "new app config failed: "+errInNewAppConfig.Error())
 		return
 	}
 
 	// Call `app service` update app
 	appDTO, err := impl.appService.FetchAppByID(teamID, appID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "fetch app error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+err.Error())
 		return
 	}
 	appDTO.UpdateAppDTOConfig(appConfig, userID)
 	res, err := impl.appService.UpdateApp(appDTO)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "update app config error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "rename app error: "+err.Error())
 		return
 	}
 
@@ -359,27 +299,18 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
 	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// Call `app service` get all apps
 	res, err := impl.appService.GetAllApps(teamID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "get all apps error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "get all apps error: "+err.Error())
 		return
 	}
 
@@ -405,17 +336,11 @@ func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(appID)
 	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
@@ -423,16 +348,10 @@ func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 	res, err := impl.appService.GetMegaData(teamID, appID, version)
 	if err != nil {
 		if err.Error() == "content not found" {
-			c.JSON(http.StatusNotFound, gin.H{
-				"errorCode":    404,
-				"errorMessage": "get app mega data error: " + err.Error(),
-			})
+			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app mega data error: "+err.Error())
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "get app mega data error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app mega data error: "+err.Error())
 		return
 	}
 
@@ -459,47 +378,32 @@ func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(appID)
 	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_APP)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// Parse request body
 	var payload AppRequest
 	if err := json.NewDecoder(c.Request.Body).Decode(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// Validate request body
 	validate := validator.New()
 	if err := validate.Struct(payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 
 	// Call `app service` to duplicate app
 	res, err := impl.appService.DuplicateApp(teamID, appID, userID, payload.Name)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "duplicate app error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_DUPLICATE_APP, "duplicate app error: "+err.Error())
 		return
 	}
 	// feedback
@@ -524,27 +428,18 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	impl.AttributeGroup.SetUnitID(appID)
 	canManageSpecial, errInCheckAttr := impl.AttributeGroup.CanManageSpecial(ac.ACTION_SPECIAL_RELEASE_APP)
 	if errInCheckAttr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    500,
-			"errorMessage": "error in check attribute: " + errInCheckAttr.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManageSpecial {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "you can not access this attribute due to access control policy.",
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// Call `app service` to release app
 	version, err := impl.appService.ReleaseApp(teamID, appID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "release app error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_RELEASE_APP, "release app error: "+err.Error())
 		return
 	}
 
