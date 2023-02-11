@@ -57,12 +57,12 @@ func NewActionRestHandlerImpl(logger *zap.SugaredLogger, actionService action.Ac
 
 func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 	// fetch payload
-	var act action.ActionDto
-	act.InitUID()
-	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
+	var actForExport action.ActionDtoForExport
+	if err := json.NewDecoder(c.Request.Body).Decode(&actForExport); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
+	act := actForExport.ExportActionDto()
 	if err := impl.actionService.ValidateActionOptions(act.Type, act.Template); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
@@ -76,7 +76,7 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
 		return
 	}
-
+	
 	// validate
 	impl.AttributeGroup.Init()
 	impl.AttributeGroup.SetTeamID(teamID)
@@ -92,8 +92,9 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
-
+	
 	// create
+	act.InitUID()
 	act.SetTeamID(teamID)
 	act.App = appID
 	act.Version = 0

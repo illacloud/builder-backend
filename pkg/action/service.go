@@ -117,6 +117,36 @@ func NewActionDtoForExport(a *ActionDto) *ActionDtoForExport {
 	}
 }
 
+func (resp *ActionDtoForExport) ExportActionDto() ActionDto {
+	actionDto := ActionDto{
+		UID: resp.UID,
+		DisplayName: resp.DisplayName,
+		Type: resp.Type,
+		Template: resp.Template,
+		Transformer: resp.Transformer,
+		TriggerMode: resp.TriggerMode,
+		CreatedAt: resp.CreatedAt,
+		UpdatedAt: resp.UpdatedAt,
+	}
+	// fill converted fields
+	if resp.ID != "" {
+		actionDto.ID = idconvertor.ConvertStringToInt(resp.ID)
+	}
+	if resp.TeamID != "" {
+		actionDto.TeamID = idconvertor.ConvertStringToInt(resp.TeamID)
+	}
+	if resp.Resource != "" {
+		actionDto.Resource = idconvertor.ConvertStringToInt(resp.Resource)
+	}
+	if resp.CreatedBy != "" {
+		actionDto.CreatedBy = idconvertor.ConvertStringToInt(resp.CreatedBy)
+	}
+	if resp.UpdatedBy != "" {
+		actionDto.UpdatedBy = idconvertor.ConvertStringToInt(resp.UpdatedBy)
+	}
+	return actionDto
+}
+
 func (resp *ActionDtoForExport) ExportForFeedback() interface{} {
 	return resp
 }
