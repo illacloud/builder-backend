@@ -67,6 +67,7 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
+	resourceID := req.ExportResourceIDInInt()
 
 	// validate internal action
 	impl.AttributeGroup.Init()
@@ -89,7 +90,7 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 	impl.AttributeGroup.SetTeamID(teamID)
 	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
 	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
-	impl.AttributeGroup.SetUnitID(req.ResourceID)
+	impl.AttributeGroup.SetUnitID(resourceID)
 	canAccessResource, errInCheckResourceAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
 	if errInCheckResourceAttr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -104,14 +105,14 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 	}
 
 	// fetch resource
-	resource, errInGetResource := impl.ResourceService.GetResource(teamID, req.ResourceID)
+	resource, errInGetResource := impl.ResourceService.GetResource(teamID, resourceID)
 	if errInGetResource != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "error in fetch resource: "+errInGetResource.Error())
 		return
 	}
 
 	// fetch resource meta info
-	resourceMetaInfo, errInGetMetaInfo := impl.ResourceService.GetMetaInfo(teamID, req.ResourceID)
+	resourceMetaInfo, errInGetMetaInfo := impl.ResourceService.GetMetaInfo(teamID, resourceID)
 	if errInGetMetaInfo != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE_META_INFO, "error in fetch resource meta info: "+errInGetMetaInfo.Error())
 		return

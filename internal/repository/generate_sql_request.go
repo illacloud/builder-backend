@@ -14,6 +14,11 @@
 
 package repository
 
+import (
+	"github.com/illacloud/builder-backend/internal/idconvertor"
+
+)
+
 const GENERATE_SQL_ACTION_SELECT = 1
 const GENERATE_SQL_ACTION_INSERT = 2
 const GENERATE_SQL_ACTION_UPDATE = 3
@@ -28,7 +33,7 @@ var ACTION_MAP = map[int]string{
 
 type GenerateSQLRequest struct {
 	Description string `json:"description" validate:"required"`
-	ResourceID  int    `json:"resourceID" validate:"required"`
+	ResourceID  string `json:"resourceID" validate:"required"`
 	Action      int    `json:"action" validate:"required"`
 }
 
@@ -38,4 +43,9 @@ func NewGenerateSQLRequest() *GenerateSQLRequest {
 
 func (req *GenerateSQLRequest) GetActionInString() string {
 	return ACTION_MAP[req.Action]
+}
+
+
+func (req *GenerateSQLRequest)  ExportResourceIDInInt() int {
+	return idconvertor.ConvertStringToInt(req.ResourceID)
 }
