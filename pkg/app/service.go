@@ -218,7 +218,7 @@ type ActionForExport struct {
 	TeamID      string                 `json:"teamID"`
 	App         string                 `json:"-"`
 	Version     int                    `json:"-"`
-	Resource    int                    `json:"resourceId,omitempty"`
+	Resource    string                 `json:"resourceId,omitempty"`
 	DisplayName string                 `json:"displayName"`
 	Type        string                 `json:"actionType"`
 	Template    map[string]interface{} `json:"content"`
@@ -237,7 +237,7 @@ func NewActionForExport(action *Action) *ActionForExport {
 		TeamID:      idconvertor.ConvertIntToString(action.TeamID),
 		App:         idconvertor.ConvertIntToString(action.App),
 		Version:     action.Version,
-		Resource:    action.Resource,
+		Resource:    idconvertor.ConvertIntToString(action.Resource),
 		DisplayName: action.DisplayName,
 		Type:        action.Type,
 		Template:    action.Template,
