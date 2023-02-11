@@ -106,6 +106,31 @@ func (resp *ResourceDtoForExport) ExportForFeedback() interface{} {
 	return resp
 }
 
+func (resp *ResourceDtoForExport) ExportResourceDto() ResourceDto {
+	resourceDto := ResourceDto{
+		UID:       resp.UID,
+		Name:      resp.Name,
+		Type:      resp.Type,
+		Options:   resp.Options,
+		CreatedAt: resp.CreatedAt,
+		UpdatedAt: resp.UpdatedAt,
+	}
+	if resp.TeamID != ""{
+		resourceDto.TeamID =   idconvertor.ConvertStringToInt(resp.TeamID)
+	}
+	if resp.ID != ""{
+		resourceDto.ID =        idconvertor.ConvertStringToInt(resp.ID)
+	}
+	if resp.CreatedBy != ""{
+		resourceDto.CreatedBy = idconvertor.ConvertStringToInt(resp.CreatedBy)
+	}
+	if resp.UpdatedBy != ""{
+		resourceDto.UpdatedBy = idconvertor.ConvertStringToInt(resp.UpdatedBy)
+	}
+	return resourceDto
+		
+}
+
 func (r *ResourceDto) InitUID() {
 	r.UID = uuid.New()
 }

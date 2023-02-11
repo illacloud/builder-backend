@@ -211,12 +211,12 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 	}
 
 	// parse request body
-	var rsc resource.ResourceDto
-	if err := json.NewDecoder(c.Request.Body).Decode(&rsc); err != nil {
+	var rscForExport resource.ResourceDtoForExport
+	if err := json.NewDecoder(c.Request.Body).Decode(&rscForExport); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
-
+	rsc := rscForExport.ExportResourceDto()
 	// validate `resource` valid required fields
 	validate := validator.New()
 	if err := validate.Struct(rsc); err != nil {
@@ -307,11 +307,13 @@ func (impl ResourceRestHandlerImpl) TestConnection(c *gin.Context) {
 	}
 
 	// format data to DTO struct
-	var rsc resource.ResourceDto
-	if err := json.NewDecoder(c.Request.Body).Decode(&rsc); err != nil {
+	var rscForExport resource.ResourceDtoForExport
+	if err := json.NewDecoder(c.Request.Body).Decode(&rscForExport); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
+	rsc := rscForExport.ExportResourceDto()
+
 
 	// validate `resource` valid required fields
 	validate := validator.New()

@@ -112,12 +112,12 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 
 func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	// fetch payload
-	var act action.ActionDto
-	act.InitUID()
-	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
+	var actForExport action.ActionDtoForExport
+	if err := json.NewDecoder(c.Request.Body).Decode(&actForExport); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
+	act := actForExport.ExportActionDto()
 	if err := impl.actionService.ValidateActionOptions(act.Type, act.Template); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
@@ -304,11 +304,13 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 
 	// execute
 	c.Header("Timing-Allow-Origin", "*")
-	var act action.ActionDto
-	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
+	var actForExport action.ActionDtoForExport
+
+	if err := json.NewDecoder(c.Request.Body).Decode(&actForExport); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error"+err.Error())
 		return
 	}
+	act := actForExport.ExportActionDto()
 	res, err := impl.actionService.RunAction(teamID, act)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Error 1064:") {
@@ -366,11 +368,12 @@ func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 
 	// execute
 	c.Header("Timing-Allow-Origin", "*")
-	var act action.ActionDto
-	if err := json.NewDecoder(c.Request.Body).Decode(&act); err != nil {
+	var actForExport action.ActionDtoForExport
+	if err := json.NewDecoder(c.Request.Body).Decode(&actForExport); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error"+err.Error())
 		return
 	}
+	act := actForExport.ExportActionDto()
 	res, err := impl.actionService.RunAction(teamID, act)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Error 1064:") {
