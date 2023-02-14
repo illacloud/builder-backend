@@ -31,6 +31,7 @@ require (
 	github.com/microsoft/go-mssqldb v0.19.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/satori/go.uuid v1.2.0
+	github.com/sijms/go-ora/v2 v2.5.29
 	github.com/snowflakedb/gosnowflake v1.6.16
 	github.com/stretchr/testify v1.8.1
 	go.mongodb.org/mongo-driver v1.11.1
