@@ -323,11 +323,11 @@ func (impl *AppServiceImpl) initialAllTypeTreeStates(teamID int, appID int, user
 }
 
 func (impl *AppServiceImpl) IsPublicApp(teamID int, appID int) bool {
-	_, err := impl.appRepository.RetrieveAppByIDAndTeamID(appID, teamID)
+	app, err := impl.appRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if err != nil {
 		return false
 	}
-	return true
+	return app.IsPublic()
 }
 
 func (impl *AppServiceImpl) UpdateApp(app AppDto) (*AppDtoForExport, error) {

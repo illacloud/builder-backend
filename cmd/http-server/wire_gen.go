@@ -52,9 +52,11 @@ func Initialize() (*Server, error) {
 	actionRepositoryImpl := repository.NewActionRepositoryImpl(sugaredLogger, gormDB)	
 	appServiceImpl := app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, kvStateRepositoryImpl, treeStateRepositoryImpl, setStateRepositoryImpl, actionRepositoryImpl)
 	treeStateServiceImpl := state.NewTreeStateServiceImpl(sugaredLogger, treeStateRepositoryImpl)
+	// App
 	appRestHandlerImpl := resthandler.NewAppRestHandlerImpl(sugaredLogger, appServiceImpl, attrg, treeStateServiceImpl)
-	publicAppRestHandlerImpl := resthandler.NewAppRestHandlerImpl(sugaredLogger, appServiceImpl, attrg, treeStateServiceImpl)
 	appRouterImpl := router.NewAppRouterImpl(appRestHandlerImpl)
+	// public App
+	publicAppRestHandlerImpl := resthandler.NewPublicAppRestHandlerImpl(sugaredLogger, appServiceImpl, attrg, treeStateServiceImpl)
 	publicAppRouterImpl := router.NewPublicAppRouterImpl(publicAppRestHandlerImpl)
 	// room
 	roomServiceImpl := room.NewRoomServiceImpl(sugaredLogger)
