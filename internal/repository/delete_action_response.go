@@ -5,7 +5,7 @@ import (
 )
 
 type DeleteActionResponse struct {
-	ID string `json:"id"`
+	ID string `json:"actionID"`
 }
 
 func NewDeleteActionResponse(id int) *DeleteActionResponse {

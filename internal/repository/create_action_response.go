@@ -5,7 +5,7 @@ import (
 )
 
 type CreateActionResponse struct {
-	ID string `json:"id"`
+	ID string `json:"actionID"`
 }
 
 func NewCreateActionResponse(id int) *CreateActionResponse {
