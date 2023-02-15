@@ -29,6 +29,7 @@ import (
 
 type AppService interface {
 	CreateApp(app AppDto) (AppDto, error)
+	IsPublicApp(teamID int, appID int) bool
 	UpdateApp(app AppDto) (*AppDtoForExport, error)
 	FetchAppByID(teamID int, appID int) (AppDto, error)
 	DeleteApp(teamID int, appID int) error
@@ -319,6 +320,14 @@ func (impl *AppServiceImpl) initialAllTypeTreeStates(teamID int, appID int, user
 		return errors.New("initial tree state failed")
 	}
 	return nil
+}
+
+func (impl *AppServiceImpl) IsPublicApp(teamID int, appID int) bool {
+	_, err := impl.appRepository.RetrieveAppByIDAndTeamID(appID, teamID)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func (impl *AppServiceImpl) UpdateApp(app AppDto) (*AppDtoForExport, error) {

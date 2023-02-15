@@ -16,7 +16,6 @@ package resthandler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
@@ -287,9 +286,6 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
 	}
-
-	fmt.Printf("teamID: %v \n", teamID)
-	fmt.Printf("userAuthToken: %v \n", userAuthToken)
 
 	// validate
 	impl.AttributeGroup.Init()
