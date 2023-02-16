@@ -54,6 +54,12 @@ func (impl PublicAppRestHandlerImpl) GetMegaData(c *gin.Context) {
 		return
 	}
 
+	// check version, the version must be repository.APP_AUTO_RELEASE_VERSION
+	if version != APP_AUTO_RELEASE_VERSION {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you only can access release version of app.")
+		return
+	}
+
 	// get team id by team teamIdentifier
 	team, errInGetTeamInfo := dc.GetTeamInfoByIdentifier(teamIdentifier)
 	if errInGetTeamInfo != nil {
