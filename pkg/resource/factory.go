@@ -27,6 +27,7 @@ import (
 	"github.com/illacloud/builder-backend/pkg/plugins/mongodb"
 	"github.com/illacloud/builder-backend/pkg/plugins/mssql"
 	"github.com/illacloud/builder-backend/pkg/plugins/mysql"
+	"github.com/illacloud/builder-backend/pkg/plugins/oracle"
 	"github.com/illacloud/builder-backend/pkg/plugins/postgresql"
 	"github.com/illacloud/builder-backend/pkg/plugins/redis"
 	"github.com/illacloud/builder-backend/pkg/plugins/restapi"
@@ -56,6 +57,7 @@ var (
 	SNOWFLAKE_RESOURCE     = "snowflake"
 	COUCHDB_RESOURCE       = "couchdb"
 	HFENDPOINT_RESOURCE    = "hfendpoint"
+	ORACLE_RESOURCE        = "oracle"
 )
 
 type AbstractResourceFactory interface {
@@ -119,6 +121,9 @@ func (f *Factory) Generate() common.DataConnector {
 	case HFENDPOINT_RESOURCE:
 		hfendpointRsc := &hfendpoint.Connector{}
 		return hfendpointRsc
+	case ORACLE_RESOURCE:
+		oracleRsc := &oracle.Connector{}
+		return oracleRsc
 	default:
 		return nil
 	}

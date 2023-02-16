@@ -27,6 +27,7 @@ import (
 	"github.com/illacloud/builder-backend/pkg/plugins/mongodb"
 	"github.com/illacloud/builder-backend/pkg/plugins/mssql"
 	"github.com/illacloud/builder-backend/pkg/plugins/mysql"
+	"github.com/illacloud/builder-backend/pkg/plugins/oracle"
 	"github.com/illacloud/builder-backend/pkg/plugins/postgresql"
 	"github.com/illacloud/builder-backend/pkg/plugins/redis"
 	"github.com/illacloud/builder-backend/pkg/plugins/restapi"
@@ -57,6 +58,7 @@ var (
 	SNOWFLAKE_ACTION     = "snowflake"
 	COUCHDB_ACTION       = "couchdb"
 	HFENDPOINT_ACTION    = "hfendpoint"
+	ORACLE_ACTION        = "oracle"
 )
 
 type AbstractActionFactory interface {
@@ -120,6 +122,9 @@ func (f *Factory) Build() common.DataConnector {
 	case HFENDPOINT_ACTION:
 		hfendpointAction := &hfendpoint.Connector{}
 		return hfendpointAction
+	case ORACLE_ACTION:
+		oracleAction := &oracle.Connector{}
+		return oracleAction
 	default:
 		return nil
 	}
