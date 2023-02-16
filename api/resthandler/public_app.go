@@ -68,22 +68,6 @@ func (impl PublicAppRestHandlerImpl) GetMegaData(c *gin.Context) {
 	}
 	teamID := team.GetID()
 
-	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_APP)
-	impl.AttributeGroup.SetUnitID(publicAppID)
-	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
-	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
-		return
-	}
-	if !canAccess {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
-		return
-	}
-
 	// check if app is public app
 	if !impl.appService.IsPublicApp(teamID, publicAppID) {
 		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this app.")
