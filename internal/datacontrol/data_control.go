@@ -26,3 +26,24 @@ func GetUserInfo(targetUserID int) (*repository.User, error) {
 	}
 	return user, nil
 }
+
+func GetTeamInfoByIdentifier(targetTeamIdentifier string) (*repository.Team, error) {
+	// init sdk
+	instance, err := supervisior.NewSupervisior()
+	if err != nil {
+		return nil, err
+	}
+
+	// fetch raw data
+	teamRaw, errInGetTargetTeam := instance.GetTeamByIdentifier(targetTeamIdentifier)
+	if errInGetTargetTeam != nil {
+		return nil, errInGetTargetTeam
+	}
+
+	// construct
+	team, errInNewTeam := repository.NewTeamByDataControlRawData(teamRaw)
+	if errInNewTeam != nil {
+		return nil, errInNewTeam
+	}
+	return team, nil
+}

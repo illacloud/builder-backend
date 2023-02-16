@@ -52,7 +52,7 @@ func (r RESTRouter) InitRouter(router *gin.RouterGroup) {
 
 	builderRouter := v1.Group("/teams/:teamID/builder")
 	appRouter := v1.Group("/teams/:teamID/apps")
-	publicAppRouter := v1.Group("/teams/:teamID/publicApps")
+	publicAppRouter := v1.Group("/teams/byIdentifier/:teamIdentifier/publicApps")
 	resourceRouter := v1.Group("/teams/:teamID/resources")
 	actionRouter := v1.Group("/teams/:teamID/apps/:appID/actions")
 	internalActionRouter := v1.Group("/teams/:teamID/apps/:appID/internalActions")

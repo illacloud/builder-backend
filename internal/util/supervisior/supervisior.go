@@ -34,7 +34,8 @@ const (
 	CAN_MODIFY            = "/accessControl/teams/%s/unitType/%s/unitID/%s/attribute/canModify/%s/from/%s/to/%s"
 	CAN_DELETE            = "/accessControl/teams/%s/unitType/%s/unitID/%s/attribute/canDelete/%s"
 	// data control part
-	GET_USER = "/dataControl/users/%s"
+	GET_USER               = "/dataControl/users/%s"
+	GET_TEAM_BY_IDENTIFIER = "/dataControl/teams/byIdentifier/%s"
 )
 
 type Supervisior struct {
@@ -200,6 +201,20 @@ func (supervisior *Supervisior) GetUser(targetUserID int) (string, error) {
 	resp, err := client.R().
 		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(targetUserIDString)).
 		Get(supervisior.Config.SupervisiorInternalAPI + fmt.Sprintf(GET_USER, targetUserIDString))
+	if resp.StatusCode() != http.StatusOK {
+		if err != nil {
+			return "", errors.New("request illa supervisior failed.")
+		}
+		return "", errors.New("validate failed.")
+	}
+	return resp.String(), nil
+}
+
+func (supervisior *Supervisior) GetTeamByIdentifier(targetTeamIdentifier string) (string, error) {
+	client := resty.New()
+	resp, err := client.R().
+		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(targetTeamIdentifier)).
+		Get(supervisior.Config.SupervisiorInternalAPI + fmt.Sprintf(GET_TEAM_BY_IDENTIFIER, targetTeamIdentifier))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
 			return "", errors.New("request illa supervisior failed.")

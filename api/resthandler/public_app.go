@@ -16,6 +16,7 @@ package resthandler
 
 import (
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
+	dc "github.com/illacloud/builder-backend/internal/datacontrol"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/state"
 
@@ -45,13 +46,21 @@ func NewPublicAppRestHandlerImpl(logger *zap.SugaredLogger, appService app.AppSe
 
 func (impl PublicAppRestHandlerImpl) GetMegaData(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	teamIdentifier, errInGetTeamID := GetStringParamFromRequest(c, PARAM_TEAM_IDENTIFIER)
 	publicAppID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	version, errInGetVersion := GetIntParamFromRequest(c, PARAM_VERSION)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetVersion != nil || errInGetAuthToken != nil {
 		return
 	}
+
+	// get team id by team teamIdentifier
+	team, errInGetTeamInfo := dc.GetTeamInfoByIdentifier(teamIdentifier)
+	if errInGetTeamInfo != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_TEAM, "get target team by identifier error: "+errInGetTeamInfo.Error())
+		return
+	}
+	teamID := team.GetID()
 
 	// validate
 	impl.AttributeGroup.Init()
