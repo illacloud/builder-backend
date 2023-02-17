@@ -47,10 +47,10 @@ func NewPublicAppRestHandlerImpl(logger *zap.SugaredLogger, appService app.AppSe
 
 func (impl PublicAppRestHandlerImpl) GetMegaData(c *gin.Context) {
 	// fetch needed param
-	teamIdentifier, errInGetTeamID := GetStringParamFromRequest(c, PARAM_TEAM_IDENTIFIER)
+	teamIdentifier, errInGetTeamIdentifier := GetStringParamFromRequest(c, PARAM_TEAM_IDENTIFIER)
 	publicAppID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	version, errInGetVersion := GetIntParamFromRequest(c, PARAM_VERSION)
-	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetVersion != nil {
+	if errInGetTeamIdentifier != nil || errInGetAPPID != nil || errInGetVersion != nil {
 		return
 	}
 
