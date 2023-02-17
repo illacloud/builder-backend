@@ -15,33 +15,80 @@
 package repository
 
 import (
+	"encoding/json"
 	"time"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
-const APP_EDIT_VERSION = 0 // the editable version app ID always be 0
-
+const APP_EDIT_VERSION = 0           // the editable version app ID always be 0
+const APP_AUTO_MAINLINE_VERSION = -1 // -1 for get mainline version automatically
+const APP_AUTO_RELEASE_VERSION = -2  // -1 for get release version automatically
 type App struct {
-	ID              int       `json:"id" 				gorm:"column:id;type:uuid;default:uuid_generate_v4();primary_key;unique"`
+	ID              int       `json:"id" 				gorm:"column:id;type:bigserial;primary_key;unique"`
+	UID             uuid.UUID `json:"uid"   		    gorm:"column:uid;type:uuid;not null"`
+	TeamID          int       `json:"teamID" 		    gorm:"column:team_id;type:bigserial"`
 	Name            string    `json:"name" 				gorm:"column:name;type:varchar"`
-	ReleaseVersion  int       `json:"release_version" 	gorm:"column:release_version;type:uuid"`
-	MainlineVersion int       `json:"mainline_version" 	gorm:"column:mainline_version;type:uuid"`
+	ReleaseVersion  int       `json:"release_version" 	gorm:"column:release_version;type:bigserial"`
+	MainlineVersion int       `json:"mainline_version" 	gorm:"column:mainline_version;type:bigserial"`
+	Config          string    `json:"config" 	        gorm:"column:config;type:jsonb"`
 	CreatedAt       time.Time `json:"created_at" 		gorm:"column:created_at;type:timestamp"`
-	CreatedBy       int       `json:"created_by" 		gorm:"column:created_by;type:uuid"`
+	CreatedBy       int       `json:"created_by" 		gorm:"column:created_by;type:bigserial"`
 	UpdatedAt       time.Time `json:"updated_at" 		gorm:"column:updated_at;type:timestamp"`
-	UpdatedBy       int       `json:"updated_by" 		gorm:"column:updated_by;type:uuid"`
+	UpdatedBy       int       `json:"updated_by" 		gorm:"column:updated_by;type:bigserial"`
+}
+
+func (app *App) UpdateAppConfig(appConfig *AppConfig, userID int) {
+	app.Config = appConfig.ExportToJSONString()
+	app.UpdatedBy = userID
+	app.InitUpdatedAt()
+}
+
+func (app *App) InitUpdatedAt() {
+	app.UpdatedAt = time.Now().UTC()
+}
+
+func (app *App) ExportUpdatedAt() time.Time {
+	return app.UpdatedAt
+}
+
+func (app *App) ExportConfig() *AppConfig {
+	ac := &AppConfig{}
+	json.Unmarshal([]byte(app.Config), ac)
+	return ac
+}
+
+func (app *App) IsPublic() bool {
+	ac := app.ExportConfig()
+	return ac.Public
+}
+
+func (app *App) SetPublic(userID int) {
+	ac := app.ExportConfig()
+	ac.Public = true
+	app.UpdatedBy = userID
+	app.InitUpdatedAt()
+}
+
+func (app *App) SetPrivate(userID int) {
+	ac := app.ExportConfig()
+	ac.Public = false
+	app.UpdatedBy = userID
+	app.InitUpdatedAt()
 }
 
 type AppRepository interface {
 	Create(app *App) (int, error)
-	Delete(appID int) error
+	Delete(teamID int, appID int) error
 	Update(app *App) error
 	UpdateUpdatedAt(app *App) error
-	RetrieveAll() ([]*App, error)
-	RetrieveAppByID(appID int) (*App, error)
-	RetrieveAllByUpdatedTime() ([]*App, error)
+	RetrieveAll(teamID int) ([]*App, error)
+	RetrieveAppByIDAndTeamID(appID int, teamID int) (*App, error)
+	RetrieveAllByUpdatedTime(teamID int) ([]*App, error)
+	CountAPPByTeamID(teamID int) (int, error)
+	RetrieveAppLastModifiedTime(teamID int) (time.Time, error)
 }
 
 type AppRepositoryImpl struct {
@@ -63,8 +110,8 @@ func (impl *AppRepositoryImpl) Create(app *App) (int, error) {
 	return app.ID, nil
 }
 
-func (impl *AppRepositoryImpl) Delete(appID int) error {
-	if err := impl.db.Delete(&App{}, appID).Error; err != nil {
+func (impl *AppRepositoryImpl) Delete(teamID int, appID int) error {
+	if err := impl.db.Where("team_id = ? AND id = ?", teamID, appID).Delete(&App{}).Error; err != nil {
 		return err
 	}
 	return nil
@@ -75,6 +122,7 @@ func (impl *AppRepositoryImpl) Update(app *App) error {
 		Name:            app.Name,
 		ReleaseVersion:  app.ReleaseVersion,
 		MainlineVersion: app.MainlineVersion,
+		Config:          app.Config,
 		UpdatedBy:       app.UpdatedBy,
 		UpdatedAt:       app.UpdatedAt,
 	}).Error; err != nil {
@@ -83,25 +131,25 @@ func (impl *AppRepositoryImpl) Update(app *App) error {
 	return nil
 }
 
-func (impl *AppRepositoryImpl) RetrieveAll() ([]*App, error) {
+func (impl *AppRepositoryImpl) RetrieveAll(teamID int) ([]*App, error) {
 	var apps []*App
-	if err := impl.db.Find(&apps).Error; err != nil {
+	if err := impl.db.Where("team_id = ?", teamID).Find(&apps).Error; err != nil {
 		return nil, err
 	}
 	return apps, nil
 }
 
-func (impl *AppRepositoryImpl) RetrieveAppByID(id int) (*App, error) {
+func (impl *AppRepositoryImpl) RetrieveAppByIDAndTeamID(appID int, teamID int) (*App, error) {
 	var app *App
-	if err := impl.db.Where("id = ?", id).Find(&app).Error; err != nil {
+	if err := impl.db.Where("id = ? AND team_id = ?", appID, teamID).Find(&app).Error; err != nil {
 		return nil, err
 	}
 	return app, nil
 }
 
-func (impl *AppRepositoryImpl) RetrieveAllByUpdatedTime() ([]*App, error) {
+func (impl *AppRepositoryImpl) RetrieveAllByUpdatedTime(teamID int) ([]*App, error) {
 	var apps []*App
-	if err := impl.db.Order("updated_at desc").Find(&apps).Error; err != nil {
+	if err := impl.db.Where("team_id = ?", teamID).Order("updated_at desc").Find(&apps).Error; err != nil {
 		return nil, err
 	}
 	return apps, nil
@@ -115,4 +163,20 @@ func (impl *AppRepositoryImpl) UpdateUpdatedAt(app *App) error {
 		return err
 	}
 	return nil
+}
+
+func (impl *AppRepositoryImpl) CountAPPByTeamID(teamID int) (int, error) {
+	var count int64
+	if err := impl.db.Model(&App{}).Where("team_id = ?", teamID).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+
+func (impl *AppRepositoryImpl) RetrieveAppLastModifiedTime(teamID int) (time.Time, error) {
+	var app *App
+	if err := impl.db.Where("team_id = ?", teamID).Order("updated_at desc").First(&app).Error; err != nil {
+		return time.Time{}, err
+	}
+	return app.ExportUpdatedAt(), nil
 }

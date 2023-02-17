@@ -17,10 +17,11 @@ package resthandler
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
+	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/resource"
 
 	"github.com/gin-gonic/gin"
@@ -40,231 +41,325 @@ type ResourceRestHandler interface {
 type ResourceRestHandlerImpl struct {
 	logger          *zap.SugaredLogger
 	resourceService resource.ResourceService
+	AttributeGroup  *ac.AttributeGroup
 }
 
-func NewResourceRestHandlerImpl(logger *zap.SugaredLogger, resourceService resource.ResourceService) *ResourceRestHandlerImpl {
+func NewResourceRestHandlerImpl(logger *zap.SugaredLogger, resourceService resource.ResourceService, attrg *ac.AttributeGroup) *ResourceRestHandlerImpl {
 	return &ResourceRestHandlerImpl{
 		logger:          logger,
 		resourceService: resourceService,
+		AttributeGroup:  attrg,
 	}
 }
 
 func (impl ResourceRestHandlerImpl) FindAllResources(c *gin.Context) {
-	res, err := impl.resourceService.FindAllResources()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "get resources error: " + err.Error(),
-		})
+	// fetch needed param
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
 	}
+
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
+	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
+	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	if errInCheckAttr != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canAccess {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// fetch data
+	res, err := impl.resourceService.FindAllResources(teamID)
+	if err != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
+		return
+	}
+
+	// feedback
 	c.JSON(http.StatusOK, res)
+	return
 }
 
 func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
-	// get user as creator
-	userID, okGet := c.Get("userID")
-	user, okReflect := userID.(int)
-	if !(okGet && okReflect) {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"errorCode":    401,
-			"errorMessage": "unauthorized",
-		})
+	// fetch needed param
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	userID, errInGetUserID := GetUserIDFromAuth(c)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
+		return
+	}
+
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
+	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
+	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_CREATE_RESOURCE)
+	if errInCheckAttr != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canManage {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	var rsc resource.ResourceDto
+	rsc.InitUID()
 	if err := json.NewDecoder(c.Request.Body).Decode(&rsc); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// validate `resource` valid required fields
 	validate := validator.New()
 	if err := validate.Struct(rsc); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 	if err := impl.resourceService.ValidateResourceOptions(rsc.Type, rsc.Options); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
+	rsc.SetTeamID(teamID)
 	rsc.CreatedAt = time.Now().UTC()
-	rsc.CreatedBy = user
+	rsc.CreatedBy = userID
 	rsc.UpdatedAt = time.Now().UTC()
-	rsc.UpdatedBy = user
+	rsc.UpdatedBy = userID
 	res, err := impl.resourceService.CreateResource(rsc)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "create resource error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_RESOURCE, "create resources error: "+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, res)
+
+	// feedback
+	FeedbackOK(c, res)
+	return
 }
 
 func (impl ResourceRestHandlerImpl) GetResource(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("resource"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse url param error: " + err.Error(),
-		})
+	// fetch needed param
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetAuthToken != nil {
 		return
 	}
 
-	res, err := impl.resourceService.GetResource(id)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "get resource error: " + err.Error(),
-		})
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
+	impl.AttributeGroup.SetUnitID(resourceID)
+	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	if errInCheckAttr != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
-	c.JSON(http.StatusOK, res)
+	if !canAccess {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// fetch data
+	res, err := impl.resourceService.GetResource(teamID, resourceID)
+	if err != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
+		return
+	}
+
+	// feedback
+	FeedbackOK(c, res)
+	return
 }
 
 func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
-	// get user as creator
-	userID, okGet := c.Get("userID")
-	user, okReflect := userID.(int)
-	if !(okGet && okReflect) {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"errorCode":    401,
-			"errorMessage": "unauthorized",
-		})
+	// fetch needed param
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
+	userID, errInGetUserID := GetUserIDFromAuth(c)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
 		return
 	}
 
-	id, err := strconv.Atoi(c.Param("resource"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse url param error: " + err.Error(),
-		})
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
+	impl.AttributeGroup.SetUnitID(resourceID)
+	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_RESOURCE)
+	if errInCheckAttr != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canManage {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
-	var rsc resource.ResourceDto
-	if err := json.NewDecoder(c.Request.Body).Decode(&rsc); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error",
-		})
+	// parse request body
+	var rscForExport resource.ResourceDtoForExport
+	if err := json.NewDecoder(c.Request.Body).Decode(&rscForExport); err != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
-
+	rsc := rscForExport.ExportResourceDto()
 	// validate `resource` valid required fields
 	validate := validator.New()
 	if err := validate.Struct(rsc); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 	if err := impl.resourceService.ValidateResourceOptions(rsc.Type, rsc.Options); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 
-	rsc.ID = id
-	rsc.UpdatedBy = user
+	// update
+	rsc.ID = resourceID
+	rsc.UpdatedBy = userID
 	rsc.UpdatedAt = time.Now().UTC()
 	res, err := impl.resourceService.UpdateResource(rsc)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "update resource error: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_RESOURCE, "update resources error: "+err.Error())
 		return
 	}
-	originInfo, _ := impl.resourceService.GetResource(rsc.ID)
+	originInfo, _ := impl.resourceService.GetResource(teamID, rsc.ID)
 	res.CreatedAt = originInfo.CreatedAt
 	res.CreatedBy = originInfo.CreatedBy
 
-	c.JSON(http.StatusOK, res)
+	// feedback
+	FeedbackOK(c, res)
+	return
 }
 
 func (impl ResourceRestHandlerImpl) DeleteResource(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("resource"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse url param error: " + err.Error(),
-		})
+	// fetch needed param
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetAuthToken != nil {
 		return
 	}
 
-	if err := impl.resourceService.DeleteResource(id); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "delete resource error: " + err.Error(),
-		})
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
+	impl.AttributeGroup.SetUnitID(resourceID)
+	canDelete, errInCheckAttr := impl.AttributeGroup.CanDelete(ac.ACTION_DELETE)
+	if errInCheckAttr != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"resourceId": id,
-	})
+	if !canDelete {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	if err := impl.resourceService.DeleteResource(teamID, resourceID); err != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_DELETE_RESOURCE, "delete resources error: "+err.Error())
+		return
+	}
+
+	// feedback
+	FeedbackOK(c, repository.NewDeleteResourceResponse(resourceID))
+	return
+
 }
 
 func (impl ResourceRestHandlerImpl) TestConnection(c *gin.Context) {
-	// format data to DTO struct
-	var rsc resource.ResourceDto
-	if err := json.NewDecoder(c.Request.Body).Decode(&rsc); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+	// fetch needed param
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
 	}
+
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
+	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
+	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_RESOURCE)
+	if errInCheckAttr != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canManage {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// format data to DTO struct
+	var rscForExport resource.ResourceDtoForExport
+	if err := json.NewDecoder(c.Request.Body).Decode(&rscForExport); err != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
+		return
+	}
+	rsc := rscForExport.ExportResourceDto()
+
 
 	// validate `resource` valid required fields
 	validate := validator.New()
 	if err := validate.Struct(rsc); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "parse request body error: " + err.Error(),
-		})
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 
 	connRes, err := impl.resourceService.TestConnection(rsc)
 	if err != nil || !connRes {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"errorCode":    400,
-			"errorMessage": "test connection failed: " + err.Error(),
-		})
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_TEST_RESOURCE_CONNECTION, "test connection failed: "+err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "test connection successfully",
-	})
+	// feedback
+	FeedbackOK(c, nil)
+	return
 }
 
 func (impl ResourceRestHandlerImpl) GetMetaInfo(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("resource"))
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{})
+	// fetch needed param
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetAuthToken != nil {
 		return
 	}
 
-	res, err := impl.resourceService.GetMetaInfo(id)
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
+	impl.AttributeGroup.SetUnitID(resourceID)
+	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	if errInCheckAttr != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canAccess {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// fetch data
+	res, err := impl.resourceService.GetMetaInfo(teamID, resourceID)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{})
 		return

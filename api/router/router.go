@@ -22,49 +22,54 @@ import (
 )
 
 type RESTRouter struct {
-	logger         *zap.SugaredLogger
-	Router         *gin.RouterGroup
-	UserRouter     UserRouter
-	AppRouter      AppRouter
-	RoomRouter     RoomRouter
-	ActionRouter   ActionRouter
-	ResourceRouter ResourceRouter
-	Authenticator  user.Authenticator
+	logger               *zap.SugaredLogger
+	Router               *gin.RouterGroup
+	BuilderRouter        BuilderRouter
+	AppRouter            AppRouter
+	PublicAppRouter      PublicAppRouter
+	RoomRouter           RoomRouter
+	ActionRouter         ActionRouter
+	InternalActionRouter InternalActionRouter
+	ResourceRouter       ResourceRouter
 }
 
-func NewRESTRouter(logger *zap.SugaredLogger, userRouter UserRouter, appRouter AppRouter, roomRouter RoomRouter,
-	actionRouter ActionRouter, resourceRouter ResourceRouter, authenticator user.Authenticator) *RESTRouter {
+func NewRESTRouter(logger *zap.SugaredLogger, builderRouter BuilderRouter, appRouter AppRouter, publicAppRouter PublicAppRouter, roomRouter RoomRouter,
+	actionRouter ActionRouter, internalActionRouter InternalActionRouter, resourceRouter ResourceRouter) *RESTRouter {
 	return &RESTRouter{
-		logger:         logger,
-		UserRouter:     userRouter,
-		AppRouter:      appRouter,
-		RoomRouter:     roomRouter,
-		ActionRouter:   actionRouter,
-		ResourceRouter: resourceRouter,
-		Authenticator:  authenticator,
+		logger:               logger,
+		BuilderRouter:        builderRouter,
+		AppRouter:            appRouter,
+		PublicAppRouter:      publicAppRouter,
+		RoomRouter:           roomRouter,
+		ActionRouter:         actionRouter,
+		InternalActionRouter: internalActionRouter,
+		ResourceRouter:       resourceRouter,
 	}
 }
 
 func (r RESTRouter) InitRouter(router *gin.RouterGroup) {
 	v1 := router.Group("/v1")
 
-	authRouter := v1.Group("/auth")
-	userRouter := v1.Group("/users")
-	appRouter := v1.Group("/apps")
-	roomRouter := v1.Group("/room")
-	actionRouter := v1.Group("/apps/:app")
-	resourceRouter := v1.Group("/resources")
+	builderRouter := v1.Group("/teams/:teamID/builder")
+	appRouter := v1.Group("/teams/:teamID/apps")
+	publicAppRouter := v1.Group("/teams/byIdentifier/:teamIdentifier/publicApps")
+	resourceRouter := v1.Group("/teams/:teamID/resources")
+	actionRouter := v1.Group("/teams/:teamID/apps/:appID/actions")
+	internalActionRouter := v1.Group("/teams/:teamID/apps/:appID/internalActions")
+	roomRouter := v1.Group("/teams/:teamID/room")
 
-	userRouter.Use(user.JWTAuth(r.Authenticator))
-	appRouter.Use(user.JWTAuth(r.Authenticator))
-	roomRouter.Use(user.JWTAuth(r.Authenticator))
-	actionRouter.Use(user.JWTAuth(r.Authenticator))
-	resourceRouter.Use(user.JWTAuth(r.Authenticator))
+	builderRouter.Use(user.RemoteJWTAuth())
+	appRouter.Use(user.RemoteJWTAuth())
+	roomRouter.Use(user.RemoteJWTAuth())
+	actionRouter.Use(user.RemoteJWTAuth())
+	internalActionRouter.Use(user.RemoteJWTAuth())
+	resourceRouter.Use(user.RemoteJWTAuth())
 
-	r.UserRouter.InitAuthRouter(authRouter)
-	r.UserRouter.InitUserRouter(userRouter)
+	r.BuilderRouter.InitBuilderRouter(builderRouter)
 	r.AppRouter.InitAppRouter(appRouter)
+	r.PublicAppRouter.InitPublicAppRouter(publicAppRouter)
 	r.RoomRouter.InitRoomRouter(roomRouter)
 	r.ActionRouter.InitActionRouter(actionRouter)
+	r.InternalActionRouter.InitInternalActionRouter(internalActionRouter)
 	r.ResourceRouter.InitResourceRouter(resourceRouter)
 }

@@ -19,8 +19,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -57,6 +57,8 @@ type Client struct {
 
 	MappedUserID int
 
+	MappedUserUID uuid.UUID
+
 	IsLoggedIn bool
 
 	Hub *Hub
@@ -67,8 +69,8 @@ type Client struct {
 	// Buffered channel of outbound messages.
 	Send chan []byte
 
-	// instanceID, SELF_HOST by default
-	InstanceID string
+	// teamID, 0 by default in SELF_HOST mode
+	TeamID int // TeamID
 
 	// appID, 0 by default, -1 for dashboard
 	APPID int
@@ -78,15 +80,15 @@ func (c *Client) GetAPPID() int {
 	return c.APPID
 }
 
-func NewClient(hub *Hub, conn *websocket.Conn, instanceID string, appID int) *Client {
+func NewClient(hub *Hub, conn *websocket.Conn, teamID int, appID int) *Client {
 	return &Client{
-		ID:           uuid.Must(uuid.NewV4(), nil),
+		ID:           uuid.New(),
 		MappedUserID: 0,
 		IsLoggedIn:   false,
 		Hub:          hub,
 		Conn:         conn,
 		Send:         make(chan []byte, 1024),
-		InstanceID:   instanceID,
+		TeamID:       teamID,
 		APPID:        appID}
 }
 

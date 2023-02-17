@@ -19,17 +19,17 @@ import (
 	"flag"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
+	"github.com/illacloud/builder-backend/internal/idconvertor"
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/internal/util"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
+
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/db"
 	"github.com/illacloud/builder-backend/pkg/resource"
 	"github.com/illacloud/builder-backend/pkg/state"
-	"github.com/illacloud/builder-backend/pkg/user"
 	filter "github.com/illacloud/builder-backend/pkg/websocket-filter"
 
 	"github.com/gorilla/mux"
@@ -43,7 +43,6 @@ var kvssi *state.KVStateServiceImpl
 var sssi *state.SetStateServiceImpl
 var asi *app.AppServiceImpl
 var rsi *resource.ResourceServiceImpl
-var ai *user.AuthenticatorImpl
 
 func initEnv() error {
 	sugaredLogger := util.NewSugardLogger()
@@ -61,15 +60,13 @@ func initEnv() error {
 	setstateRepositoryImpl := repository.NewSetStateRepositoryImpl(sugaredLogger, gormDB)
 	appRepositoryImpl := repository.NewAppRepositoryImpl(sugaredLogger, gormDB)
 	resourceRepositoryImpl := repository.NewResourceRepositoryImpl(sugaredLogger, gormDB)
-	userRepositoryImpl := repository.NewUserRepositoryImpl(gormDB, sugaredLogger)
 	actionRepositoryImpl := repository.NewActionRepositoryImpl(sugaredLogger, gormDB)
 	// init service
 	tssi = state.NewTreeStateServiceImpl(sugaredLogger, treestateRepositoryImpl)
 	kvssi = state.NewKVStateServiceImpl(sugaredLogger, kvstateRepositoryImpl)
 	sssi = state.NewSetStateServiceImpl(sugaredLogger, setstateRepositoryImpl)
-	asi = app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, userRepositoryImpl, kvstateRepositoryImpl, treestateRepositoryImpl, setstateRepositoryImpl, actionRepositoryImpl)
+	asi = app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, kvstateRepositoryImpl, treestateRepositoryImpl, setstateRepositoryImpl, actionRepositoryImpl)
 	rsi = resource.NewResourceServiceImpl(sugaredLogger, resourceRepositoryImpl)
-	ai = user.NewAuthenticatorImpl(userRepositoryImpl, sugaredLogger)
 	return nil
 }
 
@@ -82,12 +79,11 @@ func InitHub(asi *app.AppServiceImpl, rsi *resource.ResourceServiceImpl, tssi *s
 	hub.SetTreeStateServiceImpl(tssi)
 	hub.SetKVStateServiceImpl(kvssi)
 	hub.SetSetStateServiceImpl(sssi)
-	hub.SetAuthenticatorImpl(ai)
 	go filter.Run(hub)
 }
 
 // ServeWebsocket handle websocket requests from the peer.
-func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, instanceID string, appID int) {
+func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, teamID int, appID int) {
 	// init dashbroad websocket hub
 
 	// @todo: this CheckOrigin method for debug only, remove it for release.
@@ -110,7 +106,7 @@ func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, instanc
 		log.Println(err)
 		return
 	}
-	client := ws.NewClient(hub, conn, instanceID, appID)
+	client := ws.NewClient(hub, conn, teamID, appID)
 	client.Hub.Register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in
@@ -133,21 +129,21 @@ func main() {
 	r.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 	})
-	// handle ws://{ip:port}/room/{instanceID}/dashboard
-	r.HandleFunc("/room/{instanceID}/dashboard", func(w http.ResponseWriter, r *http.Request) {
-		instanceID := mux.Vars(r)["instanceID"]
-		log.Printf("[Connected] /room/%s/dashboard", instanceID)
-		ServeWebsocket(hub, w, r, instanceID, ws.DASHBOARD_APP_ID)
+	// handle ws://{ip:port}/teams/{teamID}/room/websocketConnection/dashboard
+	r.HandleFunc("/teams/{teamID}/room/websocketConnection/dashboard", func(w http.ResponseWriter, r *http.Request) {
+		teamID := mux.Vars(r)["teamID"]
+		teamIDInt := idconvertor.ConvertStringToInt(teamID)
+		log.Printf("[Connected] /teams/%d/dashboard", teamIDInt)
+		ServeWebsocket(hub, w, r, teamIDInt, ws.DASHBOARD_APP_ID)
 	})
-	// handle ws://{ip:port}/room/{instanceID}/app/{appID}
-	r.HandleFunc("/room/{instanceID}/app/{appID}", func(w http.ResponseWriter, r *http.Request) {
-		instanceID := mux.Vars(r)["instanceID"]
-		appID, err := strconv.Atoi(mux.Vars(r)["appID"])
-		if err != nil {
-			appID = ws.DEFAULT_APP_ID
-		}
-		log.Printf("[Connected] /room/%s/app/%d", instanceID, appID)
-		ServeWebsocket(hub, w, r, instanceID, appID)
+	// handle ws://{ip:port}/teams/{teamID}/room/websocketConnection/apps/{appID}
+	r.HandleFunc("/teams/{teamID}/room/websocketConnection/apps/{appID}", func(w http.ResponseWriter, r *http.Request) {
+		teamID := mux.Vars(r)["teamID"]
+		appID := mux.Vars(r)["appID"]
+		teamIDInt := idconvertor.ConvertStringToInt(teamID)
+		appIDInt := idconvertor.ConvertStringToInt(appID)
+		log.Printf("[Connected] /teams/%d/app/%d", teamIDInt, appIDInt)
+		ServeWebsocket(hub, w, r, teamIDInt, appIDInt)
 	})
 	srv := &http.Server{
 		Handler:      r,

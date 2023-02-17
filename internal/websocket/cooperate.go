@@ -122,7 +122,7 @@ func NewUserForCooperateFeedbackByUser(user *repository.User) *UserForCooperateF
 	return &UserForCooperateFeedback{
 		ID:                 user.ID,
 		Nickname:           user.Nickname,
-		Avatar:             repository.USER_DEFAULT_AVATAR,
+		Avatar:             user.Avatar,
 		AttachedComponents: make(map[string]string),
 	}
 }

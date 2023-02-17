@@ -28,9 +28,11 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
+	teamID := currentClient.TeamID
 	appDto := app.NewAppDto()
 	appDto.ConstructWithID(currentClient.APPID)
 	appDto.ConstructWithUpdateBy(currentClient.MappedUserID)
+	appDto.SetTeamID(currentClient.TeamID)
 	message.RewriteBroadcast()
 
 	// target switch
@@ -59,6 +61,8 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 			for key, depState := range subv {
 				// fill KVStateDto
 				kvStateDto := state.NewKVStateDto()
+				kvStateDto.InitUID()
+				kvStateDto.SetTeamID(teamID)
 				kvStateDto.ConstructWithKey(key)
 				kvStateDto.ConstructForDependenciesState(depState)
 				kvStateDto.ConstructByApp(appDto) // set AppRefID
@@ -84,6 +88,8 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 		for _, v := range message.Payload {
 			// fill KVStateDto
 			kvStateDto := state.NewKVStateDto()
+			kvStateDto.InitUID()
+			kvStateDto.SetTeamID(teamID)
 			kvStateDto.ConstructByMap(v)
 			kvStateDto.ConstructByApp(appDto) // set AppRefID
 			kvStateDto.ConstructWithType(stateType)
@@ -105,6 +111,8 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 			}
 			// save state
 			setStateDto := state.NewSetStateDto()
+			setStateDto.InitUID()
+			setStateDto.SetTeamID(teamID)
 			setStateDto.ConstructByApp(appDto) // set AppRefID
 			setStateDto.ConstructWithValue(displayName)
 			setStateDto.ConstructWithType(stateType)
