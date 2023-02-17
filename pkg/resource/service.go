@@ -25,9 +25,9 @@ import (
 	"go.uber.org/zap"
 )
 
-var type_array = [19]string{"restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb", "tidb",
+var type_array = [21]string{"restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb", "tidb",
 	"elasticsearch", "s3", "smtp", "supabasedb", "firebase", "clickhouse", "mssql", "huggingface", "dynamodb", "snowflake",
-	"couchdb"}
+	"couchdb", "hfendpoint", "oracle"}
 var type_map = map[string]int{
 	"restapi":       1,
 	"graphql":       2,
@@ -48,6 +48,8 @@ var type_map = map[string]int{
 	"dynamodb":      17,
 	"snowflake":     18,
 	"couchdb":       19,
+	"hfendpoint":    20,
+	"oracle":        21,
 }
 
 type ResourceService interface {
@@ -66,7 +68,7 @@ type ResourceDto struct {
 	UID       uuid.UUID              `json:"uid"`
 	TeamID    int                    `json:"teamID"`
 	Name      string                 `json:"resourceName" validate:"required"`
-	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb"`
+	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle"`
 	Options   map[string]interface{} `json:"content" validate:"required"`
 	CreatedAt time.Time              `json:"createdAt,omitempty"`
 	CreatedBy int                    `json:"createdBy,omitempty"`

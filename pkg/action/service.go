@@ -25,9 +25,9 @@ import (
 	"go.uber.org/zap"
 )
 
-var type_array = [20]string{"transformer", "restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb",
+var type_array = [22]string{"transformer", "restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb",
 	"tidb", "elasticsearch", "s3", "smtp", "supabasedb", "firebase", "clickhouse", "mssql", "huggingface", "dynamodb",
-	"snowflake", "couchdb"}
+	"snowflake", "couchdb", "hfendpoint", "oracle"}
 var type_map = map[string]int{
 	"transformer":   0,
 	"restapi":       1,
@@ -49,6 +49,8 @@ var type_map = map[string]int{
 	"dynamodb":      17,
 	"snowflake":     18,
 	"couchdb":       19,
+	"hfendpoint":    20,
+	"oracle":        21,
 }
 
 type ActionService interface {
@@ -69,7 +71,7 @@ type ActionDto struct {
 	Version     int                    `json:"-"`
 	Resource    int                    `json:"resourceId,omitempty"`
 	DisplayName string                 `json:"displayName" validate:"required"`
-	Type        string                 `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb"`
+	Type        string                 `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle"`
 	Template    map[string]interface{} `json:"content" validate:"required"`
 	Transformer map[string]interface{} `json:"transformer" validate:"required"`
 	TriggerMode string                 `json:"triggerMode" validate:"oneof=manually automate"`
