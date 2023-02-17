@@ -57,8 +57,8 @@ type AppDto struct {
 	UID             uuid.UUID             `json:"uid"`
 	TeamID          int                   `json:"teamID"`
 	Name            string                `json:"appName" validate:"required"`
-	ReleaseVersion  int                   `json:"release_version"`  // release version used for mark the app release version.
-	MainlineVersion int                   `json:"mainline_version"` // mainline version keep the newest app version in database.
+	ReleaseVersion  int                   `json:"releaseVersion"`  // release version used for mark the app release version.
+	MainlineVersion int                   `json:"mainlineVersion"` // mainline version keep the newest app version in database.
 	Config          *repository.AppConfig `json:"config"`
 	CreatedBy       int                   `json:"-" `
 	CreatedAt       time.Time             `json:"-"`
@@ -72,8 +72,8 @@ type AppDtoForExport struct {
 	UID             uuid.UUID             `json:"uid"`
 	TeamID          string                `json:"teamID"`
 	Name            string                `json:"appName" validate:"required"`
-	ReleaseVersion  int                   `json:"release_version"`  // release version used for mark the app release version.
-	MainlineVersion int                   `json:"mainline_version"` // mainline version keep the newest app version in database.
+	ReleaseVersion  int                   `json:"releaseVersion"`  // release version used for mark the app release version.
+	MainlineVersion int                   `json:"mainlineVersion"` // mainline version keep the newest app version in database.
 	Config          *repository.AppConfig `json:"config"`
 	CreatedBy       string                `json:"-" `
 	CreatedAt       time.Time             `json:"-"`
