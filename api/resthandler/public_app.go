@@ -17,6 +17,7 @@ package resthandler
 import (
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
 	dc "github.com/illacloud/builder-backend/internal/datacontrol"
+	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/state"
 
@@ -49,13 +50,12 @@ func (impl PublicAppRestHandlerImpl) GetMegaData(c *gin.Context) {
 	teamIdentifier, errInGetTeamID := GetStringParamFromRequest(c, PARAM_TEAM_IDENTIFIER)
 	publicAppID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	version, errInGetVersion := GetIntParamFromRequest(c, PARAM_VERSION)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetVersion != nil || errInGetAuthToken != nil {
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetVersion != nil {
 		return
 	}
 
 	// check version, the version must be repository.APP_AUTO_RELEASE_VERSION
-	if version != APP_AUTO_RELEASE_VERSION {
+	if version != repository.APP_AUTO_RELEASE_VERSION {
 		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you only can access release version of app.")
 		return
 	}
