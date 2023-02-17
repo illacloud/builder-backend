@@ -31,8 +31,8 @@ type App struct {
 	UID             uuid.UUID `json:"uid"   		    gorm:"column:uid;type:uuid;not null"`
 	TeamID          int       `json:"teamID" 		    gorm:"column:team_id;type:bigserial"`
 	Name            string    `json:"name" 				gorm:"column:name;type:varchar"`
-	ReleaseVersion  int       `json:"release_version" 	gorm:"column:release_version;type:bigserial"`
-	MainlineVersion int       `json:"mainline_version" 	gorm:"column:mainline_version;type:bigserial"`
+	ReleaseVersion  int       `json:"releaseVersion" 	gorm:"column:release_version;type:bigserial"`
+	MainlineVersion int       `json:"mainlineVersion" 	gorm:"column:mainline_version;type:bigserial"`
 	Config          string    `json:"config" 	        gorm:"column:config;type:jsonb"`
 	CreatedAt       time.Time `json:"created_at" 		gorm:"column:created_at;type:timestamp"`
 	CreatedBy       int       `json:"created_by" 		gorm:"column:created_by;type:bigserial"`
