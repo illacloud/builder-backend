@@ -19,6 +19,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/illacloud/builder-backend/internal/idconvertor"
@@ -116,6 +117,9 @@ func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, teamID 
 }
 
 func main() {
+	// set trial key for self-host users
+	os.Setenv("ILLA_SECRET_KEY", "8xEMrWkBARcDDYQ")
+	// init
 	addr := flag.String("addr", "0.0.0.0:8002", "websocket server serve address")
 	flag.Parse()
 
