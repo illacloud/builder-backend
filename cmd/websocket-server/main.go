@@ -116,7 +116,7 @@ func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, teamID 
 }
 
 func main() {
-	addr := flag.String("addr", "0.0.0.0:8000", "websocket server serve address")
+	addr := flag.String("addr", "0.0.0.0:8002", "websocket server serve address")
 	flag.Parse()
 
 	// init
