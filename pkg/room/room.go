@@ -26,8 +26,12 @@ const DEFAULT_SERVER_ADDRESS = "localhost"
 const DEFAULT_WEBSOCKET_PORT = "8000"
 const PROTOCOL_WEBSOCKET = "ws"
 const PROTOCOL_WEBSOCKET_OVER_TLS = "wss"
+const ILLA_DEPLOY_MODE_SELF_HOST = "self-host"
+const ILLA_DEPLOY_MODE_CLOUD = "cloud"
 const DASHBOARD_WS_URL = "%s://%s:%s/teams/%s/room/websocketConnection/dashboard"
 const ROOM_WS_URL = "%s://%s:%s/teams/%s/room/websocketConnection/apps/%s"
+const SELF_HOST_DASHBOARD_WS_URL = "/builder-ws/teams/%s/room/websocketConnection/dashboard"
+const SELF_HOST_ROOM_WS_URL = "/builder-ws/teams/%s/room/websocketConnection/apps/%s"
 
 type RoomService interface {
 	GetDashboardConn(teamID int) (WSURLResponse, error)
@@ -72,14 +76,34 @@ func getWebSocketPort() string {
 	return webSockerPort
 }
 
+// self-host mode by default
+func isSelfHostDeployMode() bool {
+	mode := os.Getenv("ILLA_DEPLOY_MODE")
+	if len(mode) == 0 || mode == "" || mode == ILLA_DEPLOY_MODE_SELF_HOST {
+		return true
+	}
+	if mode == ILLA_DEPLOY_MODE_CLOUD {
+		return false
+	}
+	return true
+}
+
 func (impl *RoomServiceImpl) GetDashboardConn(teamID int) (WSURLResponse, error) {
 	var r WSURLResponse
-	r.WSURL = fmt.Sprintf(DASHBOARD_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), idconvertor.ConvertIntToString(teamID))
+	if isSelfHostDeployMode() {
+		r.WSURL = fmt.Sprintf(DASHBOARD_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), idconvertor.ConvertIntToString(teamID))
+	} else {
+		r.WSURL = fmt.Sprintf(SELF_HOST_DASHBOARD_WS_URL, idconvertor.ConvertIntToString(teamID))
+	}
 	return r, nil
 }
 
 func (impl *RoomServiceImpl) GetAppRoomConn(teamID int, roomID int) (WSURLResponse, error) {
 	var r WSURLResponse
-	r.WSURL = fmt.Sprintf(ROOM_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
+	if isSelfHostDeployMode() {
+		r.WSURL = fmt.Sprintf(ROOM_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
+	} else {
+		r.WSURL = fmt.Sprintf(SELF_HOST_ROOM_WS_URL, idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
+	}
 	return r, nil
 }
