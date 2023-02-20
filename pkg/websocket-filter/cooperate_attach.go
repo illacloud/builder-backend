@@ -16,6 +16,7 @@ package filter
 
 import (
 	"errors"
+
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
 
@@ -32,7 +33,7 @@ func SignalCooperateAttach(hub *ws.Hub, message *ws.Message) error {
 		}
 		displayNames = append(displayNames, displayName)
 	}
-	inRoomUsers.AttachComponent(currentClient.MappedUserID, displayNames)
+	inRoomUsers.AttachComponent(currentClient.ExportMappedUserIDToString(), displayNames)
 
 	// broadcast attached components users
 	message.SetBroadcastType(ws.BROADCAST_TYPE_ATTACH_COMPONENT)

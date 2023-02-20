@@ -64,3 +64,7 @@ func NewUserByDataControlRawData(rawUserString string) (*User, error) {
 	}
 	return NewUser(&rawUser), nil
 }
+
+func (u *User) ExportIDToString() string {
+	return idconvertor.ConvertIntToString(u.ID)
+}

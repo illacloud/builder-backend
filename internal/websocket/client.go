@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/illacloud/builder-backend/internal/idconvertor"
 )
 
 const (
@@ -78,6 +79,10 @@ type Client struct {
 
 func (c *Client) GetAPPID() int {
 	return c.APPID
+}
+
+func (c *Client) ExportMappedUserIDToString() string {
+	return idconvertor.ConvertIntToString(c.MappedUserID)
 }
 
 func NewClient(hub *Hub, conn *websocket.Conn, teamID int, appID int) *Client {
