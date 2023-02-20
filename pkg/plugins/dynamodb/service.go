@@ -16,6 +16,7 @@ package dynamodb
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
@@ -105,6 +106,13 @@ func (d *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	// format action options
 	if err := mapstructure.Decode(actionOptions, &d.ActionOpts); err != nil {
 		return common.RuntimeResult{Success: false}, err
+	}
+	if d.ActionOpts.UseJson {
+		var res map[string]interface{}
+		if err := json.Unmarshal([]byte(d.ActionOpts.Parameters), &res); err != nil {
+			return common.RuntimeResult{Success: false}, err
+		}
+		d.ActionOpts.StructParams = res
 	}
 
 	// switch based on different method
