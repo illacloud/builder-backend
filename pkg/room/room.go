@@ -91,9 +91,9 @@ func isSelfHostDeployMode() bool {
 func (impl *RoomServiceImpl) GetDashboardConn(teamID int) (WSURLResponse, error) {
 	var r WSURLResponse
 	if isSelfHostDeployMode() {
-		r.WSURL = fmt.Sprintf(DASHBOARD_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), idconvertor.ConvertIntToString(teamID))
-	} else {
 		r.WSURL = fmt.Sprintf(SELF_HOST_DASHBOARD_WS_URL, idconvertor.ConvertIntToString(teamID))
+	} else {
+		r.WSURL = fmt.Sprintf(DASHBOARD_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), idconvertor.ConvertIntToString(teamID))
 	}
 	return r, nil
 }
@@ -101,9 +101,9 @@ func (impl *RoomServiceImpl) GetDashboardConn(teamID int) (WSURLResponse, error)
 func (impl *RoomServiceImpl) GetAppRoomConn(teamID int, roomID int) (WSURLResponse, error) {
 	var r WSURLResponse
 	if isSelfHostDeployMode() {
-		r.WSURL = fmt.Sprintf(ROOM_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
-	} else {
 		r.WSURL = fmt.Sprintf(SELF_HOST_ROOM_WS_URL, idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
+	} else {
+		r.WSURL = fmt.Sprintf(ROOM_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
 	}
 	return r, nil
 }
