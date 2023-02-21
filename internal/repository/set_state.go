@@ -17,12 +17,15 @@ package repository
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type SetState struct {
 	ID        int       `json:"id" 		   gorm:"column:id;type:bigserial"`
+	UID       uuid.UUID `json:"uid" 	   gorm:"column:uid;type:uuid;not null"`
+	TeamID    int       `json:"teamID"    gorm:"column:team_id;type:bigserial"`
 	StateType int       `json:"state_type" gorm:"column:state_type;type:bigint"`
 	AppRefID  int       `json:"app_ref_id" gorm:"column:app_ref_id;type:bigint"`
 	Version   int       `json:"version"    gorm:"column:version;type:bigint"`
@@ -35,15 +38,15 @@ type SetState struct {
 
 type SetStateRepository interface {
 	Create(setState *SetState) error
-	Delete(setStateID int) error
+	Delete(teamID int, setStateID int) error
 	DeleteByValue(setState *SetState) error
 	Update(setState *SetState) error
 	UpdateByValue(beforeSetState *SetState, afterSetState *SetState) error
-	RetrieveByID(setStateID int) (*SetState, error)
-	RetrieveSetStatesByVersion(version int) ([]*SetState, error)
+	RetrieveByID(teamID int, setStateID int) (*SetState, error)
+	RetrieveSetStatesByVersion(teamID int, version int) ([]*SetState, error)
 	RetrieveByValue(setState *SetState) (*SetState, error)
-	RetrieveSetStatesByApp(apprefid int, statetype int, version int) ([]*SetState, error)
-	DeleteAllTypeSetStatesByApp(apprefid int) error
+	RetrieveSetStatesByApp(teamID int, apprefid int, statetype int, version int) ([]*SetState, error)
+	DeleteAllTypeSetStatesByApp(teamID int, apprefid int) error
 }
 
 type SetStateRepositoryImpl struct {
@@ -65,15 +68,15 @@ func (impl *SetStateRepositoryImpl) Create(setState *SetState) error {
 	return nil
 }
 
-func (impl *SetStateRepositoryImpl) Delete(setStateID int) error {
-	if err := impl.db.Delete(&SetState{}, setStateID).Error; err != nil {
+func (impl *SetStateRepositoryImpl) Delete(teamID int, setStateID int) error {
+	if err := impl.db.Where("id = ? AND team_id = ?", setStateID, teamID).Delete(&SetState{}).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (impl *SetStateRepositoryImpl) DeleteByValue(setState *SetState) error {
-	if err := impl.db.Where("value = ?", setState.Value).Delete(&SetState{}).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND value = ?", setState.TeamID, setState.Value).Delete(&SetState{}).Error; err != nil {
 		return err
 	}
 	return nil
@@ -107,17 +110,17 @@ func (impl *SetStateRepositoryImpl) UpdateByValue(beforeSetState *SetState, afte
 	return nil
 }
 
-func (impl *SetStateRepositoryImpl) RetrieveByID(setStateID int) (*SetState, error) {
-	setState := &SetState{}
-	if err := impl.db.First(setState, setStateID).Error; err != nil {
+func (impl *SetStateRepositoryImpl) RetrieveByID(teamID int, setStateID int) (*SetState, error) {
+	var setState *SetState
+	if err := impl.db.Where("team_id = ? AND value = ?", teamID, setState.Value).First(&setState).Error; err != nil {
 		return &SetState{}, err
 	}
 	return setState, nil
 }
 
-func (impl *SetStateRepositoryImpl) RetrieveSetStatesByVersion(version int) ([]*SetState, error) {
+func (impl *SetStateRepositoryImpl) RetrieveSetStatesByVersion(teamID int, version int) ([]*SetState, error) {
 	var setStates []*SetState
-	if err := impl.db.Where("version = ?", version).Find(&setStates).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND version = ?", teamID, version).Find(&setStates).Error; err != nil {
 		return nil, err
 	}
 	return setStates, nil
@@ -126,7 +129,8 @@ func (impl *SetStateRepositoryImpl) RetrieveSetStatesByVersion(version int) ([]*
 func (impl *SetStateRepositoryImpl) RetrieveByValue(setState *SetState) (*SetState, error) {
 	var ret *SetState
 	if err := impl.db.Where(
-		"app_ref_id = ? AND state_type = ? AND version = ? AND value = ?",
+		"team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ? AND value = ?",
+		setState.TeamID,
 		setState.AppRefID,
 		setState.StateType,
 		setState.Version,
@@ -137,16 +141,16 @@ func (impl *SetStateRepositoryImpl) RetrieveByValue(setState *SetState) (*SetSta
 	return ret, nil
 }
 
-func (impl *SetStateRepositoryImpl) RetrieveSetStatesByApp(apprefid int, statetype int, version int) ([]*SetState, error) {
+func (impl *SetStateRepositoryImpl) RetrieveSetStatesByApp(teamID int, apprefid int, statetype int, version int) ([]*SetState, error) {
 	var setStates []*SetState
-	if err := impl.db.Where("app_ref_id = ? AND state_type = ? AND version = ?", apprefid, statetype, version).Find(&setStates).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ?", teamID, apprefid, statetype, version).Find(&setStates).Error; err != nil {
 		return nil, err
 	}
 	return setStates, nil
 }
 
-func (impl *SetStateRepositoryImpl) DeleteAllTypeSetStatesByApp(apprefid int) error {
-	if err := impl.db.Where("app_ref_id = ?", apprefid).Delete(&SetState{}).Error; err != nil {
+func (impl *SetStateRepositoryImpl) DeleteAllTypeSetStatesByApp(teamID int, apprefid int) error {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, apprefid).Delete(&SetState{}).Error; err != nil {
 		return err
 	}
 	return nil

@@ -16,6 +16,7 @@ package filter
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/illacloud/builder-backend/internal/repository"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
@@ -28,9 +29,12 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
+	teamID := currentClient.TeamID
+	fmt.Printf("SignalUpdateState teamID(from currentClient.TeamID): %v\n", teamID)
 	appDto := app.NewAppDto()
 	appDto.ConstructWithID(currentClient.APPID)
 	appDto.ConstructWithUpdateBy(currentClient.MappedUserID)
+	appDto.SetTeamID(currentClient.TeamID)
 	message.RewriteBroadcast()
 
 	// target switch
@@ -49,6 +53,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 			// find component id by displayName
 			beforeTreeState := state.NewTreeStateDto()
 			beforeTreeState.ConstructByApp(appDto)
+			beforeTreeState.SetTeamID(teamID)
 			beforeTreeState.ConstructWithType(stateType)
 			beforeTreeState.ConstructByMap(csfu.Before)
 
@@ -94,6 +99,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 				kvStateDto.ConstructWithKey(key)
 				kvStateDto.ConstructForDependenciesState(depState)
 				kvStateDto.ConstructByApp(appDto) // set AppRefID
+				kvStateDto.SetTeamID(teamID)
 				kvStateDto.ConstructWithType(stateType)
 
 				if err := hub.KVStateServiceImpl.UpdateKVStateByKey(kvStateDto); err != nil {
@@ -121,6 +127,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 			kvStateDto := state.NewKVStateDto()
 			kvStateDto.ConstructByMap(v)
 			kvStateDto.ConstructByApp(appDto)
+			kvStateDto.SetTeamID(teamID)
 			kvStateDto.ConstructWithType(stateType)
 
 			// update
@@ -145,6 +152,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 			beforeSetStateDto.ConstructWithValueBeforeUpdate(dnsfu)
 			beforeSetStateDto.ConstructWithType(stateType)
 			beforeSetStateDto.ConstructByApp(appDto)
+			beforeSetStateDto.SetTeamID(teamID)
 			beforeSetStateDto.ConstructWithEditVersion()
 			afterSetStateDto.ConstructWithValueAfterUpdate(dnsfu)
 

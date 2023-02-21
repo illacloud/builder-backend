@@ -16,7 +16,7 @@ package ws
 
 import (
 	"encoding/json"
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 )
 
 // message protocol from client in json:

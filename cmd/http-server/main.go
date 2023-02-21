@@ -14,9 +14,15 @@
 
 package main
 
-import "log"
+import (
+	"log"
+	"os"
+)
 
 func main() {
+	// set trial key for self-host users
+	os.Setenv("ILLA_SECRET_KEY", "8xEMrWkBARcDDYQ")
+	// init
 	server, err := Initialize()
 	if err != nil {
 		log.Panic(err)
