@@ -48,7 +48,9 @@ type ActionRepository interface {
 	Create(action *Action) (int, error)
 	Delete(teamID int, actionID int) error
 	Update(action *Action) error
+	UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, public bool) error
 	RetrieveActionByIDAndTeamID(actionID int, teamID int) (*Action, error)
+	RetrieveAll(teamID int, appID int) ([]*Action, error)
 	RetrieveByID(teamID int, actionID int) (*Action, error)
 	RetrieveActionsByAppVersion(teamID int, appID int, version int) ([]*Action, error)
 	DeleteActionsByApp(teamID int, appID int) error
@@ -132,12 +134,44 @@ func (impl *ActionRepositoryImpl) Update(action *Action) error {
 	return nil
 }
 
+func (impl *ActionRepositoryImpl) UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, public bool) error {
+	actions, errInGetAll := impl.RetrieveAll(teamID, appID)
+	if errInGetAll != nil {
+		return errInGetAll
+	}
+	// set status
+	for _, action := range actions {
+		// need update
+		if action.IsPublic() != public {
+			if public {
+				action.SetPublic(userID)
+			} else {
+				action.SetPrivate(userID)
+			}
+			// update
+			errorInUpdate := impl.Update(action)
+			if errorInUpdate != nil {
+				return errorInUpdate
+			}
+		}
+	}
+	return nil
+}
+
 func (impl *ActionRepositoryImpl) RetrieveActionByIDAndTeamID(actionID int, teamID int) (*Action, error) {
 	var action *Action
 	if err := impl.db.Where("id = ? AND team_id = ?", actionID, teamID).Find(&action).Error; err != nil {
 		return nil, err
 	}
 	return action, nil
+}
+
+func (impl *ActionRepositoryImpl) RetrieveAll(teamID int, appID int) ([]*Action, error) {
+	var actions []*Action
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, appID).Find(&actions).Error; err != nil {
+		return nil, err
+	}
+	return actions, nil
 }
 
 func (impl *ActionRepositoryImpl) RetrieveByID(teamID int, actionID int) (*Action, error) {

@@ -25,9 +25,23 @@ type ActionConfig struct {
 	Public bool `json:"public"` // switch for public action (which can view by anonymous user)
 }
 
+func NewActionConfig() *ActionConfig {
+	return &ActionConfig{
+		Public: false,
+	}
+}
+
 func (ac *ActionConfig) ExportToJSONString() string {
 	r, _ := json.Marshal(ac)
 	return string(r)
+}
+
+func (ac *ActionConfig) SetPublic() {
+	ac.Public = true
+}
+
+func (ac *ActionConfig) SetPrivate() {
+	ac.Public = false
 }
 
 func NewActionConfigByConfigActionRawRequest(rawReq map[string]interface{}) (*ActionConfig, error) {

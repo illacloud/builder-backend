@@ -30,6 +30,10 @@ func (ac *AppConfig) ExportToJSONString() string {
 	return string(r)
 }
 
+func (ac *AppConfig) IsPublic() bool {
+	return ac.Public
+}
+
 func NewAppConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*AppConfig, error) {
 	var assertPass bool
 	appConfig := &AppConfig{}

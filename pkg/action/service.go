@@ -16,6 +16,7 @@ package action
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -58,6 +59,7 @@ type ActionService interface {
 	CreateAction(action ActionDto) (*ActionDtoForExport, error)
 	DeleteAction(teamID int, id int) error
 	UpdateAction(action ActionDto) (*ActionDtoForExport, error)
+	UpdatePublic(teamID int, appID int, userID int, public bool) error
 	GetAction(teamID int, id int) (*ActionDtoForExport, error)
 	FindActionsByAppVersion(teamID int, app, version int) ([]*ActionDtoForExport, error)
 	RunAction(teamID int, action ActionDto) (interface{}, error)
@@ -115,6 +117,7 @@ func NewActionDtoForExport(a *ActionDto) *ActionDtoForExport {
 		Template:    a.Template,
 		Transformer: a.Transformer,
 		TriggerMode: a.TriggerMode,
+		Config:      a.Config,
 		CreatedAt:   a.CreatedAt,
 		CreatedBy:   idconvertor.ConvertIntToString(a.CreatedBy),
 		UpdatedAt:   a.UpdatedAt,
@@ -130,6 +133,7 @@ func (resp *ActionDtoForExport) ExportActionDto() ActionDto {
 		Template:    resp.Template,
 		Transformer: resp.Transformer,
 		TriggerMode: resp.TriggerMode,
+		Config:      resp.Config,
 		CreatedAt:   resp.CreatedAt,
 		UpdatedAt:   resp.UpdatedAt,
 	}
@@ -149,6 +153,9 @@ func (resp *ActionDtoForExport) ExportActionDto() ActionDto {
 	if resp.UpdatedBy != "" {
 		actionDto.UpdatedBy = idconvertor.ConvertStringToInt(resp.UpdatedBy)
 	}
+	if resp.Config == nil {
+		resp.Config = repository.NewActionConfig()
+	}
 	return actionDto
 }
 
@@ -162,6 +169,17 @@ func (a *ActionDto) InitUID() {
 
 func (a *ActionDto) SetTeamID(teamID int) {
 	a.TeamID = teamID
+}
+
+func (a *ActionDto) SetPublicStatus(isPublic bool) {
+	if a.Config == nil {
+		a.Config = repository.NewActionConfig()
+	}
+	if isPublic {
+		a.Config.SetPublic()
+	} else {
+		a.Config.SetPrivate()
+	}
 }
 
 type ActionServiceImpl struct {
@@ -211,6 +229,7 @@ func (impl *ActionServiceImpl) CreateAction(action ActionDto) (*ActionDtoForExpo
 		TriggerMode: action.TriggerMode,
 		Transformer: action.Transformer,
 		Template:    action.Template,
+		Config:      action.Config.ExportToJSONString(),
 		CreatedAt:   action.CreatedAt,
 		CreatedBy:   action.CreatedBy,
 		UpdatedAt:   action.UpdatedAt,
@@ -268,6 +287,7 @@ func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (*ActionDtoForExpo
 		TriggerMode: action.TriggerMode,
 		Transformer: action.Transformer,
 		Template:    action.Template,
+		Config:      action.Config.ExportToJSONString(),
 		UpdatedAt:   action.UpdatedAt,
 		UpdatedBy:   action.UpdatedBy,
 	}); err != nil {
@@ -282,6 +302,10 @@ func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (*ActionDtoForExpo
 	})
 
 	return NewActionDtoForExport(&action), nil
+}
+
+func (impl *ActionServiceImpl) UpdatePublic(teamID int, appID int, userID int, public bool) error {
+	return impl.actionRepository.UpdatePublicByTeamIDAndAppIDAndUserID(teamID, appID, userID, public)
 }
 
 func (impl *ActionServiceImpl) GetAction(teamID int, actionID int) (*ActionDtoForExport, error) {
@@ -299,6 +323,7 @@ func (impl *ActionServiceImpl) GetAction(teamID int, actionID int) (*ActionDtoFo
 		TriggerMode: res.TriggerMode,
 		Transformer: res.Transformer,
 		Template:    res.Template,
+		Config:      res.ExportConfig(),
 		CreatedBy:   res.CreatedBy,
 		CreatedAt:   res.CreatedAt,
 		UpdatedBy:   res.UpdatedBy,
@@ -326,11 +351,13 @@ func (impl *ActionServiceImpl) FindActionsByAppVersion(teamID int, appID int, ve
 			TriggerMode: value.TriggerMode,
 			Transformer: value.Transformer,
 			Template:    value.Template,
+			Config:      value.ExportConfig(),
 			CreatedBy:   value.CreatedBy,
 			CreatedAt:   value.CreatedAt,
 			UpdatedBy:   value.UpdatedBy,
 			UpdatedAt:   value.UpdatedAt,
 		}
+		fmt.Printf("actionDto: %v\n", actionDto)
 		actionDtoForExportSlice = append(actionDtoForExportSlice, NewActionDtoForExport(&actionDto))
 	}
 	return actionDtoForExportSlice, nil

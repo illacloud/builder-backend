@@ -50,10 +50,12 @@ func Initialize() (*Server, error) {
 	treeStateRepositoryImpl := repository.NewTreeStateRepositoryImpl(sugaredLogger, gormDB)
 	setStateRepositoryImpl := repository.NewSetStateRepositoryImpl(sugaredLogger, gormDB)
 	actionRepositoryImpl := repository.NewActionRepositoryImpl(sugaredLogger, gormDB)	
+	resourceRepositoryImpl := repository.NewResourceRepositoryImpl(sugaredLogger, gormDB)
+	actionServiceImpl := action.NewActionServiceImpl(sugaredLogger, appRepositoryImpl, actionRepositoryImpl, resourceRepositoryImpl)
 	appServiceImpl := app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, kvStateRepositoryImpl, treeStateRepositoryImpl, setStateRepositoryImpl, actionRepositoryImpl)
 	treeStateServiceImpl := state.NewTreeStateServiceImpl(sugaredLogger, treeStateRepositoryImpl)
 	// App
-	appRestHandlerImpl := resthandler.NewAppRestHandlerImpl(sugaredLogger, appServiceImpl, attrg, treeStateServiceImpl)
+	appRestHandlerImpl := resthandler.NewAppRestHandlerImpl(sugaredLogger, appServiceImpl, actionServiceImpl, attrg, treeStateServiceImpl)
 	appRouterImpl := router.NewAppRouterImpl(appRestHandlerImpl)
 	// public App
 	publicAppRestHandlerImpl := resthandler.NewPublicAppRestHandlerImpl(sugaredLogger, appServiceImpl, attrg, treeStateServiceImpl)
@@ -63,13 +65,11 @@ func Initialize() (*Server, error) {
 	roomRestHandlerImpl := resthandler.NewRoomRestHandlerImpl(sugaredLogger, roomServiceImpl, attrg)
 	roomRouterImpl := router.NewRoomRouterImpl(roomRestHandlerImpl)
 	// resource
-	resourceRepositoryImpl := repository.NewResourceRepositoryImpl(sugaredLogger, gormDB)
 	resourceServiceImpl := resource.NewResourceServiceImpl(sugaredLogger, resourceRepositoryImpl)
 	resourceRestHandlerImpl := resthandler.NewResourceRestHandlerImpl(sugaredLogger, resourceServiceImpl, attrg)
 	resourceRouterImpl := router.NewResourceRouterImpl(resourceRestHandlerImpl)
 	// actions
-	actionServiceImpl := action.NewActionServiceImpl(sugaredLogger, appRepositoryImpl, actionRepositoryImpl, resourceRepositoryImpl)
-	actionRestHandlerImpl := resthandler.NewActionRestHandlerImpl(sugaredLogger, actionServiceImpl, attrg)
+	actionRestHandlerImpl := resthandler.NewActionRestHandlerImpl(sugaredLogger, appServiceImpl, actionServiceImpl, attrg)
 	actionRouterImpl := router.NewActionRouterImpl(actionRestHandlerImpl)
 	// public actions
 	publicActionRestHandlerImpl := resthandler.NewPublicActionRestHandlerImpl(sugaredLogger, actionServiceImpl, attrg)

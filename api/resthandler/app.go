@@ -20,6 +20,7 @@ import (
 
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/builder-backend/pkg/action"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/state"
 
@@ -47,14 +48,16 @@ type AppRestHandler interface {
 type AppRestHandlerImpl struct {
 	logger           *zap.SugaredLogger
 	appService       app.AppService
+	actionService    action.ActionService
 	AttributeGroup   *ac.AttributeGroup
 	treeStateService state.TreeStateService
 }
 
-func NewAppRestHandlerImpl(logger *zap.SugaredLogger, appService app.AppService, attrg *ac.AttributeGroup, treeStateService state.TreeStateService) *AppRestHandlerImpl {
+func NewAppRestHandlerImpl(logger *zap.SugaredLogger, appService app.AppService, actionService action.ActionService, attrg *ac.AttributeGroup, treeStateService state.TreeStateService) *AppRestHandlerImpl {
 	return &AppRestHandlerImpl{
 		logger:           logger,
 		appService:       appService,
+		actionService:    actionService,
 		AttributeGroup:   attrg,
 		treeStateService: treeStateService,
 	}
@@ -270,10 +273,16 @@ func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 	appDTO.UpdateAppDTOConfig(appConfig, userID)
 	res, err := impl.appService.UpdateApp(appDTO)
 	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "rename app error: "+err.Error())
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "config app error: "+err.Error())
 		return
 	}
 
+	// Call `action service` update action public config (the action follows the app config)
+	errInUpdatePublic := impl.actionService.UpdatePublic(teamID, appID, userID, appConfig.IsPublic())
+	if errInUpdatePublic != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "config action error: "+errInUpdatePublic.Error())
+		return
+	}
 	// feedback
 	FeedbackOK(c, res)
 	return

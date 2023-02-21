@@ -26,6 +26,7 @@ import (
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/action"
+	"github.com/illacloud/builder-backend/pkg/app"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -43,13 +44,15 @@ type ActionRestHandler interface {
 
 type ActionRestHandlerImpl struct {
 	logger         *zap.SugaredLogger
+	appService     app.AppService
 	actionService  action.ActionService
 	AttributeGroup *ac.AttributeGroup
 }
 
-func NewActionRestHandlerImpl(logger *zap.SugaredLogger, actionService action.ActionService, attrg *ac.AttributeGroup) *ActionRestHandlerImpl {
+func NewActionRestHandlerImpl(logger *zap.SugaredLogger, appService app.AppService, actionService action.ActionService, attrg *ac.AttributeGroup) *ActionRestHandlerImpl {
 	return &ActionRestHandlerImpl{
 		logger:         logger,
+		appService:     appService,
 		actionService:  actionService,
 		AttributeGroup: attrg,
 	}
@@ -76,7 +79,7 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
 		return
 	}
-	
+
 	// validate
 	impl.AttributeGroup.Init()
 	impl.AttributeGroup.SetTeamID(teamID)
@@ -92,10 +95,14 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
-	
+
+	// check if app is public
+	appIsPublic := impl.appService.IsPublicApp(teamID, appID)
+
 	// create
 	act.InitUID()
 	act.SetTeamID(teamID)
+	act.SetPublicStatus(appIsPublic)
 	act.App = appID
 	act.Version = 0
 	act.CreatedAt = time.Now().UTC()
@@ -149,9 +156,13 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 		return
 	}
 
+	// check if app is public
+	appIsPublic := impl.appService.IsPublicApp(teamID, appID)
+
 	// update
 	act.ID = actionID
 	act.SetTeamID(teamID)
+	act.SetPublicStatus(appIsPublic)
 	act.UpdatedBy = userID
 	act.App = appID
 	act.Version = 0
