@@ -17,6 +17,7 @@ package app
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -207,28 +208,36 @@ type Action struct {
 	Template    map[string]interface{} `json:"content"`
 	Transformer map[string]interface{} `json:"transformer"`
 	TriggerMode string                 `json:"triggerMode"`
+	Config      string                 `json:"config"`
 	CreatedAt   time.Time              `json:"createdAt,omitempty"`
 	CreatedBy   int                    `json:"createdBy,omitempty"`
 	UpdatedAt   time.Time              `json:"updatedAt,omitempty"`
 	UpdatedBy   int                    `json:"updatedBy,omitempty"`
 }
 
+func (action *Action) ExportConfig() *repository.ActionConfig {
+	ac := &repository.ActionConfig{}
+	json.Unmarshal([]byte(action.Config), ac)
+	return ac
+}
+
 type ActionForExport struct {
-	ID          string                 `json:"actionId"`
-	UID         uuid.UUID              `json:"uid"`
-	TeamID      string                 `json:"teamID"`
-	App         string                 `json:"-"`
-	Version     int                    `json:"-"`
-	Resource    string                 `json:"resourceId,omitempty"`
-	DisplayName string                 `json:"displayName"`
-	Type        string                 `json:"actionType"`
-	Template    map[string]interface{} `json:"content"`
-	Transformer map[string]interface{} `json:"transformer"`
-	TriggerMode string                 `json:"triggerMode"`
-	CreatedAt   time.Time              `json:"createdAt,omitempty"`
-	CreatedBy   string                 `json:"createdBy,omitempty"`
-	UpdatedAt   time.Time              `json:"updatedAt,omitempty"`
-	UpdatedBy   string                 `json:"updatedBy,omitempty"`
+	ID          string                   `json:"actionId"`
+	UID         uuid.UUID                `json:"uid"`
+	TeamID      string                   `json:"teamID"`
+	App         string                   `json:"-"`
+	Version     int                      `json:"-"`
+	Resource    string                   `json:"resourceId,omitempty"`
+	DisplayName string                   `json:"displayName"`
+	Type        string                   `json:"actionType"`
+	Template    map[string]interface{}   `json:"content"`
+	Transformer map[string]interface{}   `json:"transformer"`
+	TriggerMode string                   `json:"triggerMode"`
+	Config      *repository.ActionConfig `json:"config"`
+	CreatedAt   time.Time                `json:"createdAt,omitempty"`
+	CreatedBy   string                   `json:"createdBy,omitempty"`
+	UpdatedAt   time.Time                `json:"updatedAt,omitempty"`
+	UpdatedBy   string                   `json:"updatedBy,omitempty"`
 }
 
 func NewActionForExport(action *Action) *ActionForExport {
@@ -244,6 +253,7 @@ func NewActionForExport(action *Action) *ActionForExport {
 		Template:    action.Template,
 		Transformer: action.Transformer,
 		TriggerMode: action.TriggerMode,
+		Config:      action.ExportConfig(),
 		CreatedAt:   action.CreatedAt,
 		CreatedBy:   idconvertor.ConvertIntToString(action.CreatedBy),
 		UpdatedAt:   action.UpdatedAt,
@@ -779,6 +789,7 @@ func (impl *AppServiceImpl) fetchEditor(teamID int, appID int, version int) (Edi
 
 func (impl *AppServiceImpl) formatActions(teamID, appID, version int) ([]Action, error) {
 	res, err := impl.actionRepository.RetrieveActionsByAppVersion(teamID, appID, version)
+	fmt.Printf("res dump: %v\n", res)
 	if err != nil {
 		return nil, err
 	}
@@ -795,6 +806,7 @@ func (impl *AppServiceImpl) formatActions(teamID, appID, version int) ([]Action,
 			Transformer: value.Transformer,
 			TriggerMode: value.TriggerMode,
 			Template:    value.Template,
+			Config:      value.Config,
 			CreatedBy:   value.CreatedBy,
 			CreatedAt:   value.CreatedAt,
 			UpdatedBy:   value.UpdatedBy,

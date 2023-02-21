@@ -44,6 +44,22 @@ func (ac *ActionConfig) SetPrivate() {
 	ac.Public = false
 }
 
+func NewActionConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*ActionConfig, error) {
+	var assertPass bool
+	actionConfig := &ActionConfig{}
+	for key, value := range rawReq {
+		switch key {
+		case ACTION_CONFIG_FIELD_PUBLIC:
+			actionConfig.Public, assertPass = value.(bool)
+			if !assertPass {
+				return nil, errors.New("update action config failed due to assert failed.")
+			}
+		default:
+		}
+	}
+	return actionConfig, nil
+}
+
 func NewActionConfigByConfigActionRawRequest(rawReq map[string]interface{}) (*ActionConfig, error) {
 	var assertPass bool
 	actionConfig := &ActionConfig{}

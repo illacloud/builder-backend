@@ -59,7 +59,7 @@ type ActionService interface {
 	CreateAction(action ActionDto) (*ActionDtoForExport, error)
 	DeleteAction(teamID int, id int) error
 	UpdateAction(action ActionDto) (*ActionDtoForExport, error)
-	UpdatePublic(teamID int, appID int, userID int, public bool) error
+	UpdatePublic(teamID int, appID int, userID int, actionConfig *repository.ActionConfig) error
 	GetAction(teamID int, id int) (*ActionDtoForExport, error)
 	FindActionsByAppVersion(teamID int, app, version int) ([]*ActionDtoForExport, error)
 	RunAction(teamID int, action ActionDto) (interface{}, error)
@@ -304,8 +304,8 @@ func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (*ActionDtoForExpo
 	return NewActionDtoForExport(&action), nil
 }
 
-func (impl *ActionServiceImpl) UpdatePublic(teamID int, appID int, userID int, public bool) error {
-	return impl.actionRepository.UpdatePublicByTeamIDAndAppIDAndUserID(teamID, appID, userID, public)
+func (impl *ActionServiceImpl) UpdatePublic(teamID int, appID int, userID int, actionConfig *repository.ActionConfig) error {
+	return impl.actionRepository.UpdatePublicByTeamIDAndAppIDAndUserID(teamID, appID, userID, actionConfig)
 }
 
 func (impl *ActionServiceImpl) GetAction(teamID int, actionID int) (*ActionDtoForExport, error) {

@@ -278,7 +278,12 @@ func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 	}
 
 	// Call `action service` update action public config (the action follows the app config)
-	errInUpdatePublic := impl.actionService.UpdatePublic(teamID, appID, userID, appConfig.IsPublic())
+	actionConfig, errInNewActionConfig := repository.NewActionConfigByConfigAppRawRequest(rawRequest)
+	if errInNewActionConfig != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_BUILD_APP_CONFIG_FAILED, "new action config failed: "+errInNewActionConfig.Error())
+		return
+	}
+	errInUpdatePublic := impl.actionService.UpdatePublic(teamID, appID, userID, actionConfig)
 	if errInUpdatePublic != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "config action error: "+errInUpdatePublic.Error())
 		return

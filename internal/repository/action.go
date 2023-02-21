@@ -48,7 +48,7 @@ type ActionRepository interface {
 	Create(action *Action) (int, error)
 	Delete(teamID int, actionID int) error
 	Update(action *Action) error
-	UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, public bool) error
+	UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, actionConfig *ActionConfig) error
 	RetrieveActionByIDAndTeamID(actionID int, teamID int) (*Action, error)
 	RetrieveAll(teamID int, appID int) ([]*Action, error)
 	RetrieveByID(teamID int, actionID int) (*Action, error)
@@ -80,7 +80,7 @@ func (action *Action) UpdateAppConfig(actionConfig *ActionConfig, userID int) {
 }
 
 func (action *Action) ExportConfig() *ActionConfig {
-	ac := &ActionConfig{}
+	ac := NewActionConfig()
 	json.Unmarshal([]byte(action.Config), ac)
 	return ac
 }
@@ -126,6 +126,7 @@ func (impl *ActionRepositoryImpl) Update(action *Action) error {
 		TriggerMode: action.TriggerMode,
 		Transformer: action.Transformer,
 		Template:    action.Template,
+		Config:      action.Config,
 		UpdatedBy:   action.UpdatedBy,
 		UpdatedAt:   action.UpdatedAt,
 	}).Error; err != nil {
@@ -134,26 +135,20 @@ func (impl *ActionRepositoryImpl) Update(action *Action) error {
 	return nil
 }
 
-func (impl *ActionRepositoryImpl) UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, public bool) error {
+func (impl *ActionRepositoryImpl) UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, actionConfig *ActionConfig) error {
 	actions, errInGetAll := impl.RetrieveAll(teamID, appID)
 	if errInGetAll != nil {
 		return errInGetAll
 	}
 	// set status
 	for _, action := range actions {
-		// need update
-		if action.IsPublic() != public {
-			if public {
-				action.SetPublic(userID)
-			} else {
-				action.SetPrivate(userID)
-			}
-			// update
-			errorInUpdate := impl.Update(action)
-			if errorInUpdate != nil {
-				return errorInUpdate
-			}
+		action.Config = actionConfig.ExportToJSONString()
+		// update
+		errorInUpdate := impl.Update(action)
+		if errorInUpdate != nil {
+			return errorInUpdate
 		}
+
 	}
 	return nil
 }
