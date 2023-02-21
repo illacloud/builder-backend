@@ -54,6 +54,7 @@ var type_map = map[string]int{
 }
 
 type ActionService interface {
+	IsPublicAction(teamID int, actionID int) bool
 	CreateAction(action ActionDto) (*ActionDtoForExport, error)
 	DeleteAction(teamID int, id int) error
 	UpdateAction(action ActionDto) (*ActionDtoForExport, error)
@@ -64,39 +65,41 @@ type ActionService interface {
 }
 
 type ActionDto struct {
-	ID          int                    `json:"actionId"`
-	UID         uuid.UUID              `json:"uid"`
-	TeamID      int                    `json:"teamID"`
-	App         int                    `json:"-"`
-	Version     int                    `json:"-"`
-	Resource    int                    `json:"resourceId,omitempty"`
-	DisplayName string                 `json:"displayName" validate:"required"`
-	Type        string                 `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle"`
-	Template    map[string]interface{} `json:"content" validate:"required"`
-	Transformer map[string]interface{} `json:"transformer" validate:"required"`
-	TriggerMode string                 `json:"triggerMode" validate:"oneof=manually automate"`
-	CreatedAt   time.Time              `json:"createdAt,omitempty"`
-	CreatedBy   int                    `json:"createdBy,omitempty"`
-	UpdatedAt   time.Time              `json:"updatedAt,omitempty"`
-	UpdatedBy   int                    `json:"updatedBy,omitempty"`
+	ID          int                      `json:"actionId"`
+	UID         uuid.UUID                `json:"uid"`
+	TeamID      int                      `json:"teamID"`
+	App         int                      `json:"-"`
+	Version     int                      `json:"-"`
+	Resource    int                      `json:"resourceId,omitempty"`
+	DisplayName string                   `json:"displayName" validate:"required"`
+	Type        string                   `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle"`
+	Template    map[string]interface{}   `json:"content" validate:"required"`
+	Transformer map[string]interface{}   `json:"transformer" validate:"required"`
+	TriggerMode string                   `json:"triggerMode" validate:"oneof=manually automate"`
+	Config      *repository.ActionConfig `json:"config"`
+	CreatedAt   time.Time                `json:"createdAt,omitempty"`
+	CreatedBy   int                      `json:"createdBy,omitempty"`
+	UpdatedAt   time.Time                `json:"updatedAt,omitempty"`
+	UpdatedBy   int                      `json:"updatedBy,omitempty"`
 }
 
 type ActionDtoForExport struct {
-	ID          string                 `json:"actionId"`
-	UID         uuid.UUID              `json:"uid"`
-	TeamID      string                 `json:"teamID"`
-	App         string                 `json:"-"`
-	Version     int                    `json:"-"`
-	Resource    string                 `json:"resourceId,omitempty"`
-	DisplayName string                 `json:"displayName" validate:"required"`
-	Type        string                 `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb"`
-	Template    map[string]interface{} `json:"content" validate:"required"`
-	Transformer map[string]interface{} `json:"transformer" validate:"required"`
-	TriggerMode string                 `json:"triggerMode" validate:"oneof=manually automate"`
-	CreatedAt   time.Time              `json:"createdAt,omitempty"`
-	CreatedBy   string                 `json:"createdBy,omitempty"`
-	UpdatedAt   time.Time              `json:"updatedAt,omitempty"`
-	UpdatedBy   string                 `json:"updatedBy,omitempty"`
+	ID          string                   `json:"actionId"`
+	UID         uuid.UUID                `json:"uid"`
+	TeamID      string                   `json:"teamID"`
+	App         string                   `json:"-"`
+	Version     int                      `json:"-"`
+	Resource    string                   `json:"resourceId,omitempty"`
+	DisplayName string                   `json:"displayName" validate:"required"`
+	Type        string                   `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb"`
+	Template    map[string]interface{}   `json:"content" validate:"required"`
+	Transformer map[string]interface{}   `json:"transformer" validate:"required"`
+	TriggerMode string                   `json:"triggerMode" validate:"oneof=manually automate"`
+	Config      *repository.ActionConfig `json:"config"`
+	CreatedAt   time.Time                `json:"createdAt,omitempty"`
+	CreatedBy   string                   `json:"createdBy,omitempty"`
+	UpdatedAt   time.Time                `json:"updatedAt,omitempty"`
+	UpdatedBy   string                   `json:"updatedBy,omitempty"`
 }
 
 func NewActionDtoForExport(a *ActionDto) *ActionDtoForExport {
@@ -121,14 +124,14 @@ func NewActionDtoForExport(a *ActionDto) *ActionDtoForExport {
 
 func (resp *ActionDtoForExport) ExportActionDto() ActionDto {
 	actionDto := ActionDto{
-		UID: resp.UID,
+		UID:         resp.UID,
 		DisplayName: resp.DisplayName,
-		Type: resp.Type,
-		Template: resp.Template,
+		Type:        resp.Type,
+		Template:    resp.Template,
 		Transformer: resp.Transformer,
 		TriggerMode: resp.TriggerMode,
-		CreatedAt: resp.CreatedAt,
-		UpdatedAt: resp.UpdatedAt,
+		CreatedAt:   resp.CreatedAt,
+		UpdatedAt:   resp.UpdatedAt,
 	}
 	// fill converted fields
 	if resp.ID != "" {
@@ -176,6 +179,14 @@ func NewActionServiceImpl(logger *zap.SugaredLogger, appRepository repository.Ap
 		actionRepository:   actionRepository,
 		resourceRepository: resourceRepository,
 	}
+}
+
+func (impl *ActionServiceImpl) IsPublicAction(teamID int, actionID int) bool {
+	action, err := impl.actionRepository.RetrieveActionByIDAndTeamID(actionID, teamID)
+	if err != nil {
+		return false
+	}
+	return action.IsPublic()
 }
 
 func (impl *ActionServiceImpl) CreateAction(action ActionDto) (*ActionDtoForExport, error) {

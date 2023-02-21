@@ -21,7 +21,7 @@ import (
 )
 
 type PublicAppRouter interface {
-	InitPublicAppRouter(actionRouter *gin.RouterGroup)
+	InitPublicAppRouter(appRouter *gin.RouterGroup)
 }
 
 type PublicAppRouterImpl struct {

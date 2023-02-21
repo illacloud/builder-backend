@@ -15,6 +15,7 @@
 package repository
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -36,6 +37,7 @@ type Action struct {
 	TriggerMode string    `gorm:"column:trigger_mode;type:varchar;size:16;not null"`
 	Transformer db.JSONB  `gorm:"column:transformer;type:jsonb"`
 	Template    db.JSONB  `gorm:"column:template;type:jsonb"`
+	Config      string    `gorm:"column:config;type:jsonb"`
 	CreatedAt   time.Time `gorm:"column:created_at;type:timestamp;not null"`
 	CreatedBy   int       `gorm:"column:created_by;type:bigint;not null"`
 	UpdatedAt   time.Time `gorm:"column:updated_at;type:timestamp;not null"`
@@ -44,9 +46,10 @@ type Action struct {
 
 type ActionRepository interface {
 	Create(action *Action) (int, error)
-	Delete(teamID int, appID int) error
+	Delete(teamID int, actionID int) error
 	Update(action *Action) error
-	RetrieveByID(teamID int, appID int) (*Action, error)
+	RetrieveActionByIDAndTeamID(actionID int, teamID int) (*Action, error)
+	RetrieveByID(teamID int, actionID int) (*Action, error)
 	RetrieveActionsByAppVersion(teamID int, appID int, version int) ([]*Action, error)
 	DeleteActionsByApp(teamID int, appID int) error
 	CountActionByTeamID(teamID int) (int, error)
@@ -64,6 +67,41 @@ func NewActionRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *ActionRepo
 	}
 }
 
+func (action *Action) InitUpdatedAt() {
+	action.UpdatedAt = time.Now().UTC()
+}
+
+func (action *Action) UpdateAppConfig(actionConfig *ActionConfig, userID int) {
+	action.Config = actionConfig.ExportToJSONString()
+	action.UpdatedBy = userID
+	action.InitUpdatedAt()
+}
+
+func (action *Action) ExportConfig() *ActionConfig {
+	ac := &ActionConfig{}
+	json.Unmarshal([]byte(action.Config), ac)
+	return ac
+}
+
+func (action *Action) IsPublic() bool {
+	ac := action.ExportConfig()
+	return ac.Public
+}
+
+func (action *Action) SetPublic(userID int) {
+	ac := action.ExportConfig()
+	ac.Public = true
+	action.UpdatedBy = userID
+	action.InitUpdatedAt()
+}
+
+func (action *Action) SetPrivate(userID int) {
+	ac := action.ExportConfig()
+	ac.Public = false
+	action.UpdatedBy = userID
+	action.InitUpdatedAt()
+}
+
 func (impl *ActionRepositoryImpl) Create(action *Action) (int, error) {
 	if err := impl.db.Create(action).Error; err != nil {
 		return 0, err
@@ -71,8 +109,8 @@ func (impl *ActionRepositoryImpl) Create(action *Action) (int, error) {
 	return action.ID, nil
 }
 
-func (impl *ActionRepositoryImpl) Delete(teamID int, appID int) error {
-	if err := impl.db.Where("id = ? AND team_id = ?", appID, teamID).Delete(&Action{}).Error; err != nil {
+func (impl *ActionRepositoryImpl) Delete(teamID int, actionID int) error {
+	if err := impl.db.Where("id = ? AND team_id = ?", actionID, teamID).Delete(&Action{}).Error; err != nil {
 		return err
 	}
 	return nil
@@ -94,9 +132,17 @@ func (impl *ActionRepositoryImpl) Update(action *Action) error {
 	return nil
 }
 
-func (impl *ActionRepositoryImpl) RetrieveByID(teamID int, appID int) (*Action, error) {
+func (impl *ActionRepositoryImpl) RetrieveActionByIDAndTeamID(actionID int, teamID int) (*Action, error) {
 	var action *Action
-	if err := impl.db.Where("id = ? AND team_id = ?", appID, teamID).First(&action).Error; err != nil {
+	if err := impl.db.Where("id = ? AND team_id = ?", actionID, teamID).Find(&action).Error; err != nil {
+		return nil, err
+	}
+	return action, nil
+}
+
+func (impl *ActionRepositoryImpl) RetrieveByID(teamID int, actionID int) (*Action, error) {
+	var action *Action
+	if err := impl.db.Where("id = ? AND team_id = ?", actionID, teamID).First(&action).Error; err != nil {
 		return &Action{}, err
 	}
 	return action, nil

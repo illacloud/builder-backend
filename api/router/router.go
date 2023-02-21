@@ -29,12 +29,13 @@ type RESTRouter struct {
 	PublicAppRouter      PublicAppRouter
 	RoomRouter           RoomRouter
 	ActionRouter         ActionRouter
+	PublicActionRouter   PublicActionRouter
 	InternalActionRouter InternalActionRouter
 	ResourceRouter       ResourceRouter
 }
 
 func NewRESTRouter(logger *zap.SugaredLogger, builderRouter BuilderRouter, appRouter AppRouter, publicAppRouter PublicAppRouter, roomRouter RoomRouter,
-	actionRouter ActionRouter, internalActionRouter InternalActionRouter, resourceRouter ResourceRouter) *RESTRouter {
+	actionRouter ActionRouter, publicActionRouter PublicActionRouter, internalActionRouter InternalActionRouter, resourceRouter ResourceRouter) *RESTRouter {
 	return &RESTRouter{
 		logger:               logger,
 		BuilderRouter:        builderRouter,
@@ -42,6 +43,7 @@ func NewRESTRouter(logger *zap.SugaredLogger, builderRouter BuilderRouter, appRo
 		PublicAppRouter:      publicAppRouter,
 		RoomRouter:           roomRouter,
 		ActionRouter:         actionRouter,
+		PublicActionRouter:   publicActionRouter,
 		InternalActionRouter: internalActionRouter,
 		ResourceRouter:       resourceRouter,
 	}
@@ -55,6 +57,7 @@ func (r RESTRouter) InitRouter(router *gin.RouterGroup) {
 	publicAppRouter := v1.Group("/teams/byIdentifier/:teamIdentifier/publicApps")
 	resourceRouter := v1.Group("/teams/:teamID/resources")
 	actionRouter := v1.Group("/teams/:teamID/apps/:appID/actions")
+	publicActionRouter := v1.Group("/teams/byIdentifier/:teamIdentifier/publicActions")
 	internalActionRouter := v1.Group("/teams/:teamID/apps/:appID/internalActions")
 	roomRouter := v1.Group("/teams/:teamID/room")
 
@@ -70,6 +73,7 @@ func (r RESTRouter) InitRouter(router *gin.RouterGroup) {
 	r.PublicAppRouter.InitPublicAppRouter(publicAppRouter)
 	r.RoomRouter.InitRoomRouter(roomRouter)
 	r.ActionRouter.InitActionRouter(actionRouter)
+	r.PublicActionRouter.InitPublicActionRouter(publicActionRouter)
 	r.InternalActionRouter.InitInternalActionRouter(internalActionRouter)
 	r.ResourceRouter.InitResourceRouter(resourceRouter)
 }
