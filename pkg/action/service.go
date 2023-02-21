@@ -16,7 +16,6 @@ package action
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -357,7 +356,6 @@ func (impl *ActionServiceImpl) FindActionsByAppVersion(teamID int, appID int, ve
 			UpdatedBy:   value.UpdatedBy,
 			UpdatedAt:   value.UpdatedAt,
 		}
-		fmt.Printf("actionDto: %v\n", actionDto)
 		actionDtoForExportSlice = append(actionDtoForExportSlice, NewActionDtoForExport(&actionDto))
 	}
 	return actionDtoForExportSlice, nil
