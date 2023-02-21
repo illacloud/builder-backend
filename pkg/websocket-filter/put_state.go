@@ -28,9 +28,11 @@ func SignalPutState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
+	teamID := currentClient.TeamID
 	appDto := app.NewAppDto()
 	appDto.ConstructWithID(currentClient.APPID)
 	appDto.ConstructWithUpdateBy(currentClient.MappedUserID)
+	appDto.SetTeamID(currentClient.TeamID)
 	message.RewriteBroadcast()
 
 	// target switch
@@ -44,6 +46,8 @@ func SignalPutState(hub *ws.Hub, message *ws.Message) error {
 		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
 		// delete all
 		kvStateDto := state.NewKVStateDto()
+		kvStateDto.InitUID()
+		kvStateDto.SetTeamID(teamID)
 		kvStateDto.ConstructByApp(appDto) // set AppRefID
 		kvStateDto.ConstructWithType(stateType)
 		if err := hub.KVStateServiceImpl.DeleteAllEditKVStateByStateType(kvStateDto); err != nil {
@@ -59,6 +63,8 @@ func SignalPutState(hub *ws.Hub, message *ws.Message) error {
 			for key, depState := range subv {
 				// fill KVStateDto
 				kvStateDto := state.NewKVStateDto()
+				kvStateDto.InitUID()
+				kvStateDto.SetTeamID(teamID)
 				kvStateDto.ConstructWithKey(key)
 				kvStateDto.ConstructForDependenciesState(depState)
 				kvStateDto.ConstructByApp(appDto) // set AppRefID

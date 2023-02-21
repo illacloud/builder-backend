@@ -25,6 +25,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/mitchellh/mapstructure"
+	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -136,47 +137,30 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 	fieldDescriptions := rows.FieldDescriptions()
 	var columns []string
 	for _, col := range fieldDescriptions {
-		columns = append(columns, string(col.Name))
+		columns = append(columns, col.Name)
 	}
 	count := len(columns)
 	tableData := make([]map[string]interface{}, 0)
+	values := make([]interface{}, count)
 	valuePtrs := make([]interface{}, count)
 
 	for rows.Next() {
-		values, _ := rows.Values()
-		for i, v := range values {
-			valuePtrs[i] = reflect.New(reflect.TypeOf(v)).Interface() // allocate pointer to type
+		for i := 0; i < count; i++ {
+			valuePtrs[i] = &values[i]
 		}
 		rows.Scan(valuePtrs...)
 		entry := make(map[string]interface{})
 		for i, col := range columns {
-			var v interface{}
-			val := reflect.ValueOf(valuePtrs[i]).Elem().Interface() // dereference pointer
-			b, ok := val.([]byte)
-			if ok {
-				v = string(b)
-			} else {
-				v = val
+			// uuid
+			if values[i] != nil && reflect.TypeOf(values[i]).String() == "[16]uint8" {
+				byteArray, _ := values[i].([16]uint8)
+				tmp, _ := uuid.FromBytes(byteArray[:])
+				entry[col] = tmp.String()
+				continue
 			}
-			entry[col] = v
-		}
-		tableData = append(tableData, entry)
-		break
-	}
 
-	for rows.Next() {
-		rows.Scan(valuePtrs...)
-		entry := make(map[string]interface{})
-		for i, col := range columns {
-			var v interface{}
-			val := reflect.ValueOf(valuePtrs[i]).Elem().Interface() // dereference pointer
-			b, ok := val.([]byte)
-			if ok {
-				v = string(b)
-			} else {
-				v = val
-			}
-			entry[col] = v
+			val := values[i]
+			entry[col] = val
 		}
 		tableData = append(tableData, entry)
 	}

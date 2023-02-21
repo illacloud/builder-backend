@@ -23,13 +23,12 @@ func SignalLeave(hub *ws.Hub, message *ws.Message) error {
 
 	// broadcast in room users
 	inRoomUsers := hub.GetInRoomUsersByRoomID(currentClient.APPID)
-	inRoomUsers.LeaveRoom(currentClient.MappedUserID)
+	inRoomUsers.LeaveRoom(currentClient.ExportMappedUserIDToString())
 	message.SetBroadcastType(ws.BROADCAST_TYPE_ENTER)
 	message.RewriteBroadcast()
 	message.SetBroadcastPayload(inRoomUsers.FetchAllInRoomUsers())
 	hub.BroadcastToOtherClients(message, currentClient)
 
-	
 	// broadcast attached components users
 	message.SetBroadcastType(ws.BROADCAST_TYPE_ATTACH_COMPONENT)
 	message.RewriteBroadcast()

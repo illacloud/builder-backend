@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/illacloud/builder-backend/internal/idconvertor"
 	"go.uber.org/zap"
 )
 
@@ -25,12 +26,16 @@ const DEFAULT_SERVER_ADDRESS = "localhost"
 const DEFAULT_WEBSOCKET_PORT = "8000"
 const PROTOCOL_WEBSOCKET = "ws"
 const PROTOCOL_WEBSOCKET_OVER_TLS = "wss"
-const DASHBOARD_WS_URL = "%s://%s:%s/room/%s/dashboard"
-const ROOM_WS_URL = "%s://%s:%s/room/%s/app/%d"
+const ILLA_DEPLOY_MODE_SELF_HOST = "self-host"
+const ILLA_DEPLOY_MODE_CLOUD = "cloud"
+const DASHBOARD_WS_URL = "%s://%s:%s/teams/%s/room/websocketConnection/dashboard"
+const ROOM_WS_URL = "%s://%s:%s/teams/%s/room/websocketConnection/apps/%s"
+const SELF_HOST_DASHBOARD_WS_URL = "/builder-ws/teams/%s/room/websocketConnection/dashboard"
+const SELF_HOST_ROOM_WS_URL = "/builder-ws/teams/%s/room/websocketConnection/apps/%s"
 
 type RoomService interface {
-	GetDashboardConn(instanceID string) (WSURLResponse, error)
-	GetAppRoomConn(instanceID string, roomID int) (WSURLResponse, error)
+	GetDashboardConn(teamID int) (WSURLResponse, error)
+	GetAppRoomConn(teamID int, roomID int) (WSURLResponse, error)
 }
 
 type RoomServiceImpl struct {
@@ -71,14 +76,34 @@ func getWebSocketPort() string {
 	return webSockerPort
 }
 
-func (impl *RoomServiceImpl) GetDashboardConn(instanceID string) (WSURLResponse, error) {
+// self-host mode by default
+func isSelfHostDeployMode() bool {
+	mode := os.Getenv("ILLA_DEPLOY_MODE")
+	if len(mode) == 0 || mode == "" || mode == ILLA_DEPLOY_MODE_SELF_HOST {
+		return true
+	}
+	if mode == ILLA_DEPLOY_MODE_CLOUD {
+		return false
+	}
+	return true
+}
+
+func (impl *RoomServiceImpl) GetDashboardConn(teamID int) (WSURLResponse, error) {
 	var r WSURLResponse
-	r.WSURL = fmt.Sprintf(DASHBOARD_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), instanceID)
+	if isSelfHostDeployMode() {
+		r.WSURL = fmt.Sprintf(SELF_HOST_DASHBOARD_WS_URL, idconvertor.ConvertIntToString(teamID))
+	} else {
+		r.WSURL = fmt.Sprintf(DASHBOARD_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), idconvertor.ConvertIntToString(teamID))
+	}
 	return r, nil
 }
 
-func (impl *RoomServiceImpl) GetAppRoomConn(instanceID string, roomID int) (WSURLResponse, error) {
+func (impl *RoomServiceImpl) GetAppRoomConn(teamID int, roomID int) (WSURLResponse, error) {
 	var r WSURLResponse
-	r.WSURL = fmt.Sprintf(ROOM_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), instanceID, roomID)
+	if isSelfHostDeployMode() {
+		r.WSURL = fmt.Sprintf(SELF_HOST_ROOM_WS_URL, idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
+	} else {
+		r.WSURL = fmt.Sprintf(ROOM_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
+	}
 	return r, nil
 }

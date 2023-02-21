@@ -33,7 +33,7 @@ func SignalCooperateDisattach(hub *ws.Hub, message *ws.Message) error {
 		}
 		displayNames = append(displayNames, displayName)
 	}
-	inRoomUsers.DisattachComponent(currentClient.MappedUserID, displayNames)
+	inRoomUsers.DisattachComponent(currentClient.ExportMappedUserIDToString(), displayNames)
 
 	// broadcast attachedn components users
 	message.SetBroadcastType(ws.BROADCAST_TYPE_ATTACH_COMPONENT)

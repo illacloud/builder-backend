@@ -18,14 +18,16 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/illacloud/builder-backend/internal/idconvertor"
 	"github.com/illacloud/builder-backend/internal/repository"
 
 	"go.uber.org/zap"
 )
 
-var type_array = [19]string{"restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb", "tidb",
+var type_array = [21]string{"restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb", "tidb",
 	"elasticsearch", "s3", "smtp", "supabasedb", "firebase", "clickhouse", "mssql", "huggingface", "dynamodb", "snowflake",
-	"couchdb"}
+	"couchdb", "hfendpoint", "oracle"}
 var type_map = map[string]int{
 	"restapi":       1,
 	"graphql":       2,
@@ -46,23 +48,27 @@ var type_map = map[string]int{
 	"dynamodb":      17,
 	"snowflake":     18,
 	"couchdb":       19,
+	"hfendpoint":    20,
+	"oracle":        21,
 }
 
 type ResourceService interface {
-	CreateResource(resource ResourceDto) (ResourceDto, error)
-	DeleteResource(id int) error
-	UpdateResource(resource ResourceDto) (ResourceDto, error)
-	GetResource(id int) (ResourceDto, error)
-	FindAllResources() ([]ResourceDto, error)
+	CreateResource(resource ResourceDto) (*ResourceDtoForExport, error)
+	DeleteResource(teamID int, id int) error
+	UpdateResource(resource ResourceDto) (*ResourceDtoForExport, error)
+	GetResource(teamID int, id int) (*ResourceDtoForExport, error)
+	FindAllResources(teamID int) ([]*ResourceDtoForExport, error)
 	TestConnection(resource ResourceDto) (bool, error)
 	ValidateResourceOptions(resourceType string, options map[string]interface{}) error
-	GetMetaInfo(id int) (map[string]interface{}, error)
+	GetMetaInfo(teamID int, id int) (map[string]interface{}, error)
 }
 
 type ResourceDto struct {
 	ID        int                    `json:"resourceId"`
+	UID       uuid.UUID              `json:"uid"`
+	TeamID    int                    `json:"teamID"`
 	Name      string                 `json:"resourceName" validate:"required"`
-	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb"`
+	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle"`
 	Options   map[string]interface{} `json:"content" validate:"required"`
 	CreatedAt time.Time              `json:"createdAt,omitempty"`
 	CreatedBy int                    `json:"createdBy,omitempty"`
@@ -70,8 +76,72 @@ type ResourceDto struct {
 	UpdatedBy int                    `json:"updatedBy,omitempty"`
 }
 
-func (resourced *ResourceDto) ConstructByMap(data interface{}) {
+type ResourceDtoForExport struct {
+	ID        string                 `json:"resourceId"`
+	UID       uuid.UUID              `json:"uid"`
+	TeamID    string                 `json:"teamID"`
+	Name      string                 `json:"resourceName" validate:"required"`
+	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb"`
+	Options   map[string]interface{} `json:"content" validate:"required"`
+	CreatedAt time.Time              `json:"createdAt,omitempty"`
+	CreatedBy string                 `json:"createdBy,omitempty"`
+	UpdatedAt time.Time              `json:"updatedAt,omitempty"`
+	UpdatedBy string                 `json:"updatedBy,omitempty"`
+}
 
+func NewResourceDtoForExport(r *ResourceDto) *ResourceDtoForExport {
+	return &ResourceDtoForExport{
+		ID:        idconvertor.ConvertIntToString(r.ID),
+		UID:       r.UID,
+		TeamID:    idconvertor.ConvertIntToString(r.TeamID),
+		Name:      r.Name,
+		Type:      r.Type,
+		Options:   r.Options,
+		CreatedAt: r.CreatedAt,
+		CreatedBy: idconvertor.ConvertIntToString(r.CreatedBy),
+		UpdatedAt: r.UpdatedAt,
+		UpdatedBy: idconvertor.ConvertIntToString(r.UpdatedBy),
+	}
+}
+
+func (resp *ResourceDtoForExport) ExportForFeedback() interface{} {
+	return resp
+}
+
+func (resp *ResourceDtoForExport) ExportResourceDto() ResourceDto {
+	resourceDto := ResourceDto{
+		UID:       resp.UID,
+		Name:      resp.Name,
+		Type:      resp.Type,
+		Options:   resp.Options,
+		CreatedAt: resp.CreatedAt,
+		UpdatedAt: resp.UpdatedAt,
+	}
+	if resp.TeamID != ""{
+		resourceDto.TeamID =   idconvertor.ConvertStringToInt(resp.TeamID)
+	}
+	if resp.ID != ""{
+		resourceDto.ID =        idconvertor.ConvertStringToInt(resp.ID)
+	}
+	if resp.CreatedBy != ""{
+		resourceDto.CreatedBy = idconvertor.ConvertStringToInt(resp.CreatedBy)
+	}
+	if resp.UpdatedBy != ""{
+		resourceDto.UpdatedBy = idconvertor.ConvertStringToInt(resp.UpdatedBy)
+	}
+	return resourceDto
+		
+}
+
+func (r *ResourceDto) InitUID() {
+	r.UID = uuid.New()
+}
+
+func (r *ResourceDto) SetTeamID(teamID int) {
+	r.TeamID = teamID
+}
+
+func (resourced *ResourceDto) ConstructByMap(data interface{}) {
 	udata, ok := data.(map[string]interface{})
 	if !ok {
 		return
@@ -103,8 +173,10 @@ func NewResourceServiceImpl(logger *zap.SugaredLogger, resourceRepository reposi
 	}
 }
 
-func (impl *ResourceServiceImpl) CreateResource(resource ResourceDto) (ResourceDto, error) {
+func (impl *ResourceServiceImpl) CreateResource(resource ResourceDto) (*ResourceDtoForExport, error) {
 	ID, err := impl.resourceRepository.Create(&repository.Resource{
+		UID:       resource.UID,
+		TeamID:    resource.TeamID,
 		Name:      resource.Name,
 		Type:      type_map[resource.Type],
 		Options:   resource.Options,
@@ -114,20 +186,20 @@ func (impl *ResourceServiceImpl) CreateResource(resource ResourceDto) (ResourceD
 		UpdatedBy: resource.UpdatedBy,
 	})
 	if err != nil {
-		return ResourceDto{}, err
+		return nil, err
 	}
 	resource.ID = ID
-	return resource, nil
+	return NewResourceDtoForExport(&resource), nil
 }
 
-func (impl *ResourceServiceImpl) DeleteResource(id int) error {
-	if err := impl.resourceRepository.Delete(id); err != nil {
+func (impl *ResourceServiceImpl) DeleteResource(teamID, id int) error {
+	if err := impl.resourceRepository.Delete(teamID, id); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (impl *ResourceServiceImpl) UpdateResource(resource ResourceDto) (ResourceDto, error) {
+func (impl *ResourceServiceImpl) UpdateResource(resource ResourceDto) (*ResourceDtoForExport, error) {
 	if err := impl.resourceRepository.Update(&repository.Resource{
 		ID:        resource.ID,
 		Name:      resource.Name,
@@ -136,18 +208,20 @@ func (impl *ResourceServiceImpl) UpdateResource(resource ResourceDto) (ResourceD
 		UpdatedAt: resource.UpdatedAt,
 		UpdatedBy: resource.UpdatedBy,
 	}); err != nil {
-		return ResourceDto{}, err
+		return nil, err
 	}
-	return resource, nil
+	return NewResourceDtoForExport(&resource), nil
 }
 
-func (impl *ResourceServiceImpl) GetResource(id int) (ResourceDto, error) {
-	res, err := impl.resourceRepository.RetrieveByID(id)
+func (impl *ResourceServiceImpl) GetResource(teamID, id int) (*ResourceDtoForExport, error) {
+	res, err := impl.resourceRepository.RetrieveByID(teamID, id)
 	if err != nil {
-		return ResourceDto{}, err
+		return nil, err
 	}
 	resDto := ResourceDto{
 		ID:        res.ID,
+		UID:       res.UID,
+		TeamID:    res.TeamID,
 		Name:      res.Name,
 		Type:      type_array[res.Type-1],
 		Options:   res.Options,
@@ -156,18 +230,20 @@ func (impl *ResourceServiceImpl) GetResource(id int) (ResourceDto, error) {
 		UpdatedAt: res.UpdatedAt,
 		UpdatedBy: res.UpdatedBy,
 	}
-	return resDto, nil
+	return NewResourceDtoForExport(&resDto), nil
 }
 
-func (impl *ResourceServiceImpl) FindAllResources() ([]ResourceDto, error) {
-	res, err := impl.resourceRepository.RetrieveAllByUpdatedTime()
+func (impl *ResourceServiceImpl) FindAllResources(teamID int) ([]*ResourceDtoForExport, error) {
+	res, err := impl.resourceRepository.RetrieveAllByUpdatedTime(teamID)
 	if err != nil {
 		return nil, err
 	}
-	resDtoSlice := make([]ResourceDto, 0, len(res))
+	resourceDtoForExportSlice := make([]*ResourceDtoForExport, 0, len(res))
 	for _, value := range res {
-		resDtoSlice = append(resDtoSlice, ResourceDto{
+		resourceDto := ResourceDto{
 			ID:        value.ID,
+			UID:       value.UID,
+			TeamID:    value.TeamID,
 			Name:      value.Name,
 			Type:      type_array[value.Type-1],
 			Options:   value.Options,
@@ -175,9 +251,10 @@ func (impl *ResourceServiceImpl) FindAllResources() ([]ResourceDto, error) {
 			CreatedBy: value.CreatedBy,
 			UpdatedAt: value.UpdatedAt,
 			UpdatedBy: value.UpdatedBy,
-		})
+		}
+		resourceDtoForExportSlice = append(resourceDtoForExportSlice, NewResourceDtoForExport(&resourceDto))
 	}
-	return resDtoSlice, nil
+	return resourceDtoForExportSlice, nil
 }
 
 func (impl *ResourceServiceImpl) TestConnection(resource ResourceDto) (bool, error) {
@@ -208,8 +285,8 @@ func (impl *ResourceServiceImpl) ValidateResourceOptions(resourceType string, op
 	return nil
 }
 
-func (impl *ResourceServiceImpl) GetMetaInfo(id int) (map[string]interface{}, error) {
-	rsc, err := impl.resourceRepository.RetrieveByID(id)
+func (impl *ResourceServiceImpl) GetMetaInfo(teamID int, id int) (map[string]interface{}, error) {
+	rsc, err := impl.resourceRepository.RetrieveByID(teamID, id)
 	if err != nil {
 		return map[string]interface{}{}, err
 	}

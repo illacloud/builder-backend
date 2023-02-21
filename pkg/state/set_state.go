@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"go.uber.org/zap"
@@ -36,6 +37,8 @@ type SetStateService interface {
 
 type SetStateDto struct {
 	ID        int       `json:"id"`
+	UID       uuid.UUID `json:"uid"`
+	TeamID    int       `json:"teamID"`
 	StateType int       `json:"state_type"`
 	AppRefID  int       `json:"app_ref_id"`
 	Version   int       `json:"version"`
@@ -50,6 +53,14 @@ func NewSetStateDto() *SetStateDto {
 	return &SetStateDto{}
 }
 
+func (s *SetStateDto) InitUID() {
+	s.UID = uuid.New()
+}
+
+func (s *SetStateDto) SetTeamID(teamID int) {
+	s.TeamID = teamID
+}
+
 type SetStateServiceImpl struct {
 	logger             *zap.SugaredLogger
 	setStateRepository repository.SetStateRepository
@@ -57,6 +68,8 @@ type SetStateServiceImpl struct {
 
 func (setsd *SetStateDto) ConstructBySetState(setState *repository.SetState) {
 	setsd.ID = setState.ID
+	setsd.UID = setState.UID
+	setsd.TeamID = setState.TeamID
 	setsd.StateType = setState.StateType
 	setsd.AppRefID = setState.AppRefID
 	setsd.Version = setState.Version
@@ -119,6 +132,8 @@ func (impl *SetStateServiceImpl) CreateSetState(setState *SetStateDto) (*SetStat
 	setState.UpdatedAt = time.Now().UTC()
 	if err := impl.setStateRepository.Create(&repository.SetState{
 		ID:        setState.ID,
+		UID:       setState.UID,
+		TeamID:    setState.TeamID,
 		StateType: setState.StateType,
 		AppRefID:  setState.AppRefID,
 		Version:   setState.Version,
@@ -133,8 +148,8 @@ func (impl *SetStateServiceImpl) CreateSetState(setState *SetStateDto) (*SetStat
 	return setState, nil
 }
 
-func (impl *SetStateServiceImpl) DeleteSetState(setStateID int) error {
-	if err := impl.setStateRepository.Delete(setStateID); err != nil {
+func (impl *SetStateServiceImpl) DeleteSetState(teamID, setStateID int) error {
+	if err := impl.setStateRepository.Delete(teamID, setStateID); err != nil {
 		return err
 	}
 	return nil
@@ -142,6 +157,7 @@ func (impl *SetStateServiceImpl) DeleteSetState(setStateID int) error {
 
 func (impl *SetStateServiceImpl) DeleteSetStateByValue(setStateDto *SetStateDto) error {
 	setState := &repository.SetState{
+		TeamID:    setStateDto.TeamID,
 		StateType: setStateDto.StateType,
 		AppRefID:  setStateDto.AppRefID,
 		Version:   setStateDto.Version,
@@ -161,6 +177,8 @@ func (impl *SetStateServiceImpl) UpdateSetState(setState *SetStateDto) (*SetStat
 	setState.UpdatedAt = time.Now().UTC()
 	if err := impl.setStateRepository.Update(&repository.SetState{
 		ID:        setState.ID,
+		UID:       setState.UID,
+		TeamID:    setState.TeamID,
 		StateType: setState.StateType,
 		AppRefID:  setState.AppRefID,
 		Version:   setState.Version,
@@ -187,12 +205,14 @@ func (impl *SetStateServiceImpl) UpdateSetStateByValue(beforeSetStateDto *SetSta
 	// init model
 	afterSetStateDto.UpdatedAt = time.Now().UTC()
 	beforeSetState := &repository.SetState{
+		TeamID:    beforeSetStateDto.TeamID,
 		StateType: beforeSetStateDto.StateType,
 		AppRefID:  beforeSetStateDto.AppRefID,
 		Version:   beforeSetStateDto.Version,
 		Value:     beforeSetStateDto.Value,
 	}
 	afterSetState := &repository.SetState{
+		TeamID:    beforeSetStateDto.TeamID,
 		StateType: beforeSetStateDto.StateType,
 		AppRefID:  beforeSetStateDto.AppRefID,
 		Value:     afterSetStateDto.Value,
@@ -205,13 +225,15 @@ func (impl *SetStateServiceImpl) UpdateSetStateByValue(beforeSetStateDto *SetSta
 	return nil
 }
 
-func (impl *SetStateServiceImpl) GetSetStateByID(setStateID int) (SetStateDto, error) {
-	setState, err := impl.setStateRepository.RetrieveByID(setStateID)
+func (impl *SetStateServiceImpl) GetSetStateByID(teamID, setStateID int) (SetStateDto, error) {
+	setState, err := impl.setStateRepository.RetrieveByID(teamID, setStateID)
 	if err != nil {
 		return SetStateDto{}, err
 	}
 	ret := SetStateDto{
 		ID:        setState.ID,
+		UID:       setState.UID,
+		TeamID:    setState.TeamID,
 		StateType: setState.StateType,
 		AppRefID:  setState.AppRefID,
 		Version:   setState.Version,
@@ -226,6 +248,7 @@ func (impl *SetStateServiceImpl) GetSetStateByID(setStateID int) (SetStateDto, e
 
 func (impl *SetStateServiceImpl) GetByValue(setStateDto *SetStateDto) (*SetStateDto, error) {
 	setState := &repository.SetState{
+		TeamID:    setStateDto.TeamID,
 		StateType: setStateDto.StateType,
 		AppRefID:  setStateDto.AppRefID,
 		Version:   setStateDto.Version,

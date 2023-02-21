@@ -27,8 +27,11 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient := hub.Clients[message.ClientID]
 	stateType := repository.STATE_TYPE_INVALIED
+	teamID := currentClient.TeamID
 	appDto := app.NewAppDto()
+	appDto.InitUID()
 	appDto.ConstructWithID(currentClient.APPID)
+	appDto.SetTeamID(currentClient.TeamID)
 	appDto.ConstructWithUpdateBy(currentClient.MappedUserID)
 	message.RewriteBroadcast()
 
@@ -40,8 +43,11 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 	case ws.TARGET_COMPONENTS:
 		for _, v := range message.Payload {
 			// construct TreeStateDto
-			currentNode := state.NewTreeStateDto()
 			var inDBTreeStateDto *state.TreeStateDto
+			currentNode := state.NewTreeStateDto()
+			// @todo: refactor this to fix arity new function.
+			currentNode.InitUID()                                                // set UID
+			currentNode.SetTeamID(teamID)                                        // set teamID
 			currentNode.ConstructByMap(v)                                        // set Name
 			currentNode.ConstructByApp(appDto)                                   // set AppRefID
 			currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS) // set StateType
@@ -94,8 +100,10 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 		// resolve
 		for _, v := range message.Payload {
 			// construct KVStateDto
-			kvStateDto := state.NewKVStateDto()
 			var inDBkvStateDto *state.KVStateDto
+			kvStateDto := state.NewKVStateDto()
+			kvStateDto.InitUID()
+			kvStateDto.SetTeamID(teamID)
 			kvStateDto.ConstructByMap(v)
 			kvStateDto.ConstructByApp(appDto)
 			kvStateDto.ConstructWithType(stateType)
@@ -133,8 +141,10 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 			// create or update state
 
 			// checkout
-			setStateDto := state.NewSetStateDto()
 			var setStateDtoInDB *state.SetStateDto
+			setStateDto := state.NewSetStateDto()
+			setStateDto.InitUID()
+			setStateDto.SetTeamID(teamID)
 			setStateDto.ConstructWithValue(displayName)
 			setStateDto.ConstructWithType(stateType)
 			setStateDto.ConstructByApp(appDto)

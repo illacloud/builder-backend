@@ -16,7 +16,6 @@ package filter
 
 import (
 	ws "github.com/illacloud/builder-backend/internal/websocket"
-	"github.com/illacloud/builder-backend/pkg/user"
 )
 
 func Run(hub *ws.Hub) {
@@ -43,18 +42,18 @@ func Run(hub *ws.Hub) {
 			}
 		// handle client on message event
 		case message := <-hub.OnMessage:
-			SignalFilter(hub, message, hub.AuthenticatorImpl)
+			SignalFilter(hub, message)
 		}
 
 	}
 }
 
-func SignalFilter(hub *ws.Hub, message *ws.Message, ai *user.AuthenticatorImpl) error {
+func SignalFilter(hub *ws.Hub, message *ws.Message) error {
 	switch message.Signal {
 	case ws.SIGNAL_PING:
 		return SignalPing(hub, message)
 	case ws.SIGNAL_ENTER:
-		return SignalEnter(hub, message, ai)
+		return SignalEnter(hub, message)
 	case ws.SIGNAL_LEAVE:
 		return SignalLeave(hub, message)
 	case ws.SIGNAL_CREATE_STATE:
