@@ -314,7 +314,6 @@ func (impl ResourceRestHandlerImpl) TestConnection(c *gin.Context) {
 	}
 	rsc := rscForExport.ExportResourceDto()
 
-
 	// validate `resource` valid required fields
 	validate := validator.New()
 	if err := validate.Struct(rsc); err != nil {
@@ -324,7 +323,7 @@ func (impl ResourceRestHandlerImpl) TestConnection(c *gin.Context) {
 
 	connRes, err := impl.resourceService.TestConnection(rsc)
 	if err != nil || !connRes {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_TEST_RESOURCE_CONNECTION, "test connection failed: "+err.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_TEST_RESOURCE_CONNECTION, "test connection failed: "+err.Error())
 		return
 	}
 
