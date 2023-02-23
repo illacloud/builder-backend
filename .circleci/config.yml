@@ -1,0 +1,95 @@
+version: 2.1
+jobs:
+  build:
+    working_directory: ~/project
+    docker:
+      - image: docker:17.05.0-ce-git
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Clone repo
+          command: |
+            git clone -b ${CIRCLE_BRANCH} https://github.com/illacloud/builder-backend
+      - restore_cache:
+          keys:
+            - v1-{{ .Branch }}
+          paths:
+            - /caches/illa-builder-backend.tar
+      - run:
+          name: Load Docker image layer cache
+          command: |
+            set +o pipefail
+            docker load -i /illa-builder-backend.tar | true
+      - run:
+          name: Build application Docker image
+          command: |
+            docker build --cache-from=illa-builder-backend -f Dockerfile -t illa-builder-backend .
+      - run:
+          name: Save Docker image layer cache
+          command: |
+            mkdir -p /caches
+            docker save -o /caches/illa-builder-backend.tar illa-builder-backend
+      - save_cache:
+          key: v1-{{ .Branch }}-{{ epoch }}
+          paths:
+            - /caches/illa-builder-backend.tar
+      - deploy:
+          name: Push application Docker image
+          command: |
+            docker login -u $DOCKER_LOGIN -p $DOCKER_PWD
+            docker tag illa-builder-backend "illasoft/illa-builder-backend:${CIRCLE_BRANCH}"
+            docker push "illasoft/illa-builder-backend:${CIRCLE_BRANCH}"
+  build-ws:
+    working_directory: ~/project
+    docker:
+      - image: docker:17.05.0-ce-git
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Clone repo
+          command: |
+            git clone -b ${CIRCLE_BRANCH} https://github.com/illacloud/builder-backend
+      - restore_cache:
+          keys:
+            - v1-{{ .Branch }}
+          paths:
+            - /caches/illa-builder-backend-ws.tar
+      - run:
+          name: Load Docker image layer cache
+          command: |
+            set +o pipefail
+            docker load -i /illa-builder-backend-ws.tar | true
+      - run:
+          name: Build application Docker image
+          command: |
+            docker build --cache-from=illa-builder-backend-ws -f Dockerfile -t illa-builder-backend-ws .
+      - run:
+          name: Save Docker image layer cache
+          command: |
+            mkdir -p /caches
+            docker save -o /caches/illa-builder-backend-ws.tar illa-builder-backend-ws
+      - save_cache:
+          key: v1-{{ .Branch }}-{{ epoch }}
+          paths:
+            - /caches/illa-builder-backend-ws.tar
+      - deploy:
+          name: Push application Docker image
+          command: |
+            docker login -u $DOCKER_LOGIN -p $DOCKER_PWD
+            docker tag illa-builder-backend-ws "illasoft/illa-builder-backend-ws:${CIRCLE_BRANCH}"
+            docker push "illasoft/illa-builder-backend-ws:${CIRCLE_BRANCH}"
+
+workflows:
+  illa-builder-backend:
+    when:
+      or:
+        - equal: [develop, << pipeline.git.branch >>]
+    jobs:
+      - build:
+          context:
+            - org-global
+      - build-ws:
+          context:
+            - org-global
