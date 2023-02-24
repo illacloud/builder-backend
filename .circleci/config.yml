@@ -11,7 +11,6 @@ jobs:
           name: Clone repo
           command: |
             git clone -b ${CIRCLE_BRANCH} https://github.com/illacloud/builder-backend
-            ls -l
       - restore_cache:
           keys:
             - v1-{{ .Branch }}

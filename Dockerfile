@@ -17,7 +17,6 @@ RUN cd  /opt/illa/illa-builder-backend
 RUN ls -alh
 
 COPY ./builder-backend/ ./
-RUN ls -l
 
 RUN cat ./Makefile
 
