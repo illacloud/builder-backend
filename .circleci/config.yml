@@ -7,10 +7,6 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - run:
-          name: Clone repo
-          command: |
-            git clone -b ${CIRCLE_BRANCH} https://github.com/illacloud/builder-backend
       - restore_cache:
           keys:
             - v1-{{ .Branch }}
@@ -47,10 +43,6 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - run:
-          name: Clone repo
-          command: |
-            git clone -b ${CIRCLE_BRANCH} https://github.com/illacloud/builder-backend
       - restore_cache:
           keys:
             - v1-{{ .Branch }}
