@@ -258,8 +258,12 @@ func (q *QueryRunner) find() (common.RuntimeResult, error) {
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
+	res, err := bson.MarshalExtJSON(results, true, false)
+	if err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
 
-	return common.RuntimeResult{Success: true, Rows: []map[string]interface{}{{"result": results}}}, nil
+	return common.RuntimeResult{Success: true, Rows: []map[string]interface{}{{"result": res}}}, nil
 }
 
 func (q *QueryRunner) findOne() (common.RuntimeResult, error) {
