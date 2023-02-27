@@ -16,6 +16,7 @@ package mongodb
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
@@ -258,10 +259,10 @@ func (q *QueryRunner) find() (common.RuntimeResult, error) {
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
-	res := make([][]byte, len(results))
-	for _, result := range results {
-		tmp, _ := bson.MarshalExtJSON(result, true, false)
-		res = append(res, tmp)
+	res := make(map[string]interface{})
+	b, _ := bson.Marshal(&results)
+	if err := json.Unmarshal(b, &res); err != nil {
+		return common.RuntimeResult{Success: false}, err
 	}
 
 	return common.RuntimeResult{Success: true, Rows: []map[string]interface{}{{"result": res}}}, nil
