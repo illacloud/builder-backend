@@ -111,16 +111,13 @@ func (c *CommandExecutor) readAnObject(region string) (common.RuntimeResult, err
 	urlObj := make(map[string]interface{}, 2)
 	urlObj["key"] = readCommandArgs.ObjectKey
 	if readCommandArgs.SignedURL {
-		presignClient := s3.NewPresignClient(c.client)
-		params := s3.GetObjectInput{
-			Bucket: &readCommandArgs.BucketName,
-			Key:    &readCommandArgs.ObjectKey,
-		}
-		output, err := presignClient.PresignGetObject(context.TODO(), &params)
+		expiryDuration := time.Duration(readCommandArgs.Expiry) * time.Minute
+		signedURL, err := presignGetObject(c.client, readCommandArgs.BucketName, readCommandArgs.ObjectKey,
+			expiryDuration)
 		if err != nil {
 			return common.RuntimeResult{Success: false}, err
 		}
-		urlObj["url"] = output.URL
+		urlObj["url"] = signedURL
 	} else {
 		urlObj["url"] = fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", readCommandArgs.BucketName, region, readCommandArgs.ObjectKey)
 	}
@@ -154,16 +151,13 @@ func (c *CommandExecutor) downloadAnObject(region string) (common.RuntimeResult,
 	urlObj := make(map[string]interface{}, 2)
 	urlObj["key"] = downloadCommandArgs.ObjectKey
 	if downloadCommandArgs.SignedURL {
-		presignClient := s3.NewPresignClient(c.client)
-		params := s3.GetObjectInput{
-			Bucket: &downloadCommandArgs.BucketName,
-			Key:    &downloadCommandArgs.ObjectKey,
-		}
-		output, err := presignClient.PresignGetObject(context.TODO(), &params)
+		expiryDuration := time.Duration(downloadCommandArgs.Expiry) * time.Minute
+		signedURL, err := presignGetObject(c.client, downloadCommandArgs.BucketName, downloadCommandArgs.ObjectKey,
+			expiryDuration)
 		if err != nil {
 			return common.RuntimeResult{Success: false}, err
 		}
-		urlObj["url"] = output.URL
+		urlObj["url"] = signedURL
 	} else {
 		urlObj["url"] = fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", downloadCommandArgs.BucketName, region, downloadCommandArgs.ObjectKey)
 	}
@@ -276,7 +270,10 @@ func (c *CommandExecutor) uploadAnObject(ACL string) (common.RuntimeResult, erro
 
 	// build put presigned url
 	expiryDuration := time.Duration(uploadCommandArgs.Expiry) * time.Minute
-	signedURL, _ := presignPutObject(c.client, uploadCommandArgs.BucketName, uploadCommandArgs.ObjectKey, ACL, expiryDuration)
+	signedURL, err := presignPutObject(c.client, uploadCommandArgs.BucketName, uploadCommandArgs.ObjectKey, ACL, expiryDuration)
+	if err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
 	urlObj := make(map[string]interface{}, 3)
 	urlObj["url"] = signedURL
 	urlObj["key"] = uploadCommandArgs.ObjectKey
