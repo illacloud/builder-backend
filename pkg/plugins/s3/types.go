@@ -73,7 +73,7 @@ type UploadCommandArgs struct {
 	ContentType string `json:"contentType"`
 	Expiry      int64  `json:"expiry"`
 	ObjectKey   string `json:"objectKey" validate:"required"`
-	ObjectData  string `json:"objectData" validate:"required"`
+	ObjectData  string `json:"objectData"`
 }
 
 type BatchUploadCommandArgs struct {
@@ -81,5 +81,5 @@ type BatchUploadCommandArgs struct {
 	ContentType    string   `json:"contentType"`
 	Expiry         int64    `json:"expiry"`
 	ObjectKeyList  []string `json:"objectKeyList" validate:"required,gt=0,dive,required"`
-	ObjectDataList []string `json:"objectDataList" validate:"required,gt=0,dive,required"`
+	ObjectDataList []string `json:"objectDataList"`
 }

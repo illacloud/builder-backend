@@ -266,9 +266,10 @@ func (c *CommandExecutor) uploadAnObject(ACL string) (common.RuntimeResult, erro
 	// build put presigned url
 	expiryDuration := time.Duration(uploadCommandArgs.Expiry) * time.Minute
 	signedURL, _ := presignPutObject(c.client, uploadCommandArgs.BucketName, uploadCommandArgs.ObjectKey, ACL, expiryDuration)
-	urlObj := make(map[string]interface{}, 2)
+	urlObj := make(map[string]interface{}, 3)
 	urlObj["url"] = signedURL
 	urlObj["key"] = uploadCommandArgs.ObjectKey
+	urlObj["acl"] = ACL
 
 	return common.RuntimeResult{
 		Success: true,
@@ -304,9 +305,10 @@ func (c *CommandExecutor) uploadMultipleObjects(ACL string) (common.RuntimeResul
 	for i := 0; i < batchN; i++ {
 		expiryDuration := time.Duration(batchUploadCommandArgs.Expiry) * time.Minute
 		signedURL, _ := presignPutObject(c.client, batchUploadCommandArgs.BucketName, batchUploadCommandArgs.ObjectKeyList[i], ACL, expiryDuration)
-		urlObj := make(map[string]interface{}, 2)
+		urlObj := make(map[string]interface{}, 3)
 		urlObj["url"] = signedURL
 		urlObj["key"] = batchUploadCommandArgs.ObjectKeyList[i]
+		urlObj["acl"] = ACL
 		res = append(res, urlObj)
 	}
 
