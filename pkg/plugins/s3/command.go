@@ -17,6 +17,7 @@ package s3
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
@@ -32,7 +33,7 @@ type CommandExecutor struct {
 	bucket  string
 }
 
-func (c *CommandExecutor) listObjects() (common.RuntimeResult, error) {
+func (c *CommandExecutor) listObjects(region string) (common.RuntimeResult, error) {
 	var listCommandArgs ListCommandArgs
 	if err := mapstructure.Decode(c.command.CommandArgs, &listCommandArgs); err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -75,6 +76,8 @@ func (c *CommandExecutor) listObjects() (common.RuntimeResult, error) {
 				expiryDuration)
 			objRes["signedURL"] = signedURL
 			objRes["urlExpiryDate"] = time.Now().UTC().Add(expiryDuration).Format("2006.01.02 15:04:07.000 UTC")
+		} else {
+			objRes["url"] = fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", listCommandArgs.BucketName, region, *obj.Key)
 		}
 		listObjRes = append(listObjRes, objRes)
 	}
@@ -86,7 +89,7 @@ func (c *CommandExecutor) listObjects() (common.RuntimeResult, error) {
 	}, nil
 }
 
-func (c *CommandExecutor) readAnObject() (common.RuntimeResult, error) {
+func (c *CommandExecutor) readAnObject(region string) (common.RuntimeResult, error) {
 	var readCommandArgs BaseCommandArgs
 	if err := mapstructure.Decode(c.command.CommandArgs, &readCommandArgs); err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -105,18 +108,22 @@ func (c *CommandExecutor) readAnObject() (common.RuntimeResult, error) {
 	}
 
 	// build get presigned url
-	presignClient := s3.NewPresignClient(c.client)
-	params := s3.GetObjectInput{
-		Bucket: &readCommandArgs.BucketName,
-		Key:    &readCommandArgs.ObjectKey,
-	}
-	output, err := presignClient.PresignGetObject(context.TODO(), &params)
-	if err != nil {
-		return common.RuntimeResult{Success: false}, err
-	}
 	urlObj := make(map[string]interface{}, 2)
-	urlObj["url"] = output.URL
 	urlObj["key"] = readCommandArgs.ObjectKey
+	if readCommandArgs.SignedURL {
+		presignClient := s3.NewPresignClient(c.client)
+		params := s3.GetObjectInput{
+			Bucket: &readCommandArgs.BucketName,
+			Key:    &readCommandArgs.ObjectKey,
+		}
+		output, err := presignClient.PresignGetObject(context.TODO(), &params)
+		if err != nil {
+			return common.RuntimeResult{Success: false}, err
+		}
+		urlObj["url"] = output.URL
+	} else {
+		urlObj["url"] = fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", readCommandArgs.BucketName, region, readCommandArgs.ObjectKey)
+	}
 
 	return common.RuntimeResult{
 		Success: true,
@@ -125,7 +132,7 @@ func (c *CommandExecutor) readAnObject() (common.RuntimeResult, error) {
 	}, nil
 }
 
-func (c *CommandExecutor) downloadAnObject() (common.RuntimeResult, error) {
+func (c *CommandExecutor) downloadAnObject(region string) (common.RuntimeResult, error) {
 	var downloadCommandArgs BaseCommandArgs
 	if err := mapstructure.Decode(c.command.CommandArgs, &downloadCommandArgs); err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -144,18 +151,22 @@ func (c *CommandExecutor) downloadAnObject() (common.RuntimeResult, error) {
 	}
 
 	// build get presigned url
-	presignClient := s3.NewPresignClient(c.client)
-	params := s3.GetObjectInput{
-		Bucket: &downloadCommandArgs.BucketName,
-		Key:    &downloadCommandArgs.ObjectKey,
-	}
-	output, err := presignClient.PresignGetObject(context.TODO(), &params)
-	if err != nil {
-		return common.RuntimeResult{Success: false}, err
-	}
 	urlObj := make(map[string]interface{}, 2)
-	urlObj["url"] = output.URL
 	urlObj["key"] = downloadCommandArgs.ObjectKey
+	if downloadCommandArgs.SignedURL {
+		presignClient := s3.NewPresignClient(c.client)
+		params := s3.GetObjectInput{
+			Bucket: &downloadCommandArgs.BucketName,
+			Key:    &downloadCommandArgs.ObjectKey,
+		}
+		output, err := presignClient.PresignGetObject(context.TODO(), &params)
+		if err != nil {
+			return common.RuntimeResult{Success: false}, err
+		}
+		urlObj["url"] = output.URL
+	} else {
+		urlObj["url"] = fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", downloadCommandArgs.BucketName, region, downloadCommandArgs.ObjectKey)
+	}
 
 	return common.RuntimeResult{
 		Success: true,

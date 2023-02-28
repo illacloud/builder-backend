@@ -115,11 +115,11 @@ func (s *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	commandExecutor := CommandExecutor{client: s3Client, command: s.ActionOpts, bucket: s.ResourceOpts.BucketName}
 	switch s.ActionOpts.Commands {
 	case LIST_COMMAND:
-		result, err = commandExecutor.listObjects()
+		result, err = commandExecutor.listObjects(s.ResourceOpts.Region)
 	case READ_COMMAND:
-		result, err = commandExecutor.readAnObject()
+		result, err = commandExecutor.readAnObject(s.ResourceOpts.Region)
 	case DOWNLOAD_COMMAND:
-		result, err = commandExecutor.downloadAnObject()
+		result, err = commandExecutor.downloadAnObject(s.ResourceOpts.Region)
 	case DELETE_COMMAND:
 		result, err = commandExecutor.deleteAnObject()
 	case BATCH_DELETE_COMMAND:

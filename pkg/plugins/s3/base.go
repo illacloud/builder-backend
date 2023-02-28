@@ -16,7 +16,6 @@ package s3
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -87,13 +86,9 @@ func presignPutObject(client *s3.Client, bucket, objectKey, ACL string, expiry t
 		params.ACL = types.ObjectCannedACL(ACL)
 
 	}
-	fmt.Println(params.ACL)
-	fmt.Printf("%v", params.ACL)
 	output, err := presignClient.PresignPutObject(context.TODO(), &params)
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(output.SignedHeader)
-	fmt.Printf("%v", output)
 	return output.URL, nil
 }

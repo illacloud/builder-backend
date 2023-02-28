@@ -60,6 +60,8 @@ type ListCommandArgs struct {
 
 type BaseCommandArgs struct {
 	BucketName string `json:"bucketName"`
+	SignedURL  bool   `json:"signedURL"`
+	Expiry     int64  `json:"expiry" validate:"required_unless=SignedURL false"`
 	ObjectKey  string `json:"objectKey" validate:"required"`
 }
 
