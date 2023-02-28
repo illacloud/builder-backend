@@ -40,6 +40,14 @@ func (s *Connector) ValidateResourceOptions(resourceOptions map[string]interface
 	if err := validate.Struct(s.ResourceOpts); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
+
+	// validate s3 ACL
+	if s.ResourceOpts.ACL != "" {
+		if _, ok := ACLs[s.ResourceOpts.ACL]; !ok {
+			return common.ValidateResult{Valid: false}, errors.New("invalid ACL")
+		}
+	}
+
 	return common.ValidateResult{Valid: true}, nil
 }
 
@@ -117,9 +125,9 @@ func (s *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	case BATCH_DELETE_COMMAND:
 		result, err = commandExecutor.deleteMultipleObjects()
 	case UPLOAD_COMMAND:
-		result, err = commandExecutor.uploadAnObject()
+		result, err = commandExecutor.uploadAnObject(s.ResourceOpts.ACL)
 	case BATCH_UPLOAD_COMMAND:
-		result, err = commandExecutor.uploadMultipleObjects()
+		result, err = commandExecutor.uploadMultipleObjects(s.ResourceOpts.ACL)
 	}
 
 	return result, err

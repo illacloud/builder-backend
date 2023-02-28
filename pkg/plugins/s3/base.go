@@ -22,6 +22,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -75,11 +76,15 @@ func presignGetObject(client *s3.Client, bucket, objectKey string, expiry time.D
 	return output.URL, nil
 }
 
-func presignPutObject(client *s3.Client, bucket, objectKey string, expiry time.Duration) (string, error) {
+func presignPutObject(client *s3.Client, bucket, objectKey, ACL string, expiry time.Duration) (string, error) {
 	presignClient := s3.NewPresignClient(client, s3.WithPresignExpires(expiry))
 	params := s3.PutObjectInput{
 		Bucket: &bucket,
 		Key:    &objectKey,
+	}
+	if ACL != "" {
+		params.ACL = types.ObjectCannedACL(ACL)
+
 	}
 	output, err := presignClient.PresignPutObject(context.TODO(), &params)
 	if err != nil {

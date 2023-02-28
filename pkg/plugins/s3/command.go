@@ -105,10 +105,17 @@ func (c *CommandExecutor) readAnObject() (common.RuntimeResult, error) {
 	}
 
 	// build get presigned url
-	expiryDuration := time.Duration(1) * time.Minute
-	signedURL, _ := presignGetObject(c.client, readCommandArgs.BucketName, readCommandArgs.ObjectKey, expiryDuration)
+	presignClient := s3.NewPresignClient(c.client)
+	params := s3.GetObjectInput{
+		Bucket: &readCommandArgs.BucketName,
+		Key:    &readCommandArgs.ObjectKey,
+	}
+	output, err := presignClient.PresignGetObject(context.TODO(), &params)
+	if err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
 	urlObj := make(map[string]interface{}, 2)
-	urlObj["url"] = signedURL
+	urlObj["url"] = output.URL
 	urlObj["key"] = readCommandArgs.ObjectKey
 
 	return common.RuntimeResult{
@@ -137,10 +144,17 @@ func (c *CommandExecutor) downloadAnObject() (common.RuntimeResult, error) {
 	}
 
 	// build get presigned url
-	expiryDuration := time.Duration(1) * time.Minute
-	signedURL, _ := presignGetObject(c.client, downloadCommandArgs.BucketName, downloadCommandArgs.ObjectKey, expiryDuration)
+	presignClient := s3.NewPresignClient(c.client)
+	params := s3.GetObjectInput{
+		Bucket: &downloadCommandArgs.BucketName,
+		Key:    &downloadCommandArgs.ObjectKey,
+	}
+	output, err := presignClient.PresignGetObject(context.TODO(), &params)
+	if err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
 	urlObj := make(map[string]interface{}, 2)
-	urlObj["url"] = signedURL
+	urlObj["url"] = output.URL
 	urlObj["key"] = downloadCommandArgs.ObjectKey
 
 	return common.RuntimeResult{
@@ -231,7 +245,7 @@ func (c *CommandExecutor) deleteMultipleObjects() (common.RuntimeResult, error) 
 	}, nil
 }
 
-func (c *CommandExecutor) uploadAnObject() (common.RuntimeResult, error) {
+func (c *CommandExecutor) uploadAnObject(ACL string) (common.RuntimeResult, error) {
 	var uploadCommandArgs UploadCommandArgs
 	if err := mapstructure.Decode(c.command.CommandArgs, &uploadCommandArgs); err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -250,8 +264,8 @@ func (c *CommandExecutor) uploadAnObject() (common.RuntimeResult, error) {
 	}
 
 	// build put presigned url
-	expiryDuration := time.Duration(1) * time.Minute
-	signedURL, _ := presignPutObject(c.client, uploadCommandArgs.BucketName, uploadCommandArgs.ObjectKey, expiryDuration)
+	expiryDuration := time.Duration(uploadCommandArgs.Expiry) * time.Minute
+	signedURL, _ := presignPutObject(c.client, uploadCommandArgs.BucketName, uploadCommandArgs.ObjectKey, ACL, expiryDuration)
 	urlObj := make(map[string]interface{}, 2)
 	urlObj["url"] = signedURL
 	urlObj["key"] = uploadCommandArgs.ObjectKey
@@ -263,7 +277,7 @@ func (c *CommandExecutor) uploadAnObject() (common.RuntimeResult, error) {
 	}, nil
 }
 
-func (c *CommandExecutor) uploadMultipleObjects() (common.RuntimeResult, error) {
+func (c *CommandExecutor) uploadMultipleObjects(ACL string) (common.RuntimeResult, error) {
 	var batchUploadCommandArgs BatchUploadCommandArgs
 	if err := mapstructure.Decode(c.command.CommandArgs, &batchUploadCommandArgs); err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -288,8 +302,8 @@ func (c *CommandExecutor) uploadMultipleObjects() (common.RuntimeResult, error) 
 	// build put presigned urls
 	res := make([]map[string]interface{}, 0, batchN)
 	for i := 0; i < batchN; i++ {
-		expiryDuration := time.Duration(1) * time.Minute
-		signedURL, _ := presignPutObject(c.client, batchUploadCommandArgs.BucketName, batchUploadCommandArgs.ObjectKeyList[i], expiryDuration)
+		expiryDuration := time.Duration(batchUploadCommandArgs.Expiry) * time.Minute
+		signedURL, _ := presignPutObject(c.client, batchUploadCommandArgs.BucketName, batchUploadCommandArgs.ObjectKeyList[i], ACL, expiryDuration)
 		urlObj := make(map[string]interface{}, 2)
 		urlObj["url"] = signedURL
 		urlObj["key"] = batchUploadCommandArgs.ObjectKeyList[i]
