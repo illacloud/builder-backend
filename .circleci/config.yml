@@ -92,7 +92,7 @@ jobs:
             doctl kubernetes cluster kubeconfig save $DO_CLUSTER
             kubectl version
       - run:
-          name: Download deploy yaml
+          name: Deploy different branches
           command: |
             git clone $DEPLOY_REPO
             if [ "${CIRCLE_BRANCH}" = "main" ]; then
@@ -110,9 +110,6 @@ jobs:
             else
               echo "Not a deployable branch"
             fi
-      - run:
-          name: Deploy different branches
-          command: |
             echo "Deploying to ${NS} namespace"
             kubectl delete pod -n ${NS} -l repo=illa-builder-backend
             kubectl delete pod -n ${NS} -l repo=illa-builder-backend-ws
