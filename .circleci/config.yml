@@ -98,15 +98,15 @@ jobs:
             if [ "${CIRCLE_BRANCH}" = "main" ]; then
               echo "Deploying for main branch"
               echo "export NS=production" >> "$BASH_ENV"
-              cd $DEPLOY_PRO_DIR
+              echo "export CFG_DIR=${DEPLOY_PRO_DIR}" >> "$BASH_ENV"
             elif [ "${CIRCLE_BRANCH}" = "beta" ]; then
               echo "Deploying for beta branch"
               echo "export NS=beta" >> "$BASH_ENV"
-              cd $DEPLOY_BETA_DIR
+              echo "export CFG_DIR=${DEPLOY_BETA_DIR}" >> "$BASH_ENV"
             elif [ "${CIRCLE_BRANCH}" = "develop" ]; then
               echo "Deploying for develop branch"
               echo "export NS=test" >> "$BASH_ENV"
-              cd $DEPLOY_TEST_DIR
+              echo "export CFG_DIR=${DEPLOY_TEST_DIR}" >> "$BASH_ENV"
             else
               echo "Not a deployable branch"
             fi
@@ -114,6 +114,7 @@ jobs:
           name: Deploy different branches
           command: |
             echo "Deploying to ${NS} namespace"
+            cd ${CFG_DIR}
             pwd
             kubectl delete pod -n ${NS} -l repo=illa-builder-backend
             kubectl delete pod -n ${NS} -l repo=illa-builder-backend-ws
