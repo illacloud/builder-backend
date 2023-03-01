@@ -97,15 +97,15 @@ jobs:
             git clone $DEPLOY_REPO
             if [ "${CIRCLE_BRANCH}" = "main" ]; then
               echo "Deploying for main branch"
-              export NS="production"
+              echo "export NS=production" >> "$BASH_ENV"
               cd $DEPLOY_PRO_DIR
             elif [ "${CIRCLE_BRANCH}" = "beta" ]; then
               echo "Deploying for beta branch"
-              export NS="beta"
+              echo "export NS=beta" >> "$BASH_ENV"
               cd $DEPLOY_BETA_DIR
             elif [ "${CIRCLE_BRANCH}" = "develop" ]; then
               echo "Deploying for develop branch"
-              export NS="test"
+              echo "export NS=test" >> "$BASH_ENV"
               cd $DEPLOY_TEST_DIR
             else
               echo "Not a deployable branch"
