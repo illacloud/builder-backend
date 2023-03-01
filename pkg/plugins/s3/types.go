@@ -27,10 +27,21 @@ const (
 type Resource struct {
 	BucketName      string
 	Region          string `validate:"required"`
+	ACL             string
 	Endpoint        bool
 	BaseURL         string `validate:"required_unless=Endpoint false"`
 	AccessKeyID     string `validate:"required"`
 	SecretAccessKey string `validate:"required"`
+}
+
+var ACLs = map[string]bool{
+	"private":                   true,
+	"public-read":               true,
+	"public-read-write":         true,
+	"authenticated-read":        true,
+	"aws-exec-read":             true,
+	"bucket-owner-read":         true,
+	"bucket-owner-full-control": true,
 }
 
 type Action struct {
@@ -49,6 +60,8 @@ type ListCommandArgs struct {
 
 type BaseCommandArgs struct {
 	BucketName string `json:"bucketName"`
+	SignedURL  bool   `json:"signedURL"`
+	Expiry     int64  `json:"expiry" validate:"required_unless=SignedURL false"`
 	ObjectKey  string `json:"objectKey" validate:"required"`
 }
 
@@ -60,13 +73,15 @@ type BatchDeleteCommandArgs struct {
 type UploadCommandArgs struct {
 	BucketName  string `json:"bucketName"`
 	ContentType string `json:"contentType"`
+	Expiry      int64  `json:"expiry"`
 	ObjectKey   string `json:"objectKey" validate:"required"`
-	ObjectData  string `json:"objectData" validate:"required"`
+	ObjectData  string `json:"objectData"`
 }
 
 type BatchUploadCommandArgs struct {
 	BucketName     string   `json:"bucketName"`
 	ContentType    string   `json:"contentType"`
+	Expiry         int64    `json:"expiry"`
 	ObjectKeyList  []string `json:"objectKeyList" validate:"required,gt=0,dive,required"`
-	ObjectDataList []string `json:"objectDataList" validate:"required,gt=0,dive,required"`
+	ObjectDataList []string `json:"objectDataList"`
 }

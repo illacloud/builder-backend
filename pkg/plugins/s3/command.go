@@ -15,12 +15,8 @@
 package s3
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
 	"errors"
-	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
@@ -37,7 +33,7 @@ type CommandExecutor struct {
 	bucket  string
 }
 
-func (c *CommandExecutor) listObjects() (common.RuntimeResult, error) {
+func (c *CommandExecutor) listObjects(region string) (common.RuntimeResult, error) {
 	var listCommandArgs ListCommandArgs
 	if err := mapstructure.Decode(c.command.CommandArgs, &listCommandArgs); err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -74,12 +70,17 @@ func (c *CommandExecutor) listObjects() (common.RuntimeResult, error) {
 	listObjRes := make([]map[string]interface{}, 0, len(res.Contents))
 	for _, obj := range res.Contents {
 		objRes := map[string]interface{}{"objectKey": *obj.Key}
+		expiryDuration := time.Duration(listCommandArgs.Expiry) * time.Minute
+		signedURL, _ := presignGetObject(c.client, listCommandArgs.BucketName, *obj.Key,
+			expiryDuration)
 		if listCommandArgs.SignedURL {
-			expiryDuration := time.Duration(listCommandArgs.Expiry) * time.Minute
-			signedURL, _ := presignGetObject(c.client, listCommandArgs.BucketName, *obj.Key,
-				expiryDuration)
 			objRes["signedURL"] = signedURL
 			objRes["urlExpiryDate"] = time.Now().UTC().Add(expiryDuration).Format("2006.01.02 15:04:07.000 UTC")
+		} else {
+			parts := strings.SplitN(signedURL, "?", 2)
+			if len(parts) != 0 {
+				objRes["url"] = parts[0]
+			}
 		}
 		listObjRes = append(listObjRes, objRes)
 	}
@@ -91,7 +92,7 @@ func (c *CommandExecutor) listObjects() (common.RuntimeResult, error) {
 	}, nil
 }
 
-func (c *CommandExecutor) readAnObject() (common.RuntimeResult, error) {
+func (c *CommandExecutor) readAnObject(region string) (common.RuntimeResult, error) {
 	var readCommandArgs BaseCommandArgs
 	if err := mapstructure.Decode(c.command.CommandArgs, &readCommandArgs); err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -109,35 +110,32 @@ func (c *CommandExecutor) readAnObject() (common.RuntimeResult, error) {
 		readCommandArgs.BucketName = c.bucket
 	}
 
-	// build GetObjectInput
-	params := s3.GetObjectInput{
-		Bucket: &readCommandArgs.BucketName,
-		Key:    &readCommandArgs.ObjectKey,
-	}
-
-	res, err := c.client.GetObject(context.TODO(), &params)
+	// build get presigned url
+	urlObj := make(map[string]interface{}, 2)
+	urlObj["key"] = readCommandArgs.ObjectKey
+	expiryDuration := time.Duration(readCommandArgs.Expiry) * time.Minute
+	signedURL, err := presignGetObject(c.client, readCommandArgs.BucketName, readCommandArgs.ObjectKey,
+		expiryDuration)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
-	if objectSizeLimiter(res.ContentLength) {
-		return common.RuntimeResult{Success: false}, errors.New("oversize object")
+	if readCommandArgs.SignedURL {
+		urlObj["url"] = signedURL
+	} else {
+		parts := strings.SplitN(signedURL, "?", 2)
+		if len(parts) != 0 {
+			urlObj["url"] = parts[0]
+		}
 	}
-
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(res.Body)
-	defer res.Body.Close()
-
-	resBytes := buf.Bytes()
-	resStr := base64.StdEncoding.EncodeToString(resBytes)
 
 	return common.RuntimeResult{
 		Success: true,
-		Rows:    []map[string]interface{}{{"objectData": resStr}},
+		Rows:    []map[string]interface{}{urlObj},
 		Extra:   nil,
 	}, nil
 }
 
-func (c *CommandExecutor) downloadAnObject() (common.RuntimeResult, error) {
+func (c *CommandExecutor) downloadAnObject(region string) (common.RuntimeResult, error) {
 	var downloadCommandArgs BaseCommandArgs
 	if err := mapstructure.Decode(c.command.CommandArgs, &downloadCommandArgs); err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -155,32 +153,28 @@ func (c *CommandExecutor) downloadAnObject() (common.RuntimeResult, error) {
 		downloadCommandArgs.BucketName = c.bucket
 	}
 
-	// build GetObjectInput
-	params := s3.GetObjectInput{
-		Bucket: &downloadCommandArgs.BucketName,
-		Key:    &downloadCommandArgs.ObjectKey,
-	}
-
-	res, err := c.client.GetObject(context.TODO(), &params)
+	// build get presigned url
+	urlObj := make(map[string]interface{}, 2)
+	urlObj["key"] = downloadCommandArgs.ObjectKey
+	expiryDuration := time.Duration(downloadCommandArgs.Expiry) * time.Minute
+	signedURL, err := presignGetObject(c.client, downloadCommandArgs.BucketName, downloadCommandArgs.ObjectKey,
+		expiryDuration)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
-	if objectSizeLimiter(res.ContentLength) {
-		return common.RuntimeResult{Success: false}, errors.New("oversize object")
+	if downloadCommandArgs.SignedURL {
+		urlObj["url"] = signedURL
+	} else {
+		parts := strings.SplitN(signedURL, "?", 2)
+		if len(parts) != 0 {
+			urlObj["url"] = parts[0]
+		}
 	}
-
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(res.Body)
-	defer res.Body.Close()
-
-	resBytes := buf.Bytes()
-	resStr := base64.StdEncoding.EncodeToString(resBytes)
 
 	return common.RuntimeResult{
 		Success: true,
-		Rows:    []map[string]interface{}{{"objectData": resStr}},
-		Extra: map[string]interface{}{"Download": true, "ContentType": res.ContentType,
-			"ObjectKey": downloadCommandArgs.ObjectKey},
+		Rows:    []map[string]interface{}{urlObj},
+		Extra:   nil,
 	}, nil
 }
 
@@ -265,7 +259,7 @@ func (c *CommandExecutor) deleteMultipleObjects() (common.RuntimeResult, error) 
 	}, nil
 }
 
-func (c *CommandExecutor) uploadAnObject() (common.RuntimeResult, error) {
+func (c *CommandExecutor) uploadAnObject(ACL string) (common.RuntimeResult, error) {
 	var uploadCommandArgs UploadCommandArgs
 	if err := mapstructure.Decode(c.command.CommandArgs, &uploadCommandArgs); err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -283,44 +277,25 @@ func (c *CommandExecutor) uploadAnObject() (common.RuntimeResult, error) {
 		uploadCommandArgs.BucketName = c.bucket
 	}
 
-	// build PutObjectInput
-	objectDataBytes, err := base64.StdEncoding.DecodeString(uploadCommandArgs.ObjectData)
+	// build put presigned url
+	expiryDuration := time.Duration(uploadCommandArgs.Expiry) * time.Minute
+	signedURL, err := presignPutObject(c.client, uploadCommandArgs.BucketName, uploadCommandArgs.ObjectKey, ACL, expiryDuration)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
-	decodedObjectDataString, err := url.QueryUnescape(string(objectDataBytes))
-	if err != nil {
-		return common.RuntimeResult{Success: false}, err
-	}
-	contentLength := len(decodedObjectDataString)
-	if objectSizeLimiter(int64(contentLength)) {
-		return common.RuntimeResult{Success: false}, errors.New("oversize object")
-	}
-	params := s3.PutObjectInput{
-		Bucket:        &uploadCommandArgs.BucketName,
-		Key:           &uploadCommandArgs.ObjectKey,
-		Body:          strings.NewReader(decodedObjectDataString),
-		ContentLength: int64(contentLength),
-	}
-	if uploadCommandArgs.ContentType != "" {
-		params.ContentType = &uploadCommandArgs.ContentType
-	}
-
-	_, err = c.client.PutObject(context.TODO(), &params)
-	if err != nil {
-		return common.RuntimeResult{Success: false}, err
-	}
+	urlObj := make(map[string]interface{}, 3)
+	urlObj["url"] = signedURL
+	urlObj["key"] = uploadCommandArgs.ObjectKey
+	urlObj["acl"] = ACL
 
 	return common.RuntimeResult{
 		Success: true,
-		Rows: []map[string]interface{}{
-			{"message": fmt.Sprintf("upload %s successfully", uploadCommandArgs.ObjectKey)},
-		},
-		Extra: nil,
+		Rows:    []map[string]interface{}{urlObj},
+		Extra:   nil,
 	}, nil
 }
 
-func (c *CommandExecutor) uploadMultipleObjects() (common.RuntimeResult, error) {
+func (c *CommandExecutor) uploadMultipleObjects(ACL string) (common.RuntimeResult, error) {
 	var batchUploadCommandArgs BatchUploadCommandArgs
 	if err := mapstructure.Decode(c.command.CommandArgs, &batchUploadCommandArgs); err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -342,49 +317,21 @@ func (c *CommandExecutor) uploadMultipleObjects() (common.RuntimeResult, error) 
 		return common.RuntimeResult{Success: false}, errors.New("mismatch between object keys and object data")
 	}
 
-	// run PutObject for BatchUpload
-	failedKeys := make([]string, 0, batchN)
-	successN := 0
+	// build put presigned urls
+	res := make([]map[string]interface{}, 0, batchN)
 	for i := 0; i < batchN; i++ {
-		objectDataBytes, err := base64.StdEncoding.DecodeString(batchUploadCommandArgs.ObjectDataList[i])
-		if err != nil {
-			failedKeys = append(failedKeys, batchUploadCommandArgs.ObjectKeyList[i])
-			continue
-		}
-		decodedObjectDataString, err := url.QueryUnescape(string(objectDataBytes))
-		if err != nil {
-			failedKeys = append(failedKeys, batchUploadCommandArgs.ObjectKeyList[i])
-			continue
-		}
-		contentLength := len(decodedObjectDataString)
-		if objectSizeLimiter(int64(contentLength)) {
-			failedKeys = append(failedKeys, batchUploadCommandArgs.ObjectKeyList[i])
-			continue
-		}
-		params := s3.PutObjectInput{
-			Bucket:        &batchUploadCommandArgs.BucketName,
-			Key:           &batchUploadCommandArgs.ObjectKeyList[i],
-			Body:          strings.NewReader(decodedObjectDataString),
-			ContentLength: int64(contentLength),
-		}
-		if batchUploadCommandArgs.ContentType != "" {
-			params.ContentType = &batchUploadCommandArgs.ContentType
-		}
-
-		_, err = c.client.PutObject(context.TODO(), &params)
-		if err != nil {
-			failedKeys = append(failedKeys, batchUploadCommandArgs.ObjectKeyList[i])
-			continue
-		}
-
-		successN += 1
+		expiryDuration := time.Duration(batchUploadCommandArgs.Expiry) * time.Minute
+		signedURL, _ := presignPutObject(c.client, batchUploadCommandArgs.BucketName, batchUploadCommandArgs.ObjectKeyList[i], ACL, expiryDuration)
+		urlObj := make(map[string]interface{}, 3)
+		urlObj["url"] = signedURL
+		urlObj["key"] = batchUploadCommandArgs.ObjectKeyList[i]
+		urlObj["acl"] = ACL
+		res = append(res, urlObj)
 	}
 
 	return common.RuntimeResult{
 		Success: true,
-		Rows: []map[string]interface{}{
-			{"count": batchN, "success": successN, "failure": failedKeys},
-		},
-		Extra: nil,
+		Rows:    res,
+		Extra:   nil,
 	}, nil
 }

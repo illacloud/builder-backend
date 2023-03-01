@@ -16,14 +16,13 @@ package s3
 
 import (
 	"context"
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -63,8 +62,8 @@ func (s *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 	return s3Client, nil
 }
 
-func presignGetObject(client *s3.Client, bucket, objectKey string, expirty time.Duration) (string, error) {
-	presignClient := s3.NewPresignClient(client, s3.WithPresignExpires(expirty))
+func presignGetObject(client *s3.Client, bucket, objectKey string, expiry time.Duration) (string, error) {
+	presignClient := s3.NewPresignClient(client, s3.WithPresignExpires(expiry))
 	params := s3.GetObjectInput{
 		Bucket: &bucket,
 		Key:    &objectKey,
@@ -77,17 +76,19 @@ func presignGetObject(client *s3.Client, bucket, objectKey string, expirty time.
 	return output.URL, nil
 }
 
-func objectSizeLimiter(contentLength int64) bool {
-	limitStr := os.Getenv("ILLA_S3_LIMIT")
-	limit64, err := strconv.ParseInt(limitStr, 10, 64)
-	if err != nil {
-		limit64 = 5
+func presignPutObject(client *s3.Client, bucket, objectKey, ACL string, expiry time.Duration) (string, error) {
+	presignClient := s3.NewPresignClient(client, s3.WithPresignExpires(expiry))
+	params := s3.PutObjectInput{
+		Bucket: &bucket,
+		Key:    &objectKey,
 	}
-	objectSize := contentLength / 1024
-	objectSize /= 1024
+	if ACL != "" {
+		params.ACL = types.ObjectCannedACL(ACL)
 
-	if objectSize > limit64 {
-		return true
 	}
-	return false
+	output, err := presignClient.PresignPutObject(context.TODO(), &params)
+	if err != nil {
+		return "", err
+	}
+	return output.URL, nil
 }

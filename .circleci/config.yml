@@ -1,0 +1,143 @@
+version: 2.1
+jobs:
+  build:
+    working_directory: ~/project
+    docker:
+      - image: docker:17.05.0-ce-git
+    steps:
+      - checkout
+      - setup_remote_docker
+      - restore_cache:
+          keys:
+            - v1-{{ .Branch }}
+          paths:
+            - /caches/illa-builder-backend.tar
+      - run:
+          name: Load Docker image layer cache
+          command: |
+            set +o pipefail
+            docker load -i /illa-builder-backend.tar | true
+      - run:
+          name: Build application Docker image
+          command: |
+            docker build --cache-from=illa-builder-backend -f Dockerfile -t illa-builder-backend .
+      - run:
+          name: Save Docker image layer cache
+          command: |
+            mkdir -p /caches
+            docker save -o /caches/illa-builder-backend.tar illa-builder-backend
+      - save_cache:
+          key: v1-{{ .Branch }}-{{ epoch }}
+          paths:
+            - /caches/illa-builder-backend.tar
+      - deploy:
+          name: Push application Docker image
+          command: |
+            docker login -u $DOCKER_LOGIN -p $DOCKER_PWD
+            docker tag illa-builder-backend "illasoft/illa-builder-backend:${CIRCLE_BRANCH}"
+            docker push "illasoft/illa-builder-backend:${CIRCLE_BRANCH}"
+  build-ws:
+    working_directory: ~/project
+    docker:
+      - image: docker:17.05.0-ce-git
+    steps:
+      - checkout
+      - setup_remote_docker
+      - restore_cache:
+          keys:
+            - v1-{{ .Branch }}
+          paths:
+            - /caches/illa-builder-backend-ws.tar
+      - run:
+          name: Load Docker image layer cache
+          command: |
+            set +o pipefail
+            docker load -i /illa-builder-backend-ws.tar | true
+      - run:
+          name: Build application Docker image
+          command: |
+            docker build --cache-from=illa-builder-backend-ws -f ws.Dockerfile -t illa-builder-backend-ws .
+      - run:
+          name: Save Docker image layer cache
+          command: |
+            mkdir -p /caches
+            docker save -o /caches/illa-builder-backend-ws.tar illa-builder-backend-ws
+      - save_cache:
+          key: v1-{{ .Branch }}-{{ epoch }}
+          paths:
+            - /caches/illa-builder-backend-ws.tar
+      - deploy:
+          name: Push application Docker image
+          command: |
+            docker login -u $DOCKER_LOGIN -p $DOCKER_PWD
+            docker tag illa-builder-backend-ws "illasoft/illa-builder-backend-ws:${CIRCLE_BRANCH}"
+            docker push "illasoft/illa-builder-backend-ws:${CIRCLE_BRANCH}"
+  deploy:
+    machine: # executor type
+      image: ubuntu-2004:202010-01
+    resource_class: medium
+    steps:
+      - run:
+          name: Download doctl & kubectl
+          command: |
+            sudo snap install doctl
+            sudo snap install kubectl --classic
+            doctl version
+      - run:
+          name: Setup kubectl
+          command: |
+            doctl auth init --access-token $DO_TOKEN
+            mkdir -p /home/circleci/.kube
+            sudo snap connect doctl:kube-config
+            doctl kubernetes cluster kubeconfig save $DO_CLUSTER
+            kubectl version
+      - run:
+          name: Download deployment configs
+          command: |
+            git clone $DEPLOY_REPO
+            if [ "${CIRCLE_BRANCH}" = "main" ]; then
+              echo "Deploying for main branch"
+              echo "export NS=production" >> "$BASH_ENV"
+              echo "export CFG_DIR=${DEPLOY_PRO_DIR}" >> "$BASH_ENV"
+            elif [ "${CIRCLE_BRANCH}" = "beta" ]; then
+              echo "Deploying for beta branch"
+              echo "export NS=beta" >> "$BASH_ENV"
+              echo "export CFG_DIR=${DEPLOY_BETA_DIR}" >> "$BASH_ENV"
+            elif [ "${CIRCLE_BRANCH}" = "develop" ]; then
+              echo "Deploying for develop branch"
+              echo "export NS=test" >> "$BASH_ENV"
+              echo "export CFG_DIR=${DEPLOY_TEST_DIR}" >> "$BASH_ENV"
+            else
+              echo "Not a deployable branch"
+            fi
+      - run:
+          name: Deploy different branches
+          command: |
+            echo "Deploying to ${NS} namespace"
+            cd ${CFG_DIR}
+            pwd
+            kubectl delete pod -n ${NS} -l repo=illa-builder-backend
+            kubectl delete pod -n ${NS} -l repo=illa-builder-backend-ws
+            kubectl apply -f ./illa-builder-backend/ -n ${NS}
+            kubectl apply -f ./illa-builder-backend-ws/ -n ${NS}
+
+workflows:
+  illa-builder-backend:
+    when:
+      or:
+        - equal: [main, << pipeline.git.branch >>]
+        - equal: [beta, << pipeline.git.branch >>]
+        - equal: [develop, << pipeline.git.branch >>]
+    jobs:
+      - build:
+          context:
+            - org-global
+      - build-ws:
+          context:
+            - org-global
+      - deploy:
+          context:
+            - org-global
+          requires:
+            - build
+            - build-ws

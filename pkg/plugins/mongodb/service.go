@@ -17,11 +17,11 @@ package mongodb
 import (
 	"context"
 
-	"github.com/illacloud/builder-backend/pkg/plugins/common"
-
 	"github.com/go-playground/validator/v10"
+	"github.com/illacloud/builder-backend/pkg/plugins/common"
 	"github.com/mitchellh/mapstructure"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
 type Connector struct {
@@ -115,9 +115,20 @@ func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			return common.RuntimeResult{Success: false}, err
 		}
 		db = mOptions.DatabaseName
+	} else if m.Resource.ConfigType == URI_OPTIONS {
+		mOptions := URIOptions{}
+		if err := mapstructure.Decode(m.Resource.ConfigContent, &mOptions); err != nil {
+			return common.RuntimeResult{Success: false}, err
+		}
+		uri := mOptions.URI
+		matchedStrs, err := connstring.Parse(uri)
+		if err != nil {
+			return common.RuntimeResult{Success: false}, err
+		}
+		db = matchedStrs.Database
 	}
 	if db == "" {
-		db = "admin"
+		db = "test"
 	}
 
 	var result common.RuntimeResult
