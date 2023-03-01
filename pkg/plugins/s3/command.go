@@ -17,7 +17,7 @@ package s3
 import (
 	"context"
 	"errors"
-	"fmt"
+	"strings"
 	"time"
 
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
@@ -70,14 +70,17 @@ func (c *CommandExecutor) listObjects(region string) (common.RuntimeResult, erro
 	listObjRes := make([]map[string]interface{}, 0, len(res.Contents))
 	for _, obj := range res.Contents {
 		objRes := map[string]interface{}{"objectKey": *obj.Key}
+		expiryDuration := time.Duration(listCommandArgs.Expiry) * time.Minute
+		signedURL, _ := presignGetObject(c.client, listCommandArgs.BucketName, *obj.Key,
+			expiryDuration)
 		if listCommandArgs.SignedURL {
-			expiryDuration := time.Duration(listCommandArgs.Expiry) * time.Minute
-			signedURL, _ := presignGetObject(c.client, listCommandArgs.BucketName, *obj.Key,
-				expiryDuration)
 			objRes["signedURL"] = signedURL
 			objRes["urlExpiryDate"] = time.Now().UTC().Add(expiryDuration).Format("2006.01.02 15:04:07.000 UTC")
 		} else {
-			objRes["url"] = fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", listCommandArgs.BucketName, region, *obj.Key)
+			parts := strings.SplitN(signedURL, "?", 2)
+			if len(parts) != 0 {
+				objRes["url"] = parts[0]
+			}
 		}
 		listObjRes = append(listObjRes, objRes)
 	}
@@ -110,16 +113,19 @@ func (c *CommandExecutor) readAnObject(region string) (common.RuntimeResult, err
 	// build get presigned url
 	urlObj := make(map[string]interface{}, 2)
 	urlObj["key"] = readCommandArgs.ObjectKey
+	expiryDuration := time.Duration(readCommandArgs.Expiry) * time.Minute
+	signedURL, err := presignGetObject(c.client, readCommandArgs.BucketName, readCommandArgs.ObjectKey,
+		expiryDuration)
+	if err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
 	if readCommandArgs.SignedURL {
-		expiryDuration := time.Duration(readCommandArgs.Expiry) * time.Minute
-		signedURL, err := presignGetObject(c.client, readCommandArgs.BucketName, readCommandArgs.ObjectKey,
-			expiryDuration)
-		if err != nil {
-			return common.RuntimeResult{Success: false}, err
-		}
 		urlObj["url"] = signedURL
 	} else {
-		urlObj["url"] = fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", readCommandArgs.BucketName, region, readCommandArgs.ObjectKey)
+		parts := strings.SplitN(signedURL, "?", 2)
+		if len(parts) != 0 {
+			urlObj["url"] = parts[0]
+		}
 	}
 
 	return common.RuntimeResult{
@@ -150,16 +156,19 @@ func (c *CommandExecutor) downloadAnObject(region string) (common.RuntimeResult,
 	// build get presigned url
 	urlObj := make(map[string]interface{}, 2)
 	urlObj["key"] = downloadCommandArgs.ObjectKey
+	expiryDuration := time.Duration(downloadCommandArgs.Expiry) * time.Minute
+	signedURL, err := presignGetObject(c.client, downloadCommandArgs.BucketName, downloadCommandArgs.ObjectKey,
+		expiryDuration)
+	if err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
 	if downloadCommandArgs.SignedURL {
-		expiryDuration := time.Duration(downloadCommandArgs.Expiry) * time.Minute
-		signedURL, err := presignGetObject(c.client, downloadCommandArgs.BucketName, downloadCommandArgs.ObjectKey,
-			expiryDuration)
-		if err != nil {
-			return common.RuntimeResult{Success: false}, err
-		}
 		urlObj["url"] = signedURL
 	} else {
-		urlObj["url"] = fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", downloadCommandArgs.BucketName, region, downloadCommandArgs.ObjectKey)
+		parts := strings.SplitN(signedURL, "?", 2)
+		if len(parts) != 0 {
+			urlObj["url"] = parts[0]
+		}
 	}
 
 	return common.RuntimeResult{
