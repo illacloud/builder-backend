@@ -94,17 +94,37 @@ jobs:
       - run:
           name: Download deploy yaml
           command: |
-            git clone -b test $DEPLOY_REPO
-            cd $DEPLOY_TEST_DIR
-            kubectl delete pod -n test -l repo=illa-builder-backend
-            kubectl delete pod -n test -l repo=illa-builder-backend-ws
-            kubectl apply -f ./illa-builder-backend/ -n test
-            kubectl apply -f ./illa-builder-backend-ws/ -n test
+            git clone $DEPLOY_REPO
+            if [ "${CIRCLE_BRANCH}" = "main" ]; then
+              echo "Deploying for main branch"
+              export NS="production"
+              cd $DEPLOY_PRO_DIR
+            elif [ "${CIRCLE_BRANCH}" = "beta" ]; then
+              echo "Deploying for beta branch"
+              export NS="beta"
+              cd $DEPLOY_BETA_DIR
+            elif [ "${CIRCLE_BRANCH}" = "develop" ]; then
+              echo "Deploying for develop branch"
+              export NS="test"
+              cd $DEPLOY_TEST_DIR
+            else
+              echo "Not a deployable branch"
+            fi
+      - run:
+          name: Deploy different branches
+          command: |
+            echo "Deploying to ${NS} namespace"
+            kubectl delete pod -n ${NS} -l repo=illa-builder-backend
+            kubectl delete pod -n ${NS} -l repo=illa-builder-backend-ws
+            kubectl apply -f ./illa-builder-backend/ -n ${NS}
+            kubectl apply -f ./illa-builder-backend-ws/ -n ${NS}
 
 workflows:
   illa-builder-backend:
     when:
       or:
+        - equal: [main, << pipeline.git.branch >>]
+        - equal: [beta, << pipeline.git.branch >>]
         - equal: [develop, << pipeline.git.branch >>]
     jobs:
       - build:
