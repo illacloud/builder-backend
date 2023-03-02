@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type AppRepository interface {
+type AppStorage interface {
 	Create(app *App) (int, error)
 	Delete(teamID int, appID int) error
 	Update(app *App) error
@@ -18,40 +18,40 @@ type AppRepository interface {
 	RetrieveAppLastModifiedTime(teamID int) (time.Time, error)
 }
 
-type AppRepositoryImpl struct {
+type AppStorageImpl struct {
 	logger *zap.SugaredLogger
 	db     *gorm.DB
 }
 
-func NewAppRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *AppRepositoryImpl {
-	return &AppRepositoryImpl{
+func NewAppStorageImpl(logger *zap.SugaredLogger, db *gorm.DB) *AppStorageImpl {
+	return &AppStorageImpl{
 		logger: logger,
 		db:     db,
 	}
 }
 
-func (impl *AppRepositoryImpl) Create(app *App) (int, error) {
+func (impl *AppStorageImpl) Create(app *App) error {
 	if err := impl.db.Create(app).Error; err != nil {
-		return 0, err
+		return err
 	}
-	return app.ID, nil
+	return nil
 }
 
-func (impl *AppRepositoryImpl) Delete(teamID int, appID int) error {
+func (impl *AppStorageImpl) Delete(teamID int, appID int) error {
 	if err := impl.db.Where("team_id = ? AND id = ?", teamID, appID).Delete(&App{}).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (impl *AppRepositoryImpl) Update(app *App) error {
+func (impl *AppStorageImpl) Update(app *App) error {
 	if err := impl.db.Model(&App{}).Where("id = ?", app.ID).UpdateColumns(app).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (impl *AppRepositoryImpl) RetrieveAll(teamID int) ([]*App, error) {
+func (impl *AppStorageImpl) RetrieveAll(teamID int) ([]*App, error) {
 	var apps []*App
 	if err := impl.db.Where("team_id = ?", teamID).Find(&apps).Error; err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (impl *AppRepositoryImpl) RetrieveAll(teamID int) ([]*App, error) {
 	return apps, nil
 }
 
-func (impl *AppRepositoryImpl) RetrieveAppByIDAndTeamID(appID int, teamID int) (*App, error) {
+func (impl *AppStorageImpl) RetrieveAppByIDAndTeamID(appID int, teamID int) (*App, error) {
 	var app *App
 	if err := impl.db.Where("id = ? AND team_id = ?", appID, teamID).Find(&app).Error; err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (impl *AppRepositoryImpl) RetrieveAppByIDAndTeamID(appID int, teamID int) (
 	return app, nil
 }
 
-func (impl *AppRepositoryImpl) RetrieveAllByUpdatedTime(teamID int) ([]*App, error) {
+func (impl *AppStorageImpl) RetrieveAllByUpdatedTime(teamID int) ([]*App, error) {
 	var apps []*App
 	if err := impl.db.Where("team_id = ?", teamID).Order("updated_at desc").Find(&apps).Error; err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (impl *AppRepositoryImpl) RetrieveAllByUpdatedTime(teamID int) ([]*App, err
 	return apps, nil
 }
 
-func (impl *AppRepositoryImpl) CountAPPByTeamID(teamID int) (int, error) {
+func (impl *AppStorageImpl) CountAPPByTeamID(teamID int) (int, error) {
 	var count int64
 	if err := impl.db.Model(&App{}).Where("team_id = ?", teamID).Count(&count).Error; err != nil {
 		return 0, err
@@ -83,7 +83,7 @@ func (impl *AppRepositoryImpl) CountAPPByTeamID(teamID int) (int, error) {
 	return int(count), nil
 }
 
-func (impl *AppRepositoryImpl) RetrieveAppLastModifiedTime(teamID int) (time.Time, error) {
+func (impl *AppStorageImpl) RetrieveAppLastModifiedTime(teamID int) (time.Time, error) {
 	var app *App
 	if err := impl.db.Where("team_id = ?", teamID).Order("updated_at desc").First(&app).Error; err != nil {
 		return time.Time{}, err

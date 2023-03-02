@@ -81,7 +81,7 @@ func ConstructComponentStateForUpdateByPayload(data interface{}) (*ComponentStat
 	return &csfu, nil
 }
 
-func ConstructComponentNodeByMap(data interface{}) *ComponentNode {
+func NewComponentNodeByRawData(data interface{}) *ComponentNode {
 	var cnode ComponentNode
 	var udata map[string]interface{}
 	var ok bool
@@ -104,7 +104,7 @@ func ConstructComponentNodeByMap(data interface{}) *ComponentNode {
 		case "childrenNode":
 			childrenNode, _ := v.([]interface{})
 			for _, node := range childrenNode {
-				cnode.ChildrenNode = append(cnode.ChildrenNode, ConstructComponentNodeByMap(node))
+				cnode.ChildrenNode = append(cnode.ChildrenNode, NewComponentNodeByRawData(node))
 			}
 		case "type":
 			cnode.Type, _ = v.(string)

@@ -25,13 +25,10 @@ type AppConfig struct {
 	Public bool `json:"public"` // switch for public app (which can view by anonymous user)
 }
 
-func (ac *AppConfig) ExportToJSONString() string {
-	r, _ := json.Marshal(ac)
-	return string(r)
-}
-
-func (ac *AppConfig) IsPublic() bool {
-	return ac.Public
+func NewAppConfig() *AppConfig {
+	return &AppConfig{
+		Public: false, // app always is private in default.
+	}
 }
 
 func NewAppConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*AppConfig, error) {
@@ -48,4 +45,13 @@ func NewAppConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*AppConfi
 		}
 	}
 	return appConfig, nil
+}
+
+func (ac *AppConfig) ExportToJSONString() string {
+	r, _ := json.Marshal(ac)
+	return string(r)
+}
+
+func (ac *AppConfig) IsPublic() bool {
+	return ac.Public
 }
