@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/illacloud/builder-backend/internal/idconvertor"
+	"github.com/illacloud/illa-builder-backend/internal/idconvertor"
 )
 
 type DeleteResourceResponse struct {

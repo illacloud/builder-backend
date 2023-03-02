@@ -23,10 +23,10 @@ import (
 	"strings"
 	"time"
 
-	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
-	"github.com/illacloud/builder-backend/internal/repository"
-	"github.com/illacloud/builder-backend/pkg/action"
-	"github.com/illacloud/builder-backend/pkg/app"
+	ac "github.com/illacloud/illa-builder-backend/internal/accesscontrol"
+	"github.com/illacloud/illa-builder-backend/internal/repository"
+	"github.com/illacloud/illa-builder-backend/pkg/action"
+	"github.com/illacloud/illa-builder-backend/pkg/app"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"

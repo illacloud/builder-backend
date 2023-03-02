@@ -21,8 +21,8 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/illacloud/builder-backend/internal/repository"
-	"github.com/illacloud/builder-backend/pkg/app"
+	"github.com/illacloud/illa-builder-backend/internal/repository"
+	"github.com/illacloud/illa-builder-backend/pkg/app"
 	"go.uber.org/zap"
 )
 

@@ -15,9 +15,9 @@
 package wireset
 
 import (
-	"github.com/illacloud/builder-backend/api/resthandler"
-	"github.com/illacloud/builder-backend/api/router"
-	"github.com/illacloud/builder-backend/pkg/room"
+	"github.com/illacloud/illa-builder-backend/api/resthandler"
+	"github.com/illacloud/illa-builder-backend/api/router"
+	"github.com/illacloud/illa-builder-backend/pkg/room"
 
 	"github.com/google/wire"
 )

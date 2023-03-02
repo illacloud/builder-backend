@@ -21,7 +21,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/illacloud/builder-backend/internal/idconvertor"
+	"github.com/illacloud/illa-builder-backend/internal/idconvertor"
 )
 
 const (

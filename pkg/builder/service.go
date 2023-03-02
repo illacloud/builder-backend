@@ -15,7 +15,7 @@
 package builder
 
 import (
-	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/illa-builder-backend/internal/repository"
 	"time"
 	"go.uber.org/zap"
 )

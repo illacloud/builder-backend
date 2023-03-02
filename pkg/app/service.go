@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/illacloud/builder-backend/internal/datacontrol"
-	"github.com/illacloud/builder-backend/internal/idconvertor"
-	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/illa-builder-backend/internal/datacontrol"
+	"github.com/illacloud/illa-builder-backend/internal/idconvertor"
+	"github.com/illacloud/illa-builder-backend/internal/repository"
 
 	"go.uber.org/zap"
 )

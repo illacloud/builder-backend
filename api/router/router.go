@@ -15,7 +15,7 @@
 package router
 
 import (
-	"github.com/illacloud/builder-backend/pkg/user"
+	"github.com/illacloud/illa-builder-backend/pkg/user"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"

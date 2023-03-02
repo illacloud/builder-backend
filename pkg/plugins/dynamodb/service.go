@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/illacloud/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/illa-builder-backend/pkg/plugins/common"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"

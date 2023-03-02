@@ -15,11 +15,11 @@
 package filter
 
 import (
-	"github.com/illacloud/builder-backend/internal/repository"
-	"github.com/illacloud/builder-backend/pkg/app"
-	"github.com/illacloud/builder-backend/pkg/state"
+	"github.com/illacloud/illa-builder-backend/internal/repository"
+	"github.com/illacloud/illa-builder-backend/pkg/app"
+	"github.com/illacloud/illa-builder-backend/pkg/state"
 
-	ws "github.com/illacloud/builder-backend/internal/websocket"
+	ws "github.com/illacloud/illa-builder-backend/internal/websocket"
 )
 
 func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {

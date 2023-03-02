@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/illacloud/builder-backend/internal/idconvertor"
+	"github.com/illacloud/illa-builder-backend/internal/idconvertor"
 )
 
 const CUSTOMIZATION_LANGUAGE_EN_US = "en-US"

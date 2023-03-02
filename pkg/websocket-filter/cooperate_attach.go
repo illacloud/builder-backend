@@ -17,7 +17,7 @@ package filter
 import (
 	"errors"
 
-	ws "github.com/illacloud/builder-backend/internal/websocket"
+	ws "github.com/illacloud/illa-builder-backend/internal/websocket"
 )
 
 func SignalCooperateAttach(hub *ws.Hub, message *ws.Message) error {

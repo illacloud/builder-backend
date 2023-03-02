@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/illacloud/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/illa-builder-backend/pkg/plugins/common"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"

@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/illacloud/builder-backend/internal/idconvertor"
-	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/illa-builder-backend/internal/idconvertor"
+	"github.com/illacloud/illa-builder-backend/internal/repository"
 )
 
 const PARAM_AUTHORIZATION = "Authorization"

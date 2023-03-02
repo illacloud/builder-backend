@@ -17,9 +17,9 @@ package main
 import (
 	"os"
 
-	"github.com/illacloud/builder-backend/api/router"
-	"github.com/illacloud/builder-backend/pkg/cors"
-	"github.com/illacloud/builder-backend/pkg/recovery"
+	"github.com/illacloud/illa-builder-backend/api/router"
+	"github.com/illacloud/illa-builder-backend/pkg/cors"
+	"github.com/illacloud/illa-builder-backend/pkg/recovery"
 
 	"github.com/caarlos0/env"
 	"github.com/gin-gonic/gin"

@@ -22,9 +22,9 @@ import (
 	"strconv"
 	"strings"
 
-	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
-	dc "github.com/illacloud/builder-backend/internal/datacontrol"
-	"github.com/illacloud/builder-backend/pkg/action"
+	ac "github.com/illacloud/illa-builder-backend/internal/accesscontrol"
+	dc "github.com/illacloud/illa-builder-backend/internal/datacontrol"
+	"github.com/illacloud/illa-builder-backend/pkg/action"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"

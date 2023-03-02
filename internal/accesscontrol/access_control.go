@@ -1,7 +1,7 @@
 package accesscontrol
 
 import (
-	supervisior "github.com/illacloud/builder-backend/internal/util/supervisior"
+	supervisior "github.com/illacloud/illa-builder-backend/internal/util/supervisior"
 )
 
 // default

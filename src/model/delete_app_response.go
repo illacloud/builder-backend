@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/illacloud/builder-backend/src/utils/idconvertor"
+	"github.com/illacloud/illa-builder-backend/src/utils/idconvertor"
 )
 
 type DeleteAppResponse struct {

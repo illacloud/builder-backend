@@ -26,7 +26,7 @@ import (
 
 	"github.com/caarlos0/env"
 	"github.com/golang-jwt/jwt/v4"
-	emailCloud "github.com/illacloud/builder-backend/pkg/email-cloud"
+	emailCloud "github.com/illacloud/illa-builder-backend/pkg/email-cloud"
 )
 
 var (

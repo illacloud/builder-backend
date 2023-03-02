@@ -21,7 +21,7 @@ import (
 	"net/url"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/illacloud/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/illa-builder-backend/pkg/plugins/common"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/gomail.v2"
 )

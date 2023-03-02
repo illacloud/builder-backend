@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/illacloud/builder-backend/pkg/db"
+	"github.com/illacloud/illa-builder-backend/pkg/db"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"

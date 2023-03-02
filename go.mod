@@ -1,4 +1,4 @@
-module github.com/illacloud/builder-backend
+module github.com/illacloud/illa-builder-backend
 
 go 1.19
 

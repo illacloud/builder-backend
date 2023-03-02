@@ -8,18 +8,18 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/illacloud/builder-backend/api/resthandler"
-	"github.com/illacloud/builder-backend/api/router"
-	"github.com/illacloud/builder-backend/internal/repository"
-	"github.com/illacloud/builder-backend/internal/util"
-	"github.com/illacloud/builder-backend/internal/accesscontrol"
-	"github.com/illacloud/builder-backend/pkg/action"
-	"github.com/illacloud/builder-backend/pkg/builder"
-	"github.com/illacloud/builder-backend/pkg/app"
-	"github.com/illacloud/builder-backend/pkg/db"
-	"github.com/illacloud/builder-backend/pkg/resource"
-	"github.com/illacloud/builder-backend/pkg/room"
-	"github.com/illacloud/builder-backend/pkg/state"
+	"github.com/illacloud/illa-builder-backend/api/resthandler"
+	"github.com/illacloud/illa-builder-backend/api/router"
+	"github.com/illacloud/illa-builder-backend/internal/repository"
+	"github.com/illacloud/illa-builder-backend/internal/util"
+	"github.com/illacloud/illa-builder-backend/internal/accesscontrol"
+	"github.com/illacloud/illa-builder-backend/pkg/action"
+	"github.com/illacloud/illa-builder-backend/pkg/builder"
+	"github.com/illacloud/illa-builder-backend/pkg/app"
+	"github.com/illacloud/illa-builder-backend/pkg/db"
+	"github.com/illacloud/illa-builder-backend/pkg/resource"
+	"github.com/illacloud/illa-builder-backend/pkg/room"
+	"github.com/illacloud/illa-builder-backend/pkg/state"
 )
 
 // Injectors from wire.go:

@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
-	"github.com/illacloud/builder-backend/internal/repository"
-	"github.com/illacloud/builder-backend/pkg/resource"
+	ac "github.com/illacloud/illa-builder-backend/internal/accesscontrol"
+	"github.com/illacloud/illa-builder-backend/internal/repository"
+	"github.com/illacloud/illa-builder-backend/pkg/resource"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"

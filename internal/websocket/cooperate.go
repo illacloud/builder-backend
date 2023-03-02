@@ -1,7 +1,7 @@
 package ws
 
 import (
-	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/illa-builder-backend/internal/repository"
 )
 
 const DEFAULT_ROOM_SLOT = 0

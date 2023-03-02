@@ -15,11 +15,11 @@
 package resthandler
 
 import (
-	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
-	dc "github.com/illacloud/builder-backend/internal/datacontrol"
-	"github.com/illacloud/builder-backend/internal/repository"
-	"github.com/illacloud/builder-backend/pkg/app"
-	"github.com/illacloud/builder-backend/pkg/state"
+	ac "github.com/illacloud/illa-builder-backend/internal/accesscontrol"
+	dc "github.com/illacloud/illa-builder-backend/internal/datacontrol"
+	"github.com/illacloud/illa-builder-backend/internal/repository"
+	"github.com/illacloud/illa-builder-backend/pkg/app"
+	"github.com/illacloud/illa-builder-backend/pkg/state"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"

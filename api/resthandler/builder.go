@@ -17,8 +17,8 @@ package resthandler
 import (
 	"net/http"
 
-	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
-	"github.com/illacloud/builder-backend/pkg/builder"
+	ac "github.com/illacloud/illa-builder-backend/internal/accesscontrol"
+	"github.com/illacloud/illa-builder-backend/pkg/builder"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"

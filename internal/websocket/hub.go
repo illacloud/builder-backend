@@ -15,9 +15,9 @@
 package ws
 
 import (
-	"github.com/illacloud/builder-backend/pkg/app"
-	"github.com/illacloud/builder-backend/pkg/resource"
-	"github.com/illacloud/builder-backend/pkg/state"
+	"github.com/illacloud/illa-builder-backend/pkg/app"
+	"github.com/illacloud/illa-builder-backend/pkg/resource"
+	"github.com/illacloud/illa-builder-backend/pkg/state"
 	"github.com/google/uuid"
 )
 

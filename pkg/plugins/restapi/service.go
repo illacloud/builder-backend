@@ -22,7 +22,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
-	"github.com/illacloud/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/illa-builder-backend/pkg/plugins/common"
 	"github.com/mitchellh/mapstructure"
 )
 

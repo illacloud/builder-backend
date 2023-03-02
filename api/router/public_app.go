@@ -15,7 +15,7 @@
 package router
 
 import (
-	"github.com/illacloud/builder-backend/api/resthandler"
+	"github.com/illacloud/illa-builder-backend/api/resthandler"
 
 	"github.com/gin-gonic/gin"
 )
