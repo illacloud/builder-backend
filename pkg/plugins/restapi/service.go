@@ -180,7 +180,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		break
 	case BODY_FORM:
 		b := r.Action.ReflectBodyToMap()
-		actionClient.SetBody(b)
+		actionClient.SetFormData(b)
 		break
 	case BODY_XWFU:
 		b := r.Action.ReflectBodyToMap()
