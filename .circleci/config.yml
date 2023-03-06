@@ -143,9 +143,9 @@ jobs:
             else
               echo ${CIRCLE_BRANCH}
               echo "export IMAGE_TAG=${CIRCLE_BRANCH}" >> "$BASH_ENV"
-              echo "export FE=main" >> "$BASH_ENV"
+              echo "export FE=${CIRCLE_BRANCH}" >> "$BASH_ENV"
               echo "export BE=${CIRCLE_BRANCH}" >> "$BASH_ENV"
-              echo "export SBE=main" >> "$BASH_ENV"
+              echo "export SBE=${CIRCLE_BRANCH}" >> "$BASH_ENV"
             fi
       - run:
           name: Download build scripts
@@ -187,6 +187,7 @@ workflows:
     when:
       or:
         - equal: [ main, << pipeline.git.branch >> ]
+        - equal: [develop, << pipeline.git.branch >>]
     jobs:
       - build-all-in-one-image:
           context:
