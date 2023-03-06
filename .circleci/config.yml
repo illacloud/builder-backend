@@ -121,6 +121,48 @@ jobs:
             kubectl apply -f ./illa-builder-backend/ -n ${NS}
             kubectl apply -f ./illa-builder-backend-ws/ -n ${NS}
 
+  build-all-in-one-image:
+    parameters: # parameters are at the job level
+      TAG:
+        type: boolean
+        default: false
+    machine: # executor type
+      image: ubuntu-2004:202010-01
+    resource_class: large
+    steps:
+      - checkout
+      - run:
+          name: Preprocess
+          command: |
+            if [ << parameters.TAG >> = true ]; then
+              echo ${CIRCLE_TAG}
+              echo "export IMAGE_TAG=${CIRCLE_TAG}" >> "$BASH_ENV"
+              echo "export FE=main" >> "$BASH_ENV"
+              echo "export BE=${CIRCLE_TAG}" >> "$BASH_ENV"
+              echo "export SBE=main" >> "$BASH_ENV"
+            else
+              echo ${CIRCLE_BRANCH}
+              echo "export IMAGE_TAG=${CIRCLE_BRANCH}" >> "$BASH_ENV"
+              echo "export FE=${CIRCLE_BRANCH}" >> "$BASH_ENV"
+              echo "export BE=${CIRCLE_BRANCH}" >> "$BASH_ENV"
+              echo "export SBE=${CIRCLE_BRANCH}" >> "$BASH_ENV"
+            fi
+      - run:
+          name: Download build scripts
+          command: |
+            git clone https://github.com/illacloud/build-all-in-one-image
+      - run:
+          name: Build and push Docker image
+          command: |
+            cd ./build-all-in-one-image
+            docker build -f ./dockerfile -t illasoft/illa-builder:${IMAGE_TAG} --build-arg FE=${FE} --build-arg BE=${BE} --build-arg SBE=${SBE} --no-cache .
+            docker login -u $DOCKER_LOGIN -p $DOCKER_PWD
+            docker push illasoft/illa-builder:${IMAGE_TAG}
+            if [ << parameters.TAG >> = true ]; then
+              docker tag illasoft/illa-builder:${IMAGE_TAG} illasoft/illa-builder:latest
+              docker push illasoft/illa-builder:latest
+            fi
+
 workflows:
   illa-builder-backend:
     when:
@@ -141,3 +183,23 @@ workflows:
           requires:
             - build
             - build-ws
+  branch-build-all-in-one-image:
+    when:
+      or:
+        - equal: [ main, << pipeline.git.branch >> ]
+        - equal: [develop, << pipeline.git.branch >>]
+    jobs:
+      - build-all-in-one-image:
+          context:
+            - org-global
+  tag-build-all-in-one-image:
+    jobs:
+      - build-all-in-one-image:
+          context:
+            - org-global
+          TAG: true
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9].*/

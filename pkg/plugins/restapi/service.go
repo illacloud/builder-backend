@@ -192,7 +192,10 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 
 	switch r.Action.Method {
 	case METHOD_GET:
-		resp, err := actionClient.SetQueryParams(actionURLParams).Get(baseURL + r.Action.URL)
+		resp, errInGet := actionClient.SetQueryParams(actionURLParams).Get(baseURL + r.Action.URL)
+		if errInGet != nil {
+			return res, errInGet
+		}
 		body := make(map[string]interface{})
 		listBody := make([]map[string]interface{}, 0)
 		if err := json.Unmarshal(resp.Body(), &body); err == nil {
@@ -209,7 +212,10 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		}
 		break
 	case METHOD_POST:
-		resp, err := actionClient.SetQueryParams(actionURLParams).Post(baseURL + r.Action.URL)
+		resp, errInPost := actionClient.SetQueryParams(actionURLParams).Post(baseURL + r.Action.URL)
+		if errInPost != nil {
+			return res, errInPost
+		}
 		body := make(map[string]interface{})
 		listBody := make([]map[string]interface{}, 0)
 		if err := json.Unmarshal(resp.Body(), &body); err == nil {
@@ -226,7 +232,10 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		}
 		break
 	case METHOD_PUT:
-		resp, err := actionClient.SetQueryParams(actionURLParams).Put(baseURL + r.Action.URL)
+		resp, errInPut := actionClient.SetQueryParams(actionURLParams).Put(baseURL + r.Action.URL)
+		if errInPut != nil {
+			return res, errInPut
+		}
 		body := make(map[string]interface{})
 		listBody := make([]map[string]interface{}, 0)
 		if err := json.Unmarshal(resp.Body(), &body); err == nil {
@@ -243,7 +252,10 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		}
 		break
 	case METHOD_PATCH:
-		resp, err := actionClient.SetQueryParams(actionURLParams).Patch(baseURL + r.Action.URL)
+		resp, errInPatch := actionClient.SetQueryParams(actionURLParams).Patch(baseURL + r.Action.URL)
+		if errInPatch != nil {
+			return res, errInPatch
+		}
 		body := make(map[string]interface{})
 		listBody := make([]map[string]interface{}, 0)
 		if err := json.Unmarshal(resp.Body(), &body); err == nil {
@@ -260,7 +272,10 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		}
 		break
 	case METHOD_DELETE:
-		resp, err := actionClient.SetQueryParams(actionURLParams).Delete(baseURL + r.Action.URL)
+		resp, errInDelete := actionClient.SetQueryParams(actionURLParams).Delete(baseURL + r.Action.URL)
+		if errInDelete != nil {
+			return res, errInDelete
+		}
 		body := make(map[string]interface{})
 		listBody := make([]map[string]interface{}, 0)
 		if err := json.Unmarshal(resp.Body(), &body); err == nil {
