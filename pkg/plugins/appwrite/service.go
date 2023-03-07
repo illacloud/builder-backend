@@ -103,8 +103,13 @@ func (a *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.Met
 	if !ok {
 		return common.MetaInfoResult{Success: false}, errors.New("invalid response")
 	}
-	collectionsArray, ok := collections.([]map[string]interface{})
-	if !ok {
+	collsBytes, err := json.Marshal(collections)
+	if err != nil {
+		return common.MetaInfoResult{Success: false}, errors.New("invalid response")
+	}
+
+	var collectionsArray []map[string]interface{}
+	if err = json.Unmarshal(collsBytes, &collectionsArray); err != nil {
 		return common.MetaInfoResult{Success: false}, errors.New("invalid response")
 	}
 
