@@ -15,6 +15,7 @@
 package resource
 
 import (
+	"github.com/illacloud/builder-backend/pkg/plugins/appwrite"
 	"github.com/illacloud/builder-backend/pkg/plugins/clickhouse"
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
 	"github.com/illacloud/builder-backend/pkg/plugins/couchdb"
@@ -58,6 +59,7 @@ var (
 	COUCHDB_RESOURCE       = "couchdb"
 	HFENDPOINT_RESOURCE    = "hfendpoint"
 	ORACLE_RESOURCE        = "oracle"
+	APPWRITE_RESOURCE      = "appwrite"
 )
 
 type AbstractResourceFactory interface {
@@ -124,6 +126,9 @@ func (f *Factory) Generate() common.DataConnector {
 	case ORACLE_RESOURCE:
 		oracleRsc := &oracle.Connector{}
 		return oracleRsc
+	case APPWRITE_RESOURCE:
+		appwriteRsc := &appwrite.Connector{}
+		return appwriteRsc
 	default:
 		return nil
 	}
