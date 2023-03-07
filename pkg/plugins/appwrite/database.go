@@ -122,7 +122,7 @@ func (a *ActionExecutor) CreateDoc() (common.RuntimeResult, error) {
 			}},
 		}, nil
 	}
-	if createRes.StatusCode != 200 {
+	if createRes.StatusCode != 201 {
 		return common.RuntimeResult{Success: false,
 			Rows: []map[string]interface{}{0: {
 				"message": "An error occurred while creating the document.",
@@ -256,7 +256,7 @@ func (a *ActionExecutor) DeleteDoc() (common.RuntimeResult, error) {
 			}},
 		}, nil
 	}
-	if deleteRes.StatusCode != 200 {
+	if deleteRes.StatusCode != 204 {
 		return common.RuntimeResult{Success: false,
 			Rows: []map[string]interface{}{0: {
 				"message": "An error occurred while deleting the document.",
