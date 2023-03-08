@@ -71,16 +71,25 @@ func (a *ActionExecutor) ListDocs() (common.RuntimeResult, error) {
 		return common.RuntimeResult{Success: false,
 			Rows: []map[string]interface{}{0: {
 				"message": err.Error(),
-				"success": true,
-				"result":  listRes.Result,
+				"success": false,
+				"result":  "",
+			}},
+		}, nil
+	}
+	if listRes == nil {
+		return common.RuntimeResult{Success: false,
+			Rows: []map[string]interface{}{0: {
+				"message": "An error occurred while getting the documents.",
+				"success": false,
+				"result":  "Unknown error",
 			}},
 		}, nil
 	}
 	if listRes.StatusCode != 200 {
 		return common.RuntimeResult{Success: false,
 			Rows: []map[string]interface{}{0: {
-				"message": "An error occurred while get the documents.",
-				"success": true,
+				"message": "An error occurred while getting the documents.",
+				"success": false,
 				"result":  listRes.Result,
 			}},
 		}, nil
@@ -117,8 +126,17 @@ func (a *ActionExecutor) CreateDoc() (common.RuntimeResult, error) {
 		return common.RuntimeResult{Success: false,
 			Rows: []map[string]interface{}{0: {
 				"message": err.Error(),
-				"success": true,
-				"result":  createRes.Result,
+				"success": false,
+				"result":  "",
+			}},
+		}, nil
+	}
+	if createRes == nil {
+		return common.RuntimeResult{Success: false,
+			Rows: []map[string]interface{}{0: {
+				"message": "An error occurred while creating the documents.",
+				"success": false,
+				"result":  "Unknown error",
 			}},
 		}, nil
 	}
@@ -126,7 +144,7 @@ func (a *ActionExecutor) CreateDoc() (common.RuntimeResult, error) {
 		return common.RuntimeResult{Success: false,
 			Rows: []map[string]interface{}{0: {
 				"message": "An error occurred while creating the document.",
-				"success": true,
+				"success": false,
 				"result":  createRes.Result,
 			}},
 		}, nil
@@ -161,16 +179,25 @@ func (a *ActionExecutor) GetDoc() (common.RuntimeResult, error) {
 		return common.RuntimeResult{Success: false,
 			Rows: []map[string]interface{}{0: {
 				"message": err.Error(),
-				"success": true,
-				"result":  getRes.Result,
+				"success": false,
+				"result":  "",
+			}},
+		}, nil
+	}
+	if getRes == nil {
+		return common.RuntimeResult{Success: false,
+			Rows: []map[string]interface{}{0: {
+				"message": "An error occurred while getting the document.",
+				"success": false,
+				"result":  "Unknown error",
 			}},
 		}, nil
 	}
 	if getRes.StatusCode != 200 {
 		return common.RuntimeResult{Success: false,
 			Rows: []map[string]interface{}{0: {
-				"message": "An error occurred while get the document.",
-				"success": true,
+				"message": "An error occurred while getting the document.",
+				"success": false,
 				"result":  getRes.Result,
 			}},
 		}, nil
@@ -207,8 +234,17 @@ func (a *ActionExecutor) UpdateDoc() (common.RuntimeResult, error) {
 		return common.RuntimeResult{Success: false,
 			Rows: []map[string]interface{}{0: {
 				"message": err.Error(),
-				"success": true,
-				"result":  updateRes.Result,
+				"success": false,
+				"result":  "",
+			}},
+		}, nil
+	}
+	if updateRes == nil {
+		return common.RuntimeResult{Success: false,
+			Rows: []map[string]interface{}{0: {
+				"message": "An error occurred while updating the document.",
+				"success": false,
+				"result":  "Unknown error",
 			}},
 		}, nil
 	}
@@ -216,7 +252,7 @@ func (a *ActionExecutor) UpdateDoc() (common.RuntimeResult, error) {
 		return common.RuntimeResult{Success: false,
 			Rows: []map[string]interface{}{0: {
 				"message": "An error occurred while updating the document.",
-				"success": true,
+				"success": false,
 				"result":  updateRes.Result,
 			}},
 		}, nil
@@ -251,8 +287,17 @@ func (a *ActionExecutor) DeleteDoc() (common.RuntimeResult, error) {
 		return common.RuntimeResult{Success: false,
 			Rows: []map[string]interface{}{0: {
 				"message": err.Error(),
-				"success": true,
-				"result":  deleteRes.Result,
+				"success": false,
+				"result":  "",
+			}},
+		}, nil
+	}
+	if deleteRes == nil {
+		return common.RuntimeResult{Success: false,
+			Rows: []map[string]interface{}{0: {
+				"message": "An error occurred while deleting the document.",
+				"success": false,
+				"result":  "Unknown error",
 			}},
 		}, nil
 	}
@@ -260,7 +305,7 @@ func (a *ActionExecutor) DeleteDoc() (common.RuntimeResult, error) {
 		return common.RuntimeResult{Success: false,
 			Rows: []map[string]interface{}{0: {
 				"message": "An error occurred while deleting the document.",
-				"success": true,
+				"success": false,
 				"result":  deleteRes.Result,
 			}},
 		}, nil
