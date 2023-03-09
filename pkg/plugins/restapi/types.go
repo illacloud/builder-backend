@@ -14,27 +14,20 @@
 
 package restapi
 
-import (
-	"crypto/tls"
-	"crypto/x509"
-	"encoding/base64"
-	"fmt"
-)
+import "encoding/base64"
 
 type RESTOptions struct {
 	BaseURL        string `validate:"required"`
 	URLParams      []map[string]string
 	Headers        []map[string]string
 	Cookies        []map[string]string
-	SelfSignedCert bool
-	Certs          map[string]string `validate:"required_unless=SelfSignedCert false"`
-	Authentication string            `validate:"oneof=none basic bearer digest oauth1.0 hawk aws"`
+	Authentication string            `validate:"oneof=none basic bearer"`
 	AuthContent    map[string]string `validate:"required_unless=Authentication none"`
 }
 
 type RESTTemplate struct {
 	URL       string
-	Method    string `validate:"oneof=GET POST PUT PATCH DELETE HEAD OPTIONS"`
+	Method    string `validate:"oneof=GET POST PUT PATCH DELETE"`
 	BodyType  string `validate:"oneof=none form-data x-www-form-urlencoded raw json binary"`
 	UrlParams []map[string]string
 	Headers   []map[string]string
@@ -110,74 +103,4 @@ func (t *RESTTemplate) ReflectBodyToMap() map[string]string {
 		rs[record.Key] = record.Value
 	}
 	return rs
-}
-
-type FormDataBody struct {
-	Key   string
-	Type  string
-	Value string
-}
-
-func (t *RESTTemplate) ReflectBodyToMultipart() (texts, files map[string]string) {
-	rs := make(map[string]string)
-	fs := make(map[string]string)
-	objs, _ := t.Body.([]interface{})
-	for _, v := range objs {
-		obj, _ := v.(map[string]interface{})
-		record := &FormDataBody{}
-		for k, v2 := range obj {
-			switch k {
-			case "key":
-				record.Key, _ = v2.(string)
-			case "value":
-				record.Value, _ = v2.(string)
-			case "type":
-				record.Type, _ = v2.(string)
-			}
-		}
-		if record.Type == "text" {
-			rs[record.Key] = record.Value
-		} else if record.Type == "file" {
-			v3, _ := base64.StdEncoding.DecodeString(record.Value)
-			fs[record.Key] = string(v3)
-		}
-	}
-	return rs, fs
-}
-
-func loadSelfSignedCerts(server string, certs map[string]string) (*tls.Config, error) {
-	cfg := &tls.Config{}
-	switch certs["mode"] {
-	case VERIFY_MODE_CA:
-		caCertPool := x509.NewCertPool()
-		if !caCertPool.AppendCertsFromPEM([]byte(certs["caCert"])) {
-			return nil, fmt.Errorf("failed to append caCert")
-		}
-		cfg = &tls.Config{
-			RootCAs:    caCertPool,
-			ServerName: server,
-		}
-	case VERIFY_MODE_FULL:
-		cert, err := tls.X509KeyPair([]byte(certs["clientCert"]), []byte(certs["clientKey"]))
-		if err != nil {
-			return nil, err
-		}
-		caCertPool := x509.NewCertPool()
-		if !caCertPool.AppendCertsFromPEM([]byte(certs["caCert"])) {
-			return nil, fmt.Errorf("failed to append caCert")
-		}
-		cfg = &tls.Config{
-			Certificates: []tls.Certificate{cert},
-			RootCAs:      caCertPool,
-			ServerName:   server,
-		}
-	case VERIFY_MODE_SKIP:
-		cfg = &tls.Config{
-			InsecureSkipVerify: true,
-		}
-	default:
-		break
-	}
-
-	return cfg, nil
 }
