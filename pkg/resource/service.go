@@ -25,9 +25,9 @@ import (
 	"go.uber.org/zap"
 )
 
-var type_array = [21]string{"restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb", "tidb",
+var type_array = [22]string{"restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb", "tidb",
 	"elasticsearch", "s3", "smtp", "supabasedb", "firebase", "clickhouse", "mssql", "huggingface", "dynamodb", "snowflake",
-	"couchdb", "hfendpoint", "oracle"}
+	"couchdb", "hfendpoint", "oracle", "appwrite"}
 var type_map = map[string]int{
 	"restapi":       1,
 	"graphql":       2,
@@ -50,6 +50,7 @@ var type_map = map[string]int{
 	"couchdb":       19,
 	"hfendpoint":    20,
 	"oracle":        21,
+	"appwrite":      22,
 }
 
 type ResourceService interface {
@@ -68,7 +69,7 @@ type ResourceDto struct {
 	UID       uuid.UUID              `json:"uid"`
 	TeamID    int                    `json:"teamID"`
 	Name      string                 `json:"resourceName" validate:"required"`
-	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle"`
+	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle appwrite"`
 	Options   map[string]interface{} `json:"content" validate:"required"`
 	CreatedAt time.Time              `json:"createdAt,omitempty"`
 	CreatedBy int                    `json:"createdBy,omitempty"`
@@ -81,7 +82,7 @@ type ResourceDtoForExport struct {
 	UID       uuid.UUID              `json:"uid"`
 	TeamID    string                 `json:"teamID"`
 	Name      string                 `json:"resourceName" validate:"required"`
-	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb"`
+	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle appwrite"`
 	Options   map[string]interface{} `json:"content" validate:"required"`
 	CreatedAt time.Time              `json:"createdAt,omitempty"`
 	CreatedBy string                 `json:"createdBy,omitempty"`
@@ -117,20 +118,20 @@ func (resp *ResourceDtoForExport) ExportResourceDto() ResourceDto {
 		CreatedAt: resp.CreatedAt,
 		UpdatedAt: resp.UpdatedAt,
 	}
-	if resp.TeamID != ""{
-		resourceDto.TeamID =   idconvertor.ConvertStringToInt(resp.TeamID)
+	if resp.TeamID != "" {
+		resourceDto.TeamID = idconvertor.ConvertStringToInt(resp.TeamID)
 	}
-	if resp.ID != ""{
-		resourceDto.ID =        idconvertor.ConvertStringToInt(resp.ID)
+	if resp.ID != "" {
+		resourceDto.ID = idconvertor.ConvertStringToInt(resp.ID)
 	}
-	if resp.CreatedBy != ""{
+	if resp.CreatedBy != "" {
 		resourceDto.CreatedBy = idconvertor.ConvertStringToInt(resp.CreatedBy)
 	}
-	if resp.UpdatedBy != ""{
+	if resp.UpdatedBy != "" {
 		resourceDto.UpdatedBy = idconvertor.ConvertStringToInt(resp.UpdatedBy)
 	}
 	return resourceDto
-		
+
 }
 
 func (r *ResourceDto) InitUID() {
