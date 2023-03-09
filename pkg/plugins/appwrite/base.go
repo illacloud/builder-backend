@@ -15,6 +15,8 @@
 package appwrite
 
 import (
+	"strings"
+
 	"github.com/illacloud/appwrite-sdk-go/appwrite"
 	"github.com/mitchellh/mapstructure"
 )
@@ -35,4 +37,14 @@ func (a *Connector) getClientWithOpts(Opts map[string]interface{}) (*appwrite.Da
 	database := appwrite.NewDatabases(client)
 
 	return database, nil
+}
+
+func modifyMapKeysWithPattern(in map[string]interface{}, pattern string, replacement string) {
+	for k, v := range in {
+		if strings.Contains(k, pattern) {
+			newKey := strings.ReplaceAll(k, pattern, replacement)
+			in[newKey] = v
+			delete(in, k)
+		}
+	}
 }
