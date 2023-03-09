@@ -99,6 +99,13 @@ func (a *ActionExecutor) ListDocs() (common.RuntimeResult, error) {
 	if err := json.Unmarshal([]byte(listRes.Result), &res); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
+	if vs, ok := res["documents"].([]interface{}); ok {
+		for _, v := range vs {
+			if m, ok := v.(map[string]interface{}); ok {
+				modifyMapKeysWithPattern(m, "$", "")
+			}
+		}
+	}
 
 	return common.RuntimeResult{
 		Success: true,
@@ -207,6 +214,7 @@ func (a *ActionExecutor) GetDoc() (common.RuntimeResult, error) {
 	if err := json.Unmarshal([]byte(getRes.Result), &res); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
+	modifyMapKeysWithPattern(res, "$", "")
 
 	return common.RuntimeResult{
 		Success: true,
