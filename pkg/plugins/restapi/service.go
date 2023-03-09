@@ -22,6 +22,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
+	"github.com/icholy/digest"
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
 	"github.com/mitchellh/mapstructure"
 )
@@ -56,13 +57,11 @@ func (r *RESTAPIConnector) ValidateResourceOptions(resourceOptions map[string]in
 		if !ok || basicPassword == "" {
 			return common.ValidateResult{Valid: false}, errors.New("missing basic password")
 		}
-		break
 	case AUTH_BEARER:
 		bearerToken, ok := r.Resource.AuthContent["token"]
 		if !ok || bearerToken == "" {
 			return common.ValidateResult{Valid: false}, errors.New("missing bearer token")
 		}
-		break
 	}
 	return common.ValidateResult{Valid: true}, nil
 }
@@ -98,6 +97,12 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	}
 	var err error
 
+	u, err := url.ParseRequestURI(r.Resource.BaseURL)
+	if err != nil {
+		res.Success = false
+		return res, err
+	}
+
 	actionURLParams := map[string]string{}
 	for _, param := range r.Action.UrlParams {
 		if param["key"] != "" {
@@ -131,6 +136,16 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 
 	client := resty.New()
 
+	// self-signed cert
+	if r.Resource.SelfSignedCert {
+		serverName := u.Hostname()
+		tlsCfg, err := loadSelfSignedCerts(serverName, r.Resource.Certs)
+		if err != nil {
+			return res, err
+		}
+		client.SetTLSClientConfig(tlsCfg)
+	}
+
 	// get baseurl
 	uri, err := url.Parse(r.Resource.BaseURL)
 	if err != nil {
@@ -151,9 +166,19 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	switch r.Resource.Authentication {
 	case AUTH_BASIC:
 		client.SetBasicAuth(r.Resource.AuthContent["username"], r.Resource.AuthContent["password"])
-		break
 	case AUTH_BEARER:
 		client.SetAuthToken(r.Resource.AuthContent["token"])
+	case AUTH_DIGEST:
+		transport := &digest.Transport{
+			Username: r.Resource.AuthContent["username"],
+			Password: r.Resource.AuthContent["password"],
+		}
+		client.SetTransport(transport)
+	case AUTH_HAWK:
+		break
+	case AUTH_AWS:
+		break
+	case AUTH_OAUTH1:
 		break
 	}
 
@@ -173,27 +198,29 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	case BODY_RAW:
 		b := r.Action.ReflectBodyToRaw()
 		actionClient.SetBody(b.Content)
-		break
 	case BODY_BINARY:
 		b := r.Action.ReflectBodyToBinary()
 		actionClient.SetBody(b)
-		break
 	case BODY_FORM:
-		b := r.Action.ReflectBodyToMap()
-		actionClient.SetBody(b)
-		break
+		ts, fs := r.Action.ReflectBodyToMultipart()
+		if len(ts) > 0 {
+			actionClient.SetFormData(ts)
+		}
+		if len(fs) > 0 {
+			actionClient.SetMultipartFormData(fs)
+		}
 	case BODY_XWFU:
 		b := r.Action.ReflectBodyToMap()
 		actionClient.SetFormData(b)
-		break
 	case BODY_NONE:
 		break
 	}
 
 	switch r.Action.Method {
 	case METHOD_GET:
+		actionClient.SetBody(nil)
 		resp, errInGet := actionClient.SetQueryParams(actionURLParams).Get(baseURL + r.Action.URL)
-		if errInGet != nil {
+		if errInGet != nil && (resp == nil || resp.RawResponse == nil) {
 			return res, errInGet
 		}
 		body := make(map[string]interface{})
@@ -204,16 +231,16 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
 			res.Rows = listBody
 		}
-		res.Extra["raw"] = resp.Body()
-		res.Extra["headers"] = resp.Header()
-		if err != nil {
-			res.Success = false
-			return res, err
+		if len(res.Rows) == 0 && len(resp.Body()) > 0 {
+			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
-		break
+		res.Extra["body"] = string(resp.Body())
+		res.Extra["headers"] = resp.Header()
+		res.Extra["statusCode"] = resp.StatusCode()
+		res.Extra["statusText"] = resp.Status()
 	case METHOD_POST:
 		resp, errInPost := actionClient.SetQueryParams(actionURLParams).Post(baseURL + r.Action.URL)
-		if errInPost != nil {
+		if errInPost != nil && (resp == nil || resp.RawResponse == nil) {
 			return res, errInPost
 		}
 		body := make(map[string]interface{})
@@ -224,16 +251,16 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
 			res.Rows = listBody
 		}
-		res.Extra["raw"] = resp.Body()
-		res.Extra["headers"] = resp.Header()
-		if err != nil {
-			res.Success = false
-			return res, err
+		if len(res.Rows) == 0 && len(resp.Body()) > 0 {
+			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
-		break
+		res.Extra["body"] = string(resp.Body())
+		res.Extra["headers"] = resp.Header()
+		res.Extra["statusCode"] = resp.StatusCode()
+		res.Extra["statusText"] = resp.Status()
 	case METHOD_PUT:
 		resp, errInPut := actionClient.SetQueryParams(actionURLParams).Put(baseURL + r.Action.URL)
-		if errInPut != nil {
+		if errInPut != nil && (resp == nil || resp.RawResponse == nil) {
 			return res, errInPut
 		}
 		body := make(map[string]interface{})
@@ -244,16 +271,16 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
 			res.Rows = listBody
 		}
-		res.Extra["raw"] = resp.Body()
-		res.Extra["headers"] = resp.Header()
-		if err != nil {
-			res.Success = false
-			return res, err
+		if len(res.Rows) == 0 && len(resp.Body()) > 0 {
+			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
-		break
+		res.Extra["body"] = string(resp.Body())
+		res.Extra["headers"] = resp.Header()
+		res.Extra["statusCode"] = resp.StatusCode()
+		res.Extra["statusText"] = resp.Status()
 	case METHOD_PATCH:
 		resp, errInPatch := actionClient.SetQueryParams(actionURLParams).Patch(baseURL + r.Action.URL)
-		if errInPatch != nil {
+		if errInPatch != nil && (resp == nil || resp.RawResponse == nil) {
 			return res, errInPatch
 		}
 		body := make(map[string]interface{})
@@ -264,16 +291,16 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
 			res.Rows = listBody
 		}
-		res.Extra["raw"] = resp.Body()
-		res.Extra["headers"] = resp.Header()
-		if err != nil {
-			res.Success = false
-			return res, err
+		if len(res.Rows) == 0 && len(resp.Body()) > 0 {
+			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
-		break
+		res.Extra["body"] = string(resp.Body())
+		res.Extra["headers"] = resp.Header()
+		res.Extra["statusCode"] = resp.StatusCode()
+		res.Extra["statusText"] = resp.Status()
 	case METHOD_DELETE:
 		resp, errInDelete := actionClient.SetQueryParams(actionURLParams).Delete(baseURL + r.Action.URL)
-		if errInDelete != nil {
+		if errInDelete != nil && (resp == nil || resp.RawResponse == nil) {
 			return res, errInDelete
 		}
 		body := make(map[string]interface{})
@@ -284,13 +311,54 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
 			res.Rows = listBody
 		}
-		res.Extra["raw"] = resp.Body()
-		res.Extra["headers"] = resp.Header()
-		if err != nil {
-			res.Success = false
-			return res, err
+		if len(res.Rows) == 0 && len(resp.Body()) > 0 {
+			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
-		break
+		res.Extra["body"] = string(resp.Body())
+		res.Extra["headers"] = resp.Header()
+		res.Extra["statusCode"] = resp.StatusCode()
+		res.Extra["statusText"] = resp.Status()
+	case METHOD_HEAD:
+		actionClient.SetBody(nil)
+		resp, errInHead := actionClient.SetQueryParams(actionURLParams).Head(baseURL + r.Action.URL)
+		if errInHead != nil && (resp == nil || resp.RawResponse == nil) {
+			return res, errInHead
+		}
+		body := make(map[string]interface{})
+		listBody := make([]map[string]interface{}, 0)
+		if err := json.Unmarshal(resp.Body(), &body); err == nil {
+			res.Rows = append(res.Rows, body)
+		}
+		if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
+			res.Rows = listBody
+		}
+		if len(res.Rows) == 0 && len(resp.Body()) > 0 {
+			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
+		}
+		res.Extra["body"] = string(resp.Body())
+		res.Extra["headers"] = resp.Header()
+		res.Extra["statusCode"] = resp.StatusCode()
+		res.Extra["statusText"] = resp.Status()
+	case METHOD_OPTIONS:
+		resp, errInOptions := actionClient.SetQueryParams(actionURLParams).Options(baseURL + r.Action.URL)
+		if errInOptions != nil && (resp == nil || resp.RawResponse == nil) {
+			return res, errInOptions
+		}
+		body := make(map[string]interface{})
+		listBody := make([]map[string]interface{}, 0)
+		if err := json.Unmarshal(resp.Body(), &body); err == nil {
+			res.Rows = append(res.Rows, body)
+		}
+		if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
+			res.Rows = listBody
+		}
+		if len(res.Rows) == 0 && len(resp.Body()) > 0 {
+			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
+		}
+		res.Extra["body"] = string(resp.Body())
+		res.Extra["headers"] = resp.Header()
+		res.Extra["statusCode"] = resp.StatusCode()
+		res.Extra["statusText"] = resp.Status()
 	}
 
 	res.Success = true
