@@ -15,7 +15,6 @@
 package action
 
 import (
-	"github.com/illacloud/builder-backend/pkg/plugins/appwrite"
 	"github.com/illacloud/builder-backend/pkg/plugins/clickhouse"
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
 	"github.com/illacloud/builder-backend/pkg/plugins/couchdb"
@@ -60,7 +59,6 @@ var (
 	COUCHDB_ACTION       = "couchdb"
 	HFENDPOINT_ACTION    = "hfendpoint"
 	ORACLE_ACTION        = "oracle"
-	APPWRITE_ACTION      = "appwrite"
 )
 
 type AbstractActionFactory interface {
@@ -127,9 +125,6 @@ func (f *Factory) Build() common.DataConnector {
 	case ORACLE_ACTION:
 		oracleAction := &oracle.Connector{}
 		return oracleAction
-	case APPWRITE_ACTION:
-		appwriteAction := &appwrite.Connector{}
-		return appwriteAction
 	default:
 		return nil
 	}
