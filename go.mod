@@ -26,6 +26,7 @@ require (
 	github.com/google/wire v0.5.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
+	github.com/icholy/digest v0.1.22
 	github.com/illacloud/appwrite-sdk-go v0.0.2
 	github.com/jackc/pgtype v1.13.0
 	github.com/jackc/pgx/v5 v5.2.0

@@ -22,6 +22,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
+	"github.com/icholy/digest"
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
 	"github.com/mitchellh/mapstructure"
 )
@@ -56,13 +57,11 @@ func (r *RESTAPIConnector) ValidateResourceOptions(resourceOptions map[string]in
 		if !ok || basicPassword == "" {
 			return common.ValidateResult{Valid: false}, errors.New("missing basic password")
 		}
-		break
 	case AUTH_BEARER:
 		bearerToken, ok := r.Resource.AuthContent["token"]
 		if !ok || bearerToken == "" {
 			return common.ValidateResult{Valid: false}, errors.New("missing bearer token")
 		}
-		break
 	}
 	return common.ValidateResult{Valid: true}, nil
 }
@@ -167,9 +166,19 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	switch r.Resource.Authentication {
 	case AUTH_BASIC:
 		client.SetBasicAuth(r.Resource.AuthContent["username"], r.Resource.AuthContent["password"])
-		break
 	case AUTH_BEARER:
 		client.SetAuthToken(r.Resource.AuthContent["token"])
+	case AUTH_DIGEST:
+		transport := &digest.Transport{
+			Username: r.Resource.AuthContent["username"],
+			Password: r.Resource.AuthContent["password"],
+		}
+		client.SetTransport(transport)
+	case AUTH_HAWK:
+		break
+	case AUTH_AWS:
+		break
+	case AUTH_OAUTH1:
 		break
 	}
 
@@ -189,11 +198,9 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	case BODY_RAW:
 		b := r.Action.ReflectBodyToRaw()
 		actionClient.SetBody(b.Content)
-		break
 	case BODY_BINARY:
 		b := r.Action.ReflectBodyToBinary()
 		actionClient.SetBody(b)
-		break
 	case BODY_FORM:
 		ts, fs := r.Action.ReflectBodyToMultipart()
 		if len(ts) > 0 {
@@ -202,11 +209,9 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		if len(fs) > 0 {
 			actionClient.SetMultipartFormData(fs)
 		}
-		break
 	case BODY_XWFU:
 		b := r.Action.ReflectBodyToMap()
 		actionClient.SetFormData(b)
-		break
 	case BODY_NONE:
 		break
 	}
@@ -233,7 +238,6 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		res.Extra["headers"] = resp.Header()
 		res.Extra["statusCode"] = resp.StatusCode()
 		res.Extra["statusText"] = resp.Status()
-		break
 	case METHOD_POST:
 		resp, errInPost := actionClient.SetQueryParams(actionURLParams).Post(baseURL + r.Action.URL)
 		if errInPost != nil && (resp == nil || resp.RawResponse == nil) {
@@ -254,7 +258,6 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		res.Extra["headers"] = resp.Header()
 		res.Extra["statusCode"] = resp.StatusCode()
 		res.Extra["statusText"] = resp.Status()
-		break
 	case METHOD_PUT:
 		resp, errInPut := actionClient.SetQueryParams(actionURLParams).Put(baseURL + r.Action.URL)
 		if errInPut != nil && (resp == nil || resp.RawResponse == nil) {
@@ -275,7 +278,6 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		res.Extra["headers"] = resp.Header()
 		res.Extra["statusCode"] = resp.StatusCode()
 		res.Extra["statusText"] = resp.Status()
-		break
 	case METHOD_PATCH:
 		resp, errInPatch := actionClient.SetQueryParams(actionURLParams).Patch(baseURL + r.Action.URL)
 		if errInPatch != nil && (resp == nil || resp.RawResponse == nil) {
@@ -296,7 +298,6 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		res.Extra["headers"] = resp.Header()
 		res.Extra["statusCode"] = resp.StatusCode()
 		res.Extra["statusText"] = resp.Status()
-		break
 	case METHOD_DELETE:
 		resp, errInDelete := actionClient.SetQueryParams(actionURLParams).Delete(baseURL + r.Action.URL)
 		if errInDelete != nil && (resp == nil || resp.RawResponse == nil) {
@@ -317,7 +318,6 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		res.Extra["headers"] = resp.Header()
 		res.Extra["statusCode"] = resp.StatusCode()
 		res.Extra["statusText"] = resp.Status()
-		break
 	case METHOD_HEAD:
 		actionClient.SetBody(nil)
 		resp, errInHead := actionClient.SetQueryParams(actionURLParams).Head(baseURL + r.Action.URL)
@@ -339,7 +339,6 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		res.Extra["headers"] = resp.Header()
 		res.Extra["statusCode"] = resp.StatusCode()
 		res.Extra["statusText"] = resp.Status()
-		break
 	case METHOD_OPTIONS:
 		resp, errInOptions := actionClient.SetQueryParams(actionURLParams).Options(baseURL + r.Action.URL)
 		if errInOptions != nil && (resp == nil || resp.RawResponse == nil) {
@@ -360,7 +359,6 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		res.Extra["headers"] = resp.Header()
 		res.Extra["statusCode"] = resp.StatusCode()
 		res.Extra["statusText"] = resp.Status()
-		break
 	}
 
 	res.Success = true
