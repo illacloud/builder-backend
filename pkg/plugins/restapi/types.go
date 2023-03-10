@@ -169,7 +169,10 @@ func (t *RESTTemplate) ReflectBodyToMultipart() (texts map[string]string, files 
 		if record.Type == "text" {
 			rs[record.Key], _ = record.Value.(string)
 		} else if record.Type == "file" {
-			fileData, _ := record.Value.(map[string]interface{})
+			fileData, ok := record.Value.(map[string]interface{})
+			if !ok {
+				fs[record.Key] = map[string]string{"filename": "", "data": ""}
+			}
 			strData, _ := fileData["data"].(string)
 			v3, _ := base64.StdEncoding.DecodeString(strData)
 			fs[record.Key] = map[string]string{"filename": fileData["filename?"].(string), "data": string(v3)}
