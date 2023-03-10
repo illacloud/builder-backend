@@ -19,6 +19,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
@@ -212,8 +213,8 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		if len(ts) > 0 {
 			actionClient.SetFormData(ts)
 		}
-		if len(fs) > 0 {
-			actionClient.SetMultipartFormData(fs)
+		for k, file := range fs {
+			actionClient.SetFileReader(k, file["filename"], strings.NewReader(file["data"]))
 		}
 	case BODY_XWFU:
 		b := r.Action.ReflectBodyToMap()
