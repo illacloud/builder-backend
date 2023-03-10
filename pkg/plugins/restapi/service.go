@@ -197,7 +197,13 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	switch r.Action.BodyType {
 	case BODY_RAW:
 		b := r.Action.ReflectBodyToRaw()
-		actionClient.SetBody(b.Content)
+		rawBody, contentType := b.UnmarshalRawBody()
+		client.OnBeforeRequest(
+			func(c *resty.Client, req *resty.Request) error {
+				req.Header.Add("Content-Type", contentType)
+				return nil
+			})
+		actionClient.SetBody(rawBody)
 	case BODY_BINARY:
 		b := r.Action.ReflectBodyToBinary()
 		actionClient.SetBody(b)
