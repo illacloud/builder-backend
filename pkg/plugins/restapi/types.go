@@ -18,7 +18,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"strconv"
 )
 
 type RESTOptions struct {
@@ -66,6 +68,35 @@ func (t *RESTTemplate) ReflectBodyToRaw() *RawBody {
 		}
 	}
 	return rbd
+}
+
+func (r *RawBody) UnmarshalRawBody() (interface{}, string) {
+	switch r.Type {
+	case "json":
+		rawStr, _ := strconv.Unquote(r.Content)
+		var data map[string]interface{}
+		if err := json.Unmarshal([]byte(rawStr), &data); err == nil {
+			return data, "application/json"
+		}
+		var listData []map[string]interface{}
+		if err := json.Unmarshal([]byte(rawStr), &listData); err == nil {
+			return listData, "application/json"
+		}
+		return rawStr, "application/json"
+	case "xml":
+		rawStr, err := strconv.Unquote(r.Content)
+		if err != nil {
+			return r.Content, "application/xml"
+		}
+		return rawStr, "application/xml"
+	case "html":
+		return []byte(r.Content), "text/html"
+	case "text":
+		return []byte(r.Content), "text/plain"
+	case "javascript":
+		return []byte(r.Content), "application/javascript"
+	}
+	return nil, ""
 }
 
 func (t *RESTTemplate) ReflectBodyToBinary() []byte {
