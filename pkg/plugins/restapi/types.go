@@ -177,7 +177,7 @@ func (t *RESTTemplate) ReflectBodyToMultipart() (texts map[string]string, files 
 			if !ok {
 				strData = ""
 			}
-			filename, ok := fileData["filename?"].(string)
+			filename, ok := fileData["filename"].(string)
 			if !ok {
 				filename = ""
 			}
