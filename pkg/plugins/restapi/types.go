@@ -146,12 +146,12 @@ func (t *RESTTemplate) ReflectBodyToMap() map[string]string {
 type FormDataBody struct {
 	Key   string
 	Type  string
-	Value string
+	Value interface{}
 }
 
-func (t *RESTTemplate) ReflectBodyToMultipart() (texts, files map[string]string) {
+func (t *RESTTemplate) ReflectBodyToMultipart() (texts map[string]string, files map[string]map[string]string) {
 	rs := make(map[string]string)
-	fs := make(map[string]string)
+	fs := make(map[string]map[string]string)
 	objs, _ := t.Body.([]interface{})
 	for _, v := range objs {
 		obj, _ := v.(map[string]interface{})
@@ -161,16 +161,28 @@ func (t *RESTTemplate) ReflectBodyToMultipart() (texts, files map[string]string)
 			case "key":
 				record.Key, _ = v2.(string)
 			case "value":
-				record.Value, _ = v2.(string)
+				record.Value = v2
 			case "type":
 				record.Type, _ = v2.(string)
 			}
 		}
 		if record.Type == "text" {
-			rs[record.Key] = record.Value
+			rs[record.Key], _ = record.Value.(string)
 		} else if record.Type == "file" {
-			v3, _ := base64.StdEncoding.DecodeString(record.Value)
-			fs[record.Key] = string(v3)
+			fileData, ok := record.Value.(map[string]interface{})
+			if !ok {
+				fs[record.Key] = map[string]string{"filename": "", "data": ""}
+			}
+			strData, ok := fileData["data"].(string)
+			if !ok {
+				strData = ""
+			}
+			filename, ok := fileData["filename"].(string)
+			if !ok {
+				filename = ""
+			}
+			v3, _ := base64.StdEncoding.DecodeString(strData)
+			fs[record.Key] = map[string]string{"filename": filename, "data": string(v3)}
 		}
 	}
 	return rs, fs
