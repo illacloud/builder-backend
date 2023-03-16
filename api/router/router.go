@@ -32,10 +32,11 @@ type RESTRouter struct {
 	PublicActionRouter   PublicActionRouter
 	InternalActionRouter InternalActionRouter
 	ResourceRouter       ResourceRouter
+	StatusRouter         StatusRouter
 }
 
 func NewRESTRouter(logger *zap.SugaredLogger, builderRouter BuilderRouter, appRouter AppRouter, publicAppRouter PublicAppRouter, roomRouter RoomRouter,
-	actionRouter ActionRouter, publicActionRouter PublicActionRouter, internalActionRouter InternalActionRouter, resourceRouter ResourceRouter) *RESTRouter {
+	actionRouter ActionRouter, publicActionRouter PublicActionRouter, internalActionRouter InternalActionRouter, resourceRouter ResourceRouter, statusRouter StatusRouter) *RESTRouter {
 	return &RESTRouter{
 		logger:               logger,
 		BuilderRouter:        builderRouter,
@@ -46,6 +47,7 @@ func NewRESTRouter(logger *zap.SugaredLogger, builderRouter BuilderRouter, appRo
 		PublicActionRouter:   publicActionRouter,
 		InternalActionRouter: internalActionRouter,
 		ResourceRouter:       resourceRouter,
+		StatusRouter:         statusRouter,
 	}
 }
 
@@ -60,6 +62,7 @@ func (r RESTRouter) InitRouter(router *gin.RouterGroup) {
 	publicActionRouter := v1.Group("/teams/byIdentifier/:teamIdentifier/apps/:appID/publicActions")
 	internalActionRouter := v1.Group("/teams/:teamID/apps/:appID/internalActions")
 	roomRouter := v1.Group("/teams/:teamID/room")
+	statusRouter := v1.Group("/status")
 
 	builderRouter.Use(user.RemoteJWTAuth())
 	appRouter.Use(user.RemoteJWTAuth())
@@ -76,4 +79,6 @@ func (r RESTRouter) InitRouter(router *gin.RouterGroup) {
 	r.PublicActionRouter.InitPublicActionRouter(publicActionRouter)
 	r.InternalActionRouter.InitInternalActionRouter(internalActionRouter)
 	r.ResourceRouter.InitResourceRouter(resourceRouter)
+	r.StatusRouter.InitStatusRouter(statusRouter)
+
 }
