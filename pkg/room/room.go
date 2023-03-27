@@ -30,12 +30,15 @@ const ILLA_DEPLOY_MODE_SELF_HOST = "self-host"
 const ILLA_DEPLOY_MODE_CLOUD = "cloud"
 const DASHBOARD_WS_URL = "%s://%s:%s/teams/%s/room/websocketConnection/dashboard"
 const ROOM_WS_URL = "%s://%s:%s/teams/%s/room/websocketConnection/apps/%s"
+const ROOM_BINARY_WS_URL = "%s://%s:%s/teams/%s/room/binaryWebsocketConnection/apps/%s"
 const SELF_HOST_DASHBOARD_WS_URL = "/builder-ws/teams/%s/room/websocketConnection/dashboard"
 const SELF_HOST_ROOM_WS_URL = "/builder-ws/teams/%s/room/websocketConnection/apps/%s"
+const SELF_HOST_ROOM_BINARY_WS_URL = "/builder-ws/teams/%s/room/binaryWebsocketConnection/apps/%s"
 
 type RoomService interface {
 	GetDashboardConn(teamID int) (WSURLResponse, error)
 	GetAppRoomConn(teamID int, roomID int) (WSURLResponse, error)
+	GetAppRoomBinaryConn(teamID int, roomID int) (WSURLResponse, error)
 }
 
 type RoomServiceImpl struct {
@@ -104,6 +107,16 @@ func (impl *RoomServiceImpl) GetAppRoomConn(teamID int, roomID int) (WSURLRespon
 		r.WSURL = fmt.Sprintf(SELF_HOST_ROOM_WS_URL, idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
 	} else {
 		r.WSURL = fmt.Sprintf(ROOM_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
+	}
+	return r, nil
+}
+
+func (impl *RoomServiceImpl) GetAppRoomBinaryConn(teamID int, roomID int) (WSURLResponse, error) {
+	var r WSURLResponse
+	if isSelfHostDeployMode() {
+		r.WSURL = fmt.Sprintf(SELF_HOST_ROOM_BINARY_WS_URL, idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
+	} else {
+		r.WSURL = fmt.Sprintf(ROOM_BINARY_WS_URL, getProtocol(), getServerAddress(), getWebSocketPort(), idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
 	}
 	return r, nil
 }
