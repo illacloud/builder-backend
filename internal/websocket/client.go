@@ -62,7 +62,7 @@ type Client struct {
 
 	IsLoggedIn bool
 
-	Hub Hub
+	Hub *Hub
 
 	// The websocket connection.
 	Conn *websocket.Conn
@@ -85,7 +85,7 @@ func (c *Client) ExportMappedUserIDToString() string {
 	return idconvertor.ConvertIntToString(c.MappedUserID)
 }
 
-func NewClient(hub Hub, conn *websocket.Conn, teamID int, appID int) *Client {
+func NewClient(hub *Hub, conn *websocket.Conn, teamID int, appID int) *Client {
 	return &Client{
 		ID:           uuid.New(),
 		MappedUserID: 0,
@@ -150,7 +150,7 @@ func (c *Client) OnTextMessage(message []byte) {
 	msg, _ := NewMessage(c.ID, c.APPID, message)
 	// send to hub and process
 	if msg != nil {
-		c.Hub.OnMessage <- msg
+		c.Hub.OnTextMessage <- msg
 	}
 }
 

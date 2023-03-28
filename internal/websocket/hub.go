@@ -21,14 +21,8 @@ import (
 	"github.com/illacloud/builder-backend/pkg/state"
 )
 
-type Hub interface {
-	Register chan *Client
-	Unregister chan *Client
-	KickClient(client *Client)
-}
-
 // clients hub, maintains active clients and broadcast messags.
-type TextHub struct {
+type Hub struct {
 	// registered clients map
 	Clients map[uuid.UUID]*Client
 
@@ -37,7 +31,9 @@ type TextHub struct {
 	Broadcast chan []byte
 
 	// on message process
-	OnMessage chan *Message
+	OnTextMessage chan *Message
+
+	OnBinaryMessage chan []byte
 
 	// register requests from the clients.
 	Register chan *Client
@@ -56,38 +52,39 @@ type TextHub struct {
 	ResourceServiceImpl  *resource.ResourceServiceImpl
 }
 
-func NewTextHub() *TextHub {
-	return &TextHub{
-		Clients:        make(map[uuid.UUID]*Client),
-		Broadcast:      make(chan []byte),
-		OnMessage:      make(chan *Message),
-		Register:       make(chan *Client),
-		Unregister:     make(chan *Client),
-		InRoomUsersMap: make(map[int]*InRoomUsers),
+func NewHub() *Hub {
+	return &Hub{
+		Clients:         make(map[uuid.UUID]*Client),
+		Broadcast:       make(chan []byte),
+		OnTextMessage:   make(chan *Message),
+		OnBinaryMessage: make(chan []byte),
+		Register:        make(chan *Client),
+		Unregister:      make(chan *Client),
+		InRoomUsersMap:  make(map[int]*InRoomUsers),
 	}
 }
 
-func (hub *TextHub) SetTreeStateServiceImpl(tssi *state.TreeStateServiceImpl) {
+func (hub *Hub) SetTreeStateServiceImpl(tssi *state.TreeStateServiceImpl) {
 	hub.TreeStateServiceImpl = tssi
 }
 
-func (hub *TextHub) SetKVStateServiceImpl(kvssi *state.KVStateServiceImpl) {
+func (hub *Hub) SetKVStateServiceImpl(kvssi *state.KVStateServiceImpl) {
 	hub.KVStateServiceImpl = kvssi
 }
 
-func (hub *TextHub) SetSetStateServiceImpl(sssi *state.SetStateServiceImpl) {
+func (hub *Hub) SetSetStateServiceImpl(sssi *state.SetStateServiceImpl) {
 	hub.SetStateServiceImpl = sssi
 }
 
-func (hub *TextHub) SetAppServiceImpl(asi *app.AppServiceImpl) {
+func (hub *Hub) SetAppServiceImpl(asi *app.AppServiceImpl) {
 	hub.AppServiceImpl = asi
 }
 
-func (hub *TextHub) SetResourceServiceImpl(rsi *resource.ResourceServiceImpl) {
+func (hub *Hub) SetResourceServiceImpl(rsi *resource.ResourceServiceImpl) {
 	hub.ResourceServiceImpl = rsi
 }
 
-func (hub *TextHub) GetInRoomUsersByRoomID(roomID int) *InRoomUsers {
+func (hub *Hub) GetInRoomUsersByRoomID(roomID int) *InRoomUsers {
 	inRoomUsers, hit := hub.InRoomUsersMap[roomID]
 	if !hit {
 		hub.InRoomUsersMap[roomID] = NewInRoomUsers(roomID)
@@ -96,7 +93,7 @@ func (hub *TextHub) GetInRoomUsersByRoomID(roomID int) *InRoomUsers {
 	return inRoomUsers
 }
 
-func (hub *TextHub) CleanRoom(roomID int) {
+func (hub *Hub) CleanRoom(roomID int) {
 	inRoomUsers, hit := hub.InRoomUsersMap[roomID]
 	if inRoomUsers.Count() != 0 || !hit {
 		return
@@ -104,7 +101,7 @@ func (hub *TextHub) CleanRoom(roomID int) {
 	delete(hub.InRoomUsersMap, roomID)
 }
 
-func (hub *TextHub) BroadcastToOtherClients(message *Message, currentClient *Client) {
+func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client) {
 	if !message.NeedBroadcast {
 		return
 	}
@@ -127,7 +124,19 @@ func (hub *TextHub) BroadcastToOtherClients(message *Message, currentClient *Cli
 	}
 }
 
-func (hub *TextHub) BroadcastToRoomAllClients(message *Message, currentClient *Client) {
+func (hub *Hub) BroadcastBinaryToOtherClients(message []byte, currentClient *Client) {
+	for clientid, client := range hub.Clients {
+		if clientid == currentClient.ID {
+			continue
+		}
+		if client.APPID != currentClient.APPID {
+			continue
+		}
+		client.Send <- message
+	}
+}
+
+func (hub *Hub) BroadcastToRoomAllClients(message *Message, currentClient *Client) {
 	if !message.NeedBroadcast {
 		return
 	}
@@ -147,7 +156,7 @@ func (hub *TextHub) BroadcastToRoomAllClients(message *Message, currentClient *C
 	}
 }
 
-func (hub *TextHub) BroadcastToGlobal(message *Message, currentClient *Client, includeCurrentClient bool) {
+func (hub *Hub) BroadcastToGlobal(message *Message, currentClient *Client, includeCurrentClient bool) {
 	feed := Feedback{
 		ErrorCode:    ERROR_CODE_BROADCAST,
 		ErrorMessage: "",
@@ -163,7 +172,7 @@ func (hub *TextHub) BroadcastToGlobal(message *Message, currentClient *Client, i
 	}
 }
 
-func (hub *TextHub) KickClient(client *Client) {
+func (hub *Hub) KickClient(client *Client) {
 	close(client.Send)
 	delete(hub.Clients, client.ID)
 }
