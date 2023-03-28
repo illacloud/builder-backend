@@ -62,7 +62,7 @@ type Client struct {
 
 	IsLoggedIn bool
 
-	Hub *Hub
+	Hub Hub
 
 	// The websocket connection.
 	Conn *websocket.Conn
@@ -85,7 +85,7 @@ func (c *Client) ExportMappedUserIDToString() string {
 	return idconvertor.ConvertIntToString(c.MappedUserID)
 }
 
-func NewClient(hub *Hub, conn *websocket.Conn, teamID int, appID int) *Client {
+func NewClient(hub Hub, conn *websocket.Conn, teamID int, appID int) *Client {
 	return &Client{
 		ID:           uuid.New(),
 		MappedUserID: 0,
@@ -126,21 +126,36 @@ func (c *Client) ReadPump() {
 	c.Conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.Conn.SetPongHandler(func(string) error { c.Conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		_, message, err := c.Conn.ReadMessage()
+		// got message
+		messageType, message, err := c.Conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				log.Printf("[ReadPump] error: %v", err)
 			}
 			break
 		}
-		// on message, format
-		message = bytes.TrimSpace(bytes.Replace(message, newline, charSpace, -1))
-		msg, _ := NewMessage(c.ID, c.APPID, message)
-		// send to hub and process
-		if msg != nil {
-			c.Hub.OnMessage <- msg
+		// check out message type
+		switch messageType {
+		case websocket.TextMessage:
+			c.OnTextMessage(message)
+		case websocket.BinaryMessage:
+			c.OnBinaryMessage(message)
 		}
+
 	}
+}
+
+func (c *Client) OnTextMessage(message []byte) {
+	message = bytes.TrimSpace(bytes.Replace(message, newline, charSpace, -1))
+	msg, _ := NewMessage(c.ID, c.APPID, message)
+	// send to hub and process
+	if msg != nil {
+		c.Hub.OnMessage <- msg
+	}
+}
+
+func (c *Client) OnBinaryMessage(message []byte) {
+	c.Hub.OnBinaryMessage <- message
 }
 
 // writePump pumps messages from the hub to the websocket connection.
@@ -148,6 +163,9 @@ func (c *Client) ReadPump() {
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
+//
+// All message types (TextMessage, BinaryMessage, CloseMessage, PingMessage and
+// PongMessage) are supported.
 func (c *Client) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {

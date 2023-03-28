@@ -15,14 +15,20 @@
 package ws
 
 import (
+	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/resource"
 	"github.com/illacloud/builder-backend/pkg/state"
-	"github.com/google/uuid"
 )
 
+type Hub interface {
+	Register chan *Client
+	Unregister chan *Client
+	KickClient(client *Client)
+}
+
 // clients hub, maintains active clients and broadcast messags.
-type Hub struct {
+type TextHub struct {
 	// registered clients map
 	Clients map[uuid.UUID]*Client
 
@@ -50,8 +56,8 @@ type Hub struct {
 	ResourceServiceImpl  *resource.ResourceServiceImpl
 }
 
-func NewHub() *Hub {
-	return &Hub{
+func NewTextHub() *TextHub {
+	return &TextHub{
 		Clients:        make(map[uuid.UUID]*Client),
 		Broadcast:      make(chan []byte),
 		OnMessage:      make(chan *Message),
@@ -61,27 +67,27 @@ func NewHub() *Hub {
 	}
 }
 
-func (hub *Hub) SetTreeStateServiceImpl(tssi *state.TreeStateServiceImpl) {
+func (hub *TextHub) SetTreeStateServiceImpl(tssi *state.TreeStateServiceImpl) {
 	hub.TreeStateServiceImpl = tssi
 }
 
-func (hub *Hub) SetKVStateServiceImpl(kvssi *state.KVStateServiceImpl) {
+func (hub *TextHub) SetKVStateServiceImpl(kvssi *state.KVStateServiceImpl) {
 	hub.KVStateServiceImpl = kvssi
 }
 
-func (hub *Hub) SetSetStateServiceImpl(sssi *state.SetStateServiceImpl) {
+func (hub *TextHub) SetSetStateServiceImpl(sssi *state.SetStateServiceImpl) {
 	hub.SetStateServiceImpl = sssi
 }
 
-func (hub *Hub) SetAppServiceImpl(asi *app.AppServiceImpl) {
+func (hub *TextHub) SetAppServiceImpl(asi *app.AppServiceImpl) {
 	hub.AppServiceImpl = asi
 }
 
-func (hub *Hub) SetResourceServiceImpl(rsi *resource.ResourceServiceImpl) {
+func (hub *TextHub) SetResourceServiceImpl(rsi *resource.ResourceServiceImpl) {
 	hub.ResourceServiceImpl = rsi
 }
 
-func (hub *Hub) GetInRoomUsersByRoomID(roomID int) *InRoomUsers {
+func (hub *TextHub) GetInRoomUsersByRoomID(roomID int) *InRoomUsers {
 	inRoomUsers, hit := hub.InRoomUsersMap[roomID]
 	if !hit {
 		hub.InRoomUsersMap[roomID] = NewInRoomUsers(roomID)
@@ -90,7 +96,7 @@ func (hub *Hub) GetInRoomUsersByRoomID(roomID int) *InRoomUsers {
 	return inRoomUsers
 }
 
-func (hub *Hub) CleanRoom(roomID int) {
+func (hub *TextHub) CleanRoom(roomID int) {
 	inRoomUsers, hit := hub.InRoomUsersMap[roomID]
 	if inRoomUsers.Count() != 0 || !hit {
 		return
@@ -98,7 +104,7 @@ func (hub *Hub) CleanRoom(roomID int) {
 	delete(hub.InRoomUsersMap, roomID)
 }
 
-func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client) {
+func (hub *TextHub) BroadcastToOtherClients(message *Message, currentClient *Client) {
 	if !message.NeedBroadcast {
 		return
 	}
@@ -121,7 +127,7 @@ func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client)
 	}
 }
 
-func (hub *Hub) BroadcastToRoomAllClients(message *Message, currentClient *Client) {
+func (hub *TextHub) BroadcastToRoomAllClients(message *Message, currentClient *Client) {
 	if !message.NeedBroadcast {
 		return
 	}
@@ -141,7 +147,7 @@ func (hub *Hub) BroadcastToRoomAllClients(message *Message, currentClient *Clien
 	}
 }
 
-func (hub *Hub) BroadcastToGlobal(message *Message, currentClient *Client, includeCurrentClient bool) {
+func (hub *TextHub) BroadcastToGlobal(message *Message, currentClient *Client, includeCurrentClient bool) {
 	feed := Feedback{
 		ErrorCode:    ERROR_CODE_BROADCAST,
 		ErrorMessage: "",
@@ -157,7 +163,7 @@ func (hub *Hub) BroadcastToGlobal(message *Message, currentClient *Client, inclu
 	}
 }
 
-func KickClient(hub *Hub, client *Client) {
+func (hub *TextHub) KickClient(client *Client) {
 	close(client.Send)
 	delete(hub.Clients, client.ID)
 }

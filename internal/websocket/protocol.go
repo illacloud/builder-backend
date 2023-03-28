@@ -16,6 +16,7 @@ package ws
 
 import (
 	"encoding/json"
+
 	"github.com/google/uuid"
 )
 
@@ -41,6 +42,7 @@ const SIGNAL_PUT_STATE = 9
 const SIGNAL_GLOBAL_BROADCAST_ONLY = 10
 const SIGNAL_COOPERATE_ATTACH = 11
 const SIGNAL_COOPERATE_DISATTACH = 12
+const SIGNAL_MOVE_CURSOR = 13
 
 const OPTION_BROADCAST_ROOM = 1 // 00000000000000000000000000000001; // use as signed int32 in typescript
 
@@ -53,6 +55,7 @@ const TARGET_DISPLAY_NAME = 5       // DisplayNameState
 const TARGET_APPS = 6               // only for broadcast
 const TARGET_RESOURCE = 7           // only for broadcast
 const TARGET_ACTION = 8             // only for broadcast
+const TARGET_CURSOR = 9             // only for broadcast
 
 // for broadcast rewrite
 const BROADCAST_TYPE_SUFFIX = "/remote"
