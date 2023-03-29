@@ -22,6 +22,7 @@ import (
 	"github.com/illacloud/builder-backend/pkg/plugins/dynamodb"
 	"github.com/illacloud/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illacloud/builder-backend/pkg/plugins/firebase"
+	"github.com/illacloud/builder-backend/pkg/plugins/googlesheets"
 	"github.com/illacloud/builder-backend/pkg/plugins/graphql"
 	"github.com/illacloud/builder-backend/pkg/plugins/hfendpoint"
 	"github.com/illacloud/builder-backend/pkg/plugins/huggingface"
@@ -60,6 +61,7 @@ var (
 	HFENDPOINT_RESOURCE    = "hfendpoint"
 	ORACLE_RESOURCE        = "oracle"
 	APPWRITE_RESOURCE      = "appwrite"
+	GOOGLESHEETS_RESOURCE  = "googlesheets"
 )
 
 type AbstractResourceFactory interface {
@@ -129,6 +131,9 @@ func (f *Factory) Generate() common.DataConnector {
 	case APPWRITE_RESOURCE:
 		appwriteRsc := &appwrite.Connector{}
 		return appwriteRsc
+	case GOOGLESHEETS_RESOURCE:
+		googlesheetsRsc := &googlesheets.Connector{}
+		return googlesheetsRsc
 	default:
 		return nil
 	}
