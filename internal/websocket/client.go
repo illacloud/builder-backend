@@ -19,6 +19,7 @@ import (
 	"log"
 	"time"
 
+	proto "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/illacloud/builder-backend/internal/idconvertor"
@@ -68,7 +69,8 @@ type Client struct {
 	Conn *websocket.Conn
 
 	// Buffered channel of outbound messages.
-	Send chan []byte
+	Send       chan []byte
+	SendBinary chan []byte
 
 	// teamID, 0 by default in SELF_HOST mode
 	TeamID int // TeamID
@@ -112,6 +114,10 @@ func (c *Client) Feedback(message *Message, errorCode int, errorMessage error) {
 	c.Send <- feedbyte
 }
 
+func (c *Client) FeedbackBinary(message []byte) {
+	c.Send <- message
+}
+
 // readPump pumps messages from the websocket connection to the hub.
 //
 // The application runs readPump in a per-connection goroutine. The application
@@ -141,7 +147,6 @@ func (c *Client) ReadPump() {
 		case websocket.BinaryMessage:
 			c.OnBinaryMessage(message)
 		}
-
 	}
 }
 
@@ -155,6 +160,33 @@ func (c *Client) OnTextMessage(message []byte) {
 }
 
 func (c *Client) OnBinaryMessage(message []byte) {
+	// unpack binary message and fill clientID
+	binaryMessageType, errInGetType := GetBinaryMessageType(message)
+	if errInGetType != nil {
+		log.Printf("[OnBinaryMessage] error: %v", errInGetType)
+		return
+	}
+
+	// fill client ID
+	switch binaryMessageType {
+	case BINARY_MESSAGE_TYPE_MOVING:
+		// decode binary message
+		movingMessageBin := &MovingMessageBin{}
+		if errInUnmarshal := proto.Unmarshal(message, movingMessageBin); errInUnmarshal != nil {
+			log.Printf("[OnBinaryMessage] Failed to parse message MovingMessageBin: ", errInUnmarshal)
+			return
+		}
+		movingMessageBin.ClientID = c.ID.String()
+		// encode binary message
+		var errInMarshal error
+		message, errInMarshal = proto.Marshal(movingMessageBin)
+		if errInMarshal != nil {
+			log.Printf("[OnBinaryMessage] Failed to parse message MovingMessageBin: ", errInMarshal)
+			return
+		}
+	}
+
+	// send to following pipeline
 	c.Hub.OnBinaryMessage <- message
 }
 

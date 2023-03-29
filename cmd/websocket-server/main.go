@@ -74,7 +74,7 @@ func initEnv() error {
 var hub *ws.Hub
 
 func InitHub(asi *app.AppServiceImpl, rsi *resource.ResourceServiceImpl, tssi *state.TreeStateServiceImpl, kvssi *state.KVStateServiceImpl, sssi *state.SetStateServiceImpl) {
-	hub = ws.NewTextHub()
+	hub = ws.NewHub()
 	hub.SetAppServiceImpl(asi)
 	hub.SetResourceServiceImpl(rsi)
 	hub.SetTreeStateServiceImpl(tssi)
@@ -84,7 +84,7 @@ func InitHub(asi *app.AppServiceImpl, rsi *resource.ResourceServiceImpl, tssi *s
 }
 
 // ServeWebsocket handle websocket requests from the peer.
-func ServeWebsocket(hub ws.Hub, w http.ResponseWriter, r *http.Request, teamID int, appID int) {
+func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, teamID int, appID int) {
 	// init dashbroad websocket hub
 
 	// @todo: this CheckOrigin method for debug only, remove it for release.
