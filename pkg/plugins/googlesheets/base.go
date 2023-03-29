@@ -17,6 +17,8 @@ package googlesheets
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strconv"
 
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2/google"
@@ -122,4 +124,21 @@ func getDriveWithKey(privateKey string) (*drive.Service, error) {
 func getDriveWithOAuth2() (*drive.Service, error) {
 	// TODO
 	return nil, nil
+}
+
+func interfaceToString(i interface{}) string {
+	switch v := i.(type) {
+	case string:
+		return v
+	case int:
+		return strconv.Itoa(v)
+	case int64:
+		return strconv.FormatInt(v, 10)
+	case float64:
+		return strconv.FormatFloat(v, 'f', -1, 64)
+	case bool:
+		return strconv.FormatBool(v)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }
