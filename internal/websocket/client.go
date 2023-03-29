@@ -16,6 +16,7 @@ package ws
 
 import (
 	"bytes"
+	"encoding/json"
 	"log"
 	"time"
 
@@ -69,8 +70,7 @@ type Client struct {
 	Conn *websocket.Conn
 
 	// Buffered channel of outbound messages.
-	Send       chan []byte
-	SendBinary chan []byte
+	Send chan []byte
 
 	// teamID, 0 by default in SELF_HOST mode
 	TeamID int // TeamID
@@ -214,7 +214,7 @@ func (c *Client) WritePump() {
 				return
 			}
 
-			w, err := c.Conn.NextWriter(websocket.TextMessage)
+			w, err := c.Conn.NextWriter(checkOutMessageType(message))
 			if err != nil {
 				return
 			}
@@ -252,4 +252,13 @@ func ping(ws *websocket.Conn, done chan struct{}) {
 			return
 		}
 	}
+}
+
+func checkOutMessageType(message []byte) int {
+	untypedData := make(map[string]interface{})
+	errInUnmarshal := json.Unmarshal(message, &untypedData)
+	if errInUnmarshal != nil {
+		return websocket.BinaryMessage
+	}
+	return websocket.TextMessage
 }
