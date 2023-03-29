@@ -290,17 +290,34 @@ func (r *ActionRunner) Append() (common.RuntimeResult, error) {
 		return common.RuntimeResult{Success: false, Rows: []map[string]interface{}{0: {"message": err.Error()}}}, nil
 	}
 
-	// calculate the range to append based on the existing data.
+	// calculate the range to append based on the existing data
 	rangeToAppend := fmt.Sprintf("%s!A%d", sheet, len(resp.Values)+1)
-
-	// Convert the input data format to the required format for appending.
-	valuesToAppend := make([][]interface{}, len(appendOpts.Values))
-	for i, row := range appendOpts.Values {
-		rowValues := make([]interface{}, 0)
-		for _, value := range row {
-			rowValues = append(rowValues, value)
+	valuesToAppend := make([][]interface{}, len(appendOpts.Values)+1)
+	if len(resp.Values) == 0 {
+		if len(appendOpts.Values) != 0 {
+			rowValues := make([]interface{}, 0)
+			for key := range appendOpts.Values[0] {
+				rowValues = append(rowValues, key)
+			}
+			valuesToAppend[0] = rowValues
 		}
-		valuesToAppend[i] = rowValues
+		// convert the input data format to the required format for appending
+		for i, row := range appendOpts.Values {
+			rowValues := make([]interface{}, 0)
+			for _, value := range row {
+				rowValues = append(rowValues, value)
+			}
+			valuesToAppend[i+1] = rowValues
+		}
+	} else {
+		valuesToAppend = make([][]interface{}, len(appendOpts.Values))
+		for i, row := range appendOpts.Values {
+			rowValues := make([]interface{}, 0)
+			for _, value := range row {
+				rowValues = append(rowValues, value)
+			}
+			valuesToAppend[i] = rowValues
+		}
 	}
 
 	rb := &sheets.ValueRange{
