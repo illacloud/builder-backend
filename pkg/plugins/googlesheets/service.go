@@ -308,10 +308,21 @@ func (r *ActionRunner) Append() (common.RuntimeResult, error) {
 		Values:         valuesToAppend,
 	}
 
-	_, err = r.service.Spreadsheets.Values.Append(appendOpts.Spreadsheet, rangeToAppend, rb).ValueInputOption("RAW").Do()
-
+	appendResp, err := r.service.Spreadsheets.Values.Append(appendOpts.Spreadsheet, rangeToAppend, rb).ValueInputOption("RAW").Do()
 	if err != nil {
 		return common.RuntimeResult{Success: false, Rows: []map[string]interface{}{0: {"message": err.Error()}}}, nil
+	}
+	res := make([]map[string]interface{}, 1, 1)
+	res[0] = map[string]interface{}{
+		"spreadsheetId": appendResp.SpreadsheetId,
+		"tableRange":    appendResp.TableRange,
+		"updates": map[string]interface{}{
+			"spreadsheetId":  appendResp.SpreadsheetId,
+			"updatedRange":   appendResp.Updates.UpdatedRange,
+			"updatedRows":    appendResp.Updates.UpdatedRows,
+			"updatedColumns": appendResp.Updates.UpdatedColumns,
+			"updatedCells":   appendResp.Updates.UpdatedCells,
+		},
 	}
 
 	return common.RuntimeResult{Success: true}, nil
@@ -343,20 +354,33 @@ func (r *ActionRunner) Update() (common.RuntimeResult, error) {
 		valuesToUpdate[i] = rowValues
 	}
 
+	res := make([]map[string]interface{}, 1, 1)
+
 	if updateOpts.FilterType == "a1" {
 		rb := &sheets.ValueRange{
 			MajorDimension: "ROWS",
 			Values:         valuesToUpdate,
 		}
 
-		if _, err := r.service.Spreadsheets.Values.Update(updateOpts.Spreadsheet, updateOpts.A1Notation, rb).ValueInputOption("RAW").Do(); err != nil {
+		resp, err := r.service.Spreadsheets.Values.Update(updateOpts.Spreadsheet, updateOpts.A1Notation, rb).ValueInputOption("RAW").Do()
+		res[0] = map[string]interface{}{
+			"spreadsheetId": resp.SpreadsheetId,
+			"updates": map[string]interface{}{
+				"spreadsheetId":  resp.SpreadsheetId,
+				"updatedRange":   resp.UpdatedRange,
+				"updatedRows":    resp.UpdatedRows,
+				"updatedColumns": resp.UpdatedColumns,
+				"updatedCells":   resp.UpdatedCells,
+			},
+		}
+		if err != nil {
 			return common.RuntimeResult{Success: false, Rows: []map[string]interface{}{0: {"message": err.Error()}}}, nil
 		}
-	} else if updateOpts.FilterType == "limit" {
+	} else if updateOpts.FilterType == "filter" {
 		return updateSpreadsheetByFilters(r.service, updateOpts.Spreadsheet, updateOpts.SheetName, updateOpts.Filters, updateOpts.Values)
 	}
 
-	return common.RuntimeResult{Success: true}, nil
+	return common.RuntimeResult{Success: true, Rows: res}, nil
 }
 
 func (r *ActionRunner) BulkUpdate() (common.RuntimeResult, error) {
@@ -414,7 +438,7 @@ func (r *ActionRunner) BulkUpdate() (common.RuntimeResult, error) {
 			return common.RuntimeResult{Success: false, Rows: []map[string]interface{}{0: {"message": "primary key value missing in provided values"}}}, nil
 		}
 
-		rowNumber, ok := rowNumbers[primaryKeyValue.(string)]
+		rowNumber, ok := rowNumbers[interfaceToString(primaryKeyValue)]
 		if !ok {
 			return common.RuntimeResult{Success: false, Rows: []map[string]interface{}{0: {"message": "primary key value not found in the sheet"}}}, nil
 		}
@@ -658,9 +682,9 @@ func updateSpreadsheetByFilters(srv *sheets.Service, spreadsheetID, sheetName st
 
 	// Update the matching rows with the new values
 	var updateRows []*sheets.ValueRange
-	for _, rowIndex := range matchingRows {
+	for i, rowIndex := range matchingRows {
 		row := response.Values[rowIndex]
-		updateValues(row, values[rowIndex], response.Values[0])
+		updateValues(row, values[i], response.Values[0])
 		updateRange := fmt.Sprintf("%s!A%d:Z%d", sheetName, rowIndex+1, rowIndex+1)
 		updateRow := &sheets.ValueRange{
 			Range:  updateRange,
@@ -675,7 +699,18 @@ func updateSpreadsheetByFilters(srv *sheets.Service, spreadsheetID, sheetName st
 		Data:             updateRows,
 	}
 
-	_, err = srv.Spreadsheets.Values.BatchUpdate(spreadsheetID, batchUpdate).Do()
+	resp, err := srv.Spreadsheets.Values.BatchUpdate(spreadsheetID, batchUpdate).Do()
+	res := make([]map[string]interface{}, 1, 1)
+	res[0] = map[string]interface{}{
+		"spreadsheetId": resp.SpreadsheetId,
+		"updates": map[string]interface{}{
+			"spreadsheetId":  resp.SpreadsheetId,
+			"updatedSheets":  resp.TotalUpdatedSheets,
+			"updatedRows":    resp.TotalUpdatedRows,
+			"updatedColumns": resp.TotalUpdatedColumns,
+			"updatedCells":   resp.TotalUpdatedCells,
+		},
+	}
 	if err != nil {
 		return common.RuntimeResult{Success: false, Rows: []map[string]interface{}{0: {"message": err.Error()}}}, nil
 	}
