@@ -35,4 +35,5 @@ func NewRoomRouterImpl(RoomRestHandler resthandler.RoomRestHandler) *RoomRouterI
 func (impl RoomRouterImpl) InitRoomRouter(roomRouter *gin.RouterGroup) {
 	roomRouter.GET("/websocketConnection/dashboard", impl.RoomRestHandler.GetDashboardRoomConn)
 	roomRouter.GET("/websocketConnection/app/:appID", impl.RoomRestHandler.GetAppRoomConn)
+	roomRouter.GET("/binaryWebsocketConnection/app/:appID", impl.RoomRestHandler.GetAppRoomBinaryConn)
 }
