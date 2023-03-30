@@ -304,14 +304,13 @@ func (r *ActionRunner) Append() (common.RuntimeResult, error) {
 	if len(resp.Values) == 0 {
 		keys := make([]string, 0, 0)
 		if len(appendOpts.Values) != 0 {
-			keys = make([]string, 0, len(appendOpts.Values[0]))
 			for k := range appendOpts.Values[0] {
 				keys = append(keys, k)
 			}
 			sort.Strings(keys)
-			rowValues := make([]interface{}, len(appendOpts.Values[0]))
+			rowValues := make([]interface{}, 0)
 			for _, k := range keys {
-				rowValues = append(rowValues, appendOpts.Values[0][k])
+				rowValues = append(rowValues, k)
 			}
 			valuesToAppend[0] = rowValues
 		}
