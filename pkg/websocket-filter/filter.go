@@ -27,6 +27,8 @@ func Run(hub *ws.Hub) {
 		// handle register event
 		case client := <-hub.Register:
 			hub.Clients[client.ID] = client
+		case client := <-hub.RegisterBinary:
+			hub.BinaryClients[client.ID] = client
 		// handle unregister events
 		case client := <-hub.Unregister:
 			if _, ok := hub.Clients[client.ID]; ok {

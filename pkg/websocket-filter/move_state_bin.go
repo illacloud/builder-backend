@@ -30,7 +30,7 @@ func SignalMoveStateBinary(hub *ws.Hub, message *ws.MovingMessageBin) error {
 	if errInParseClientID != nil {
 		return errInParseClientID
 	}
-	currentClient := hub.Clients[clientID]
+	currentClient := hub.BinaryClients[clientID]
 
 	// feedback otherClient
 	binaryMessage, errInMarshal := proto.Marshal(message)
