@@ -23,11 +23,9 @@ import (
 
 func SignalPing(hub *ws.Hub, message *ws.Message) error {
 	currentClient, hit := hub.Clients[message.ClientID]
-	fmt.Printf("[SignalPing] ckientID: %v\n", message.ClientID)
 	if !hit {
 		return errors.New("[SignalPing] target client("+message.ClientID.String()+") does dot exists.")
 	}
-	fmt.Printf("[SignalPing] message: %v\n", message)
 
 	currentClient.Feedback(message, ws.ERROR_CODE_PONG, nil)
 	return nil
