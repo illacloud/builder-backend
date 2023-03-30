@@ -36,7 +36,7 @@ func SignalLeave(hub *ws.Hub, message *ws.Message) error {
 	hub.BroadcastToOtherClients(message, currentClient)
 
 	// kick leaved user
-	ws.KickClient(hub, currentClient)
+	hub.KickClient(currentClient)
 	hub.CleanRoom(currentClient.APPID)
 	return nil
 }

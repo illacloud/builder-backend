@@ -31,6 +31,7 @@ type RoomRequest struct {
 type RoomRestHandler interface {
 	GetDashboardRoomConn(c *gin.Context)
 	GetAppRoomConn(c *gin.Context)
+	GetAppRoomBinaryConn(c *gin.Context)
 }
 
 type RoomRestHandlerImpl struct {
@@ -102,6 +103,36 @@ func (impl RoomRestHandlerImpl) GetAppRoomConn(c *gin.Context) {
 	}
 
 	roomData, _ := impl.RoomService.GetAppRoomConn(teamID, appID)
+
+	c.JSON(http.StatusOK, roomData)
+}
+
+func (impl RoomRestHandlerImpl) GetAppRoomBinaryConn(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
+		return
+	}
+
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_APP)
+	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
+	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	if errInCheckAttr != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canAccess {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	roomData, _ := impl.RoomService.GetAppRoomBinaryConn(teamID, appID)
 
 	c.JSON(http.StatusOK, roomData)
 }

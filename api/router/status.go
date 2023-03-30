@@ -20,20 +20,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type RoomRouter interface {
-	InitRoomRouter(roomRouter *gin.RouterGroup)
+type StatusRouter interface {
+	InitStatusRouter(statusRouter *gin.RouterGroup)
 }
 
-type RoomRouterImpl struct {
-	RoomRestHandler resthandler.RoomRestHandler
+type StatusRouterImpl struct {
+	StatusRestHandler resthandler.StatusRestHandler
 }
 
-func NewRoomRouterImpl(RoomRestHandler resthandler.RoomRestHandler) *RoomRouterImpl {
-	return &RoomRouterImpl{RoomRestHandler: RoomRestHandler}
+func NewStatusRouterImpl(StatusRestHandler resthandler.StatusRestHandler) *StatusRouterImpl {
+	return &StatusRouterImpl{StatusRestHandler: StatusRestHandler}
 }
 
-func (impl RoomRouterImpl) InitRoomRouter(roomRouter *gin.RouterGroup) {
-	roomRouter.GET("/websocketConnection/dashboard", impl.RoomRestHandler.GetDashboardRoomConn)
-	roomRouter.GET("/websocketConnection/app/:appID", impl.RoomRestHandler.GetAppRoomConn)
-	roomRouter.GET("/binaryWebsocketConnection/app/:appID", impl.RoomRestHandler.GetAppRoomBinaryConn)
+func (impl StatusRouterImpl) InitStatusRouter(statusRouter *gin.RouterGroup) {
+	statusRouter.GET("", impl.StatusRestHandler.GetStatus)
 }

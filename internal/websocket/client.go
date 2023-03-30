@@ -16,9 +16,11 @@ package ws
 
 import (
 	"bytes"
+	"encoding/json"
 	"log"
 	"time"
 
+	proto "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/illacloud/builder-backend/internal/idconvertor"
@@ -112,6 +114,10 @@ func (c *Client) Feedback(message *Message, errorCode int, errorMessage error) {
 	c.Send <- feedbyte
 }
 
+func (c *Client) FeedbackBinary(message []byte) {
+	c.Send <- message
+}
+
 // readPump pumps messages from the websocket connection to the hub.
 //
 // The application runs readPump in a per-connection goroutine. The application
@@ -126,21 +132,62 @@ func (c *Client) ReadPump() {
 	c.Conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.Conn.SetPongHandler(func(string) error { c.Conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		_, message, err := c.Conn.ReadMessage()
+		// got message
+		messageType, message, err := c.Conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				log.Printf("[ReadPump] error: %v", err)
 			}
 			break
 		}
-		// on message, format
-		message = bytes.TrimSpace(bytes.Replace(message, newline, charSpace, -1))
-		msg, _ := NewMessage(c.ID, c.APPID, message)
-		// send to hub and process
-		if msg != nil {
-			c.Hub.OnMessage <- msg
+		// check out message type
+		switch messageType {
+		case websocket.TextMessage:
+			c.OnTextMessage(message)
+		case websocket.BinaryMessage:
+			c.OnBinaryMessage(message)
 		}
 	}
+}
+
+func (c *Client) OnTextMessage(message []byte) {
+	message = bytes.TrimSpace(bytes.Replace(message, newline, charSpace, -1))
+	msg, _ := NewMessage(c.ID, c.APPID, message)
+	// send to hub and process
+	if msg != nil {
+		c.Hub.OnTextMessage <- msg
+	}
+}
+
+func (c *Client) OnBinaryMessage(message []byte) {
+	// unpack binary message and fill clientID
+	binaryMessageType, errInGetType := GetBinaryMessageType(message)
+	if errInGetType != nil {
+		log.Printf("[OnBinaryMessage] error: %v", errInGetType)
+		return
+	}
+
+	// fill client ID
+	switch binaryMessageType {
+	case BINARY_MESSAGE_TYPE_MOVING:
+		// decode binary message
+		movingMessageBin := &MovingMessageBin{}
+		if errInUnmarshal := proto.Unmarshal(message, movingMessageBin); errInUnmarshal != nil {
+			log.Printf("[OnBinaryMessage] Failed to parse message MovingMessageBin: ", errInUnmarshal)
+			return
+		}
+		movingMessageBin.ClientID = c.ID.String()
+		// encode binary message
+		var errInMarshal error
+		message, errInMarshal = proto.Marshal(movingMessageBin)
+		if errInMarshal != nil {
+			log.Printf("[OnBinaryMessage] Failed to parse message MovingMessageBin: ", errInMarshal)
+			return
+		}
+	}
+
+	// send to following pipeline
+	c.Hub.OnBinaryMessage <- message
 }
 
 // writePump pumps messages from the hub to the websocket connection.
@@ -148,6 +195,9 @@ func (c *Client) ReadPump() {
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
+//
+// All message types (TextMessage, BinaryMessage, CloseMessage, PingMessage and
+// PongMessage) are supported.
 func (c *Client) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
@@ -164,7 +214,7 @@ func (c *Client) WritePump() {
 				return
 			}
 
-			w, err := c.Conn.NextWriter(websocket.TextMessage)
+			w, err := c.Conn.NextWriter(checkOutMessageType(message))
 			if err != nil {
 				return
 			}
@@ -202,4 +252,13 @@ func ping(ws *websocket.Conn, done chan struct{}) {
 			return
 		}
 	}
+}
+
+func checkOutMessageType(message []byte) int {
+	untypedData := make(map[string]interface{})
+	errInUnmarshal := json.Unmarshal(message, &untypedData)
+	if errInUnmarshal != nil {
+		return websocket.BinaryMessage
+	}
+	return websocket.TextMessage
 }

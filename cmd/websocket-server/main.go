@@ -149,6 +149,15 @@ func main() {
 		log.Printf("[Connected] /teams/%d/app/%d", teamIDInt, appIDInt)
 		ServeWebsocket(hub, w, r, teamIDInt, appIDInt)
 	})
+	// handle ws://{ip:port}/teams/{teamID}/room/binaryWebsocketConnection/apps/{appID}
+	r.HandleFunc("/teams/{teamID}/room/binaryWebsocketConnection/apps/{appID}", func(w http.ResponseWriter, r *http.Request) {
+		teamID := mux.Vars(r)["teamID"]
+		appID := mux.Vars(r)["appID"]
+		teamIDInt := idconvertor.ConvertStringToInt(teamID)
+		appIDInt := idconvertor.ConvertStringToInt(appID)
+		log.Printf("[Connected] binary /teams/%d/app/%d", teamIDInt, appIDInt)
+		ServeWebsocket(hub, w, r, teamIDInt, appIDInt)
+	})
 	srv := &http.Server{
 		Handler:      r,
 		Addr:         *addr,
