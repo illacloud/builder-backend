@@ -238,7 +238,11 @@ func (r *ActionRunner) Read() (common.RuntimeResult, error) {
 			endRow = totalRows
 		}
 
-		readRange = fmt.Sprintf("%s!A%d:Z%d", sheetName, startRow, endRow)
+		if endRow == 0 {
+			readRange = fmt.Sprintf("%s!A%d:Z", sheetName, startRow)
+		} else {
+			readRange = fmt.Sprintf("%s!A%d:Z%d", sheetName, startRow, endRow)
+		}
 
 	}
 
