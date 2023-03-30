@@ -261,6 +261,9 @@ func (r *ActionRunner) Read() (common.RuntimeResult, error) {
 	for i, row := range valuesResp.Values[1:] {
 		data[i] = make(map[string]interface{}, len(headers))
 		for j, cell := range row {
+			if j >= len(headers) {
+				break
+			}
 			header := interfaceToString(headers[j])
 			data[i][header] = cell
 		}
