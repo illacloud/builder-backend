@@ -17,6 +17,7 @@ package googlesheets
 import (
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
@@ -260,7 +261,7 @@ func (r *ActionRunner) Read() (common.RuntimeResult, error) {
 	for i, row := range valuesResp.Values[1:] {
 		data[i] = make(map[string]interface{}, len(headers))
 		for j, cell := range row {
-			header := headers[j].(string)
+			header := interfaceToString(headers[j])
 			data[i][header] = cell
 		}
 	}
@@ -294,27 +295,37 @@ func (r *ActionRunner) Append() (common.RuntimeResult, error) {
 	rangeToAppend := fmt.Sprintf("%s!A%d", sheet, len(resp.Values)+1)
 	valuesToAppend := make([][]interface{}, len(appendOpts.Values)+1)
 	if len(resp.Values) == 0 {
+		keys := make([]string, 0, 0)
 		if len(appendOpts.Values) != 0 {
-			rowValues := make([]interface{}, 0)
-			for key := range appendOpts.Values[0] {
-				rowValues = append(rowValues, key)
+			keys = make([]string, 0, len(appendOpts.Values[0]))
+			for k := range appendOpts.Values[0] {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			rowValues := make([]interface{}, len(appendOpts.Values[0]))
+			for _, k := range keys {
+				rowValues = append(rowValues, appendOpts.Values[0][k])
 			}
 			valuesToAppend[0] = rowValues
 		}
 		// convert the input data format to the required format for appending
 		for i, row := range appendOpts.Values {
 			rowValues := make([]interface{}, 0)
-			for _, value := range row {
-				rowValues = append(rowValues, value)
+			for _, k := range keys {
+				rowValues = append(rowValues, row[k])
 			}
 			valuesToAppend[i+1] = rowValues
 		}
 	} else {
+		keys := make([]string, 0, len(resp.Values[0]))
+		for _, k := range resp.Values[0] {
+			keys = append(keys, interfaceToString(k))
+		}
 		valuesToAppend = make([][]interface{}, len(appendOpts.Values))
 		for i, row := range appendOpts.Values {
 			rowValues := make([]interface{}, 0)
-			for _, value := range row {
-				rowValues = append(rowValues, value)
+			for _, k := range keys {
+				rowValues = append(rowValues, row[k])
 			}
 			valuesToAppend[i] = rowValues
 		}
@@ -342,7 +353,7 @@ func (r *ActionRunner) Append() (common.RuntimeResult, error) {
 		},
 	}
 
-	return common.RuntimeResult{Success: true}, nil
+	return common.RuntimeResult{Success: true, Rows: res}, nil
 }
 
 func (r *ActionRunner) Update() (common.RuntimeResult, error) {
@@ -361,12 +372,26 @@ func (r *ActionRunner) Update() (common.RuntimeResult, error) {
 		updateOpts.SheetName = "Sheet1"
 	}
 
+	// get the header row in the sheet
+	readRange := fmt.Sprintf("%s!A1:Z1", updateOpts.SheetName)
+	resp, err := r.service.Spreadsheets.Values.Get(updateOpts.Spreadsheet, readRange).Do()
+	if err != nil {
+		return common.RuntimeResult{Success: false, Rows: []map[string]interface{}{0: {"message": err.Error()}}}, nil
+	}
+	keys := make([]string, 0, 0)
+	if len(resp.Values) != 0 {
+		keys = make([]string, 0, len(resp.Values[0]))
+		for _, k := range resp.Values[0] {
+			keys = append(keys, interfaceToString(k))
+		}
+	}
+
 	// convert the input data format to the required format for updating.
 	valuesToUpdate := make([][]interface{}, len(updateOpts.Values))
 	for i, row := range updateOpts.Values {
 		rowValues := make([]interface{}, 0)
-		for _, value := range row {
-			rowValues = append(rowValues, value)
+		for _, k := range keys {
+			rowValues = append(rowValues, row[k])
 		}
 		valuesToUpdate[i] = rowValues
 	}
@@ -422,6 +447,12 @@ func (r *ActionRunner) BulkUpdate() (common.RuntimeResult, error) {
 	if err != nil {
 		return common.RuntimeResult{Success: false, Rows: []map[string]interface{}{0: {"message": err.Error()}}}, nil
 	}
+	keys := make(map[string]int)
+	if len(resp.Values) != 0 {
+		for i, k := range resp.Values[0] {
+			keys[interfaceToString(k)] = i
+		}
+	}
 
 	if len(resp.Values) == 0 {
 		return common.RuntimeResult{Success: false, Rows: []map[string]interface{}{0: {"message": "no data found"}}}, nil
@@ -437,7 +468,7 @@ func (r *ActionRunner) BulkUpdate() (common.RuntimeResult, error) {
 			if rowIndex == 0 && cell == bulkUpdateOpts.PrimaryKey {
 				primaryKeyIndex = colIndex
 			} else if rowIndex > 0 && colIndex == primaryKeyIndex {
-				rowNumbers[cell.(string)] = rowIndex + 1
+				rowNumbers[interfaceToString(cell)] = rowIndex + 1
 			}
 		}
 	}
@@ -462,13 +493,13 @@ func (r *ActionRunner) BulkUpdate() (common.RuntimeResult, error) {
 
 		for colName, cellValue := range value {
 			if colName != bulkUpdateOpts.PrimaryKey {
-				cellValueString := cellValue.(string)
+				cellValueString := interfaceToString(cellValue)
 				updateRequest := &sheets.Request{
 					UpdateCells: &sheets.UpdateCellsRequest{
 						Range: &sheets.GridRange{
 							SheetId:          0,
-							StartColumnIndex: int64(primaryKeyIndex),
-							EndColumnIndex:   int64(primaryKeyIndex + 1),
+							StartColumnIndex: int64(keys[colName]),
+							EndColumnIndex:   int64(keys[colName] + 1),
 							StartRowIndex:    int64(rowNumber - 1),
 							EndRowIndex:      int64(rowNumber),
 						},
@@ -496,9 +527,18 @@ func (r *ActionRunner) BulkUpdate() (common.RuntimeResult, error) {
 		Requests: updateRequests,
 	}
 
-	_, err = r.service.Spreadsheets.BatchUpdate(bulkUpdateOpts.Spreadsheet, batchUpdate).Do()
+	batchUpdateResp, err := r.service.Spreadsheets.BatchUpdate(bulkUpdateOpts.Spreadsheet, batchUpdate).Do()
+	if err != nil {
+		return common.RuntimeResult{Success: false, Rows: []map[string]interface{}{0: {"message": err.Error()}}}, nil
+	}
+	res := make([]map[string]interface{}, 1, 1)
+	res[0] = map[string]interface{}{
+		"spreadsheetId":      batchUpdateResp.SpreadsheetId,
+		"updatedSpreadsheet": batchUpdateResp.UpdatedSpreadsheet,
+		"replies":            batchUpdateResp.Replies,
+	}
 
-	return common.RuntimeResult{Success: true}, nil
+	return common.RuntimeResult{Success: true, Rows: res}, nil
 }
 
 func (r *ActionRunner) DeleteSingleRow() (common.RuntimeResult, error) {
@@ -549,12 +589,18 @@ func (r *ActionRunner) DeleteSingleRow() (common.RuntimeResult, error) {
 		Requests: requests,
 	}
 
-	_, err = r.service.Spreadsheets.BatchUpdate(deleteOpts.Spreadsheet, batchUpdateRequest).Do()
+	batchUpdateResp, err := r.service.Spreadsheets.BatchUpdate(deleteOpts.Spreadsheet, batchUpdateRequest).Do()
 	if err != nil {
 		return common.RuntimeResult{Success: false, Rows: []map[string]interface{}{0: {"message": err.Error()}}}, nil
 	}
+	res := make([]map[string]interface{}, 1, 1)
+	res[0] = map[string]interface{}{
+		"spreadsheetId":      batchUpdateResp.SpreadsheetId,
+		"updatedSpreadsheet": batchUpdateResp.UpdatedSpreadsheet,
+		"replies":            batchUpdateResp.Replies,
+	}
 
-	return common.RuntimeResult{Success: true}, nil
+	return common.RuntimeResult{Success: true, Rows: res}, nil
 }
 
 func (r *ActionRunner) CreateASpreadsheet() (common.RuntimeResult, error) {
@@ -650,12 +696,18 @@ func (r *ActionRunner) CopyFromAToB() (common.RuntimeResult, error) {
 		Requests: requests,
 	}
 
-	_, err = r.service.Spreadsheets.BatchUpdate(copyOpts.ToSpreadsheet, batchUpdateRequest).Do()
+	batchUpdateResp, err := r.service.Spreadsheets.BatchUpdate(copyOpts.ToSpreadsheet, batchUpdateRequest).Do()
 	if err != nil {
 		return common.RuntimeResult{Success: false, Rows: []map[string]interface{}{0: {"message": err.Error()}}}, nil
 	}
+	res := make([]map[string]interface{}, 1, 1)
+	res[0] = map[string]interface{}{
+		"spreadsheetId":      batchUpdateResp.SpreadsheetId,
+		"updatedSpreadsheet": batchUpdateResp.UpdatedSpreadsheet,
+		"replies":            batchUpdateResp.Replies,
+	}
 
-	return common.RuntimeResult{Success: true}, nil
+	return common.RuntimeResult{Success: true, Rows: res}, nil
 }
 
 func (r *ActionRunner) GetSpreadsheetInfo() (common.RuntimeResult, error) {
@@ -732,7 +784,7 @@ func updateSpreadsheetByFilters(srv *sheets.Service, spreadsheetID, sheetName st
 		return common.RuntimeResult{Success: false, Rows: []map[string]interface{}{0: {"message": err.Error()}}}, nil
 	}
 
-	return common.RuntimeResult{Success: true}, nil
+	return common.RuntimeResult{Success: true, Rows: res}, nil
 }
 
 // findMatchingRows is a helper function that returns the indices of rows matching the filters.
@@ -743,7 +795,7 @@ func findMatchingRows(sheetData [][]interface{}, filters []Filter) []int {
 		matches := true
 		for _, filter := range filters {
 			columnIndex := getColumnIndex(sheetData[0], filter.Key)
-			if columnIndex == -1 || row[columnIndex].(string) != filter.Value {
+			if columnIndex == -1 || interfaceToString(row[columnIndex]) != filter.Value {
 				matches = false
 				break
 			}
@@ -759,7 +811,7 @@ func findMatchingRows(sheetData [][]interface{}, filters []Filter) []int {
 // getColumnIndex is a helper function that returns the index of a column by its name.
 func getColumnIndex(header []interface{}, columnName string) int {
 	for i, col := range header {
-		if col.(string) == columnName {
+		if interfaceToString(col) == columnName {
 			return i
 		}
 	}
