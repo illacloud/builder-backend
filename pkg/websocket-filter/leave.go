@@ -15,11 +15,15 @@
 package filter
 
 import (
+	"errors"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
 
 func SignalLeave(hub *ws.Hub, message *ws.Message) error {
-	currentClient := hub.Clients[message.ClientID]
+	currentClient, hit := hub.Clients[message.ClientID]
+	if !hit {
+		return errors.New("[SignalLeave] target client("+message.ClientID.String()+") does dot exists.")
+	}
 
 	// broadcast in room users
 	inRoomUsers := hub.GetInRoomUsersByRoomID(currentClient.APPID)

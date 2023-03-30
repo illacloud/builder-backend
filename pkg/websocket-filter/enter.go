@@ -24,7 +24,10 @@ import (
 
 func SignalEnter(hub *ws.Hub, message *ws.Message) error {
 	// init
-	currentClient := hub.Clients[message.ClientID]
+	currentClient, hit := hub.Clients[message.ClientID]
+	if !hit {
+		return errors.New("[SignalEnter] target client("+message.ClientID.String()+") does dot exists.")
+	}
 	var ok bool
 	if len(message.Payload) == 0 {
 		err := errors.New("[websocket-server] websocket protocol syntax error.")

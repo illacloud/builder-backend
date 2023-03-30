@@ -27,7 +27,10 @@ import (
 func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 
 	// deserialize message
-	currentClient := hub.Clients[message.ClientID]
+	currentClient, hit := hub.Clients[message.ClientID]
+	if !hit {
+		return errors.New("[SignalUpdateState] target client("+message.ClientID.String()+") does dot exists.")
+	}
 	stateType := repository.STATE_TYPE_INVALIED
 	teamID := currentClient.TeamID
 	fmt.Printf("SignalUpdateState teamID(from currentClient.TeamID): %v\n", teamID)

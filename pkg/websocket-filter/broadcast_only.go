@@ -15,12 +15,16 @@
 package filter
 
 import (
+	"errors"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
 
 func SignalBroadcastOnly(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
-	currentClient := hub.Clients[message.ClientID]
+	currentClient, hit := hub.Clients[message.ClientID]
+	if !hit {
+		return errors.New("[SignalBroadcastOnly] target client("+message.ClientID.String()+") does dot exists.")
+	}
 	message.RewriteBroadcast()
 
 	// feedback otherClient

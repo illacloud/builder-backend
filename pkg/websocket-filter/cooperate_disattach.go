@@ -21,7 +21,10 @@ import (
 )
 
 func SignalCooperateDisattach(hub *ws.Hub, message *ws.Message) error {
-	currentClient := hub.Clients[message.ClientID]
+	currentClient, hit := hub.Clients[message.ClientID]
+	if !hit {
+		return errors.New("[SignalCooperateDisattach] target client("+message.ClientID.String()+") does dot exists.")
+	}
 
 	// disattach components
 	inRoomUsers := hub.GetInRoomUsersByRoomID(currentClient.APPID)
