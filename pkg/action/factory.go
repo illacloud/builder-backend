@@ -22,6 +22,7 @@ import (
 	"github.com/illacloud/builder-backend/pkg/plugins/dynamodb"
 	"github.com/illacloud/builder-backend/pkg/plugins/elasticsearch"
 	"github.com/illacloud/builder-backend/pkg/plugins/firebase"
+	"github.com/illacloud/builder-backend/pkg/plugins/googlesheets"
 	"github.com/illacloud/builder-backend/pkg/plugins/graphql"
 	"github.com/illacloud/builder-backend/pkg/plugins/hfendpoint"
 	"github.com/illacloud/builder-backend/pkg/plugins/huggingface"
@@ -61,6 +62,7 @@ var (
 	HFENDPOINT_ACTION    = "hfendpoint"
 	ORACLE_ACTION        = "oracle"
 	APPWRITE_ACTION      = "appwrite"
+	GOOGLESHEETS_ACTION  = "googlesheets"
 )
 
 type AbstractActionFactory interface {
@@ -130,6 +132,9 @@ func (f *Factory) Build() common.DataConnector {
 	case APPWRITE_ACTION:
 		appwriteAction := &appwrite.Connector{}
 		return appwriteAction
+	case GOOGLESHEETS_ACTION:
+		googlesheetsAction := &googlesheets.Connector{}
+		return googlesheetsAction
 	default:
 		return nil
 	}

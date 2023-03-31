@@ -15,6 +15,9 @@
 package filter
 
 import (
+	"log"
+
+	proto "github.com/golang/protobuf/proto"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
 
@@ -41,8 +44,10 @@ func Run(hub *ws.Hub) {
 				}
 			}
 		// handle client on message event
-		case message := <-hub.OnMessage:
+		case message := <-hub.OnTextMessage:
 			SignalFilter(hub, message)
+		case message := <-hub.OnBinaryMessage:
+			BinarySignalFilter(hub, message)
 		}
 
 	}
@@ -76,6 +81,39 @@ func SignalFilter(hub *ws.Hub, message *ws.Message) error {
 		return SignalCooperateAttach(hub, message)
 	case ws.SIGNAL_COOPERATE_DISATTACH:
 		return SignalCooperateDisattach(hub, message)
+	default:
+		return nil
+	}
+}
+
+func BinarySignalFilter(hub *ws.Hub, message []byte) error {
+	binaryMessageType, errInGetMessageType := ws.GetBinaryMessageType(message)
+	if errInGetMessageType != nil {
+		return errInGetMessageType
+	}
+
+	switch binaryMessageType {
+	case ws.BINARY_MESSAGE_TYPE_MOVING:
+		// decode binary message
+		movingMessageBin := &ws.MovingMessageBin{}
+		if errInParse := proto.Unmarshal(message, movingMessageBin); errInParse != nil {
+			log.Printf("[websocket-filter] Failed to parse message MovingMessageBin: ", errInParse)
+			return errInParse
+		}
+
+		// process message
+		MovingMessageFilter(hub, movingMessageBin)
+
+	}
+	return nil
+}
+
+func MovingMessageFilter(hub *ws.Hub, message *ws.MovingMessageBin) error {
+	switch message.Signal {
+	case ws.SIGNAL_MOVE_STATE:
+		return SignalMoveStateBinary(hub, message)
+	case ws.SIGNAL_MOVE_CURSOR:
+		return SignalMoveCursorBinary(hub, message)
 	default:
 		return nil
 	}

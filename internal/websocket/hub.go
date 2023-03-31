@@ -15,10 +15,10 @@
 package ws
 
 import (
+	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/resource"
 	"github.com/illacloud/builder-backend/pkg/state"
-	"github.com/google/uuid"
 )
 
 // clients hub, maintains active clients and broadcast messags.
@@ -31,7 +31,9 @@ type Hub struct {
 	Broadcast chan []byte
 
 	// on message process
-	OnMessage chan *Message
+	OnTextMessage chan *Message
+
+	OnBinaryMessage chan []byte
 
 	// register requests from the clients.
 	Register chan *Client
@@ -52,12 +54,13 @@ type Hub struct {
 
 func NewHub() *Hub {
 	return &Hub{
-		Clients:        make(map[uuid.UUID]*Client),
-		Broadcast:      make(chan []byte),
-		OnMessage:      make(chan *Message),
-		Register:       make(chan *Client),
-		Unregister:     make(chan *Client),
-		InRoomUsersMap: make(map[int]*InRoomUsers),
+		Clients:         make(map[uuid.UUID]*Client),
+		Broadcast:       make(chan []byte),
+		OnTextMessage:   make(chan *Message),
+		OnBinaryMessage: make(chan []byte),
+		Register:        make(chan *Client),
+		Unregister:      make(chan *Client),
+		InRoomUsersMap:  make(map[int]*InRoomUsers),
 	}
 }
 
@@ -121,6 +124,18 @@ func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client)
 	}
 }
 
+func (hub *Hub) BroadcastBinaryToOtherClients(message []byte, currentClient *Client) {
+	for clientid, client := range hub.Clients {
+		if clientid == currentClient.ID {
+			continue
+		}
+		if client.APPID != currentClient.APPID {
+			continue
+		}
+		client.Send <- message
+	}
+}
+
 func (hub *Hub) BroadcastToRoomAllClients(message *Message, currentClient *Client) {
 	if !message.NeedBroadcast {
 		return
@@ -157,7 +172,7 @@ func (hub *Hub) BroadcastToGlobal(message *Message, currentClient *Client, inclu
 	}
 }
 
-func KickClient(hub *Hub, client *Client) {
+func (hub *Hub) KickClient(client *Client) {
 	close(client.Send)
 	delete(hub.Clients, client.ID)
 }
