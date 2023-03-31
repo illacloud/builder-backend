@@ -26,7 +26,10 @@ import (
 
 func SignalPutState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
-	currentClient := hub.Clients[message.ClientID]
+	currentClient, hit := hub.Clients[message.ClientID]
+	if !hit {
+		return errors.New("[SignalPutState] target client("+message.ClientID.String()+") does dot exists.")
+	}
 	stateType := repository.STATE_TYPE_INVALIED
 	teamID := currentClient.TeamID
 	appDto := app.NewAppDto()

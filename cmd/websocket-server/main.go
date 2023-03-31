@@ -84,7 +84,7 @@ func InitHub(asi *app.AppServiceImpl, rsi *resource.ResourceServiceImpl, tssi *s
 }
 
 // ServeWebsocket handle websocket requests from the peer.
-func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, teamID int, appID int) {
+func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, teamID int, appID int, clientType int) {
 	// init dashbroad websocket hub
 
 	// @todo: this CheckOrigin method for debug only, remove it for release.
@@ -107,8 +107,14 @@ func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, teamID 
 		log.Println(err)
 		return
 	}
-	client := ws.NewClient(hub, conn, teamID, appID)
-	client.Hub.Register <- client
+	client := ws.NewClient(hub, conn, teamID, appID, clientType)
+	// checkout client type
+	switch clientType {
+	case ws.CLIENT_TYPE_TEXT:
+		client.Hub.Register <- client
+	case ws.CLIENT_TYPE_BINARY:
+		client.Hub.RegisterBinary <- client
+	}
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
@@ -138,7 +144,7 @@ func main() {
 		teamID := mux.Vars(r)["teamID"]
 		teamIDInt := idconvertor.ConvertStringToInt(teamID)
 		log.Printf("[Connected] /teams/%d/dashboard", teamIDInt)
-		ServeWebsocket(hub, w, r, teamIDInt, ws.DASHBOARD_APP_ID)
+		ServeWebsocket(hub, w, r, teamIDInt, ws.DASHBOARD_APP_ID, ws.CLIENT_TYPE_TEXT)
 	})
 	// handle ws://{ip:port}/teams/{teamID}/room/websocketConnection/apps/{appID}
 	r.HandleFunc("/teams/{teamID}/room/websocketConnection/apps/{appID}", func(w http.ResponseWriter, r *http.Request) {
@@ -147,7 +153,7 @@ func main() {
 		teamIDInt := idconvertor.ConvertStringToInt(teamID)
 		appIDInt := idconvertor.ConvertStringToInt(appID)
 		log.Printf("[Connected] /teams/%d/app/%d", teamIDInt, appIDInt)
-		ServeWebsocket(hub, w, r, teamIDInt, appIDInt)
+		ServeWebsocket(hub, w, r, teamIDInt, appIDInt, ws.CLIENT_TYPE_TEXT)
 	})
 	// handle ws://{ip:port}/teams/{teamID}/room/binaryWebsocketConnection/apps/{appID}
 	r.HandleFunc("/teams/{teamID}/room/binaryWebsocketConnection/apps/{appID}", func(w http.ResponseWriter, r *http.Request) {
@@ -156,7 +162,7 @@ func main() {
 		teamIDInt := idconvertor.ConvertStringToInt(teamID)
 		appIDInt := idconvertor.ConvertStringToInt(appID)
 		log.Printf("[Connected] binary /teams/%d/app/%d", teamIDInt, appIDInt)
-		ServeWebsocket(hub, w, r, teamIDInt, appIDInt)
+		ServeWebsocket(hub, w, r, teamIDInt, appIDInt, ws.CLIENT_TYPE_BINARY)
 	})
 	srv := &http.Server{
 		Handler:      r,

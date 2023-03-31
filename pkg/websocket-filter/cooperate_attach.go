@@ -21,7 +21,10 @@ import (
 )
 
 func SignalCooperateAttach(hub *ws.Hub, message *ws.Message) error {
-	currentClient := hub.Clients[message.ClientID]
+	currentClient, hit := hub.Clients[message.ClientID]
+	if !hit {
+		return errors.New("[SignalCooperateAttach] target client("+message.ClientID.String()+") does dot exists.")
+	}
 
 	// attach components
 	inRoomUsers := hub.GetInRoomUsersByRoomID(currentClient.APPID)

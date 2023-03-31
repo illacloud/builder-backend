@@ -16,7 +16,7 @@ package filter
 
 import (
 	"log"
-
+	"errors"
 	"github.com/google/uuid"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 	"google.golang.org/protobuf/proto"
@@ -30,8 +30,10 @@ func SignalMoveCursorBinary(hub *ws.Hub, message *ws.MovingMessageBin) error {
 	if errInParseClientID != nil {
 		return errInParseClientID
 	}
-	currentClient := hub.Clients[clientID]
-
+	currentClient, hit := hub.BinaryClients[clientID]
+	if !hit {
+		return errors.New("[SignalMoveCursorBinary] target client("+message.ClientID+") does dot exists.")
+	}
 	// feedback otherClient
 	binaryMessage, errInMarshal := proto.Marshal(message)
 	if errInMarshal != nil {

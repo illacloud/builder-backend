@@ -24,7 +24,8 @@ import (
 // clients hub, maintains active clients and broadcast messags.
 type Hub struct {
 	// registered clients map
-	Clients map[uuid.UUID]*Client
+	Clients       map[uuid.UUID]*Client
+	BinaryClients map[uuid.UUID]*Client
 
 	// inbound messages from the clients.
 	// try ```hub.Broadcast <- []byte(message)```
@@ -36,7 +37,8 @@ type Hub struct {
 	OnBinaryMessage chan []byte
 
 	// register requests from the clients.
-	Register chan *Client
+	Register       chan *Client
+	RegisterBinary chan *Client
 
 	// unregister requests from the clients.
 	Unregister chan *Client
@@ -55,10 +57,12 @@ type Hub struct {
 func NewHub() *Hub {
 	return &Hub{
 		Clients:         make(map[uuid.UUID]*Client),
+		BinaryClients:   make(map[uuid.UUID]*Client),
 		Broadcast:       make(chan []byte),
 		OnTextMessage:   make(chan *Message),
 		OnBinaryMessage: make(chan []byte),
 		Register:        make(chan *Client),
+		RegisterBinary:  make(chan *Client),
 		Unregister:      make(chan *Client),
 		InRoomUsersMap:  make(map[int]*InRoomUsers),
 	}
@@ -125,7 +129,7 @@ func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client)
 }
 
 func (hub *Hub) BroadcastBinaryToOtherClients(message []byte, currentClient *Client) {
-	for clientid, client := range hub.Clients {
+	for clientid, client := range hub.BinaryClients {
 		if clientid == currentClient.ID {
 			continue
 		}

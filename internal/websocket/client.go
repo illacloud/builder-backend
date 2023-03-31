@@ -27,6 +27,11 @@ import (
 )
 
 const (
+	CLIENT_TYPE_TEXT = 1
+	CLIENT_TYPE_BINARY = 2
+)
+
+const (
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
 
@@ -58,6 +63,8 @@ var upgrader = websocket.Upgrader{
 type Client struct {
 	ID uuid.UUID
 
+	Type int
+
 	MappedUserID int
 
 	MappedUserUID uuid.UUID
@@ -83,13 +90,19 @@ func (c *Client) GetAPPID() int {
 	return c.APPID
 }
 
+func (c *Client) SetType(clientType int) {
+	c.Type = clientType
+}
+
+
 func (c *Client) ExportMappedUserIDToString() string {
 	return idconvertor.ConvertIntToString(c.MappedUserID)
 }
 
-func NewClient(hub *Hub, conn *websocket.Conn, teamID int, appID int) *Client {
+func NewClient(hub *Hub, conn *websocket.Conn, teamID int, appID int, clientType int) *Client {
 	return &Client{
 		ID:           uuid.New(),
+		Type: clientType,
 		MappedUserID: 0,
 		IsLoggedIn:   false,
 		Hub:          hub,
