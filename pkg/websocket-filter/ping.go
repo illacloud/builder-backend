@@ -16,7 +16,6 @@ package filter
 
 import (
 	"errors"
-	"fmt"
 
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
@@ -24,7 +23,7 @@ import (
 func SignalPing(hub *ws.Hub, message *ws.Message) error {
 	currentClient, hit := hub.Clients[message.ClientID]
 	if !hit {
-		return errors.New("[SignalPing] target client("+message.ClientID.String()+") does dot exists.")
+		return errors.New("[SignalPing] target client(" + message.ClientID.String() + ") does dot exists.")
 	}
 
 	currentClient.Feedback(message, ws.ERROR_CODE_PONG, nil)
