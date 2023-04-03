@@ -107,6 +107,16 @@ func (hub *Hub) CleanRoom(roomID int) {
 	delete(hub.InRoomUsersMap, roomID)
 }
 
+func (hub *Hub) RemoveClient(client *Client) {
+	close(client.Send)
+	delete(hub.Clients, client.GetID())
+}
+
+func (hub *Hub) RemoveBinaryClient(client *Client) {
+	close(client.Send)
+	delete(hub.BinaryClients, client.GetID())
+}
+
 func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client) {
 	log.Printf("[BroadcastToOtherClients] call by %v\n", currentClient.ID)
 	if !message.NeedBroadcast {
@@ -121,6 +131,9 @@ func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client)
 	feedbyte, _ := feedOtherClient.Serialization()
 
 	for clientid, client := range hub.Clients {
+		if client.IsDead() {
+			hub.RemoveClient(client)
+		}
 		if clientid == currentClient.ID {
 			continue
 		}
@@ -134,6 +147,9 @@ func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client)
 func (hub *Hub) BroadcastBinaryToOtherClients(message []byte, currentClient *Client) {
 	log.Printf("[BroadcastBinaryToOtherClients] call by %v\n", currentClient.ID)
 	for clientid, client := range hub.BinaryClients {
+		if client.IsDead() {
+			hub.RemoveBinaryClient(client)
+		}
 		if clientid == currentClient.ID {
 			continue
 		}
@@ -157,6 +173,9 @@ func (hub *Hub) BroadcastToRoomAllClients(message *Message, currentClient *Clien
 	feedbyte, _ := feedOtherClient.Serialization()
 
 	for _, client := range hub.Clients {
+		if client.IsDead() {
+			hub.RemoveClient(client)
+		}
 		if client.APPID != currentClient.APPID {
 			continue
 		}
@@ -173,6 +192,9 @@ func (hub *Hub) BroadcastToGlobal(message *Message, currentClient *Client, inclu
 	}
 	feedbyte, _ := feed.Serialization()
 	for clientid, client := range hub.Clients {
+		if client.IsDead() {
+			hub.RemoveClient(client)
+		}
 		if clientid == currentClient.ID && !includeCurrentClient {
 			continue
 		}
@@ -183,4 +205,5 @@ func (hub *Hub) BroadcastToGlobal(message *Message, currentClient *Client, inclu
 func (hub *Hub) KickClient(client *Client) {
 	close(client.Send)
 	delete(hub.Clients, client.ID)
+	delete(hub.BinaryClients, client.ID)
 }

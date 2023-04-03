@@ -17,6 +17,7 @@ package ws
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -30,6 +31,11 @@ import (
 const (
 	CLIENT_TYPE_TEXT   = 1
 	CLIENT_TYPE_BINARY = 2
+)
+
+const (
+	CLIENT_STATUS_ACTIVE = 1
+	CLIENT_STATUS_DEAD   = 2
 )
 
 const (
@@ -64,6 +70,8 @@ var upgrader = websocket.Upgrader{
 type Client struct {
 	ID uuid.UUID
 
+	Status int
+
 	Type int
 
 	MappedUserID int
@@ -87,12 +95,24 @@ type Client struct {
 	APPID int
 }
 
+func (c *Client) GetID() uuid.UUID {
+	return c.ID
+}
+
 func (c *Client) GetAPPID() int {
 	return c.APPID
 }
 
 func (c *Client) SetType(clientType int) {
 	c.Type = clientType
+}
+
+func (c *Client) SetStatus(status int) {
+	c.Status = status
+}
+
+func (c *Client) IsDead() bool {
+	return c.Status == CLIENT_STATUS_DEAD
 }
 
 func (c *Client) ExportMappedUserIDToString() string {
@@ -102,6 +122,7 @@ func (c *Client) ExportMappedUserIDToString() string {
 func NewClient(hub *Hub, conn *websocket.Conn, teamID int, appID int, clientType int) *Client {
 	return &Client{
 		ID:           uuid.New(),
+		Status:       CLIENT_STATUS_ACTIVE,
 		Type:         clientType,
 		MappedUserID: 0,
 		IsLoggedIn:   false,
@@ -215,7 +236,7 @@ func (c *Client) OnBinaryMessage(message []byte) {
 //
 // All message types (TextMessage, BinaryMessage, CloseMessage, PingMessage and
 // PongMessage) are supported.
-func (c *Client) WritePump() {
+func (c *Client) WritePump() error {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
@@ -230,17 +251,21 @@ func (c *Client) WritePump() {
 			if !ok {
 				// The hub closed the channel.
 				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
-				return
+				c.SetStatus(CLIENT_STATUS_DEAD)
+				return errors.New("Reached the write deadline, hub closed the channel.")
 			}
 
 			w, err := c.Conn.NextWriter(checkOutMessageType(message))
 			if err != nil {
 				log.Printf("c.Conn.NextWriter error: %v\n", err)
-				return
+				c.SetStatus(CLIENT_STATUS_DEAD)
+				return errors.New("NextWriter error: " + err.Error())
 			}
 			wrttedBytes, errInWrite := w.Write(message)
 			if errInWrite != nil {
 				log.Printf("Write error: %v\n", errInWrite)
+				c.SetStatus(CLIENT_STATUS_DEAD)
+				return errors.New("write error: " + errInWrite.Error())
 			}
 			log.Printf("wrttedBytes: %v\n", wrttedBytes)
 
@@ -252,13 +277,15 @@ func (c *Client) WritePump() {
 			}
 
 			if err := w.Close(); err != nil {
-				return
+				c.SetStatus(CLIENT_STATUS_DEAD)
+				return errors.New("writer close failed: " + err.Error())
 			}
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				log.Printf("c.Conn.WriteMessage(websocket.PingMessage) failed: %v\n", err)
-				return
+				c.SetStatus(CLIENT_STATUS_DEAD)
+				return errors.New("client no response, destory client connection.")
 			}
 		}
 	}
