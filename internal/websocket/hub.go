@@ -110,10 +110,6 @@ func (hub *Hub) CleanRoom(roomID int) {
 func (hub *Hub) RemoveClient(client *Client) {
 	close(client.Send)
 	delete(hub.Clients, client.GetID())
-}
-
-func (hub *Hub) RemoveBinaryClient(client *Client) {
-	close(client.Send)
 	delete(hub.BinaryClients, client.GetID())
 }
 
@@ -148,7 +144,7 @@ func (hub *Hub) BroadcastBinaryToOtherClients(message []byte, currentClient *Cli
 	log.Printf("[BroadcastBinaryToOtherClients] call by %v\n", currentClient.ID)
 	for clientid, client := range hub.BinaryClients {
 		if client.IsDead() {
-			hub.RemoveBinaryClient(client)
+			hub.RemoveClient(client)
 		}
 		if clientid == currentClient.ID {
 			continue
