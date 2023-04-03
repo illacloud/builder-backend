@@ -15,6 +15,8 @@
 package ws
 
 import (
+	"log"
+
 	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/resource"
@@ -106,6 +108,7 @@ func (hub *Hub) CleanRoom(roomID int) {
 }
 
 func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client) {
+	log.Printf("[BroadcastToOtherClients] call by %v\n", currentClient.ID)
 	if !message.NeedBroadcast {
 		return
 	}
@@ -129,6 +132,7 @@ func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client)
 }
 
 func (hub *Hub) BroadcastBinaryToOtherClients(message []byte, currentClient *Client) {
+	log.Printf("[BroadcastBinaryToOtherClients] call by %v\n", currentClient.ID)
 	for clientid, client := range hub.BinaryClients {
 		if clientid == currentClient.ID {
 			continue
