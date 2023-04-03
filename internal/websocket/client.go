@@ -17,6 +17,7 @@ package ws
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -27,7 +28,7 @@ import (
 )
 
 const (
-	CLIENT_TYPE_TEXT = 1
+	CLIENT_TYPE_TEXT   = 1
 	CLIENT_TYPE_BINARY = 2
 )
 
@@ -94,7 +95,6 @@ func (c *Client) SetType(clientType int) {
 	c.Type = clientType
 }
 
-
 func (c *Client) ExportMappedUserIDToString() string {
 	return idconvertor.ConvertIntToString(c.MappedUserID)
 }
@@ -102,7 +102,7 @@ func (c *Client) ExportMappedUserIDToString() string {
 func NewClient(hub *Hub, conn *websocket.Conn, teamID int, appID int, clientType int) *Client {
 	return &Client{
 		ID:           uuid.New(),
-		Type: clientType,
+		Type:         clientType,
 		MappedUserID: 0,
 		IsLoggedIn:   false,
 		Hub:          hub,
@@ -147,6 +147,8 @@ func (c *Client) ReadPump() {
 	for {
 		// got message
 		messageType, message, err := c.Conn.ReadMessage()
+		fmt.Printf("[websocket client] on message, type: %v\n", messageType)
+
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("[ReadPump] error: %v", err)
@@ -166,6 +168,7 @@ func (c *Client) ReadPump() {
 func (c *Client) OnTextMessage(message []byte) {
 	message = bytes.TrimSpace(bytes.Replace(message, newline, charSpace, -1))
 	msg, _ := NewMessage(c.ID, c.APPID, message)
+	fmt.Printf("[websocket client] on text message: %v\n", msg)
 	// send to hub and process
 	if msg != nil {
 		c.Hub.OnTextMessage <- msg
@@ -193,6 +196,7 @@ func (c *Client) OnBinaryMessage(message []byte) {
 		// encode binary message
 		var errInMarshal error
 		message, errInMarshal = proto.Marshal(movingMessageBin)
+		fmt.Printf("[websocket client] on binary message: %v\n", movingMessageBin)
 		if errInMarshal != nil {
 			log.Printf("[OnBinaryMessage] Failed to parse message MovingMessageBin: ", errInMarshal)
 			return
@@ -220,6 +224,8 @@ func (c *Client) WritePump() {
 	for {
 		select {
 		case message, ok := <-c.Send:
+			fmt.Printf("[websocket client] WritePump: %v\n", message)
+
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
@@ -229,9 +235,14 @@ func (c *Client) WritePump() {
 
 			w, err := c.Conn.NextWriter(checkOutMessageType(message))
 			if err != nil {
+				log.Println("c.Conn.NextWriter error: %v\n", err)
 				return
 			}
-			w.Write(message)
+			wrttedBytes, errInWrite := w.Write(message)
+			if errInWrite != nil {
+				log.Println("Write error: %v\n", errInWrite)
+			}
+			log.Println("wrttedBytes: %v\n", wrttedBytes)
 
 			// Add queued chat messages to the current websocket message.
 			n := len(c.Send)
