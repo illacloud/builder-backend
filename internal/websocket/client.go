@@ -37,7 +37,7 @@ const (
 	writeWait = 10 * time.Second
 
 	// Time allowed to read the next pong message from the peer.
-	pongWait = 60 * time.Second
+	pongWait = 6 * time.Second
 
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
@@ -235,14 +235,14 @@ func (c *Client) WritePump() {
 
 			w, err := c.Conn.NextWriter(checkOutMessageType(message))
 			if err != nil {
-				log.Println("c.Conn.NextWriter error: %v\n", err)
+				log.Printf("c.Conn.NextWriter error: %v\n", err)
 				return
 			}
 			wrttedBytes, errInWrite := w.Write(message)
 			if errInWrite != nil {
-				log.Println("Write error: %v\n", errInWrite)
+				log.Printf("Write error: %v\n", errInWrite)
 			}
-			log.Println("wrttedBytes: %v\n", wrttedBytes)
+			log.Printf("wrttedBytes: %v\n", wrttedBytes)
 
 			// Add queued chat messages to the current websocket message.
 			n := len(c.Send)
@@ -257,6 +257,7 @@ func (c *Client) WritePump() {
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				log.Printf("c.Conn.WriteMessage(websocket.PingMessage) failed: %v\n", err)
 				return
 			}
 		}
@@ -270,7 +271,7 @@ func ping(ws *websocket.Conn, done chan struct{}) {
 		select {
 		case <-ticker.C:
 			if err := ws.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(writeWait)); err != nil {
-				log.Println("ping:", err)
+				log.Printf("ping error: %v\n", err)
 			}
 		case <-done:
 			return
