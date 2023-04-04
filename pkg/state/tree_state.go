@@ -17,7 +17,6 @@ package state
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -361,7 +360,6 @@ func (impl *TreeStateServiceImpl) ReleaseTreeStateByApp(app *app.AppDto) error {
 }
 
 func (impl *TreeStateServiceImpl) GetTreeStateByName(currentNode *TreeStateDto) (*TreeStateDto, error) {
-	fmt.Printf("call in GetTreeStateByName, TeamID(currentNode): %v \n", currentNode.TeamID)
 	// get id by displayName
 	var err error
 	var inDBTreeState *repository.TreeState
