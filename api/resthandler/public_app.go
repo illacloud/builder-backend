@@ -102,7 +102,7 @@ func (impl PublicAppRestHandlerImpl) IsPublicApp(c *gin.Context) {
 	// get team id by team teamIdentifier
 	team, errInGetTeamInfo := dc.GetTeamInfoByIdentifier(teamIdentifier)
 	if errInGetTeamInfo != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_TEAM, "get target team by identifier error: "+errInGetTeamInfo.Error())
+		FeedbackOK(c, repository.NewIsPublicAppResponse(false))
 		return
 	}
 	teamID := team.GetID()
