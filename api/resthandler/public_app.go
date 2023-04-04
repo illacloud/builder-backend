@@ -27,6 +27,7 @@ import (
 
 type PublicAppRestHandler interface {
 	GetMegaData(c *gin.Context)
+	IsPublicApp(c *gin.Context)
 }
 
 type PublicAppRestHandlerImpl struct {
@@ -87,5 +88,32 @@ func (impl PublicAppRestHandlerImpl) GetMegaData(c *gin.Context) {
 
 	// feedback
 	FeedbackOK(c, res)
+	return
+}
+
+func (impl PublicAppRestHandlerImpl) IsPublicApp(c *gin.Context) {
+	// fetch needed param
+	teamIdentifier, errInGetTeamIdentifier := GetStringParamFromRequest(c, PARAM_TEAM_IDENTIFIER)
+	publicAppID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	if errInGetTeamIdentifier != nil || errInGetAPPID != nil {
+		return
+	}
+
+	// get team id by team teamIdentifier
+	team, errInGetTeamInfo := dc.GetTeamInfoByIdentifier(teamIdentifier)
+	if errInGetTeamInfo != nil {
+		FeedbackOK(c, repository.NewIsPublicAppResponse(false))
+		return
+	}
+	teamID := team.GetID()
+
+	// check if app is public app
+	if !impl.appService.IsPublicApp(teamID, publicAppID) {
+		FeedbackOK(c, repository.NewIsPublicAppResponse(false))
+		return
+	}
+
+	// feedback
+	FeedbackOK(c, repository.NewIsPublicAppResponse(true))
 	return
 }

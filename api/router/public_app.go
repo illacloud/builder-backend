@@ -34,4 +34,5 @@ func NewPublicAppRouterImpl(publicAppRestHandler resthandler.PublicAppRestHandle
 
 func (impl PublicAppRouterImpl) InitPublicAppRouter(publicAppRouter *gin.RouterGroup) {
 	publicAppRouter.GET(":appID/versions/:version", impl.publicAppRestHandler.GetMegaData)
+	publicAppRouter.GET(":appID/isPublic", impl.publicAppRestHandler.IsPublicApp)
 }

@@ -41,4 +41,5 @@ func (impl AppRouterImpl) InitAppRouter(appRouter *gin.RouterGroup) {
 	appRouter.GET(":appID/versions/:version", impl.appRestHandler.GetMegaData)
 	appRouter.POST(":appID/duplication", impl.appRestHandler.DuplicateApp)
 	appRouter.POST(":appID/deploy", impl.appRestHandler.ReleaseApp)
+
 }
