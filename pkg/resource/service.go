@@ -269,8 +269,11 @@ func (impl *ResourceServiceImpl) TestConnection(resource ResourceDto) (bool, err
 		return false, err
 	}
 	connRes, err := dbResource.TestConnection(resource.Options)
-	if err != nil || !connRes.Success {
-		return false, errors.New("connection failed")
+	if err != nil {
+		return false, err
+	}
+	if !connRes.Success {
+		return false, errors.New("unknown error")
 	}
 	return true, nil
 }
