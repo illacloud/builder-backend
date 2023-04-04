@@ -55,8 +55,9 @@ const DEFAULT_APP_ID = 0
 const DASHBOARD_APP_ID = -1
 
 var (
-	newline   = []byte{'\n'}
-	charSpace = []byte{' '}
+	newLine       = []byte{'\n'}
+	binaryNewLine = []byte{'\x1e'}
+	charSpace     = []byte{' '}
 )
 
 var upgrader = websocket.Upgrader{
@@ -183,7 +184,7 @@ func (c *Client) ReadPump() {
 }
 
 func (c *Client) OnTextMessage(message []byte) {
-	message = bytes.TrimSpace(bytes.Replace(message, newline, charSpace, -1))
+	message = bytes.TrimSpace(bytes.Replace(message, newLine, charSpace, -1))
 	msg, _ := NewMessage(c.ID, c.APPID, message)
 	// send to hub and process
 	if msg != nil {
@@ -246,8 +247,9 @@ func (c *Client) WritePump() {
 				c.SetStatus(CLIENT_STATUS_DEAD)
 				return
 			}
+			messageType := checkOutMessageType(message)
 
-			w, errInSetNextWriter := c.Conn.NextWriter(checkOutMessageType(message))
+			w, errInSetNextWriter := c.Conn.NextWriter(messageType)
 			if errInSetNextWriter != nil {
 				c.SetStatus(CLIENT_STATUS_DEAD)
 				log.Printf("[WritePump] c.Conn.NextWriter error: %v\n", errInSetNextWriter)
@@ -263,7 +265,11 @@ func (c *Client) WritePump() {
 			// Add queued chat messages to the current websocket message.
 			n := len(c.Send)
 			for i := 0; i < n; i++ {
-				w.Write(newline)
+				if messageType == websocket.TextMessage {
+					w.Write(newLine)
+				} else {
+					w.Write(binaryNewLine)
+				}
 				w.Write(<-c.Send)
 			}
 
