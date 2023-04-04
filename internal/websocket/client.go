@@ -17,8 +17,6 @@ package ws
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"log"
 	"time"
 
@@ -167,12 +165,10 @@ func (c *Client) ReadPump() {
 	c.Conn.SetPongHandler(func(string) error { c.Conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
 		// got message
-		messageType, message, err := c.Conn.ReadMessage()
-		fmt.Printf("[websocket client] on message, type: %v\n", messageType)
-
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("[ReadPump] error: %v", err)
+		messageType, message, errInReadMessage := c.Conn.ReadMessage()
+		if errInReadMessage != nil {
+			if websocket.IsUnexpectedCloseError(errInReadMessage, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("[ReadMessage] error: %v", errInReadMessage)
 			}
 			break
 		}
@@ -189,7 +185,6 @@ func (c *Client) ReadPump() {
 func (c *Client) OnTextMessage(message []byte) {
 	message = bytes.TrimSpace(bytes.Replace(message, newline, charSpace, -1))
 	msg, _ := NewMessage(c.ID, c.APPID, message)
-	fmt.Printf("[websocket client] on text message: %v\n", msg)
 	// send to hub and process
 	if msg != nil {
 		c.Hub.OnTextMessage <- msg
@@ -217,7 +212,6 @@ func (c *Client) OnBinaryMessage(message []byte) {
 		// encode binary message
 		var errInMarshal error
 		message, errInMarshal = proto.Marshal(movingMessageBin)
-		fmt.Printf("[websocket client] on binary message: %v\n", movingMessageBin)
 		if errInMarshal != nil {
 			log.Printf("[OnBinaryMessage] Failed to parse message MovingMessageBin: ", errInMarshal)
 			return
@@ -236,7 +230,7 @@ func (c *Client) OnBinaryMessage(message []byte) {
 //
 // All message types (TextMessage, BinaryMessage, CloseMessage, PingMessage and
 // PongMessage) are supported.
-func (c *Client) WritePump() error {
+func (c *Client) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
@@ -245,29 +239,26 @@ func (c *Client) WritePump() error {
 	for {
 		select {
 		case message, ok := <-c.Send:
-			fmt.Printf("[websocket client] WritePump: %v\n", message)
-
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
 				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
 				c.SetStatus(CLIENT_STATUS_DEAD)
-				return errors.New("Reached the write deadline, hub closed the channel.")
+				return
 			}
 
-			w, err := c.Conn.NextWriter(checkOutMessageType(message))
-			if err != nil {
-				log.Printf("c.Conn.NextWriter error: %v\n", err)
+			w, errInSetNextWriter := c.Conn.NextWriter(checkOutMessageType(message))
+			if errInSetNextWriter != nil {
 				c.SetStatus(CLIENT_STATUS_DEAD)
-				return errors.New("NextWriter error: " + err.Error())
+				log.Printf("[WritePump] c.Conn.NextWriter error: %v\n", errInSetNextWriter)
+				return
 			}
-			wrttedBytes, errInWrite := w.Write(message)
+			_, errInWrite := w.Write(message)
 			if errInWrite != nil {
-				log.Printf("Write error: %v\n", errInWrite)
 				c.SetStatus(CLIENT_STATUS_DEAD)
-				return errors.New("write error: " + errInWrite.Error())
+				log.Printf("[WritePump] Write message error: %v\n", errInWrite)
+				return
 			}
-			log.Printf("wrttedBytes: %v\n", wrttedBytes)
 
 			// Add queued chat messages to the current websocket message.
 			n := len(c.Send)
@@ -278,14 +269,14 @@ func (c *Client) WritePump() error {
 
 			if err := w.Close(); err != nil {
 				c.SetStatus(CLIENT_STATUS_DEAD)
-				return errors.New("writer close failed: " + err.Error())
+				return
 			}
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				log.Printf("c.Conn.WriteMessage(websocket.PingMessage) failed: %v\n", err)
+			if errInWritePingMessage := c.Conn.WriteMessage(websocket.PingMessage, nil); errInWritePingMessage != nil {
 				c.SetStatus(CLIENT_STATUS_DEAD)
-				return errors.New("client no response, destory client connection.")
+				log.Printf("[WritePump] c.Conn.WriteMessage(websocket.PingMessage) failed: %v\n", errInWritePingMessage)
+				return
 			}
 		}
 	}
@@ -298,7 +289,7 @@ func ping(ws *websocket.Conn, done chan struct{}) {
 		select {
 		case <-ticker.C:
 			if err := ws.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(writeWait)); err != nil {
-				log.Printf("ping error: %v\n", err)
+				log.Printf("[ping] WriteControl ping error: %v\n", err)
 			}
 		case <-done:
 			return

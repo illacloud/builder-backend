@@ -15,8 +15,8 @@
 package filter
 
 import (
-	"log"
 	"errors"
+	"log"
 
 	"github.com/google/uuid"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
@@ -38,7 +38,7 @@ func SignalMoveStateBinary(hub *ws.Hub, message *ws.MovingMessageBin) error {
 	// feedback otherClient
 	binaryMessage, errInMarshal := proto.Marshal(message)
 	if errInMarshal != nil {
-		log.Printf("[websocker-filter] Failed to encode MovingMessageBin: ", errInMarshal)
+		log.Printf("[SignalMoveStateBinary] Failed to encode MovingMessageBin: ", errInMarshal)
 		return errInMarshal
 	}
 	hub.BroadcastBinaryToOtherClients(binaryMessage, currentClient)
