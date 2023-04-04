@@ -195,6 +195,8 @@ func (c *Client) OnTextMessage(message []byte) {
 func (c *Client) OnBinaryMessage(message []byte) {
 	// unpack binary message and fill clientID
 	binaryMessageType, errInGetType := GetBinaryMessageType(message)
+	log.Printf("[OnBinaryMessage] message: %v\n", message)
+
 	if errInGetType != nil {
 		log.Printf("[OnBinaryMessage] error: %v", errInGetType)
 		return
@@ -210,6 +212,8 @@ func (c *Client) OnBinaryMessage(message []byte) {
 			return
 		}
 		movingMessageBin.ClientID = c.ID.String()
+		log.Printf("[dump] movingMessageBin: %v\n", movingMessageBin)
+
 		// encode binary message
 		var errInMarshal error
 		message, errInMarshal = proto.Marshal(movingMessageBin)
@@ -248,6 +252,7 @@ func (c *Client) WritePump() {
 				return
 			}
 			messageType := checkOutMessageType(message)
+			log.Printf("[WritePump] message: %v\n", message)
 
 			w, errInSetNextWriter := c.Conn.NextWriter(messageType)
 			if errInSetNextWriter != nil {
