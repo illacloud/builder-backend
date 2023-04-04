@@ -24,7 +24,8 @@ import (
 // clients hub, maintains active clients and broadcast messags.
 type Hub struct {
 	// registered clients map
-	Clients map[uuid.UUID]*Client
+	Clients       map[uuid.UUID]*Client
+	BinaryClients map[uuid.UUID]*Client
 
 	// inbound messages from the clients.
 	// try ```hub.Broadcast <- []byte(message)```
@@ -36,7 +37,8 @@ type Hub struct {
 	OnBinaryMessage chan []byte
 
 	// register requests from the clients.
-	Register chan *Client
+	Register       chan *Client
+	RegisterBinary chan *Client
 
 	// unregister requests from the clients.
 	Unregister chan *Client
@@ -55,10 +57,12 @@ type Hub struct {
 func NewHub() *Hub {
 	return &Hub{
 		Clients:         make(map[uuid.UUID]*Client),
+		BinaryClients:   make(map[uuid.UUID]*Client),
 		Broadcast:       make(chan []byte),
 		OnTextMessage:   make(chan *Message),
 		OnBinaryMessage: make(chan []byte),
 		Register:        make(chan *Client),
+		RegisterBinary:  make(chan *Client),
 		Unregister:      make(chan *Client),
 		InRoomUsersMap:  make(map[int]*InRoomUsers),
 	}
@@ -101,6 +105,12 @@ func (hub *Hub) CleanRoom(roomID int) {
 	delete(hub.InRoomUsersMap, roomID)
 }
 
+func (hub *Hub) RemoveClient(client *Client) {
+	close(client.Send)
+	delete(hub.Clients, client.GetID())
+	delete(hub.BinaryClients, client.GetID())
+}
+
 func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client) {
 	if !message.NeedBroadcast {
 		return
@@ -114,6 +124,10 @@ func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client)
 	feedbyte, _ := feedOtherClient.Serialization()
 
 	for clientid, client := range hub.Clients {
+		if client.IsDead() {
+			hub.RemoveClient(client)
+			continue
+		}
 		if clientid == currentClient.ID {
 			continue
 		}
@@ -125,7 +139,11 @@ func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client)
 }
 
 func (hub *Hub) BroadcastBinaryToOtherClients(message []byte, currentClient *Client) {
-	for clientid, client := range hub.Clients {
+	for clientid, client := range hub.BinaryClients {
+		if client.IsDead() {
+			hub.RemoveClient(client)
+			continue
+		}
 		if clientid == currentClient.ID {
 			continue
 		}
@@ -149,6 +167,10 @@ func (hub *Hub) BroadcastToRoomAllClients(message *Message, currentClient *Clien
 	feedbyte, _ := feedOtherClient.Serialization()
 
 	for _, client := range hub.Clients {
+		if client.IsDead() {
+			hub.RemoveClient(client)
+			continue
+		}
 		if client.APPID != currentClient.APPID {
 			continue
 		}
@@ -165,6 +187,10 @@ func (hub *Hub) BroadcastToGlobal(message *Message, currentClient *Client, inclu
 	}
 	feedbyte, _ := feed.Serialization()
 	for clientid, client := range hub.Clients {
+		if client.IsDead() {
+			hub.RemoveClient(client)
+			continue
+		}
 		if clientid == currentClient.ID && !includeCurrentClient {
 			continue
 		}
@@ -175,4 +201,5 @@ func (hub *Hub) BroadcastToGlobal(message *Message, currentClient *Client, inclu
 func (hub *Hub) KickClient(client *Client) {
 	close(client.Send)
 	delete(hub.Clients, client.ID)
+	delete(hub.BinaryClients, client.ID)
 }

@@ -15,6 +15,7 @@
 package filter
 
 import (
+	"errors"
 	"log"
 
 	"github.com/google/uuid"
@@ -30,12 +31,14 @@ func SignalMoveStateBinary(hub *ws.Hub, message *ws.MovingMessageBin) error {
 	if errInParseClientID != nil {
 		return errInParseClientID
 	}
-	currentClient := hub.Clients[clientID]
-
+	currentClient, hit := hub.BinaryClients[clientID]
+	if !hit {
+		return errors.New("[SignalMoveStateBinary] target client("+message.ClientID+") does dot exists.")
+	}
 	// feedback otherClient
 	binaryMessage, errInMarshal := proto.Marshal(message)
 	if errInMarshal != nil {
-		log.Printf("[websocker-filter] Failed to encode MovingMessageBin: ", errInMarshal)
+		log.Printf("[SignalMoveStateBinary] Failed to encode MovingMessageBin: ", errInMarshal)
 		return errInMarshal
 	}
 	hub.BroadcastBinaryToOtherClients(binaryMessage, currentClient)
