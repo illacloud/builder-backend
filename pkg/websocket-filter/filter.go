@@ -99,7 +99,7 @@ func BinarySignalFilter(hub *ws.Hub, message []byte) error {
 		// decode binary message
 		movingMessageBin := &ws.MovingMessageBin{}
 		if errInParse := proto.Unmarshal(message, movingMessageBin); errInParse != nil {
-			log.Printf("[websocket-filter] Failed to parse message MovingMessageBin: ", errInParse)
+			log.Printf("[BinarySignalFilter] Failed to parse message MovingMessageBin: ", errInParse)
 			return errInParse
 		}
 

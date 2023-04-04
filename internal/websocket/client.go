@@ -27,8 +27,13 @@ import (
 )
 
 const (
-	CLIENT_TYPE_TEXT = 1
+	CLIENT_TYPE_TEXT   = 1
 	CLIENT_TYPE_BINARY = 2
+)
+
+const (
+	CLIENT_STATUS_ACTIVE = 1
+	CLIENT_STATUS_DEAD   = 2
 )
 
 const (
@@ -36,7 +41,7 @@ const (
 	writeWait = 10 * time.Second
 
 	// Time allowed to read the next pong message from the peer.
-	pongWait = 60 * time.Second
+	pongWait = 6 * time.Second
 
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
@@ -63,6 +68,8 @@ var upgrader = websocket.Upgrader{
 type Client struct {
 	ID uuid.UUID
 
+	Status int
+
 	Type int
 
 	MappedUserID int
@@ -86,6 +93,10 @@ type Client struct {
 	APPID int
 }
 
+func (c *Client) GetID() uuid.UUID {
+	return c.ID
+}
+
 func (c *Client) GetAPPID() int {
 	return c.APPID
 }
@@ -94,6 +105,13 @@ func (c *Client) SetType(clientType int) {
 	c.Type = clientType
 }
 
+func (c *Client) SetStatus(status int) {
+	c.Status = status
+}
+
+func (c *Client) IsDead() bool {
+	return c.Status == CLIENT_STATUS_DEAD
+}
 
 func (c *Client) ExportMappedUserIDToString() string {
 	return idconvertor.ConvertIntToString(c.MappedUserID)
@@ -102,7 +120,8 @@ func (c *Client) ExportMappedUserIDToString() string {
 func NewClient(hub *Hub, conn *websocket.Conn, teamID int, appID int, clientType int) *Client {
 	return &Client{
 		ID:           uuid.New(),
-		Type: clientType,
+		Status:       CLIENT_STATUS_ACTIVE,
+		Type:         clientType,
 		MappedUserID: 0,
 		IsLoggedIn:   false,
 		Hub:          hub,
@@ -146,10 +165,10 @@ func (c *Client) ReadPump() {
 	c.Conn.SetPongHandler(func(string) error { c.Conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
 		// got message
-		messageType, message, err := c.Conn.ReadMessage()
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("[ReadPump] error: %v", err)
+		messageType, message, errInReadMessage := c.Conn.ReadMessage()
+		if errInReadMessage != nil {
+			if websocket.IsUnexpectedCloseError(errInReadMessage, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("[ReadMessage] error: %v", errInReadMessage)
 			}
 			break
 		}
@@ -224,14 +243,22 @@ func (c *Client) WritePump() {
 			if !ok {
 				// The hub closed the channel.
 				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				c.SetStatus(CLIENT_STATUS_DEAD)
 				return
 			}
 
-			w, err := c.Conn.NextWriter(checkOutMessageType(message))
-			if err != nil {
+			w, errInSetNextWriter := c.Conn.NextWriter(checkOutMessageType(message))
+			if errInSetNextWriter != nil {
+				c.SetStatus(CLIENT_STATUS_DEAD)
+				log.Printf("[WritePump] c.Conn.NextWriter error: %v\n", errInSetNextWriter)
 				return
 			}
-			w.Write(message)
+			_, errInWrite := w.Write(message)
+			if errInWrite != nil {
+				c.SetStatus(CLIENT_STATUS_DEAD)
+				log.Printf("[WritePump] Write message error: %v\n", errInWrite)
+				return
+			}
 
 			// Add queued chat messages to the current websocket message.
 			n := len(c.Send)
@@ -241,11 +268,14 @@ func (c *Client) WritePump() {
 			}
 
 			if err := w.Close(); err != nil {
+				c.SetStatus(CLIENT_STATUS_DEAD)
 				return
 			}
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			if errInWritePingMessage := c.Conn.WriteMessage(websocket.PingMessage, nil); errInWritePingMessage != nil {
+				c.SetStatus(CLIENT_STATUS_DEAD)
+				log.Printf("[WritePump] c.Conn.WriteMessage(websocket.PingMessage) failed: %v\n", errInWritePingMessage)
 				return
 			}
 		}
@@ -259,7 +289,7 @@ func ping(ws *websocket.Conn, done chan struct{}) {
 		select {
 		case <-ticker.C:
 			if err := ws.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(writeWait)); err != nil {
-				log.Println("ping:", err)
+				log.Printf("[ping] WriteControl ping error: %v\n", err)
 			}
 		case <-done:
 			return
