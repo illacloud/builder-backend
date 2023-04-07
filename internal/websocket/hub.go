@@ -131,6 +131,9 @@ func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client)
 		if clientid == currentClient.ID {
 			continue
 		}
+		if client.TeamID != currentClient.TeamID {
+			continue
+		}
 		if client.APPID != currentClient.APPID {
 			continue
 		}
@@ -145,6 +148,9 @@ func (hub *Hub) BroadcastBinaryToOtherClients(message []byte, currentClient *Cli
 			continue
 		}
 		if clientid == currentClient.ID {
+			continue
+		}
+		if client.TeamID != currentClient.TeamID {
 			continue
 		}
 		if client.APPID != currentClient.APPID {
@@ -169,6 +175,9 @@ func (hub *Hub) BroadcastToRoomAllClients(message *Message, currentClient *Clien
 	for _, client := range hub.Clients {
 		if client.IsDead() {
 			hub.RemoveClient(client)
+			continue
+		}
+		if client.TeamID != currentClient.TeamID {
 			continue
 		}
 		if client.APPID != currentClient.APPID {
