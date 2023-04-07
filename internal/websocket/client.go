@@ -56,7 +56,7 @@ const DASHBOARD_APP_ID = -1
 
 var (
 	newLine       = []byte{'\n'}
-	binaryNewLine = []byte{'\x1e'}
+	binaryNewLine = []byte{'\x1e', '\x1e', '\x1e', '\x1e'}
 	charSpace     = []byte{' '}
 )
 
