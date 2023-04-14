@@ -69,7 +69,7 @@ type ResourceDto struct {
 	ID        int                    `json:"resourceId"`
 	UID       uuid.UUID              `json:"uid"`
 	TeamID    int                    `json:"teamID"`
-	Name      string                 `json:"resourceName" validate:"required"`
+	Name      string                 `json:"resourceName" validate:"required,min=1,max=128"`
 	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle appwrite googlesheets"`
 	Options   map[string]interface{} `json:"content" validate:"required"`
 	CreatedAt time.Time              `json:"createdAt,omitempty"`
