@@ -20,14 +20,17 @@ import (
 )
 
 const ACTION_CONFIG_FIELD_PUBLIC = "public"
+const ACTION_CONFIG_FIELD_WATER_MARK = "waterMark"
 
 type ActionConfig struct {
-	Public bool `json:"public"` // switch for public action (which can view by anonymous user)
+	Public    bool `json:"public"` // switch for public action (which can view by anonymous user)
+	WaterMark bool `json:"waterMark"`
 }
 
 func NewActionConfig() *ActionConfig {
 	return &ActionConfig{
-		Public: false,
+		Public:    false,
+		WaterMark: true,
 	}
 }
 
@@ -44,6 +47,14 @@ func (ac *ActionConfig) SetPrivate() {
 	ac.Public = false
 }
 
+func (ac *ActionConfig) EnableWaterMark() {
+	ac.WaterMark = true
+}
+
+func (ac *ActionConfig) DisableWaterMark() {
+	ac.WaterMark = false
+}
+
 func NewActionConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*ActionConfig, error) {
 	var assertPass bool
 	actionConfig := &ActionConfig{}
@@ -51,6 +62,11 @@ func NewActionConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*Actio
 		switch key {
 		case ACTION_CONFIG_FIELD_PUBLIC:
 			actionConfig.Public, assertPass = value.(bool)
+			if !assertPass {
+				return nil, errors.New("update action config failed due to assert failed.")
+			}
+		case ACTION_CONFIG_FIELD_WATER_MARK:
+			actionConfig.WaterMark, assertPass = value.(bool)
 			if !assertPass {
 				return nil, errors.New("update action config failed due to assert failed.")
 			}
