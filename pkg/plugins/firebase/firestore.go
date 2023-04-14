@@ -354,7 +354,7 @@ func (f *FirestoreOperationRunner) queryCollectionGroup() (common.RuntimeResult,
 	}
 
 	if queryCGOptions.StartAt.Trigger {
-		query = query.EndAt(queryCGOptions.StartAt.Value)
+		query = query.StartAt(queryCGOptions.StartAt.Value)
 	}
 
 	if queryCGOptions.EndAt.Trigger {
