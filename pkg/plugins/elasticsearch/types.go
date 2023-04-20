@@ -23,7 +23,7 @@ const (
 )
 
 type Resource struct {
-	Host     string `validate:"required,url"`
+	Host     string `validate:"required"`
 	Port     string `validate:"required"`
 	Username string `validate:"required"`
 	Password string `validate:"required"`
