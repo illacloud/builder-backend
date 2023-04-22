@@ -1,6 +1,9 @@
 package repository
 
-import "errors"
+import (
+	"encoding/json"
+	"errors"
+)
 
 type EchoFeedback struct {
 	ID      string                 `json:"id"`
@@ -33,7 +36,7 @@ func (ef *EchoFeedback) ExportContent() (map[string]interface{}, bool, error) {
 	// check out meessage is finish
 	finishReason, ok := firstChoiceAsserted["finish_reason"]
 	if !ok {
-		return nil, needQueryMore, errors.New("choices syntax illegal.")
+		return nil, needQueryMore, errors.New("choices finish_reason syntax illegal.")
 	}
 	if finishReason != "stop" {
 		needQueryMore = true
@@ -41,7 +44,7 @@ func (ef *EchoFeedback) ExportContent() (map[string]interface{}, bool, error) {
 	// assert message
 	message, ok := firstChoiceAsserted["message"]
 	if !ok {
-		return nil, needQueryMore, errors.New("choices syntax illegal.")
+		return nil, needQueryMore, errors.New("choices message syntax illegal.")
 	}
 	messageAsserted, assertMessageOK := message.(map[string]interface{})
 	if !assertMessageOK {
@@ -50,13 +53,19 @@ func (ef *EchoFeedback) ExportContent() (map[string]interface{}, bool, error) {
 	// assert content
 	content, ok := messageAsserted["content"]
 	if !ok {
-		return nil, needQueryMore, errors.New("message syntax illegal.")
+		return nil, needQueryMore, errors.New("message content syntax illegal.")
 	}
-	contentAsserted, assertContentOK := content.(map[string]interface{})
+	contentAsserted, assertContentOK := content.(string)
 	if !assertContentOK {
 		return nil, needQueryMore, errors.New("content syntax illegal.")
 	}
-	return contentAsserted, true, nil
+	// decode content
+	var decodedContent map[string]interface{}
+	errInUnMarshal := json.Unmarshal([]byte(contentAsserted), &decodedContent)
+	if errInUnMarshal != nil {
+		return nil, needQueryMore, errInUnMarshal
+	}
+	return decodedContent, needQueryMore, nil
 }
 
 type Usage struct {

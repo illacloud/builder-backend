@@ -59,7 +59,7 @@ func (egen *EchoGenerator) GenerateBasePrompt(userDemand string) string {
 }
 
 func (egen *EchoGenerator) DetectComponentTypes(component map[string]interface{}) map[string]bool {
-	var componentTypeList map[string]bool
+	componentTypeList := make(map[string]bool)
 	retrieveComponentTypes(component, componentTypeList)
 	return componentTypeList
 }

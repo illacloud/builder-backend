@@ -49,11 +49,20 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 	tokenValidator := tokenvalidator.NewRequestTokenValidator()
 	token := tokenValidator.GenerateValidateToken(echoPeripheralRequest.Message)
 	echoPeripheralRequest.SetValidateToken(token)
+
 	// call echo API
 	echoFeedback, _ := repository.Echo(echoPeripheralRequest)
 	fmt.Printf("[DUMP] echoFeedback: %+v\n", echoFeedback)
+	exportedContent, queryDidNotFinish, errInExportContent := echoFeedback.ExportContent()
+	if errInExportContent != nil {
+		fmt.Printf("[ERROR] errInExportContent: %+v\n", errInExportContent)
+		return errInExportContent
+	}
+	fmt.Printf("[queryDidNotFinish?] %v\n", queryDidNotFinish)
 	// check if props not exists, fill props
+	componentTypeList := echoGenerator.DetectComponentTypes(exportedContent)
 
+	fmt.Printf("[DUMP] componentTypeList: %+v\n", componentTypeList)
 	// filter components
 
 	// save components
