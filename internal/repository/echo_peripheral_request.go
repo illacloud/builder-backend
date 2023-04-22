@@ -27,10 +27,10 @@ func (m *EchoPeripheralRequest) Export() map[string]string {
 	return payload
 }
 
-func NewEchoPeripheralRequest(message string) (*EchoPeripheralRequest, error) {
+func NewEchoPeripheralRequest(message string) *EchoPeripheralRequest {
 	return &EchoPeripheralRequest{
 		Message: message,
-	}, nil
+	}
 }
 
 func (m *EchoPeripheralRequest) SetValidateToken(token string) {

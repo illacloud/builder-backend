@@ -1,12 +1,19 @@
 package repository
 
 type EchoFeedback struct {
-	Id      string                 `json:"id"`
+	ID      string                 `json:"id"`
 	Object  string                 `json:"object"`
 	Created int                    `json:"created"`
 	Model   string                 `json:"model"`
 	Usage   map[string]interface{} `json:"usage"`
 	Choices []interface{}          `json:"choices"`
+}
+
+func (ef *EchoFeedback) Avaliable() bool {
+	if len(ef.Choices) == 0 {
+		return false
+	}
+	return true
 }
 
 type Usage struct {

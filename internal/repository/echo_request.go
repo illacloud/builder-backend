@@ -21,6 +21,10 @@ const (
 	ECHO_REQ_DEFAULT_TOKENS = 1000
 )
 
+const (
+	ECHO_MSG_DEFAULT_ROLE = "user"
+)
+
 type EchoRequest struct {
 	Model     string         `json:"model"`
 	MaxTokens int            `json:"max_tokens"`
@@ -36,14 +40,21 @@ func (m *EchoRequest) Export() string {
 	return string(r)
 }
 
-func NewEchoRequest() (*EchoRequest, error) {
+func NewEchoRequest() *EchoRequest {
 	return &EchoRequest{
 		Model:     ECHO_REQ_DEFAULT_MODEL,
 		MaxTokens: ECHO_REQ_DEFAULT_TOKENS,
-	}, nil
+	}
 }
 
 type EchoMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
+}
+
+func NewEchoMessage(conntent string) *EchoMessage {
+	return &EchoMessage{
+		Role:    ECHO_MSG_DEFAULT_ROLE,
+		Content: conntent,
+	}
 }

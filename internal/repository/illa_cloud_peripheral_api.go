@@ -20,6 +20,10 @@ type GenerateSQLFeedback struct {
 	Payload string `json:"payload"`
 }
 
+type GeneralFeedback struct {
+	Payload string `json:"payload"`
+}
+
 func GenerateSQL(m *GenerateSQLPeripheralRequest, req *GenerateSQLRequest) (*GenerateSQLFeedback, error) {
 	payload := m.Export()
 	client := resty.New()
@@ -36,7 +40,7 @@ func GenerateSQL(m *GenerateSQLPeripheralRequest, req *GenerateSQLRequest) (*Gen
 	return res, nil
 }
 
-func Echo(req *NewEchoPeripheralRequest) (*EchoFeedback, error) {
+func Echo(req *EchoPeripheralRequest) (*EchoFeedback, error) {
 	payload := req.Export()
 	client := resty.New()
 	client.SetTimeout(PERIPHERAL_API_GLOBAL_TIMEOUT)
@@ -46,7 +50,12 @@ func Echo(req *NewEchoPeripheralRequest) (*EchoFeedback, error) {
 	if resp.StatusCode() != http.StatusOK || err != nil {
 		return nil, errors.New("failed to generate SQL")
 	}
-	res := &EchoFeedback{}
+	res := &GeneralFeedback{}
 	json.Unmarshal(resp.Body(), res)
-	return res, nil
+	echoFeedback := &EchoFeedback{}
+	json.Unmarshal([]byte(res.Payload), echoFeedback)
+	if !echoFeedback.Avaliable() {
+		return nil, errors.New("unavaliable echo request.")
+	}
+	return echoFeedback, nil
 }
