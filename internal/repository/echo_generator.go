@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
@@ -59,11 +58,9 @@ func (egen *EchoGenerator) GenerateBasePrompt(userDemand string) string {
 	return ret
 }
 
-func (egen *EchoGenerator) DetectComponentTypes(component string) map[string]bool {
+func (egen *EchoGenerator) DetectComponentTypes(component map[string]interface{}) map[string]bool {
 	var componentTypeList map[string]bool
-	var rawComponent map[string]interface{}
-	json.Unmarshal([]byte(component), &rawComponent)
-	retrieveComponentTypes(rawComponent, componentTypeList)
+	retrieveComponentTypes(component, componentTypeList)
 	return componentTypeList
 }
 
