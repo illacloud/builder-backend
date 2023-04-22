@@ -21,6 +21,60 @@ func (ef *EchoFeedback) Avaliable() bool {
 	return true
 }
 
+func (ef *EchoFeedback) ExportMessage() (*HistoryMessage, bool, error) {
+	// init
+	needQueryMore := false
+	// pick up first choice
+	if len(ef.Choices) == 0 {
+		return nil, needQueryMore, errors.New("echo return 0 choices.")
+	}
+	firstChoice := ef.Choices[0]
+	firstChoiceAsserted, assertFirstChoiceOK := firstChoice.(map[string]interface{})
+	if !assertFirstChoiceOK {
+		return nil, needQueryMore, errors.New("choices syntax illegal.")
+	}
+	// check out meessage is finish
+	finishReason, ok := firstChoiceAsserted["finish_reason"]
+	if !ok {
+		return nil, needQueryMore, errors.New("choices finish_reason syntax illegal.")
+	}
+	if finishReason != "stop" {
+		needQueryMore = true
+	}
+	// assert message
+	message, ok := firstChoiceAsserted["message"]
+	if !ok {
+		return nil, needQueryMore, errors.New("choices message syntax illegal.")
+	}
+	messageAsserted, assertMessageOK := message.(map[string]interface{})
+	if !assertMessageOK {
+		return nil, needQueryMore, errors.New("message syntax illegal.")
+	}
+	// fill history message
+	role, ok := messageAsserted["role"]
+	if !ok {
+		return nil, needQueryMore, errors.New("message.role syntax illegal.")
+	}
+	roleAsserted, assertRoleOK := role.(string)
+	if !assertRoleOK {
+		return nil, needQueryMore, errors.New("message.role assert failed.")
+	}
+	content, ok := messageAsserted["content"]
+	if !ok {
+		return nil, needQueryMore, errors.New("message.content syntax illegal.")
+	}
+	contentAsserted, assertContentOK := content.(string)
+	if !assertContentOK {
+		return nil, needQueryMore, errors.New("message.content assert failed.")
+	}
+
+	historyMessage := &HistoryMessage{
+		Role:    roleAsserted,
+		Content: contentAsserted,
+	}
+	return historyMessage, needQueryMore, nil
+}
+
 func (ef *EchoFeedback) ExportContent() (map[string]interface{}, bool, error) {
 	// init
 	needQueryMore := false

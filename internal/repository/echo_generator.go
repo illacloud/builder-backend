@@ -1,7 +1,15 @@
 package repository
 
 import (
+	"encoding/json"
 	"fmt"
+)
+
+// role
+
+const (
+	ROLE_USER      = "user"
+	ROLE_ASSISTANT = "assistant"
 )
 
 // template base prompt
@@ -39,11 +47,28 @@ const (
 )
 
 type EchoGenerator struct {
-	Placeholder string
+	Placeholder     string
+	HistoryMessages []*HistoryMessage
 }
 
 func NewEchoGenerator() *EchoGenerator {
 	return &EchoGenerator{}
+}
+
+func (egen *EchoGenerator) SaveHistoryMessageInRaw(role string, content string) {
+	historyMessage := &HistoryMessage{
+		Role:    role,
+		Content: content,
+	}
+	egen.HistoryMessages = append(egen.HistoryMessages, historyMessage)
+}
+
+func (egen *EchoGenerator) SaveHistoryMessage(historyMessage *HistoryMessage) {
+	egen.HistoryMessages = append(egen.HistoryMessages, historyMessage)
+}
+
+func (egen *EchoGenerator) ExportFullHistoryMessages() []*HistoryMessage {
+	return egen.HistoryMessages
 }
 
 func (egen *EchoGenerator) GenerateBasePrompt(userDemand string) string {
@@ -55,49 +80,14 @@ func (egen *EchoGenerator) GenerateBasePrompt(userDemand string) string {
 			TEMPLATE_BASE_PROMPT_COMPONENT_PROPS+
 			TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE, userDemand,
 	)
+	// auto save history message
+	egen.SaveHistoryMessageInRaw(ROLE_USER, ret)
 	return ret
 }
 
-func (egen *EchoGenerator) DetectComponentTypes(component map[string]interface{}) map[string]bool {
-	componentTypeList := make(map[string]bool)
-	retrieveComponentTypes(component, componentTypeList)
-	return componentTypeList
-}
-
-func retrieveComponentTypes(rawComponent map[string]interface{}, componentTypeList map[string]bool) {
-	hitType, ok := rawComponent["type"]
-	if !ok {
-		return
-	}
-	hitTypeString, assertHitTypeOK := hitType.(string)
-	if !assertHitTypeOK {
-		return
-	}
-	componentTypeList[hitTypeString] = true
-	hitChindrenNode, ok := rawComponent["childrenNode"]
-	if !ok {
-		return
-	}
-	hitChindrenNodeAsserted, asserthitChindrenNodeOK := hitChindrenNode.([]interface{})
-	if !asserthitChindrenNodeOK {
-		return
-	}
-	if len(hitChindrenNodeAsserted) == 0 {
-		return
-	}
-	for _, node := range hitChindrenNodeAsserted {
-		nodeAsserted, assertNodeOK := node.(map[string]interface{})
-		if !assertNodeOK {
-			continue
-		}
-		retrieveComponentTypes(nodeAsserted, componentTypeList)
-	}
-	return
-}
-
-func (egen *EchoGenerator) FillPropsByContext(componentTypeList []string) string {
+func (egen *EchoGenerator) FillPropsByContext(componentTypeList map[string]bool) string {
 	ret := COMPONENTS_BASE_PROMPT
-	for _, componentType := range componentTypeList {
+	for componentType, _ := range componentTypeList {
 		switch componentType {
 		case "CONTAINER_WIDGET":
 			ret += "CONTAINER_WIDGET props be like " + COMPONENTS_BASE_PROMPT_CONTAINER_WIDGET + ". "
@@ -137,10 +127,64 @@ func (egen *EchoGenerator) FillPropsByContext(componentTypeList []string) string
 			ret += "CHECKBOX_GROUP_WIDGET props be like " + COMPONENTS_BASE_PROMPT_CHECKBOX_GROUP_WIDGET + ". "
 		}
 	}
+	egen.SaveHistoryMessageInRaw(ROLE_USER, ret)
 	return ret
 }
 
 // auto complete missing component field and properties
 func (egen *EchoGenerator) ComponentFilter(uncompleteComponent string) string {
 	return uncompleteComponent
+}
+
+type HistoryMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+func (hm *HistoryMessage) UnMarshalContent() (map[string]interface{}, error) {
+	// decode content
+	var decodedContent map[string]interface{}
+	errInUnMarshal := json.Unmarshal([]byte(hm.Content), &decodedContent)
+	if errInUnMarshal != nil {
+		return nil, errInUnMarshal
+	}
+	return decodedContent, nil
+}
+
+func (hm *HistoryMessage) DetectComponentTypes() map[string]bool {
+	component, _ := hm.UnMarshalContent()
+	componentTypeList := make(map[string]bool)
+	retrieveComponentTypes(component, componentTypeList)
+	return componentTypeList
+}
+
+func retrieveComponentTypes(rawComponent map[string]interface{}, componentTypeList map[string]bool) {
+	hitType, ok := rawComponent["type"]
+	if !ok {
+		return
+	}
+	hitTypeString, assertHitTypeOK := hitType.(string)
+	if !assertHitTypeOK {
+		return
+	}
+	componentTypeList[hitTypeString] = true
+	hitChindrenNode, ok := rawComponent["childrenNode"]
+	if !ok {
+		return
+	}
+	hitChindrenNodeAsserted, asserthitChindrenNodeOK := hitChindrenNode.([]interface{})
+	if !asserthitChindrenNodeOK {
+		return
+	}
+	if len(hitChindrenNodeAsserted) == 0 {
+		return
+	}
+	for _, node := range hitChindrenNodeAsserted {
+		nodeAsserted, assertNodeOK := node.(map[string]interface{})
+		if !assertNodeOK {
+			continue
+		}
+		retrieveComponentTypes(nodeAsserted, componentTypeList)
+	}
+	return
 }

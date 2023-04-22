@@ -26,12 +26,16 @@ const (
 )
 
 type EchoRequest struct {
-	Model     string         `json:"model"`
-	MaxTokens int            `json:"max_tokens"`
-	Messages  []*EchoMessage `json:"messages"`
+	Model     string            `json:"model"`
+	MaxTokens int               `json:"max_tokens"`
+	Messages  []*HistoryMessage `json:"messages"`
 }
 
-func (m *EchoRequest) SetMessage(msg *EchoMessage) {
+func (m *EchoRequest) SetMessages(msgs []*HistoryMessage) {
+	m.Messages = msgs
+}
+
+func (m *EchoRequest) AppendMessage(msg *HistoryMessage) {
 	m.Messages = append(m.Messages, msg)
 }
 
@@ -44,17 +48,5 @@ func NewEchoRequest() *EchoRequest {
 	return &EchoRequest{
 		Model:     ECHO_REQ_DEFAULT_MODEL,
 		MaxTokens: ECHO_REQ_DEFAULT_TOKENS,
-	}
-}
-
-type EchoMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-func NewEchoMessage(conntent string) *EchoMessage {
-	return &EchoMessage{
-		Role:    ECHO_MSG_DEFAULT_ROLE,
-		Content: conntent,
 	}
 }
