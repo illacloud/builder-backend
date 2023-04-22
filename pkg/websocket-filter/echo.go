@@ -92,7 +92,7 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 	payloadData := make([]interface{}, 0)
 	payloadData = append(payloadData, finalContent)
 	broadcastData := &ws.Broadcast{
-		Type:    "components/addComponentReducer",
+		Type:    "components/addComponentReducer/remote",
 		Payload: payloadData,
 	}
 
