@@ -18,6 +18,7 @@ const (
 	TEMPLATE_BASE_PROMPT_COMPONENT_SCHEMA      = "consider a json struct named component like {type:\"\",displayName:\"\",parentNode:\"\",childrenNode:[],h:0,w:0,x:0,y:0,props:{}}. "
 	TEMPLATE_BASE_PROMPT_COMPONENT_TYPE        = "component type are in CONTAINER_WIDGET, FORM_WIDGET, MODAL_WIDGET, TABLE_WIDGET, TEXT_WIDGET, BUTTON_WIDGET, INPUT_WIDGET, NUMBER_INPUT_WIDGET, SELECT_WIDGET, CHART_WIDGET, IMAGE_WIDGET, UPLOAD_WIDGET, EDITABLE_TEXT_WIDGET, SLIDER_WIDGET, RANGE_SLIDER_WIDGET, SWITCH_WIDGET, MULTISELECT_WIDGET, CHECKBOX_GROUP_WIDGET. Only CONTAINER_WIDGET, FORM_WIDGET, MODAL_WIDGET can contain other widget. "
 	TEMPLATE_BASE_PROMPT_COMPONENT_DISPLAYNAME = "displayName value is type field concat serial number with \"_\" and global unique. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_PARENT_NODE = "top level parentNode value must be \"bodySection1-bodySectionContainer1\". "
 	TEMPLATE_BASE_PROMPT_COMPONENT_HWXY        = "all components are rectangle. h, w are component size and w should not above 60. x, y are left-top position of component. "
 	TEMPLATE_BASE_PROMPT_COMPONENT_PROPS       = "props leave it as an empty json object. "
 	TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE    = "%s, no prose, no note, output only JSON. "
@@ -76,6 +77,7 @@ func (egen *EchoGenerator) GenerateBasePrompt(userDemand string) string {
 		TEMPLATE_BASE_PROMPT_COMPONENT_SCHEMA+
 			TEMPLATE_BASE_PROMPT_COMPONENT_TYPE+
 			TEMPLATE_BASE_PROMPT_COMPONENT_DISPLAYNAME+
+			TEMPLATE_BASE_PROMPT_COMPONENT_PARENT_NODE+
 			TEMPLATE_BASE_PROMPT_COMPONENT_HWXY+
 			TEMPLATE_BASE_PROMPT_COMPONENT_PROPS+
 			TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE, userDemand,
