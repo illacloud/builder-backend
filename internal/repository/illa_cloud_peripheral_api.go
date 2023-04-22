@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 )
 
 const (
-	PERIPHERAL_API_BASEURL           = "https://email.illasoft.com/v1/"
+	PERIPHERAL_API_BASEURL           = "https://peripheral-api.illasoft.com/v1/"
 	PERIPHERAL_API_GENERATE_SQL_PATH = "generateSQL"
+	PERIPHERAL_API_ECHO_PATH         = "echo"
+	PERIPHERAL_API_GLOBAL_TIMEOUT    = 5 * time.Minute
 )
 
 type GenerateSQLFeedback struct {
@@ -20,6 +23,7 @@ type GenerateSQLFeedback struct {
 func GenerateSQL(m *GenerateSQLPeripheralRequest, req *GenerateSQLRequest) (*GenerateSQLFeedback, error) {
 	payload := m.Export()
 	client := resty.New()
+	client.SetTimeout(PERIPHERAL_API_GLOBAL_TIMEOUT)
 	resp, err := client.R().
 		SetBody(payload).
 		Post(PERIPHERAL_API_BASEURL + PERIPHERAL_API_GENERATE_SQL_PATH)
@@ -29,5 +33,20 @@ func GenerateSQL(m *GenerateSQLPeripheralRequest, req *GenerateSQLRequest) (*Gen
 	res := &GenerateSQLFeedback{}
 	json.Unmarshal(resp.Body(), res)
 	res.Payload = req.GetActionInString() + res.Payload + ";"
+	return res, nil
+}
+
+func Echo(req *NewEchoPeripheralRequest) (*EchoFeedback, error) {
+	payload := req.Export()
+	client := resty.New()
+	client.SetTimeout(PERIPHERAL_API_GLOBAL_TIMEOUT)
+	resp, err := client.R().
+		SetBody(payload).
+		Post(PERIPHERAL_API_BASEURL + PERIPHERAL_API_ECHO_PATH)
+	if resp.StatusCode() != http.StatusOK || err != nil {
+		return nil, errors.New("failed to generate SQL")
+	}
+	res := &EchoFeedback{}
+	json.Unmarshal(resp.Body(), res)
 	return res, nil
 }
