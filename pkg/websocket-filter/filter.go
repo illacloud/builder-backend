@@ -84,7 +84,8 @@ func SignalFilter(hub *ws.Hub, message *ws.Message) error {
 	case ws.SIGNAL_COOPERATE_DISATTACH:
 		return SignalCooperateDisattach(hub, message)
 	case ws.SIGNAL_SUPER_POWER:
-		return SignalEcho(hub, message)
+		go SignalEcho(hub, message)
+		return nil
 	default:
 		return nil
 	}
