@@ -78,6 +78,11 @@ func (egen *EchoGenerator) ExportFullHistoryMessages() []*HistoryMessage {
 	return egen.HistoryMessages
 }
 
+func (egen *EchoGenerator) ExportLastHistoryMessages() *HistoryMessage {
+	lastMessageSerial := len(egen.HistoryMessages) - 1
+	return egen.HistoryMessages[lastMessageSerial]
+}
+
 func (egen *EchoGenerator) GenerateBasePrompt(userDemand string) string {
 	ret := fmt.Sprintf(
 		TEMPLATE_BASE_PROMPT_COMPONENT_SCHEMA+

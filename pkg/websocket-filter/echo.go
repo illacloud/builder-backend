@@ -54,14 +54,22 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 	fmt.Printf("[DUMP] componentTypeList: %+v\n", componentTypeList)
 
 	// generate request again
-	historyMessageFinal, errInEmitEchoRequestAgain := echoGenerator.EmitEchoRequest(false)
+	_, errInEmitEchoRequestAgain := echoGenerator.EmitEchoRequest(false)
 	if errInEmitEchoRequestAgain != nil {
 		fmt.Printf("[ERROR] errInEmitEchoRequestAgain: %+v\n", errInEmitEchoRequestAgain)
 		return errInEmitEchoRequestAgain
 	}
 
 	// new message
+	fullStack := echoGenerator.ExportFullHistoryMessages()
+
+	fmt.Printf("[DUMP] full: %+v\n", fullStack)
+
+	historyMessageFinal := echoGenerator.ExportLastHistoryMessages()
 	finalContent, _ := historyMessageFinal.UnMarshalContent()
+
+	fmt.Printf("[DUMP] historyMessageFinal: %+v \n", historyMessageFinal)
+	fmt.Printf("[DUMP] finalContent: %+v \n", finalContent)
 	payloadData := make([]interface{}, 0)
 	payloadData = append(payloadData, finalContent)
 	broadcastData := &ws.Broadcast{
