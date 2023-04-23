@@ -22,7 +22,7 @@ const (
 	TEMPLATE_BASE_PROMPT_COMPONENT_CONTAINER_TYPE = "containerType is fixed EDITOR_SCALE_SQUARE . "
 	TEMPLATE_BASE_PROMPT_COMPONENT_DISPLAYNAME    = "displayName value is type field concat serial number with \"_\" and global unique. "
 	TEMPLATE_BASE_PROMPT_COMPONENT_PARENT_NODE    = "top level parentNode value must be \"bodySection1-bodySectionContainer1\". "
-	TEMPLATE_BASE_PROMPT_COMPONENT_HWXY           = "all components are rectangle. h, w are component size. w should not above 60. x, y are left-top position of component, should start with 0. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_HWXY           = "all components are rectangle. h, w are component size. w should not above 60. x, y are left-top position of component and start with 0. "
 	TEMPLATE_BASE_PROMPT_COMPONENT_PROPS          = "props leave it as an empty json object. "
 	TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE       = "%s, no prose, no note, output only JSON object. "
 )
