@@ -24,7 +24,7 @@ const (
 	TEMPLATE_BASE_PROMPT_COMPONENT_PARENT_NODE    = "top level parentNode value must be \"bodySection1-bodySectionContainer1\". "
 	TEMPLATE_BASE_PROMPT_COMPONENT_HWXY           = "all components are rectangle. h, w are component size. x, y are left-top position of component. and x + w should not above 60."
 	TEMPLATE_BASE_PROMPT_COMPONENT_PROPS          = "props leave it as an empty json object. "
-	TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE       = "%s, no prose, no note, output only JSON. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE       = "%s, no prose, no note, output only JSON object. "
 )
 
 // components base prompt
