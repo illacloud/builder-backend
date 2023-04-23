@@ -1,16 +1,24 @@
 package repository
 
 type WidgetPrototype struct {
-	Type          string                 `json:"type"`
-	ContainerType string                 `json:"containerType"`
-	DisplayName   string                 `json:"displayName"`
-	ParentNode    string                 `json:"parentNode"`
-	ChildrenNode  []*WidgetPrototype     `json:"childrenNode"`
-	H             float64                `json:"h"`
-	W             float64                `json:"w"`
-	X             float64                `json:"x"`
-	Y             float64                `json:"y"`
-	Props         map[string]interface{} `json:"props"`
+	Type           string                 `json:"type"`
+	ContainerType  string                 `json:"containerType"`
+	DisplayName    string                 `json:"displayName"`
+	ParentNode     string                 `json:"parentNode"`
+	ChildrenNode   []*WidgetPrototype     `json:"childrenNode"`
+	H              float64                `json:"h"`
+	W              float64                `json:"w"`
+	X              float64                `json:"x"`
+	Y              float64                `json:"y"`
+	Z              float64                `json:"z"`
+	Props          map[string]interface{} `json:"props"`
+	IsDragging     bool                   `json:"isDragging"`
+	IsResizing     bool                   `json:"isResizing"`
+	VerticalResize bool                   `json:"verticalResize"`
+	MinH           float64                `json:"minH"`
+	MinW           float64                `json:"minW"`
+	UnitH          float64                `json:"unitH"`
+	UnitW          float64                `json:"unitW"`
 }
 
 func NewWidgetPrototypeByMap(rawWidget map[string]interface{}) *WidgetPrototype {
@@ -34,6 +42,15 @@ func NewWidgetPrototypeByMap(rawWidget map[string]interface{}) *WidgetPrototype 
 		X:             xAsserted,
 		Y:             yAsserted,
 		Props:         propsAsserted,
+		// reserved field
+		IsDragging:     false,
+		IsResizing:     false,
+		VerticalResize: false,
+		MinH:           2,
+		MinW:           2,
+		UnitH:          hAsserted * 2,
+		UnitW:          wAsserted * 2,
+		Z:              0,
 	}
 	return widget
 }
