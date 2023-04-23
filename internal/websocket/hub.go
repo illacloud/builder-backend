@@ -208,7 +208,11 @@ func (hub *Hub) BroadcastToGlobal(message *Message, currentClient *Client, inclu
 }
 
 func (hub *Hub) KickClient(client *Client) {
-	close(client.Send)
+	_, existsInTextClients := hub.Clients[client.ID]
+	_, existsInBinaryClients := hub.BinaryClients[client.ID]
+	if existsInTextClients || existsInBinaryClients {
+		close(client.Send)
+	}
 	delete(hub.Clients, client.ID)
 	delete(hub.BinaryClients, client.ID)
 }

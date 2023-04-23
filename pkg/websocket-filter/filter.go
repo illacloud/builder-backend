@@ -58,37 +58,37 @@ func Run(hub *ws.Hub) {
 func SignalFilter(hub *ws.Hub, message *ws.Message) error {
 	switch message.Signal {
 	case ws.SIGNAL_PING:
-		go SignalPing(hub, message)
+		return SignalPing(hub, message)
 	case ws.SIGNAL_ENTER:
-		go SignalEnter(hub, message)
+		return SignalEnter(hub, message)
 	case ws.SIGNAL_LEAVE:
-		go SignalLeave(hub, message)
+		return SignalLeave(hub, message)
 	case ws.SIGNAL_CREATE_STATE:
-		go SignalCreateState(hub, message)
+		return SignalCreateState(hub, message)
 	case ws.SIGNAL_DELETE_STATE:
-		go SignalDeleteState(hub, message)
+		return SignalDeleteState(hub, message)
 	case ws.SIGNAL_UPDATE_STATE:
-		go SignalUpdateState(hub, message)
+		return SignalUpdateState(hub, message)
 	case ws.SIGNAL_MOVE_STATE:
-		go SignalMoveState(hub, message)
+		return SignalMoveState(hub, message)
 	case ws.SIGNAL_CREATE_OR_UPDATE_STATE:
-		go SignalCreateOrUpdateState(hub, message)
+		return SignalCreateOrUpdateState(hub, message)
 	case ws.SIGNAL_BROADCAST_ONLY:
-		go SignalBroadcastOnly(hub, message)
+		return SignalBroadcastOnly(hub, message)
 	case ws.SIGNAL_PUT_STATE:
-		go SignalPutState(hub, message)
+		return SignalPutState(hub, message)
 	case ws.SIGNAL_GLOBAL_BROADCAST_ONLY:
-		go SignalGlobalBroadcastOnly(hub, message)
+		return SignalGlobalBroadcastOnly(hub, message)
 	case ws.SIGNAL_COOPERATE_ATTACH:
-		go SignalCooperateAttach(hub, message)
+		return SignalCooperateAttach(hub, message)
 	case ws.SIGNAL_COOPERATE_DISATTACH:
-		go SignalCooperateDisattach(hub, message)
+		return SignalCooperateDisattach(hub, message)
 	case ws.SIGNAL_SUPER_POWER:
 		go SignalEcho(hub, message)
+		return nil
 	default:
 		return nil
 	}
-	return nil
 }
 
 func BinarySignalFilter(hub *ws.Hub, message []byte) error {
