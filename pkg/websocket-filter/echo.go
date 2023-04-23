@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"github.com/illacloud/builder-backend/internal/repository"
-	"github.com/illacloud/builder-backend/internal/tokenvalidator"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
 
@@ -43,51 +42,25 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 	// form echo request by user demand
 	echoGenerator := repository.NewEchoGenerator()
 	echoGenerator.GenerateBasePrompt(userDemand)
-	fullHistoryMessage := echoGenerator.ExportFullHistoryMessages()
-	echoRequest := repository.NewEchoRequest()
-	echoRequest.SetMessages(fullHistoryMessage)
-	echoPeripheralRequest := repository.NewEchoPeripheralRequest(echoRequest.Export())
-	tokenValidator := tokenvalidator.NewRequestTokenValidator()
-	token := tokenValidator.GenerateValidateToken(echoPeripheralRequest.Message)
-	echoPeripheralRequest.SetValidateToken(token)
-
-	// call echo API
-	echoFeedback, _ := repository.Echo(echoPeripheralRequest)
-	fmt.Printf("[DUMP] echoFeedback: %+v\n", echoFeedback)
-	historyMessage, queryDidNotFinish, errInExportMessage := echoFeedback.ExportMessage()
-	if errInExportMessage != nil {
-		fmt.Printf("[ERROR] errInExportMessage: %+v\n", errInExportMessage)
-		return errInExportMessage
+	historyMessage, errInEmitEchoRequest := echoGenerator.EmitEchoRequest(false)
+	if errInEmitEchoRequest != nil {
+		fmt.Printf("[ERROR] errInEmitEchoRequest: %+v\n", errInEmitEchoRequest)
+		return errInEmitEchoRequest
 	}
-	// @todo: process if query did not finish
-	fmt.Printf("[queryDidNotFinish?] %v\n", queryDidNotFinish)
-
-	// log history message
-	echoGenerator.SaveHistoryMessage(historyMessage)
 
 	// check if props not exists, fill props
 	componentTypeList := historyMessage.DetectComponentTypes()
-	fmt.Printf("[DUMP] componentTypeList: %+v\n", componentTypeList)
 	echoGenerator.FillPropsByContext(componentTypeList)
+	fmt.Printf("[DUMP] componentTypeList: %+v\n", componentTypeList)
 
 	// generate request again
-	echoRequest2 := repository.NewEchoRequest()
-	fullHistoryMessage2 := echoGenerator.ExportFullHistoryMessages()
-	echoRequest2.SetMessages(fullHistoryMessage2)
-	echoPeripheralRequest2 := repository.NewEchoPeripheralRequest(echoRequest2.Export())
-	token2 := tokenValidator.GenerateValidateToken(echoPeripheralRequest2.Message)
-	echoPeripheralRequest2.SetValidateToken(token2)
-
-	// call API again
-	echoFeedback2, _ := repository.Echo(echoPeripheralRequest2)
-	fmt.Printf("[DUMP] echoFeedback: %+v\n", echoFeedback2)
-	historyMessageFinal, _, _ := echoFeedback.ExportMessage()
-	// filter components
-
-	// save components
+	historyMessageFinal, errInEmitEchoRequestAgain := echoGenerator.EmitEchoRequest(false)
+	if errInEmitEchoRequestAgain != nil {
+		fmt.Printf("[ERROR] errInEmitEchoRequestAgain: %+v\n", errInEmitEchoRequestAgain)
+		return errInEmitEchoRequestAgain
+	}
 
 	// new message
-	// finalContent, _ := historyMessage.UnMarshalContent()
 	finalContent, _ := historyMessageFinal.UnMarshalContent()
 	payloadData := make([]interface{}, 0)
 	payloadData = append(payloadData, finalContent)

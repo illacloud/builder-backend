@@ -3,6 +3,8 @@ package repository
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/illacloud/builder-backend/internal/tokenvalidator"
 )
 
 // role
@@ -45,6 +47,10 @@ const (
 	COMPONENTS_BASE_PROMPT_SWITCH_WIDGET         = "{\"label\": \"Label\",\"labelAlign\": \"left\",\"labelPosition\": \"left\",\"labelWidth\": \"{{33}}\",\"labelFull\": \"{{true}}\",\"colorScheme\": \"blue\",\"hidden\": \"{{false}}\",\"$dynamicAttrPaths\": []}"
 	COMPONENTS_BASE_PROMPT_MULTISELECT_WIDGET    = "{\"label\":\"Label\",\"optionConfigureMode\":\"static\",\"labelAlign\":\"left\",\"labelPosition\":\"left\",\"labelWidth\":\"{{33}}\",\"dataSources\":\"{{[]}}\",\"colorScheme\":\"blue\",\"hidden\":false,\"manualOptions\":[{\"id\":\"option-73733667-a63f-44ef-9caf-4700d1138cea\",\"label\":\"Option1\",\"value\":\"Option1\"},{\"id\":\"option-3633908a-40b5-4bd3-9530-5fd87a0a760c\",\"label\":\"Option2\",\"value\":\"Option2\"},{\"id\":\"option-1c7c6a83-1a4b-4a42-917c-cb0ff1541ae1\",\"label\":\"Option3\",\"value\":\"Option3\"}],\"dynamicHeight\":\"auto\",\"formDataKey\":\"{{multiselect1.displayName}}\",\"resizeDirection\":\"HORIZONTAL\",\"$dynamicAttrPaths\":[]}"
 	COMPONENTS_BASE_PROMPT_CHECKBOX_GROUP_WIDGET = "{\"optionConfigureMode\":\"static\",\"label\":\"Label\",\"labelAlign\":\"left\",\"labelPosition\":\"left\",\"labelWidth\":\"{{33}}\",\"manualOptions\":[{\"id\":\"option-6cd4af1c-16fb-49c8-9098-2abedbb8678f\",\"label\":\"Option1\",\"value\":\"Option1\"},{\"id\":\"option-7cdb88c3-e213-426f-adaf-3c4118b347de\",\"label\":\"Option2\",\"value\":\"Option2\"},{\"id\":\"option-bc940e14-2df5-4cff-84d7-cbeb87b19e8b\",\"label\":\"Option3\",\"value\":\"Option3\"}],\"dataSources\":\"{{[]}}\",\"direction\":\"horizontal\",\"colorScheme\":\"blue\",\"formDataKey\":\"{{checkboxGroup1.displayName}}\",\"$dynamicAttrPaths\":[]}"
+)
+
+const (
+	PRIMITIVE_PROMPT_CONTINUE = "continue"
 )
 
 type EchoGenerator struct {
@@ -133,9 +139,71 @@ func (egen *EchoGenerator) FillPropsByContext(componentTypeList map[string]bool)
 	return ret
 }
 
+func (egen *EchoGenerator) FillContinueContext() {
+	egen.SaveHistoryMessageInRaw(ROLE_USER, PRIMITIVE_PROMPT_CONTINUE)
+}
+
+func (egen *EchoGenerator) DoesContextIsContinued() bool {
+	lastMessageSerial := len(egen.HistoryMessages) - 2
+	if egen.HistoryMessages[lastMessageSerial].Content == PRIMITIVE_PROMPT_CONTINUE {
+		return true
+	}
+	return false
+}
+
+func (egen *EchoGenerator) ConcatContinuedContextOnStackTop() {
+	stackTopPointer := len(egen.HistoryMessages) - 1
+	concatTargetPointer := stackTopPointer - 2
+	// concat
+	egen.HistoryMessages[concatTargetPointer].Content += egen.HistoryMessages[stackTopPointer].Content
+	// remove old context
+	egen.HistoryMessages = egen.HistoryMessages[:concatTargetPointer]
+}
+
 // auto complete missing component field and properties
 func (egen *EchoGenerator) ComponentFilter(uncompleteComponent string) string {
 	return uncompleteComponent
+}
+
+func (egen *EchoGenerator) EmitEchoRequest(lastQueryDidNotFinish bool) (*HistoryMessage, error) {
+	// emit new request
+	tokenValidator := tokenvalidator.NewRequestTokenValidator()
+
+	echoRequest := NewEchoRequest()
+	fullHistoryMessage := egen.ExportFullHistoryMessages()
+	echoRequest.SetMessages(fullHistoryMessage)
+	echoPeripheralRequest := NewEchoPeripheralRequest(echoRequest.Export())
+	token := tokenValidator.GenerateValidateToken(echoPeripheralRequest.Message)
+	echoPeripheralRequest.SetValidateToken(token)
+
+	// call API again
+	echoFeedback, errInCallEcho := Echo(echoPeripheralRequest)
+	if errInCallEcho != nil {
+		return nil, errInCallEcho
+	}
+	fmt.Printf("[DUMP] EmitEchoRequest().echoFeedback: %+v\n", echoFeedback)
+
+	// try export
+	historyMessageFinal, queryDidNotFinish, errInExport := echoFeedback.ExportMessage()
+	if errInExport != nil {
+		return nil, errInExport
+	}
+	egen.SaveHistoryMessage(historyMessageFinal)
+
+	// concat last not finished query
+	if lastQueryDidNotFinish {
+		egen.ConcatContinuedContextOnStackTop()
+	}
+
+	// query are finished
+	if !queryDidNotFinish {
+		return historyMessageFinal, nil
+	}
+
+	// query did not finish, request again
+	egen.FillContinueContext()
+	return egen.EmitEchoRequest(lastQueryDidNotFinish)
+
 }
 
 type HistoryMessage struct {
