@@ -18,7 +18,7 @@ import "encoding/json"
 
 const (
 	ECHO_REQ_DEFAULT_MODEL  = "gpt-3.5-turbo"
-	ECHO_REQ_DEFAULT_TOKENS = 1000
+	ECHO_REQ_DEFAULT_TOKENS = 500
 )
 
 const (

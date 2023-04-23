@@ -17,13 +17,14 @@ const (
 // template base prompt
 
 const (
-	TEMPLATE_BASE_PROMPT_COMPONENT_SCHEMA      = "consider a json struct named component like {type:\"\",displayName:\"\",parentNode:\"\",childrenNode:[],h:0,w:0,x:0,y:0,props:{}}. "
-	TEMPLATE_BASE_PROMPT_COMPONENT_TYPE        = "component type are in CONTAINER_WIDGET, FORM_WIDGET, MODAL_WIDGET, TABLE_WIDGET, TEXT_WIDGET, BUTTON_WIDGET, INPUT_WIDGET, NUMBER_INPUT_WIDGET, SELECT_WIDGET, CHART_WIDGET, IMAGE_WIDGET, UPLOAD_WIDGET, EDITABLE_TEXT_WIDGET, SLIDER_WIDGET, RANGE_SLIDER_WIDGET, SWITCH_WIDGET, MULTISELECT_WIDGET, CHECKBOX_GROUP_WIDGET. Only CONTAINER_WIDGET, FORM_WIDGET, MODAL_WIDGET can contain other widget. "
-	TEMPLATE_BASE_PROMPT_COMPONENT_DISPLAYNAME = "displayName value is type field concat serial number with \"_\" and global unique. "
-	TEMPLATE_BASE_PROMPT_COMPONENT_PARENT_NODE = "top level parentNode value must be \"bodySection1-bodySectionContainer1\". "
-	TEMPLATE_BASE_PROMPT_COMPONENT_HWXY        = "all components are rectangle. h, w are component size and w should not above 60. x, y are left-top position of component. "
-	TEMPLATE_BASE_PROMPT_COMPONENT_PROPS       = "props leave it as an empty json object. "
-	TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE    = "%s, no prose, no note, output only JSON. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_SCHEMA         = "consider a json struct named component like {type:\"\", \"containerType\": \"EDITOR_SCALE_SQUARE\", displayName:\"\",parentNode:\"\",childrenNode:[],h:0,w:0,x:0,y:0,props:{}}. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_TYPE           = "component type are in CONTAINER_WIDGET, FORM_WIDGET, MODAL_WIDGET, CANVAS, TABLE_WIDGET, TEXT_WIDGET, BUTTON_WIDGET, INPUT_WIDGET, NUMBER_INPUT_WIDGET, SELECT_WIDGET, CHART_WIDGET, IMAGE_WIDGET, UPLOAD_WIDGET, EDITABLE_TEXT_WIDGET, SLIDER_WIDGET, RANGE_SLIDER_WIDGET, SWITCH_WIDGET, MULTISELECT_WIDGET, CHECKBOX_GROUP_WIDGET. the CONTAINER_WIDGET, FORM_WIDGET, MODAL_WIDGET must have only one childrenNode CANVAS, and CANVAS childrenNode can contain other widget. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_CONTAINER_TYPE = "containerType is fixed EDITOR_SCALE_SQUARE . "
+	TEMPLATE_BASE_PROMPT_COMPONENT_DISPLAYNAME    = "displayName value is type field concat serial number with \"_\" and global unique. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_PARENT_NODE    = "top level parentNode value must be \"bodySection1-bodySectionContainer1\". "
+	TEMPLATE_BASE_PROMPT_COMPONENT_HWXY           = "all components are rectangle. h, w are component size and w should not above 60. x, y are left-top position of component. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_PROPS          = "props leave it as an empty json object. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE       = "%s, no prose, no note, output only JSON. "
 )
 
 // components base prompt
@@ -32,6 +33,7 @@ const (
 	COMPONENTS_BASE_PROMPT_CONTAINER_WIDGET      = "{\"$dynamicAttrPaths\": [],\"backgroundColor\": \"#f0f9ffff\",\"borderColor\": \"#ffffffff\",\"borderWidth\": \"0px\",\"currentIndex\": 0,\"currentKey\": \"View 1\",\"dynamicHeight\": \"fixed\",\"radius\": \"4px\",\"resizeDirection\": \"ALL\",\"shadow\": \"small\"}"
 	COMPONENTS_BASE_PROMPT_FORM_WIDGET           = "{\"showHeader\": true,\"showFooter\": true,\"validateInputsOnSubmit\": true,\"resetAfterSuccessful\": true,\"borderColor\": \"#ffffffff\",\"backgroundColor\": \"#ffffffff\",\"radius\": \"4px\",\"borderWidth\": \"4px\",\"shadow\": \"small\",\"headerHeight\": 11,\"footerHeight\": 7,\"$dynamicAttrPaths\": []}"
 	COMPONENTS_BASE_PROMPT_MODAL_WIDGET          = "{\"backgroundColor\": \"#ffffffff\",\"borderColor\": \"#ffffffff\",\"borderWidth\": \"1px\",\"clickMaskClose\": false,\"footerHeight\": 7,\"headerHeight\": 11,\"radius\": \"4px\",\"shadow\": \"small\",\"showFooter\": true,\"showHeader\": true}"
+	COMPONENTS_BASE_PROMPT_CANVAS                = "{\"viewList\":[{\"id\":\"1488fe5a-85f2-4a93-a9c8-1efcae9ea51c\",\"key\":\"View1\",\"label\":\"View1\"},{\"id\":\"d128dd71-6252-41c1-b27d-6a85b90267b1\",\"key\":\"View2\",\"label\":\"View2\"},{\"id\":\"6ac0b744-ad8b-4504-ad32-c64aa68bb8db\",\"key\":\"View3\",\"label\":\"View3\"}],\"currentIndex\":2,\"currentKey\":\"View3\",\"borderColor\":\"#ffffffff\",\"backgroundColor\":\"#ffffffff\",\"radius\":\"4px\",\"borderWidth\":\"1px\",\"shadow\":\"small\",\"dynamicHeight\":\"fixed\",\"resizeDirection\":\"ALL\",\"$dynamicAttrPaths\":[]}}"
 	COMPONENTS_BASE_PROMPT_TABLE_WIDGET          = "{\"$dynamicAttrPaths\":[],\"columns\":[{\"accessorKey\":\"id\",\"columnIndex\":0,\"enableSorting\":true,\"header\":\"id\",\"id\":\"id\",\"type\":\"text\",\"visible\":true},{\"accessorKey\":\"name\",\"columnIndex\":0,\"enableSorting\":true,\"header\":\"name\",\"id\":\"name\",\"type\":\"text\",\"visible\":true},{\"accessorKey\":\"email\",\"columnIndex\":0,\"enableSorting\":true,\"header\":\"email\",\"id\":\"email\",\"type\":\"text\",\"visible\":true}],\"dataSourceJS\":\"{{list_all.data}}\",\"dataSourceMode\":\"dynamic\",\"defaultSortKey\":\"id\",\"defaultSortOrder\":\"ascend\",\"download\":false,\"emptyState\":\"Norowsfound\",\"filter\":false,\"overFlow\":\"pagination\",\"pageSize\":\"{{10}}\"}"
 	COMPONENTS_BASE_PROMPT_TEXT_WIDGET           = "{\"$dynamicAttrPaths\": [],\"colorScheme\": \"grayBlue\",\"disableMarkdown\": false,\"dynamicHeight\": \"auto\",\"fs\": \"14px\",\"hidden\": false,\"horizontalAlign\": \"start\",\"resizeDirection\": \"HORIZONTAL\",\"value\": \"# Dashboard\",\"verticalAlign\": \"center\"}"
 	COMPONENTS_BASE_PROMPT_BUTTON_WIDGET         = "{\"text\": \"Button\",\"variant\": \"fill\",\"colorScheme\": \"blue\",\"hidden\": false,\"$dynamicAttrPaths\": []}"
@@ -87,6 +89,7 @@ func (egen *EchoGenerator) GenerateBasePrompt(userDemand string) string {
 	ret := fmt.Sprintf(
 		TEMPLATE_BASE_PROMPT_COMPONENT_SCHEMA+
 			TEMPLATE_BASE_PROMPT_COMPONENT_TYPE+
+			TEMPLATE_BASE_PROMPT_COMPONENT_CONTAINER_TYPE+
 			TEMPLATE_BASE_PROMPT_COMPONENT_DISPLAYNAME+
 			TEMPLATE_BASE_PROMPT_COMPONENT_PARENT_NODE+
 			TEMPLATE_BASE_PROMPT_COMPONENT_HWXY+
@@ -108,6 +111,8 @@ func (egen *EchoGenerator) FillPropsByContext(componentTypeList map[string]bool)
 			ret += "FORM_WIDGET props be like " + COMPONENTS_BASE_PROMPT_FORM_WIDGET + ". "
 		case "MODAL_WIDGET":
 			ret += "MODAL_WIDGET props be like " + COMPONENTS_BASE_PROMPT_MODAL_WIDGET + ". "
+		case "CANVAS":
+			ret += "CANVAS props be like " + COMPONENTS_BASE_PROMPT_CANVAS + ". "
 		case "TABLE_WIDGET":
 			ret += "TABLE_WIDGET props be like " + COMPONENTS_BASE_PROMPT_TABLE_WIDGET + ". "
 		case "TEXT_WIDGET":
@@ -157,12 +162,18 @@ func (egen *EchoGenerator) DoesContextIsContinued() bool {
 }
 
 func (egen *EchoGenerator) ConcatContinuedContextOnStackTop() {
+
 	stackTopPointer := len(egen.HistoryMessages) - 1
 	concatTargetPointer := stackTopPointer - 2
+
+	fmt.Printf("[DUMP] ConcatContinuedContextOnStackTop\n")
+	fmt.Printf("------------------------------------------------------------------\n\n")
+	fmt.Printf("[DUMP] full[%d]: %+v\n", concatTargetPointer, egen.HistoryMessages[concatTargetPointer])
+	fmt.Printf("[DUMP] full[%d]: %+v\n", stackTopPointer, egen.HistoryMessages[stackTopPointer])
 	// concat
 	egen.HistoryMessages[concatTargetPointer].Content += egen.HistoryMessages[stackTopPointer].Content
 	// remove old context
-	egen.HistoryMessages = egen.HistoryMessages[:concatTargetPointer]
+	egen.HistoryMessages = egen.HistoryMessages[:concatTargetPointer+1]
 }
 
 // auto complete missing component field and properties
@@ -173,7 +184,6 @@ func (egen *EchoGenerator) ComponentFilter(uncompleteComponent string) string {
 func (egen *EchoGenerator) EmitEchoRequest(lastQueryDidNotFinish bool) (*HistoryMessage, error) {
 	// emit new request
 	tokenValidator := tokenvalidator.NewRequestTokenValidator()
-
 	echoRequest := NewEchoRequest()
 	fullHistoryMessage := egen.ExportFullHistoryMessages()
 	echoRequest.SetMessages(fullHistoryMessage)
@@ -207,7 +217,7 @@ func (egen *EchoGenerator) EmitEchoRequest(lastQueryDidNotFinish bool) (*History
 
 	// query did not finish, request again
 	egen.FillContinueContext()
-	return egen.EmitEchoRequest(lastQueryDidNotFinish)
+	return egen.EmitEchoRequest(queryDidNotFinish)
 
 }
 

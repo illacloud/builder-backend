@@ -63,9 +63,14 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 	// new message
 	fullStack := echoGenerator.ExportFullHistoryMessages()
 
-	fmt.Printf("[DUMP] full: %+v\n", fullStack)
+	for k, v := range fullStack {
+		fmt.Printf("[DUMP] full[%d]: %+v\n", k, v)
+	}
 
 	historyMessageFinal := echoGenerator.ExportLastHistoryMessages()
+
+	fmt.Printf("\n[DUMP] historyMessageFinal.Content: %+v\n\n", historyMessageFinal.Content)
+
 	finalContent, _ := historyMessageFinal.UnMarshalContent()
 
 	fmt.Printf("[DUMP] historyMessageFinal: %+v \n", historyMessageFinal)
