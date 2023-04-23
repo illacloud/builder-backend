@@ -14,7 +14,10 @@
 
 package repository
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 const (
 	ECHO_REQ_DEFAULT_MODEL  = "gpt-3.5-turbo"
@@ -32,7 +35,7 @@ type EchoRequest struct {
 }
 
 func (m *EchoRequest) SetMessages(msgs []*HistoryMessage) {
-	m.Messages = msgs
+	m.Messages = append(m.Messages, msgs...)
 }
 
 func (m *EchoRequest) AppendMessage(msg *HistoryMessage) {
@@ -41,6 +44,7 @@ func (m *EchoRequest) AppendMessage(msg *HistoryMessage) {
 
 func (m *EchoRequest) Export() string {
 	r, _ := json.Marshal(m)
+	fmt.Printf("[DUMP] EchoRequest: %+v\n", string(r))
 	return string(r)
 }
 

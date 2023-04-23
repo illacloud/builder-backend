@@ -2,6 +2,7 @@ package repository
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/illacloud/builder-backend/internal/tokenvalidator"
@@ -17,14 +18,16 @@ const (
 // template base prompt
 
 const (
-	TEMPLATE_BASE_PROMPT_COMPONENT_SCHEMA         = "consider a json struct named component like {type:\"\", \"containerType\": \"EDITOR_SCALE_SQUARE\", displayName:\"\",parentNode:\"\",childrenNode:[],h:0,w:0,x:0,y:0,props:{}}. "
-	TEMPLATE_BASE_PROMPT_COMPONENT_TYPE           = "component type are in CONTAINER_WIDGET, FORM_WIDGET, MODAL_WIDGET, CANVAS, TABLE_WIDGET, TEXT_WIDGET, BUTTON_WIDGET, INPUT_WIDGET, NUMBER_INPUT_WIDGET, SELECT_WIDGET, CHART_WIDGET, IMAGE_WIDGET, UPLOAD_WIDGET, EDITABLE_TEXT_WIDGET, SLIDER_WIDGET, RANGE_SLIDER_WIDGET, SWITCH_WIDGET, MULTISELECT_WIDGET, CHECKBOX_GROUP_WIDGET. the CONTAINER_WIDGET, FORM_WIDGET, MODAL_WIDGET must have only one childrenNode CANVAS, and CANVAS childrenNode can contain other widget. "
-	TEMPLATE_BASE_PROMPT_COMPONENT_CONTAINER_TYPE = "containerType is fixed EDITOR_SCALE_SQUARE . "
-	TEMPLATE_BASE_PROMPT_COMPONENT_DISPLAYNAME    = "displayName value is type field concat serial number with \"_\" and global unique. "
-	TEMPLATE_BASE_PROMPT_COMPONENT_PARENT_NODE    = "top level parentNode value must be \"bodySection1-bodySectionContainer1\". "
-	TEMPLATE_BASE_PROMPT_COMPONENT_HWXY           = "all components are rectangle. h, w are component size. w should not above 60. x, y are left-top position of component and start with 0. "
-	TEMPLATE_BASE_PROMPT_COMPONENT_PROPS          = "props leave it as an empty json object. "
-	TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE       = "%s, no prose, no note, output only JSON object. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_SCHEMA             = "consider a json struct named component like {type:\"\", \"containerType\": \"EDITOR_SCALE_SQUARE\", displayName:\"\",parentNode:\"\",childrenNode:[],h:0,w:0,x:0,y:0,props:{}}. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_TYPE               = "type field are only in CONTAINER_WIDGET, FORM_WIDGET, MODAL_WIDGET, CANVAS, TABLE_WIDGET, TEXT_WIDGET, BUTTON_WIDGET, INPUT_WIDGET, NUMBER_INPUT_WIDGET, SELECT_WIDGET, CHART_WIDGET, IMAGE_WIDGET, UPLOAD_WIDGET, EDITABLE_TEXT_WIDGET, SLIDER_WIDGET, RANGE_SLIDER_WIDGET, SWITCH_WIDGET, MULTISELECT_WIDGET, CHECKBOX_GROUP_WIDGET. the CONTAINER_WIDGET, FORM_WIDGET, MODAL_WIDGET must have only one childrenNode CANVAS, and CANVAS childrenNode can contain other widget. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_CONTAINER_TYPE     = "containerType is fixed EDITOR_SCALE_SQUARE . "
+	TEMPLATE_BASE_PROMPT_COMPONENT_DISPLAYNAME        = "displayName value is type field concat serial number with \"_\" and global unique. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_PARENT_NODE        = "top level parentNode value must be \"bodySection1-bodySectionContainer1\". "
+	TEMPLATE_BASE_PROMPT_COMPONENT_CHILDREN_NODE      = "childrenNode only include component displayName. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_HWXY               = "all components are rectangle. h, w are component size. w should not above 60. x, y are left-top position of component and start with 0. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_PROPS              = "props leave it as an empty json object. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_STRUCTURE_DESCRIBE = "all components are parallel in a json array with no key name. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE           = "%s, "
 )
 
 // components base prompt
@@ -49,19 +52,42 @@ const (
 	COMPONENTS_BASE_PROMPT_SWITCH_WIDGET         = "{\"label\": \"Label\",\"labelAlign\": \"left\",\"labelPosition\": \"left\",\"labelWidth\": \"{{33}}\",\"labelFull\": \"{{true}}\",\"colorScheme\": \"blue\",\"hidden\": \"{{false}}\",\"$dynamicAttrPaths\": []}"
 	COMPONENTS_BASE_PROMPT_MULTISELECT_WIDGET    = "{\"label\":\"Label\",\"optionConfigureMode\":\"static\",\"labelAlign\":\"left\",\"labelPosition\":\"left\",\"labelWidth\":\"{{33}}\",\"dataSources\":\"{{[]}}\",\"colorScheme\":\"blue\",\"hidden\":false,\"manualOptions\":[{\"id\":\"option-73733667-a63f-44ef-9caf-4700d1138cea\",\"label\":\"Option1\",\"value\":\"Option1\"},{\"id\":\"option-3633908a-40b5-4bd3-9530-5fd87a0a760c\",\"label\":\"Option2\",\"value\":\"Option2\"},{\"id\":\"option-1c7c6a83-1a4b-4a42-917c-cb0ff1541ae1\",\"label\":\"Option3\",\"value\":\"Option3\"}],\"dynamicHeight\":\"auto\",\"formDataKey\":\"{{multiselect1.displayName}}\",\"resizeDirection\":\"HORIZONTAL\",\"$dynamicAttrPaths\":[]}"
 	COMPONENTS_BASE_PROMPT_CHECKBOX_GROUP_WIDGET = "{\"optionConfigureMode\":\"static\",\"label\":\"Label\",\"labelAlign\":\"left\",\"labelPosition\":\"left\",\"labelWidth\":\"{{33}}\",\"manualOptions\":[{\"id\":\"option-6cd4af1c-16fb-49c8-9098-2abedbb8678f\",\"label\":\"Option1\",\"value\":\"Option1\"},{\"id\":\"option-7cdb88c3-e213-426f-adaf-3c4118b347de\",\"label\":\"Option2\",\"value\":\"Option2\"},{\"id\":\"option-bc940e14-2df5-4cff-84d7-cbeb87b19e8b\",\"label\":\"Option3\",\"value\":\"Option3\"}],\"dataSources\":\"{{[]}}\",\"direction\":\"horizontal\",\"colorScheme\":\"blue\",\"formDataKey\":\"{{checkboxGroup1.displayName}}\",\"$dynamicAttrPaths\":[]}"
+	COMPONENTS_BASE_FILL_TARGET_PROMPT           = "now we have component %s, fill it props field with reasonable data. "
 )
 
 const (
-	PRIMITIVE_PROMPT_CONTINUE = "continue"
+	PRIMITIVE_PROMPT_CONTINUE  = "continue"
+	PRIMITIVE_PROMPT_JSON_ONLY = "output no prose, no note, only JSON. "
 )
 
 type EchoGenerator struct {
-	Placeholder     string
-	HistoryMessages []*HistoryMessage
+	Placeholder      string
+	StackendMessages []*HistoryMessage
+	HistoryMessages  []*HistoryMessage
 }
 
 func NewEchoGenerator() *EchoGenerator {
 	return &EchoGenerator{}
+}
+
+func (egen *EchoGenerator) SaveStackendMessageInRaw(role string, content string) {
+	historyMessage := &HistoryMessage{
+		Role:    role,
+		Content: content,
+	}
+	egen.StackendMessages = append(egen.StackendMessages, historyMessage)
+}
+
+func (egen *EchoGenerator) SaveStackendMessage(historyMessage *HistoryMessage) {
+	egen.StackendMessages = append(egen.StackendMessages, historyMessage)
+}
+
+func (egen *EchoGenerator) ExportFullStackendMessage() []*HistoryMessage {
+	return egen.StackendMessages
+}
+
+func (egen *EchoGenerator) CleanHistoryMessages() {
+	egen.HistoryMessages = make([]*HistoryMessage, 0)
 }
 
 func (egen *EchoGenerator) SaveHistoryMessageInRaw(role string, content string) {
@@ -74,6 +100,10 @@ func (egen *EchoGenerator) SaveHistoryMessageInRaw(role string, content string) 
 
 func (egen *EchoGenerator) SaveHistoryMessage(historyMessage *HistoryMessage) {
 	egen.HistoryMessages = append(egen.HistoryMessages, historyMessage)
+}
+
+func (egen *EchoGenerator) StackAllHistoryMessage() {
+	egen.StackendMessages = append(egen.StackendMessages, egen.HistoryMessages...)
 }
 
 func (egen *EchoGenerator) ExportFullHistoryMessages() []*HistoryMessage {
@@ -92,9 +122,12 @@ func (egen *EchoGenerator) GenerateBasePrompt(userDemand string) string {
 			TEMPLATE_BASE_PROMPT_COMPONENT_CONTAINER_TYPE+
 			TEMPLATE_BASE_PROMPT_COMPONENT_DISPLAYNAME+
 			TEMPLATE_BASE_PROMPT_COMPONENT_PARENT_NODE+
+			TEMPLATE_BASE_PROMPT_COMPONENT_CHILDREN_NODE+
 			TEMPLATE_BASE_PROMPT_COMPONENT_HWXY+
 			TEMPLATE_BASE_PROMPT_COMPONENT_PROPS+
-			TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE, userDemand,
+			TEMPLATE_BASE_PROMPT_COMPONENT_STRUCTURE_DESCRIBE+
+			TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE+
+			PRIMITIVE_PROMPT_JSON_ONLY, userDemand,
 	)
 	// auto save history message
 	egen.SaveHistoryMessageInRaw(ROLE_USER, ret)
@@ -149,6 +182,67 @@ func (egen *EchoGenerator) FillPropsByContext(componentTypeList map[string]bool)
 	return ret
 }
 
+func (egen *EchoGenerator) FillPropsBySingleComponent(component map[string]interface{}) (string, error) {
+	componentTypeRaw, ok := component["type"]
+	if !ok {
+		return "", errors.New("can not find component.type field")
+	}
+	componentType, assertComponentTypeOK := componentTypeRaw.(string)
+	if !assertComponentTypeOK {
+		return "", errors.New("assert component.type failed")
+	}
+
+	ret := ""
+	switch componentType {
+	case "CONTAINER_WIDGET":
+		ret += "CONTAINER_WIDGET props be like " + COMPONENTS_BASE_PROMPT_CONTAINER_WIDGET + ". "
+	case "FORM_WIDGET":
+		ret += "FORM_WIDGET props be like " + COMPONENTS_BASE_PROMPT_FORM_WIDGET + ". "
+	case "MODAL_WIDGET":
+		ret += "MODAL_WIDGET props be like " + COMPONENTS_BASE_PROMPT_MODAL_WIDGET + ". "
+	case "CANVAS":
+		ret += "CANVAS props be like " + COMPONENTS_BASE_PROMPT_CANVAS + ". "
+	case "TABLE_WIDGET":
+		ret += "TABLE_WIDGET props be like " + COMPONENTS_BASE_PROMPT_TABLE_WIDGET + ". "
+	case "TEXT_WIDGET":
+		ret += "TEXT_WIDGET props be like " + COMPONENTS_BASE_PROMPT_TEXT_WIDGET + ". "
+	case "BUTTON_WIDGET":
+		ret += "BUTTON_WIDGET props be like " + COMPONENTS_BASE_PROMPT_BUTTON_WIDGET + ". "
+	case "INPUT_WIDGET":
+		ret += "INPUT_WIDGET props be like " + COMPONENTS_BASE_PROMPT_INPUT_WIDGET + ". "
+	case "NUMBER_INPUT_WIDGET":
+		ret += "NUMBER_INPUT_WIDGET props be like " + COMPONENTS_BASE_PROMPT_NUMBER_INPUT_WIDGET + ". "
+	case "SELECT_WIDGET":
+		ret += "SELECT_WIDGET props be like " + COMPONENTS_BASE_PROMPT_SELECT_WIDGET + ". "
+	case "CHART_WIDGET":
+		ret += "CHART_WIDGET props be like " + COMPONENTS_BASE_PROMPT_CHART_WIDGET + ". "
+	case "IMAGE_WIDGET":
+		ret += "IMAGE_WIDGET props be like " + COMPONENTS_BASE_PROMPT_IMAGE_WIDGET + ". "
+	case "UPLOAD_WIDGET":
+		ret += "UPLOAD_WIDGET props be like " + COMPONENTS_BASE_PROMPT_UPLOAD_WIDGET + ". "
+	case "EDITABLE_TEXT_WIDGET":
+		ret += "EDITABLE_TEXT_WIDGET props be like " + COMPONENTS_BASE_PROMPT_EDITABLE_TEXT_WIDGET + ". "
+	case "SLIDER_WIDGET":
+		ret += "SLIDER_WIDGET props be like " + COMPONENTS_BASE_PROMPT_SLIDER_WIDGET + ". "
+	case "RANGE_SLIDER_WIDGET":
+		ret += "RANGE_SLIDER_WIDGET props be like " + COMPONENTS_BASE_PROMPT_RANGE_SLIDER_WIDGET + ". "
+	case "SWITCH_WIDGET":
+		ret += "SWITCH_WIDGET props be like " + COMPONENTS_BASE_PROMPT_SWITCH_WIDGET + ". "
+	case "MULTISELECT_WIDGET":
+		ret += "MULTISELECT_WIDGET props be like " + COMPONENTS_BASE_PROMPT_MULTISELECT_WIDGET + ". "
+	case "CHECKBOX_GROUP_WIDGET":
+		ret += "CHECKBOX_GROUP_WIDGET props be like " + COMPONENTS_BASE_PROMPT_CHECKBOX_GROUP_WIDGET + ". "
+	}
+	componentInJSON, errorInMarshal := json.Marshal(component)
+	if errorInMarshal != nil {
+		return "", errorInMarshal
+	}
+	ret += fmt.Sprintf(COMPONENTS_BASE_FILL_TARGET_PROMPT, componentInJSON)
+	ret += PRIMITIVE_PROMPT_JSON_ONLY
+	egen.SaveHistoryMessageInRaw(ROLE_USER, ret)
+	return ret, nil
+}
+
 func (egen *EchoGenerator) FillContinueContext() {
 	egen.SaveHistoryMessageInRaw(ROLE_USER, PRIMITIVE_PROMPT_CONTINUE)
 }
@@ -185,6 +279,8 @@ func (egen *EchoGenerator) EmitEchoRequest(lastQueryDidNotFinish bool) (*History
 	// emit new request
 	tokenValidator := tokenvalidator.NewRequestTokenValidator()
 	echoRequest := NewEchoRequest()
+	fullStackedMessage := egen.ExportFullStackendMessage()
+	echoRequest.SetMessages(fullStackedMessage)
 	fullHistoryMessage := egen.ExportFullHistoryMessages()
 	echoRequest.SetMessages(fullHistoryMessage)
 	echoPeripheralRequest := NewEchoPeripheralRequest(echoRequest.Export())
@@ -226,7 +322,7 @@ type HistoryMessage struct {
 	Content string `json:"content"`
 }
 
-func (hm *HistoryMessage) UnMarshalContent() (map[string]interface{}, error) {
+func (hm *HistoryMessage) UnMarshalObjectContent() (map[string]interface{}, error) {
 	// decode content
 	var decodedContent map[string]interface{}
 	errInUnMarshal := json.Unmarshal([]byte(hm.Content), &decodedContent)
@@ -236,8 +332,18 @@ func (hm *HistoryMessage) UnMarshalContent() (map[string]interface{}, error) {
 	return decodedContent, nil
 }
 
+func (hm *HistoryMessage) UnMarshalArrayContent() ([]interface{}, error) {
+	// decode content
+	var decodedContent []interface{}
+	errInUnMarshal := json.Unmarshal([]byte(hm.Content), &decodedContent)
+	if errInUnMarshal != nil {
+		return nil, errInUnMarshal
+	}
+	return decodedContent, nil
+}
+
 func (hm *HistoryMessage) DetectComponentTypes() map[string]bool {
-	component, _ := hm.UnMarshalContent()
+	component, _ := hm.UnMarshalObjectContent()
 	componentTypeList := make(map[string]bool)
 	retrieveComponentTypes(component, componentTypeList)
 	return componentTypeList
