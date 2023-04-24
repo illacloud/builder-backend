@@ -28,7 +28,7 @@ const (
 	TEMPLATE_BASE_PROMPT_COMPONENT_HWXY               = "all components are rectangle. h, w are component size. x, y are left-top position of component and start with 0. "
 	TEMPLATE_BASE_PROMPT_COMPONENT_PROPS              = "props leave it as an empty json object. "
 	TEMPLATE_BASE_PROMPT_COMPONENT_STRUCTURE_DESCRIBE = "all components are parallel in a json array as top data structure, with no name. "
-	TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE           = "now use these type of components %s, output no prose, no note, only JSON components array. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE           = "now use these type of components %s, output no prose, no note, only JSON components array without line break and spaces character. "
 )
 
 // components base prompt
