@@ -280,11 +280,11 @@ func (egen *EchoGenerator) FillPropsBySingleComponent(component map[string]inter
 	case "TABLE_WIDGET":
 		ret += "TABLE_WIDGET props be like " + COMPONENTS_BASE_PROMPT_TABLE_WIDGET + ". "
 	case "TEXT_WIDGET":
-		ret += "TEXT_WIDGET props be like " + COMPONENTS_BASE_PROMPT_TEXT_WIDGET + ". "
+		ret += "TEXT_WIDGET h is 2, props be like " + COMPONENTS_BASE_PROMPT_TEXT_WIDGET + ". "
 	case "BUTTON_WIDGET":
-		ret += "BUTTON_WIDGET props be like " + COMPONENTS_BASE_PROMPT_BUTTON_WIDGET + ". "
+		ret += "BUTTON_WIDGET h is 2, props be like " + COMPONENTS_BASE_PROMPT_BUTTON_WIDGET + ". "
 	case "INPUT_WIDGET":
-		ret += "INPUT_WIDGET props be like " + COMPONENTS_BASE_PROMPT_INPUT_WIDGET + ". "
+		ret += "INPUT_WIDGET h is 2, and props be like " + COMPONENTS_BASE_PROMPT_INPUT_WIDGET + ". "
 	case "NUMBER_INPUT_WIDGET":
 		ret += "NUMBER_INPUT_WIDGET props be like " + COMPONENTS_BASE_PROMPT_NUMBER_INPUT_WIDGET + ". "
 	case "SELECT_WIDGET":
