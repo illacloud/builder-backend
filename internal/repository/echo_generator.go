@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/illacloud/builder-backend/internal/tokenvalidator"
 )
@@ -53,6 +54,7 @@ const (
 	COMPONENTS_BASE_PROMPT_MULTISELECT_WIDGET    = "{\"label\":\"Label\",\"optionConfigureMode\":\"static\",\"labelAlign\":\"left\",\"labelPosition\":\"left\",\"labelWidth\":\"{{33}}\",\"dataSources\":\"{{[]}}\",\"colorScheme\":\"blue\",\"hidden\":false,\"manualOptions\":[{\"id\":\"option-73733667-a63f-44ef-9caf-4700d1138cea\",\"label\":\"Option1\",\"value\":\"Option1\"},{\"id\":\"option-3633908a-40b5-4bd3-9530-5fd87a0a760c\",\"label\":\"Option2\",\"value\":\"Option2\"},{\"id\":\"option-1c7c6a83-1a4b-4a42-917c-cb0ff1541ae1\",\"label\":\"Option3\",\"value\":\"Option3\"}],\"dynamicHeight\":\"auto\",\"formDataKey\":\"{{multiselect1.displayName}}\",\"resizeDirection\":\"HORIZONTAL\",\"$dynamicAttrPaths\":[]}"
 	COMPONENTS_BASE_PROMPT_CHECKBOX_GROUP_WIDGET = "{\"optionConfigureMode\":\"static\",\"label\":\"Label\",\"labelAlign\":\"left\",\"labelPosition\":\"left\",\"labelWidth\":\"{{33}}\",\"manualOptions\":[{\"id\":\"option-6cd4af1c-16fb-49c8-9098-2abedbb8678f\",\"label\":\"Option1\",\"value\":\"Option1\"},{\"id\":\"option-7cdb88c3-e213-426f-adaf-3c4118b347de\",\"label\":\"Option2\",\"value\":\"Option2\"},{\"id\":\"option-bc940e14-2df5-4cff-84d7-cbeb87b19e8b\",\"label\":\"Option3\",\"value\":\"Option3\"}],\"dataSources\":\"{{[]}}\",\"direction\":\"horizontal\",\"colorScheme\":\"blue\",\"formDataKey\":\"{{checkboxGroup1.displayName}}\",\"$dynamicAttrPaths\":[]}"
 	COMPONENTS_BASE_FILL_TARGET_PROMPT           = "now we have component %s, fill it props field with reasonable data. "
+	COMPONENTS_BASE_USER_DEMAND                  = "and %s. "
 )
 
 const (
@@ -61,13 +63,71 @@ const (
 )
 
 type EchoGenerator struct {
-	Placeholder      string
-	StackendMessages []*HistoryMessage
-	HistoryMessages  []*HistoryMessage
+	Placeholder         string
+	StackendMessages    []*HistoryMessage
+	HistoryMessages     []*HistoryMessage
+	StackedComponents   map[string]*WidgetPrototype
+	ComponentsFramework []interface{}
 }
 
 func NewEchoGenerator() *EchoGenerator {
 	return &EchoGenerator{}
+}
+
+func (egen *EchoGenerator) DumpStackendMessages() {
+	fmt.Printf("---------- [DUMP] EchoGenerator.StackendMessages: ----------\n")
+	for k, v := range egen.StackendMessages {
+		fmt.Printf("[%d] role: %s, content: %v\n", k, v.Role, strings.Replace(v.Content, "\n", "", -1))
+	}
+	fmt.Printf("---------- -------------------------------------- ----------\n")
+}
+
+func (egen *EchoGenerator) DumpHistoryMessages() {
+	fmt.Printf("---------- [DUMP] EchoGenerator.HistoryMessages: ----------\n")
+	for k, v := range egen.HistoryMessages {
+		fmt.Printf("[%d] role: %s, content: %v\n", k, v.Role, strings.Replace(v.Content, "\n", "", -1))
+	}
+	fmt.Printf("---------- -------------------------------------- ----------\n")
+}
+
+func (egen *EchoGenerator) RemoveStackTopAssistantMessage() {
+	lastPos := len(egen.StackendMessages) - 1
+	if egen.StackendMessages[lastPos].Role == ROLE_ASSISTANT {
+		egen.StackendMessages = egen.StackendMessages[:lastPos]
+	}
+}
+
+// only left base prompt
+func (egen *EchoGenerator) CleanStackendMessages() {
+	egen.StackendMessages = egen.StackendMessages[:1]
+}
+
+func (egen *EchoGenerator) SetComponentsFramework(components []interface{}) {
+	egen.ComponentsFramework = components
+}
+
+func (egen *EchoGenerator) ExportComponentsFramework() []interface{} {
+	return egen.ComponentsFramework
+}
+
+func (egen *EchoGenerator) SaveStackedComponents(component *WidgetPrototype) {
+	egen.StackedComponents[component.DisplayName] = component
+}
+
+func (egen *EchoGenerator) GetAllComponentDisplayName() []string {
+	names := make([]string, 0)
+	for displayName, _ := range egen.StackedComponents {
+		names = append(names, displayName)
+	}
+	return names
+}
+
+func (egen *EchoGenerator) IsFirstTimeGenerate() bool {
+	return len(egen.StackedComponents) == 0
+}
+
+func (egen *EchoGenerator) HaveStackendMessages() bool {
+	return len(egen.StackendMessages) != 0
 }
 
 func (egen *EchoGenerator) SaveStackendMessageInRaw(role string, content string) {
@@ -78,7 +138,7 @@ func (egen *EchoGenerator) SaveStackendMessageInRaw(role string, content string)
 	egen.StackendMessages = append(egen.StackendMessages, historyMessage)
 }
 
-func (egen *EchoGenerator) SaveStackendMessage(historyMessage *HistoryMessage) {
+func (egen *EchoGenerator) SaveStackedMessage(historyMessage *HistoryMessage) {
 	egen.StackendMessages = append(egen.StackendMessages, historyMessage)
 }
 
@@ -134,6 +194,13 @@ func (egen *EchoGenerator) GenerateBasePrompt(userDemand string) string {
 	return ret
 }
 
+func (egen *EchoGenerator) FillRawUserDemand(demand string) {
+	ret := demand
+	ret += ". "
+	ret += PRIMITIVE_PROMPT_JSON_ONLY
+	egen.SaveHistoryMessageInRaw(ROLE_USER, ret)
+}
+
 func (egen *EchoGenerator) FillPropsByContext(componentTypeList map[string]bool) string {
 	ret := COMPONENTS_BASE_PROMPT
 	for componentType, _ := range componentTypeList {
@@ -182,7 +249,7 @@ func (egen *EchoGenerator) FillPropsByContext(componentTypeList map[string]bool)
 	return ret
 }
 
-func (egen *EchoGenerator) FillPropsBySingleComponent(component map[string]interface{}) (string, error) {
+func (egen *EchoGenerator) FillPropsBySingleComponent(component map[string]interface{}, demand string) (string, error) {
 	componentTypeRaw, ok := component["type"]
 	if !ok {
 		return "", errors.New("can not find component.type field")
@@ -238,6 +305,13 @@ func (egen *EchoGenerator) FillPropsBySingleComponent(component map[string]inter
 		return "", errorInMarshal
 	}
 	ret += fmt.Sprintf(COMPONENTS_BASE_FILL_TARGET_PROMPT, componentInJSON)
+
+	// fill user deamnd if exists
+	if len(demand) != 0 {
+		ret += fmt.Sprintf(COMPONENTS_BASE_USER_DEMAND, demand)
+	}
+
+	// fill last prompt
 	ret += PRIMITIVE_PROMPT_JSON_ONLY
 	egen.SaveHistoryMessageInRaw(ROLE_USER, ret)
 	return ret, nil

@@ -24,6 +24,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/illacloud/builder-backend/internal/idconvertor"
+	"github.com/illacloud/builder-backend/internal/repository"
 )
 
 const (
@@ -92,6 +93,9 @@ type Client struct {
 
 	// appID, 0 by default, -1 for dashboard
 	APPID int
+
+	// EchoGenerator
+	EchoGenerator *repository.EchoGenerator
 }
 
 func (c *Client) GetID() uuid.UUID {
@@ -120,16 +124,18 @@ func (c *Client) ExportMappedUserIDToString() string {
 
 func NewClient(hub *Hub, conn *websocket.Conn, teamID int, appID int, clientType int) *Client {
 	return &Client{
-		ID:           uuid.New(),
-		Status:       CLIENT_STATUS_ACTIVE,
-		Type:         clientType,
-		MappedUserID: 0,
-		IsLoggedIn:   false,
-		Hub:          hub,
-		Conn:         conn,
-		Send:         make(chan []byte, 1024),
-		TeamID:       teamID,
-		APPID:        appID}
+		ID:            uuid.New(),
+		Status:        CLIENT_STATUS_ACTIVE,
+		Type:          clientType,
+		MappedUserID:  0,
+		IsLoggedIn:    false,
+		Hub:           hub,
+		Conn:          conn,
+		Send:          make(chan []byte, 1024),
+		TeamID:        teamID,
+		APPID:         appID,
+		EchoGenerator: repository.NewEchoGenerator(),
+	}
 }
 
 func (c *Client) Feedback(message *Message, errorCode int, errorMessage error) {

@@ -23,6 +23,22 @@ import (
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
 
+// - generate base component tree
+// - is first time generate
+//   - [true]
+//   - generate base component
+//   - stack base generated component
+//   - [false]
+//   - re-generate base component
+//   - replace base generated component
+//
+// - generate props
+// - have history component
+//   - [false]
+//   - just generate props by iteration
+//   - [true]
+//   - merge components props by displayName
+//   - generate props
 func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 	currentClient, hit := hub.Clients[message.ClientID]
 	if !hit {
@@ -40,17 +56,36 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 	}
 
 	// init generator
-	echoGenerator := repository.NewEchoGenerator()
+	echoGenerator := currentClient.EchoGenerator
+	echoGenerator.CleanHistoryMessages() // must do this
 
 	// form echo request by user demand
-	componentsList, errInGen := generateBaseComponentPhrase(echoGenerator, userDemand)
-	if errInGen != nil {
-		fmt.Printf("[ERROR] errInGen: %+v\n", errInGen)
-		return nil
+	var componentsList []interface{}
+	if !echoGenerator.HaveStackendMessages() {
+		fmt.Printf("[DUMP] now is first time generate. run generateBaseComponentPhrase()\n")
+		// fisrt time generate
+		var errInGen error
+		componentsList, errInGen = generateBaseComponentPhrase(echoGenerator, userDemand)
+		if errInGen != nil {
+			fmt.Printf("[ERROR] errInGen: %+v\n", errInGen)
+			return nil
+		}
+		// stack base prompt
+		echoGenerator.StackAllHistoryMessage()
+	} else {
+		fmt.Printf("[DUMP] NOT first time generate. run generateRawUserDemand(). \n")
+		// update user demand
+		var errInGen error
+		componentsList, errInGen = generateRawUserDemand(echoGenerator, userDemand)
+		if errInGen != nil {
+			fmt.Printf("[ERROR] errInGen: %+v\n", errInGen)
+			return nil
+		}
+		// stack base prompt
+		echoGenerator.StackAllHistoryMessage()
+		echoGenerator.DumpStackendMessages()
+		echoGenerator.DumpHistoryMessages()
 	}
-
-	// stack base prompt
-	echoGenerator.StackAllHistoryMessage()
 
 	// process single components
 	propsFilledComponent := make(map[string]interface{})
@@ -65,7 +100,7 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 			return errors.New("failed in assert displayName.")
 		}
 		fmt.Printf("[DUMP] now component.type is: %+v\n", componentAsserted["type"])
-		generateComponent, errInGenerateComponent := generateComponentPropsPhrase(echoGenerator, componentAsserted)
+		generateComponent, errInGenerateComponent := generateComponentPropsPhrase(echoGenerator, componentAsserted, "")
 		if errInGenerateComponent != nil {
 			return errInGenerateComponent
 		}
@@ -131,8 +166,32 @@ func generateBaseComponentPhrase(echoGenerator *repository.EchoGenerator, userDe
 	return finalContent, nil
 }
 
-func generateComponentPropsPhrase(echoGenerator *repository.EchoGenerator, component map[string]interface{}) (map[string]interface{}, error) {
-	echoGenerator.FillPropsBySingleComponent(component)
+func generateRawUserDemand(echoGenerator *repository.EchoGenerator, userDemand string) ([]interface{}, error) {
+	echoGenerator.FillRawUserDemand(userDemand)
+	// generate
+	_, errInEmitEchoRequest := echoGenerator.EmitEchoRequest(false)
+	if errInEmitEchoRequest != nil {
+		fmt.Printf("[ERROR] errInEmitEchoRequest: %+v\n", errInEmitEchoRequest)
+		return nil, errInEmitEchoRequest
+	}
+
+	// sence new base prompt and result generated, clean Stacked message
+	echoGenerator.CleanStackendMessages()
+
+	// dump
+	historyMessageFinal := echoGenerator.ExportLastHistoryMessages()
+	fmt.Printf("\n[DUMP] historyMessageFinal.Content: %+v\n\n", historyMessageFinal.Content)
+
+	// unmarshal
+	finalContent, errInUnmarshal := historyMessageFinal.UnMarshalArrayContent()
+	if errInUnmarshal != nil {
+		return nil, errInUnmarshal
+	}
+	return finalContent, nil
+}
+
+func generateComponentPropsPhrase(echoGenerator *repository.EchoGenerator, component map[string]interface{}, userDeamnd string) (map[string]interface{}, error) {
+	echoGenerator.FillPropsBySingleComponent(component, userDeamnd)
 	historyMessage1 := echoGenerator.ExportLastHistoryMessages()
 	fmt.Printf("\n[DUMP] historyMessage1.Content: %+v\n\n", historyMessage1.Content)
 	_, errInEmitEchoRequest := echoGenerator.EmitEchoRequest(false)
