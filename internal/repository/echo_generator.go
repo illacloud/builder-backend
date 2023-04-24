@@ -46,7 +46,7 @@ const (
 	COMPONENTS_BASE_PROMPT_NUMBER_INPUT_WIDGET   = "{\"label\": \"Label\",\"labelAlign\": \"left\",\"labelPosition\": \"left\",\"labelWidth\": \"{{33}}\",\"colorScheme\": \"blue\",\"hidden\": false,\"formDataKey\": \"{{this_component.displayName}}\",\"$dynamicAttrPaths\": [    \"labelWidth\",    \"formDataKey\"]}"
 	COMPONENTS_BASE_PROMPT_SELECT_WIDGET         = "{\"optionConfigureMode\":\"static\",\"label\":\"Label\",\"labelAlign\":\"left\",\"labelPosition\":\"left\",\"labelWidth\":\"{{33}}\",\"manualOptions\":[{\"id\":\"option-db33ac88-6319-4ee0-b922-63dc53b77671\",\"label\":\"Option1\",\"value\":\"Option1\"},{\"id\":\"option-765ca2d5-073b-4677-8a13-327bad08f304\",\"label\":\"Option2\",\"value\":\"Option2\"},{\"id\":\"option-db200246-0423-4540-b972-6b2d9b8d4a56\",\"label\":\"Option3\",\"value\":\"Option3\"}],\"dataSources\":\"{{[]}}\",\"colorScheme\":\"blue\",\"hidden\":false,\"formDataKey\":\"{{select1.displayName}}\",\"$dynamicAttrPaths\":[\"labelWidth\",\"dataSources\",\"formDataKey\"]}"
 	COMPONENTS_BASE_PROMPT_CHART_WIDGET          = "{\"dataSourceJS\":\"{{list_all.data}}\",\"chartType\":\"bar\",\"dataSourceMode\":\"dynamic\",\"xAxis\":\"month\",\"datasets\":[{\"id\":\"8e6fc947-f354-4e33-977d-7dd0ca85b23a\",\"datasetName\":\"Dataset1\",\"datasetValues\":\"users\",\"aggregationMethod\":\"SUM\",\"type\":\"bar\",\"color\":\"#165DFF\"}],\"$dynamicAttrPaths\":[]}"
-	COMPONENTS_BASE_PROMPT_IMAGE_WIDGET          = "{\"imageSrc\":\"https://images.unsplash.com/photo-1614853316476-de00d14cb1fc?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2370&q=80\",\"radius\":\"0px\",\"hidden\":false,\"objectFit\":\"cover\",\"$dynamicAttrPaths\":[]}"
+	COMPONENTS_BASE_PROMPT_IMAGE_WIDGET          = "{\"imageSrc\":\"sample.png\",\"radius\":\"0px\",\"hidden\":false,\"objectFit\":\"cover\",\"$dynamicAttrPaths\":[]}"
 	COMPONENTS_BASE_PROMPT_UPLOAD_WIDGET         = "{\"type\":\"button\",\"buttonText\":\"Upload\",\"selectionType\":\"single\",\"dropText\":\"Selectordropafilehere\",\"verticalAlign\":\"center\",\"hidden\":false,\"appendFiles\":false,\"fileType\":\"\",\"variant\":\"fill\",\"colorScheme\":\"blue\",\"formDataKey\":\"{{upload1.displayName}}\",\"showFileList\":false,\"sizeType\":\"mb\",\"dynamicHeight\":\"auto\",\"$dynamicAttrPaths\":[]}"
 	COMPONENTS_BASE_PROMPT_EDITABLE_TEXT_WIDGET  = "{\"label\": \"Label\",\"labelAlign\": \"left\",\"labelPosition\": \"left\",\"labelWidth\": \"{{33}}\",\"colorScheme\": \"blue\",\"hidden\": false,\"value\": \"editable text for display\",\"$dynamicAttrPaths\": []}"
 	COMPONENTS_BASE_PROMPT_SLIDER_WIDGET         = "{\"value\":\"{{2}}\",\"min\":\"{{0}}\",\"max\":\"{{10}}\",\"step\":\"{{1}}\",\"label\":\"Label\",\"labelAlign\":\"left\",\"labelPosition\":\"left\",\"labelWidth\":\"{{33}}\",\"hideOutput\":false,\"disabled\":false,\"colorScheme\":\"blue\",\"hidden\":false,\"formDataKey\":\"{{slider1.displayName}}\",\"$dynamicAttrPaths\":[]}"
@@ -426,7 +426,7 @@ func (hm *HistoryMessage) UnMarshalArrayContentWithKeyResult() ([]interface{}, e
 		return nil, errors.New("can not found result field in json object.")
 	}
 	resultAsserted, assertResultOK := result.([]interface{})
-	if ! assertResultOK {
+	if !assertResultOK {
 		return nil, errors.New("assert result field in []interface{} failed.")
 	}
 	return resultAsserted, nil
