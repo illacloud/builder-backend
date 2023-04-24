@@ -28,8 +28,12 @@ type WidgetPrototype struct {
 }
 
 func NewWidgetPrototypeByMap(rawWidget map[string]interface{}) *WidgetPrototype {
-	// assign data
+	// assign & filter data
 	typeAsserted, _ := rawWidget["type"].(string)
+	// rewrite canvas component type
+	if typeAsserted == "CANVAS_WIDGET" {
+		typeAsserted = "CANVAS"
+	}
 	containerTypeAsserted, _ := rawWidget["containerType"].(string)
 	displayNameAsserted, _ := rawWidget["displayName"].(string)
 	parentNodeAsserted, _ := rawWidget["parentNode"].(string)

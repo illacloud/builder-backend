@@ -65,6 +65,7 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 	removeOldComponents(currentClient, hub, echoGenerator)
 
 	// form echo request by user demand
+	fmt.Printf("\n- [form echo request by user demand] -------------------------------------------------------------------------\n")
 	var componentsList []interface{}
 	if !echoGenerator.HaveStackendMessages() {
 		fmt.Printf("[DUMP] now is first time generate. run generateBaseComponentPhrase()\n")
@@ -93,8 +94,10 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 	}
 
 	// process single components
+	fmt.Printf("\n- [process single components] -------------------------------------------------------------------------\n")
 	propsFilledComponent := make(map[string]interface{})
-	for _, component := range componentsList {
+	for serial, component := range componentsList {
+		fmt.Printf("\n- [process single components (%d/%d) ] -------------------------------------------------------------------------\n", serial+1, len(componentsList))
 		echoGenerator.CleanHistoryMessages()
 		componentAsserted, assertComponentOK := component.(map[string]interface{})
 		if !assertComponentOK {
@@ -115,6 +118,7 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 	fmt.Printf("[DUMP] propsFilledComponent: %+v\n", propsFilledComponent)
 
 	// repack component tree
+	fmt.Printf("\n- [repack component tree] -------------------------------------------------------------------------\n")
 	componentTree, componentTreeObject, errInRepack := repackComponentTree(propsFilledComponent)
 	if errInRepack != nil {
 		return errInRepack
@@ -130,6 +134,9 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 
 	// send
 	createComponent(currentClient, hub, finalContent)
+
+	// end
+	fmt.Printf("\n- [FINISH] -------------------------------------------------------------------------\n")
 	return nil
 }
 
@@ -245,6 +252,8 @@ func packComponetRecrusive(currentNode map[string]interface{}, currentNodeProtot
 }
 
 func removeOldComponents(currentClient *ws.Client, hub *ws.Hub, echoGenerator *repository.EchoGenerator) {
+	fmt.Printf("\n- [removeOldComponents] -------------------------------------------------------------------------\n")
+
 	// get display name
 	rootDisplayName := echoGenerator.ExportLastRootNodeDisplayName()
 	if len(rootDisplayName) == 0 {
@@ -277,11 +286,13 @@ func removeOldComponents(currentClient *ws.Client, hub *ws.Hub, echoGenerator *r
 	fmt.Printf("[DUMP] ws message: %s\n", jsonData)
 
 	// send it
+	fmt.Printf("\n- [call BroadcastToClientItSelf] -------------------------------------------------------------------------\n")
 	hub.BroadcastToClientItSelf(&messageData, currentClient)
 
 }
 
 func createComponent(currentClient *ws.Client, hub *ws.Hub, content map[string]interface{}) {
+	fmt.Printf("\n- [createComponent] -------------------------------------------------------------------------\n")
 	payloadData := make([]interface{}, 0)
 	payloadData = append(payloadData, content)
 	broadcastData := &ws.Broadcast{
@@ -304,5 +315,6 @@ func createComponent(currentClient *ws.Client, hub *ws.Hub, content map[string]i
 	fmt.Printf("[DUMP] ws message: %s\n", jsonData)
 
 	// send it
+	fmt.Printf("\n- [call BroadcastToClientItSelf] -------------------------------------------------------------------------\n")
 	hub.BroadcastToClientItSelf(&messageData, currentClient)
 }

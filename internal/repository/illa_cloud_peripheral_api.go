@@ -3,6 +3,7 @@ package repository
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -44,11 +45,13 @@ func Echo(req *EchoPeripheralRequest) (*EchoFeedback, error) {
 	payload := req.Export()
 	client := resty.New()
 	client.SetTimeout(PERIPHERAL_API_GLOBAL_TIMEOUT)
+	fmt.Printf("[DUMP] calling Echo API.\n")
 	resp, err := client.R().
 		SetBody(payload).
 		Post(PERIPHERAL_API_BASEURL + PERIPHERAL_API_ECHO_PATH)
 	if resp.StatusCode() != http.StatusOK || err != nil {
-		return nil, errors.New("failed to generate SQL")
+		fmt.Printf("[ERROR] %+v\n", err)
+		return nil, errors.New("failed to call echo API")
 	}
 	res := &GeneralFeedback{}
 	json.Unmarshal(resp.Body(), res)
