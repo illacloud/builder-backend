@@ -175,7 +175,7 @@ func generateBaseComponentPhrase(echoGenerator *repository.EchoGenerator, userDe
 	fmt.Printf("\n[DUMP] historyMessageFinal.Content: %+v\n\n", historyMessageFinal.Content)
 
 	// unmarshal
-	finalContent, errInUnmarshal := historyMessageFinal.UnMarshalArrayContent()
+	finalContent, errInUnmarshal := historyMessageFinal.UnMarshalArrayContentWithKeyResult()
 	if errInUnmarshal != nil {
 		return nil, errInUnmarshal
 	}
@@ -199,7 +199,7 @@ func generateRawUserDemand(echoGenerator *repository.EchoGenerator, userDemand s
 	fmt.Printf("\n[DUMP] historyMessageFinal.Content: %+v\n\n", historyMessageFinal.Content)
 
 	// unmarshal
-	finalContent, errInUnmarshal := historyMessageFinal.UnMarshalArrayContent()
+	finalContent, errInUnmarshal := historyMessageFinal.UnMarshalArrayContentWithKeyResult()
 	if errInUnmarshal != nil {
 		return nil, errInUnmarshal
 	}

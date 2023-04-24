@@ -53,6 +53,7 @@ func Echo(req *EchoPeripheralRequest) (*EchoFeedback, error) {
 		fmt.Printf("[ERROR] %+v\n", err)
 		return nil, errors.New("failed to call echo API")
 	}
+	fmt.Printf("[DUMP] Echo API result: \n%+v\n", string(resp.Body()))
 	res := &GeneralFeedback{}
 	json.Unmarshal(resp.Body(), res)
 	echoFeedback := &EchoFeedback{}

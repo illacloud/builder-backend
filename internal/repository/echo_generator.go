@@ -28,7 +28,7 @@ const (
 	TEMPLATE_BASE_PROMPT_COMPONENT_HWXY               = "all components are rectangle. h, w are component size. x, y are left-top position of component and start with 0. "
 	TEMPLATE_BASE_PROMPT_COMPONENT_PROPS              = "props leave it as an empty json object. "
 	TEMPLATE_BASE_PROMPT_COMPONENT_STRUCTURE_DESCRIBE = "all components are parallel in a json array as top data structure, with no name. "
-	TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE           = "now use these type of components %s, output no prose, no note, only JSON components array without line break and spaces character. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE           = "now %s, output no prose, no note, only generated components in a JSON array with key name \"result\". "
 )
 
 // components base prompt
@@ -60,7 +60,7 @@ const (
 
 const (
 	PRIMITIVE_PROMPT_CONTINUE  = "continue"
-	PRIMITIVE_PROMPT_JSON_ONLY = "output no prose, no note, only JSON. "
+	PRIMITIVE_PROMPT_JSON_ONLY = "output no prose, no note, only generated components in a JSON array with key name \"result\". "
 )
 
 type EchoGenerator struct {
@@ -412,6 +412,24 @@ func (hm *HistoryMessage) UnMarshalObjectContent() (map[string]interface{}, erro
 		return nil, errInUnMarshal
 	}
 	return decodedContent, nil
+}
+
+func (hm *HistoryMessage) UnMarshalArrayContentWithKeyResult() ([]interface{}, error) {
+	// decode content
+	var decodedContent map[string]interface{}
+	errInUnMarshal := json.Unmarshal([]byte(hm.Content), &decodedContent)
+	if errInUnMarshal != nil {
+		return nil, errInUnMarshal
+	}
+	result, canNotFindResultField := decodedContent["result"]
+	if !canNotFindResultField {
+		return nil, errors.New("can not found result field in json object.")
+	}
+	resultAsserted, assertResultOK := result.([]interface{})
+	if ! assertResultOK {
+		return nil, errors.New("assert result field in []interface{} failed.")
+	}
+	return resultAsserted, nil
 }
 
 func (hm *HistoryMessage) UnMarshalArrayContent() ([]interface{}, error) {
