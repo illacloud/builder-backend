@@ -63,11 +63,12 @@ const (
 )
 
 type EchoGenerator struct {
-	Placeholder         string
-	StackendMessages    []*HistoryMessage
-	HistoryMessages     []*HistoryMessage
-	StackedComponents   map[string]*WidgetPrototype
-	ComponentsFramework []interface{}
+	Placeholder             string
+	StackendMessages        []*HistoryMessage
+	HistoryMessages         []*HistoryMessage
+	StackedComponents       map[string]*WidgetPrototype
+	ComponentsFramework     []interface{}
+	LastRootNodeDisplayName string
 }
 
 func NewEchoGenerator() *EchoGenerator {
@@ -173,6 +174,14 @@ func (egen *EchoGenerator) ExportFullHistoryMessages() []*HistoryMessage {
 func (egen *EchoGenerator) ExportLastHistoryMessages() *HistoryMessage {
 	lastMessageSerial := len(egen.HistoryMessages) - 1
 	return egen.HistoryMessages[lastMessageSerial]
+}
+
+func (egen *EchoGenerator) SetLastRootNodeDisplayName(displayName string) {
+	egen.LastRootNodeDisplayName = displayName
+}
+
+func (egen *EchoGenerator) ExportLastRootNodeDisplayName() (displayName string) {
+	return egen.LastRootNodeDisplayName
 }
 
 func (egen *EchoGenerator) GenerateBasePrompt(userDemand string) string {

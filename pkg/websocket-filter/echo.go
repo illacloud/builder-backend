@@ -19,6 +19,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"github.com/illacloud/builder-backend/internal/repository"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
@@ -58,6 +60,9 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 	// init generator
 	echoGenerator := currentClient.EchoGenerator
 	echoGenerator.CleanHistoryMessages() // must do this
+
+	// delete old components
+	removeOldComponents(currentClient, hub, echoGenerator)
 
 	// form echo request by user demand
 	var componentsList []interface{}
@@ -110,38 +115,21 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 	fmt.Printf("[DUMP] propsFilledComponent: %+v\n", propsFilledComponent)
 
 	// repack component tree
-	componentTree, errInRepack := repackComponentTree(propsFilledComponent)
+	componentTree, componentTreeObject, errInRepack := repackComponentTree(propsFilledComponent)
 	if errInRepack != nil {
 		return errInRepack
 	}
 	fmt.Printf("[DUMP] componentTree: %+v\n", componentTree)
 
+	// set top tree node displayName
+	echoGenerator.SetLastRootNodeDisplayName(componentTreeObject.ExportDisplayName())
+
 	// generate final content
 	var finalContent map[string]interface{}
 	json.Unmarshal([]byte(componentTree), &finalContent)
-	payloadData := make([]interface{}, 0)
-	payloadData = append(payloadData, finalContent)
-	broadcastData := &ws.Broadcast{
-		Type:    "components/addComponentReducer/remote",
-		Payload: payloadData,
-	}
 
-	messageData := ws.Message{
-		ClientID:      currentClient.GetID(),
-		Signal:        ws.SIGNAL_CREATE_STATE,
-		APPID:         currentClient.GetAPPID(),
-		Option:        1,
-		Payload:       payloadData,
-		Target:        1,
-		Broadcast:     broadcastData,
-		NeedBroadcast: true,
-	}
-	jsonData, _ := json.Marshal(messageData)
-	fmt.Printf("[DUMP] ws message: %s\n", jsonData)
-
-	// broadcast to all clients
-	hub.BroadcastToRoomAllClients(&messageData, currentClient)
-
+	// send
+	createComponent(currentClient, hub, finalContent)
 	return nil
 }
 
@@ -209,7 +197,7 @@ func generateComponentPropsPhrase(echoGenerator *repository.EchoGenerator, compo
 	return unmarshaledContent, nil
 }
 
-func repackComponentTree(fullComponentList map[string]interface{}) (string, error) {
+func repackComponentTree(fullComponentList map[string]interface{}) (string, *repository.WidgetPrototype, error) {
 	// pick up root node
 	var rootNode string
 	for displayName, component := range fullComponentList {
@@ -220,7 +208,7 @@ func repackComponentTree(fullComponentList map[string]interface{}) (string, erro
 		}
 	}
 	if rootNode == "" {
-		return "", errors.New("can not find root node.")
+		return "", nil, errors.New("can not find root node.")
 	}
 
 	// recrusive fill
@@ -230,7 +218,7 @@ func repackComponentTree(fullComponentList map[string]interface{}) (string, erro
 
 	// marshal to json and return it
 	componentTreeInJSON, errInMarshal := json.Marshal(rootNodePrototype)
-	return string(componentTreeInJSON), errInMarshal
+	return string(componentTreeInJSON), rootNodePrototype, errInMarshal
 }
 
 func packComponetRecrusive(currentNode map[string]interface{}, currentNodePrototype *repository.WidgetPrototype, fullComponentList map[string]interface{}) {
@@ -254,4 +242,67 @@ func packComponetRecrusive(currentNode map[string]interface{}, currentNodeProtot
 		currentNodePrototype.AppendChildrenNode(childrenNodePrototyle)
 	}
 	return
+}
+
+func removeOldComponents(currentClient *ws.Client, hub *ws.Hub, echoGenerator *repository.EchoGenerator) {
+	// get display name
+	rootDisplayName := echoGenerator.ExportLastRootNodeDisplayName()
+	if len(rootDisplayName) == 0 {
+		return
+	}
+
+	// pack websocket message
+	payloadData := make([]interface{}, 0)
+	payloadData = append(payloadData, rootDisplayName)
+	broadcastPayloadData := make(map[string]interface{}, 2)
+	broadcastPayloadData["displayNames"] = payloadData
+	broadcastPayloadData["source"] = "illa-ai"
+	broadcastData := &ws.Broadcast{
+		Type:    "components/deleteComponentNodeReducer",
+		Payload: broadcastPayloadData,
+	}
+
+	illaAIUUID, _ := uuid.Parse("000000a1-0000-0000-0000-000000000001")
+	messageData := ws.Message{
+		Signal:        ws.SIGNAL_DELETE_STATE,
+		Target:        1,
+		Option:        1,
+		Payload:       payloadData,
+		Broadcast:     broadcastData,
+		ClientID:      illaAIUUID,
+		APPID:         currentClient.GetAPPID(),
+		NeedBroadcast: true,
+	}
+	jsonData, _ := json.Marshal(messageData)
+	fmt.Printf("[DUMP] ws message: %s\n", jsonData)
+
+	// send it
+	hub.BroadcastToClientItSelf(&messageData, currentClient)
+
+}
+
+func createComponent(currentClient *ws.Client, hub *ws.Hub, content map[string]interface{}) {
+	payloadData := make([]interface{}, 0)
+	payloadData = append(payloadData, content)
+	broadcastData := &ws.Broadcast{
+		Type:    "components/addComponentReducer",
+		Payload: payloadData,
+	}
+	illaAIUUID, _ := uuid.Parse("000000a1-0000-0000-0000-000000000001")
+
+	messageData := ws.Message{
+		Signal:        ws.SIGNAL_CREATE_STATE,
+		Target:        1,
+		Option:        1,
+		Payload:       payloadData,
+		Broadcast:     broadcastData,
+		ClientID:      illaAIUUID,
+		APPID:         currentClient.GetAPPID(),
+		NeedBroadcast: true,
+	}
+	jsonData, _ := json.Marshal(messageData)
+	fmt.Printf("[DUMP] ws message: %s\n", jsonData)
+
+	// send it
+	hub.BroadcastToClientItSelf(&messageData, currentClient)
 }

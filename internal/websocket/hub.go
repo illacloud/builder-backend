@@ -111,6 +111,10 @@ func (hub *Hub) RemoveClient(client *Client) {
 	delete(hub.BinaryClients, client.GetID())
 }
 
+func (hub *Hub) BroadcastToClientItSelf(message *Message, currentClient *Client) {
+	currentClient.Hub.OnTextMessage <- message
+}
+
 func (hub *Hub) BroadcastToOtherClients(message *Message, currentClient *Client) {
 	if !message.NeedBroadcast {
 		return

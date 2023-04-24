@@ -74,3 +74,8 @@ func (p *WidgetPrototype) CheckIfNeedReduceSize() {
 		p.Y = math.Round(p.Y / 5)
 	}
 }
+
+
+func (p *WidgetPrototype) ExportDisplayName() (string) {
+	return p.DisplayName
+}
