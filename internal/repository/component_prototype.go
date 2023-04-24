@@ -2,6 +2,10 @@ package repository
 
 import "math"
 
+const (
+	SIZE_REDUCER_TRIGGER_W_LIMIT = 60
+)
+
 type WidgetPrototype struct {
 	Type           string                 `json:"type"`
 	ContainerType  string                 `json:"containerType"`
@@ -24,14 +28,15 @@ type WidgetPrototype struct {
 }
 
 func NewWidgetPrototypeByMap(rawWidget map[string]interface{}) *WidgetPrototype {
+	// assign data
 	typeAsserted, _ := rawWidget["type"].(string)
 	containerTypeAsserted, _ := rawWidget["containerType"].(string)
 	displayNameAsserted, _ := rawWidget["displayName"].(string)
 	parentNodeAsserted, _ := rawWidget["parentNode"].(string)
-	hAsserted := math.Round(rawWidget["h"].(float64) / 5)
-	wAsserted := math.Round(rawWidget["w"].(float64) / 5)
-	xAsserted := math.Round(rawWidget["x"].(float64) / 5)
-	yAsserted := math.Round(rawWidget["y"].(float64) / 5)
+	hAsserted, _ := rawWidget["h"].(float64)
+	wAsserted, _ := rawWidget["w"].(float64)
+	xAsserted, _ := rawWidget["x"].(float64)
+	yAsserted, _ := rawWidget["y"].(float64)
 	propsAsserted, _ := rawWidget["props"].(map[string]interface{})
 	widget := &WidgetPrototype{
 		Type:          typeAsserted,
@@ -59,4 +64,13 @@ func NewWidgetPrototypeByMap(rawWidget map[string]interface{}) *WidgetPrototype 
 
 func (p *WidgetPrototype) AppendChildrenNode(node *WidgetPrototype) {
 	p.ChildrenNode = append(p.ChildrenNode, node)
+}
+
+func (p *WidgetPrototype) CheckIfNeedReduceSize() {
+	if p.W > SIZE_REDUCER_TRIGGER_W_LIMIT {
+		p.H = math.Round(p.H / 5)
+		p.W = math.Round(p.W / 5)
+		p.X = math.Round(p.X / 5)
+		p.Y = math.Round(p.Y / 5)
+	}
 }
