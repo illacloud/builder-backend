@@ -117,18 +117,22 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 
 	// repack component tree
 	fmt.Printf("\n- [repack component tree] -------------------------------------------------------------------------\n")
-	componentTree, componentTreeObject, errInRepack := repackComponentTree(propsFilledComponent)
+	componentTreeInJSON, componentTreeObjectList, errInRepack := repackComponentTree(propsFilledComponent)
 	if errInRepack != nil {
 		return errInRepack
 	}
-	fmt.Printf("[DUMP] componentTree: %+v\n", componentTree)
+	fmt.Printf("[DUMP] componentTreeInJSON: %+v\n", componentTreeInJSON)
 
 	// set top tree node displayName
-	echoGenerator.SetLastRootNodeDisplayName(componentTreeObject.ExportDisplayName())
+	lastRootDisplayNames := make([]string, 1)
+	for _, componentTreeObject := range componentTreeObjectList {
+		lastRootDisplayNames = append(lastRootDisplayNames, componentTreeObject.ExportDisplayName())
+	}
+	echoGenerator.SetLastRootNodeDisplayNames(lastRootDisplayNames)
 
 	// generate final content
-	var finalContent map[string]interface{}
-	json.Unmarshal([]byte(componentTree), &finalContent)
+	var finalContent []interface{}
+	json.Unmarshal([]byte(componentTreeInJSON), &finalContent)
 
 	// send
 	createComponent(currentClient, hub, finalContent)
@@ -202,7 +206,9 @@ func generateComponentPropsPhrase(echoGenerator *repository.EchoGenerator, compo
 	return unmarshaledContent, nil
 }
 
-func repackComponentTree(fullComponentList map[string]interface{}) (string, *repository.WidgetPrototype, error) {
+func repackComponentTree(fullComponentList map[string]interface{}) (string, []*repository.WidgetPrototype, error) {
+	// init
+	prototypeList := make([]*repository.WidgetPrototype, 0)
 	// pick up root node
 	var rootNode string
 	for displayName, component := range fullComponentList {
@@ -210,20 +216,17 @@ func repackComponentTree(fullComponentList map[string]interface{}) (string, *rep
 		parentNode, _ := componentAsserted["parentNode"].(string)
 		if parentNode == "bodySection1-bodySectionContainer1" {
 			rootNode = displayName
+			rootNodeAsserted, _ := fullComponentList[rootNode].(map[string]interface{})
+			rootNodePrototype := repository.NewWidgetPrototypeByMap(rootNodeAsserted)
+			packComponetRecrusive(rootNodeAsserted, rootNodePrototype, fullComponentList)
+			prototypeList = append(prototypeList, rootNodePrototype)
 		}
 	}
 	if rootNode == "" {
 		return "", nil, errors.New("can not find root node.")
 	}
-
-	// recrusive fill
-	rootNodeAsserted, _ := fullComponentList[rootNode].(map[string]interface{})
-	rootNodePrototype := repository.NewWidgetPrototypeByMap(rootNodeAsserted)
-	packComponetRecrusive(rootNodeAsserted, rootNodePrototype, fullComponentList)
-
-	// marshal to json and return it
-	componentTreeInJSON, errInMarshal := json.Marshal(rootNodePrototype)
-	return string(componentTreeInJSON), rootNodePrototype, errInMarshal
+	componentTreeListInJSON, errInMarshal := json.Marshal(prototypeList)
+	return string(componentTreeListInJSON), prototypeList, errInMarshal
 }
 
 func packComponetRecrusive(currentNode map[string]interface{}, currentNodePrototype *repository.WidgetPrototype, fullComponentList map[string]interface{}) {
@@ -253,14 +256,16 @@ func removeOldComponents(currentClient *ws.Client, hub *ws.Hub, echoGenerator *r
 	fmt.Printf("\n- [removeOldComponents] -------------------------------------------------------------------------\n")
 
 	// get display name
-	rootDisplayName := echoGenerator.ExportLastRootNodeDisplayName()
-	if len(rootDisplayName) == 0 {
+	rootDisplayNames := echoGenerator.ExportLastRootNodeDisplayNames()
+	if len(rootDisplayNames) == 0 {
 		return
 	}
 
 	// pack websocket message
 	payloadData := make([]interface{}, 0)
-	payloadData = append(payloadData, rootDisplayName)
+	for _, displayName := range rootDisplayNames {
+		payloadData = append(payloadData, displayName)
+	}
 	broadcastPayloadData := make(map[string]interface{}, 2)
 	broadcastPayloadData["displayNames"] = payloadData
 	broadcastPayloadData["source"] = "illa-ai"
@@ -290,10 +295,9 @@ func removeOldComponents(currentClient *ws.Client, hub *ws.Hub, echoGenerator *r
 
 }
 
-func createComponent(currentClient *ws.Client, hub *ws.Hub, content map[string]interface{}) {
+func createComponent(currentClient *ws.Client, hub *ws.Hub, content []interface{}) {
 	fmt.Printf("\n- [createComponent] -------------------------------------------------------------------------\n")
-	payloadData := make([]interface{}, 0)
-	payloadData = append(payloadData, content)
+	payloadData := content
 	broadcastData := &ws.Broadcast{
 		Type:    "components/addComponentReducer",
 		Payload: payloadData,

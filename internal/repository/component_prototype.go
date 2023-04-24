@@ -63,6 +63,9 @@ func NewWidgetPrototypeByMap(rawWidget map[string]interface{}) *WidgetPrototype 
 		UnitW:          wAsserted * 2,
 		Z:              0,
 	}
+
+	// post filter
+	widget.ReduceSize()
 	return widget
 }
 
@@ -70,16 +73,33 @@ func (p *WidgetPrototype) AppendChildrenNode(node *WidgetPrototype) {
 	p.ChildrenNode = append(p.ChildrenNode, node)
 }
 
-func (p *WidgetPrototype) CheckIfNeedReduceSize() {
-	if p.W > SIZE_REDUCER_TRIGGER_W_LIMIT {
-		p.H = math.Round(p.H / 5)
-		p.W = math.Round(p.W / 5)
-		p.X = math.Round(p.X / 5)
-		p.Y = math.Round(p.Y / 5)
+func (p *WidgetPrototype) ReduceSize() {
+	if p.H != 0 {
+		p.H = math.Round(p.H / 10)
+		if p.H == 0 {
+			p.H = 1
+		}
+	}
+	if p.W != 0 {
+		p.W = math.Round(p.W / 10)
+		if p.W == 0 {
+			p.W = 1
+		}
+	}
+	if p.X != 0 {
+		p.X = math.Round(p.X / 10)
+		if p.X == 0 {
+			p.X = 1
+		}
+	}
+	if p.Y != 0 {
+		p.Y = math.Round(p.Y / 10)
+		if p.Y == 0 {
+			p.Y = 1
+		}
 	}
 }
 
-
-func (p *WidgetPrototype) ExportDisplayName() (string) {
+func (p *WidgetPrototype) ExportDisplayName() string {
 	return p.DisplayName
 }
