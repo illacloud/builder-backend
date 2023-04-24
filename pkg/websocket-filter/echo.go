@@ -124,7 +124,7 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 	fmt.Printf("[DUMP] componentTreeInJSON: %+v\n", componentTreeInJSON)
 
 	// set top tree node displayName
-	lastRootDisplayNames := make([]string, 1)
+	lastRootDisplayNames := make([]string, 0)
 	for _, componentTreeObject := range componentTreeObjectList {
 		lastRootDisplayNames = append(lastRootDisplayNames, componentTreeObject.ExportDisplayName())
 	}
@@ -260,6 +260,7 @@ func removeOldComponents(currentClient *ws.Client, hub *ws.Hub, echoGenerator *r
 	if len(rootDisplayNames) == 0 {
 		return
 	}
+	fmt.Printf("[DUMP] being deleted components list: %+v\n", rootDisplayNames)
 
 	// pack websocket message
 	payloadData := make([]interface{}, 0)
