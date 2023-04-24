@@ -1,5 +1,7 @@
 package repository
 
+import "math"
+
 type WidgetPrototype struct {
 	Type           string                 `json:"type"`
 	ContainerType  string                 `json:"containerType"`
@@ -26,10 +28,10 @@ func NewWidgetPrototypeByMap(rawWidget map[string]interface{}) *WidgetPrototype 
 	containerTypeAsserted, _ := rawWidget["containerType"].(string)
 	displayNameAsserted, _ := rawWidget["displayName"].(string)
 	parentNodeAsserted, _ := rawWidget["parentNode"].(string)
-	hAsserted, _ := rawWidget["h"].(float64)
-	wAsserted, _ := rawWidget["w"].(float64)
-	xAsserted, _ := rawWidget["x"].(float64)
-	yAsserted, _ := rawWidget["y"].(float64)
+	hAsserted := math.Round(rawWidget["h"].(float64) / 5)
+	wAsserted := math.Round(rawWidget["w"].(float64) / 5)
+	xAsserted := math.Round(rawWidget["x"].(float64) / 5)
+	yAsserted := math.Round(rawWidget["y"].(float64) / 5)
 	propsAsserted, _ := rawWidget["props"].(map[string]interface{})
 	widget := &WidgetPrototype{
 		Type:          typeAsserted,

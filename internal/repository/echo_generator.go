@@ -19,7 +19,7 @@ const (
 
 const (
 	TEMPLATE_BASE_PROMPT_COMPONENT_SCHEMA             = "consider a json struct named component like {type:\"\", \"containerType\": \"EDITOR_SCALE_SQUARE\", displayName:\"\",parentNode:\"\",childrenNode:[],h:0,w:0,x:0,y:0,props:{}}. "
-	TEMPLATE_BASE_PROMPT_COMPONENT_TYPE               = "type field are only in FORM_WIDGET, MODAL_WIDGET, CANVAS, TABLE_WIDGET, TEXT_WIDGET, BUTTON_WIDGET, INPUT_WIDGET, NUMBER_INPUT_WIDGET, SELECT_WIDGET, CHART_WIDGET, IMAGE_WIDGET, UPLOAD_WIDGET, EDITABLE_TEXT_WIDGET, SLIDER_WIDGET, RANGE_SLIDER_WIDGET, SWITCH_WIDGET, MULTISELECT_WIDGET, CHECKBOX_GROUP_WIDGET. the FORM_WIDGET, MODAL_WIDGET must have only one childrenNode CANVAS, and CANVAS childrenNode can contain other widget. "
+	TEMPLATE_BASE_PROMPT_COMPONENT_TYPE               = "type field are only in CONTAINER_WIDGET, FORM_WIDGET, MODAL_WIDGET, CANVAS, TABLE_WIDGET, TEXT_WIDGET, BUTTON_WIDGET, INPUT_WIDGET, NUMBER_INPUT_WIDGET, SELECT_WIDGET, CHART_WIDGET, IMAGE_WIDGET, UPLOAD_WIDGET, EDITABLE_TEXT_WIDGET, SLIDER_WIDGET, RANGE_SLIDER_WIDGET, SWITCH_WIDGET, MULTISELECT_WIDGET, CHECKBOX_GROUP_WIDGET. the CONTAINER_WIDGET, FORM_WIDGET, MODAL_WIDGET must have only one childrenNode CANVAS, and CANVAS childrenNode can contain other widget. "
 	TEMPLATE_BASE_PROMPT_COMPONENT_CONTAINER_TYPE     = "containerType is fixed EDITOR_SCALE_SQUARE . "
 	TEMPLATE_BASE_PROMPT_COMPONENT_DISPLAYNAME        = "displayName value is type field concat serial number with \"_\" and global unique. "
 	TEMPLATE_BASE_PROMPT_COMPONENT_PARENT_NODE        = "top level parentNode value must be \"bodySection1-bodySectionContainer1\". "
@@ -27,7 +27,7 @@ const (
 	TEMPLATE_BASE_PROMPT_COMPONENT_HWXY               = "all components are rectangle. h, w are component size. w should not above 60. x, y are left-top position of component and start with 0. "
 	TEMPLATE_BASE_PROMPT_COMPONENT_PROPS              = "props leave it as an empty json object. "
 	TEMPLATE_BASE_PROMPT_COMPONENT_STRUCTURE_DESCRIBE = "all components are parallel in a json array with no key name. "
-	TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE           = "%s, like pc web page layout, "
+	TEMPLATE_BASE_PROMPT_COMPONENT_GENERATE           = "%s, "
 )
 
 // components base prompt
