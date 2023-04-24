@@ -111,7 +111,7 @@ Power by:
 	fmt.Printf("\n- [process single components] -------------------------------------------------------------------------\n")
 	propsFilledComponent := make(map[string]interface{})
 	for serial, component := range componentsList {
-		fmt.Printf("\n- [process single components (%d/%d) ] -------------------------------------------------------------------------\n", serial+1, len(componentsList))
+		fmt.Printf("\n- [process single component (%d/%d) ] -------------------------------------------------------------------------\n", serial+1, len(componentsList))
 		echoGenerator.CleanHistoryMessages()
 		componentAsserted, assertComponentOK := component.(map[string]interface{})
 		if !assertComponentOK {
@@ -157,7 +157,7 @@ Power by:
 	createComponent(currentClient, hub, finalContent)
 
 	// end
-	fmt.Printf("\n- [FINISH] -------------------------------------------------------------------------\n")
+	fmt.Printf("\n- [FINISH] -------------------------------------------------------------------------\n\n")
 	return nil
 }
 
