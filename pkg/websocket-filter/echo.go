@@ -59,9 +59,6 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 	echoGenerator := currentClient.EchoGenerator
 	echoGenerator.CleanHistoryMessages() // must do this
 
-	// delete old components
-	removeOldComponents(currentClient, hub, echoGenerator)
-
 	// form echo request by user demand
 	fmt.Printf("\n- [form echo request by user demand] -------------------------------------------------------------------------\n")
 	var componentsList []interface{}
@@ -71,7 +68,7 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 		var errInGen error
 		componentsList, errInGen = generateBaseComponentPhrase(echoGenerator, userDemand)
 		if errInGen != nil {
-			fmt.Printf("[ERROR] errInGen: %+v\n", errInGen)
+			fmt.Printf("[ERROR] generateBaseComponentPhrase: %+v\n", errInGen)
 			return nil
 		}
 		// stack base prompt
@@ -82,7 +79,7 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 		var errInGen error
 		componentsList, errInGen = generateRawUserDemand(echoGenerator, userDemand)
 		if errInGen != nil {
-			fmt.Printf("[ERROR] errInGen: %+v\n", errInGen)
+			fmt.Printf("[ERROR] generateRawUserDemand: %+v\n", errInGen)
 			return nil
 		}
 		// stack base prompt
@@ -114,6 +111,9 @@ func SignalEcho(hub *ws.Hub, message *ws.Message) error {
 	}
 
 	fmt.Printf("[DUMP] propsFilledComponent: %+v\n", propsFilledComponent)
+
+	// call echo api to generate component process done, clean old component (place ths methord here for better user experience)
+	removeOldComponents(currentClient, hub, echoGenerator)
 
 	// repack component tree
 	fmt.Printf("\n- [repack component tree] -------------------------------------------------------------------------\n")

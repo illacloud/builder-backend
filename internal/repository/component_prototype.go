@@ -77,26 +77,20 @@ func (p *WidgetPrototype) ReduceSize() {
 	if p.H != 0 {
 		p.H = math.Round(p.H / 10)
 		if p.H == 0 {
-			p.H = 1
+			p.H = 2
 		}
 	}
 	if p.W != 0 {
 		p.W = math.Round(p.W / 10)
 		if p.W == 0 {
-			p.W = 1
+			p.W = 2
 		}
 	}
 	if p.X != 0 {
 		p.X = math.Round(p.X / 10)
-		if p.X == 0 {
-			p.X = 1
-		}
 	}
 	if p.Y != 0 {
 		p.Y = math.Round(p.Y / 10)
-		if p.Y == 0 {
-			p.Y = 1
-		}
 	}
 }
 
