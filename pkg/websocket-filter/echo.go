@@ -19,8 +19,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/uuid"
-
 	"github.com/illacloud/builder-backend/internal/repository"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
@@ -271,14 +269,14 @@ func removeOldComponents(currentClient *ws.Client, hub *ws.Hub, echoGenerator *r
 		Payload: broadcastPayloadData,
 	}
 
-	illaAIUUID, _ := uuid.Parse("000000a1-0000-0000-0000-000000000001")
+	// illaAIUUID, _ := uuid.Parse("000000a1-0000-0000-0000-000000000001")
 	messageData := ws.Message{
 		Signal:        ws.SIGNAL_DELETE_STATE,
 		Target:        1,
 		Option:        1,
 		Payload:       payloadData,
 		Broadcast:     broadcastData,
-		ClientID:      illaAIUUID,
+		ClientID:      currentClient.ID,
 		APPID:         currentClient.GetAPPID(),
 		NeedBroadcast: true,
 	}
@@ -299,7 +297,7 @@ func createComponent(currentClient *ws.Client, hub *ws.Hub, content map[string]i
 		Type:    "components/addComponentReducer",
 		Payload: payloadData,
 	}
-	illaAIUUID, _ := uuid.Parse("000000a1-0000-0000-0000-000000000001")
+	// illaAIUUID, _ := uuid.Parse("000000a1-0000-0000-0000-000000000001")
 
 	messageData := ws.Message{
 		Signal:        ws.SIGNAL_CREATE_STATE,
@@ -307,7 +305,7 @@ func createComponent(currentClient *ws.Client, hub *ws.Hub, content map[string]i
 		Option:        1,
 		Payload:       payloadData,
 		Broadcast:     broadcastData,
-		ClientID:      illaAIUUID,
+		ClientID:      currentClient.ID,
 		APPID:         currentClient.GetAPPID(),
 		NeedBroadcast: true,
 	}

@@ -53,7 +53,7 @@ const (
 	COMPONENTS_BASE_PROMPT_SWITCH_WIDGET         = "{\"label\": \"Label\",\"labelAlign\": \"left\",\"labelPosition\": \"left\",\"labelWidth\": \"{{33}}\",\"labelFull\": \"{{true}}\",\"colorScheme\": \"blue\",\"hidden\": \"{{false}}\",\"$dynamicAttrPaths\": []}"
 	COMPONENTS_BASE_PROMPT_MULTISELECT_WIDGET    = "{\"label\":\"Label\",\"optionConfigureMode\":\"static\",\"labelAlign\":\"left\",\"labelPosition\":\"left\",\"labelWidth\":\"{{33}}\",\"dataSources\":\"{{[]}}\",\"colorScheme\":\"blue\",\"hidden\":false,\"manualOptions\":[{\"id\":\"option-73733667-a63f-44ef-9caf-4700d1138cea\",\"label\":\"Option1\",\"value\":\"Option1\"},{\"id\":\"option-3633908a-40b5-4bd3-9530-5fd87a0a760c\",\"label\":\"Option2\",\"value\":\"Option2\"},{\"id\":\"option-1c7c6a83-1a4b-4a42-917c-cb0ff1541ae1\",\"label\":\"Option3\",\"value\":\"Option3\"}],\"dynamicHeight\":\"auto\",\"formDataKey\":\"{{multiselect1.displayName}}\",\"resizeDirection\":\"HORIZONTAL\",\"$dynamicAttrPaths\":[]}"
 	COMPONENTS_BASE_PROMPT_CHECKBOX_GROUP_WIDGET = "{\"optionConfigureMode\":\"static\",\"label\":\"Label\",\"labelAlign\":\"left\",\"labelPosition\":\"left\",\"labelWidth\":\"{{33}}\",\"manualOptions\":[{\"id\":\"option-6cd4af1c-16fb-49c8-9098-2abedbb8678f\",\"label\":\"Option1\",\"value\":\"Option1\"},{\"id\":\"option-7cdb88c3-e213-426f-adaf-3c4118b347de\",\"label\":\"Option2\",\"value\":\"Option2\"},{\"id\":\"option-bc940e14-2df5-4cff-84d7-cbeb87b19e8b\",\"label\":\"Option3\",\"value\":\"Option3\"}],\"dataSources\":\"{{[]}}\",\"direction\":\"horizontal\",\"colorScheme\":\"blue\",\"formDataKey\":\"{{checkboxGroup1.displayName}}\",\"$dynamicAttrPaths\":[]}"
-	COMPONENTS_BASE_FILL_TARGET_PROMPT           = "now we have this component %s, fill this component props field with reasonable data. "
+	COMPONENTS_BASE_FILL_TARGET_PROMPT           = "now we have this component %s, fill this component props field with reasonable data. output no prose, no note, only one JSON object of given component. "
 	COMPONENTS_BASE_USER_DEMAND                  = "and %s. "
 )
 
@@ -319,8 +319,7 @@ func (egen *EchoGenerator) FillPropsBySingleComponent(component map[string]inter
 		ret += fmt.Sprintf(COMPONENTS_BASE_USER_DEMAND, demand)
 	}
 
-	// fill last prompt
-	ret += PRIMITIVE_PROMPT_JSON_ONLY
+	// save
 	egen.SaveHistoryMessageInRaw(ROLE_USER, ret)
 	return ret, nil
 }

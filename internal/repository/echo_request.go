@@ -20,8 +20,9 @@ import (
 )
 
 const (
-	ECHO_REQ_DEFAULT_MODEL  = "gpt-3.5-turbo"
-	ECHO_REQ_DEFAULT_TOKENS = 1000
+	ECHO_REQ_DEFAULT_MODEL       = "gpt-3.5-turbo"
+	ECHO_REQ_DEFAULT_TOKENS      = 1000
+	ECHO_REQ_DEFAULT_TEMPERATURE = 0.2
 )
 
 const (
@@ -29,9 +30,10 @@ const (
 )
 
 type EchoRequest struct {
-	Model     string            `json:"model"`
-	MaxTokens int               `json:"max_tokens"`
-	Messages  []*HistoryMessage `json:"messages"`
+	Model       string            `json:"model"`
+	MaxTokens   int               `json:"max_tokens"`
+	Messages    []*HistoryMessage `json:"messages"`
+	Temperature float64           `json:"temperature"`
 }
 
 func (m *EchoRequest) SetMessages(msgs []*HistoryMessage) {
@@ -50,7 +52,8 @@ func (m *EchoRequest) Export() string {
 
 func NewEchoRequest() *EchoRequest {
 	return &EchoRequest{
-		Model:     ECHO_REQ_DEFAULT_MODEL,
-		MaxTokens: ECHO_REQ_DEFAULT_TOKENS,
+		Model:       ECHO_REQ_DEFAULT_MODEL,
+		MaxTokens:   ECHO_REQ_DEFAULT_TOKENS,
+		Temperature: ECHO_REQ_DEFAULT_TEMPERATURE,
 	}
 }
