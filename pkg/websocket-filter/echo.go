@@ -40,6 +40,25 @@ import (
 //   - merge components props by displayName
 //   - generate props
 func SignalEcho(hub *ws.Hub, message *ws.Message) error {
+	logo := `
+
+Power by:
+
+██╗██╗     ██╗      █████╗        █████╗ ██╗
+██║██║     ██║     ██╔══██╗      ██╔══██╗██║
+██║██║     ██║     ███████║█████╗███████║██║
+██║██║     ██║     ██╔══██║╚════╝██╔══██║██║
+██║███████╗███████╗██║  ██║      ██║  ██║██║
+╚═╝╚══════╝╚══════╝╚═╝  ╚═╝      ╚═╝  ╚═╝╚═╝ v0.0.42
+
+
+
+
+
+                                            
+	
+`
+	fmt.Printf(logo)
 	currentClient, hit := hub.Clients[message.ClientID]
 	if !hit {
 		return errors.New("[SignalEcho] target client(" + message.ClientID.String() + ") does dot exists.")
