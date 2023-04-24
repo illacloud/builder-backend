@@ -69,14 +69,15 @@ type Broadcast struct {
 }
 
 type Message struct {
-	ClientID      uuid.UUID     `json:"clientID"`
-	Signal        int           `json:"signal"`
-	APPID         int           `json:"appID"` // also as APP ID
-	Option        int           `json:"option"`
-	Payload       []interface{} `json:"payload"`
-	Target        int           `json:"target"`
-	Broadcast     *Broadcast    `json:"broadcast"`
-	NeedBroadcast bool
+	ClientID          uuid.UUID     `json:"clientID"`
+	Signal            int           `json:"signal"`
+	APPID             int           `json:"appID"` // also as APP ID
+	Option            int           `json:"option"`
+	Payload           []interface{} `json:"payload"`
+	Target            int           `json:"target"`
+	Broadcast         *Broadcast    `json:"broadcast"`
+	NeedBroadcast     bool
+	GeneratedByILLAAI bool
 }
 
 func NewMessage(clientID uuid.UUID, appID int, rawMessage []byte) (*Message, error) {
@@ -115,4 +116,8 @@ func (m *Message) RewriteBroadcast() {
 	if m.NeedBroadcast {
 		m.Broadcast.Type = m.Broadcast.Type + BROADCAST_TYPE_SUFFIX
 	}
+}
+
+func (m *Message) IsGenratedByAI() bool {
+	return m.GeneratedByILLAAI
 }

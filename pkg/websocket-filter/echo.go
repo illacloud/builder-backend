@@ -271,14 +271,15 @@ func removeOldComponents(currentClient *ws.Client, hub *ws.Hub, echoGenerator *r
 
 	// illaAIUUID, _ := uuid.Parse("000000a1-0000-0000-0000-000000000001")
 	messageData := ws.Message{
-		Signal:        ws.SIGNAL_DELETE_STATE,
-		Target:        1,
-		Option:        1,
-		Payload:       payloadData,
-		Broadcast:     broadcastData,
-		ClientID:      currentClient.ID,
-		APPID:         currentClient.GetAPPID(),
-		NeedBroadcast: true,
+		Signal:            ws.SIGNAL_DELETE_STATE,
+		Target:            1,
+		Option:            1,
+		Payload:           payloadData,
+		Broadcast:         broadcastData,
+		ClientID:          currentClient.ID,
+		APPID:             currentClient.GetAPPID(),
+		NeedBroadcast:     true,
+		GeneratedByILLAAI: true,
 	}
 	jsonData, _ := json.Marshal(messageData)
 	fmt.Printf("[DUMP] ws message: %s\n", jsonData)
@@ -300,14 +301,15 @@ func createComponent(currentClient *ws.Client, hub *ws.Hub, content map[string]i
 	// illaAIUUID, _ := uuid.Parse("000000a1-0000-0000-0000-000000000001")
 
 	messageData := ws.Message{
-		Signal:        ws.SIGNAL_CREATE_STATE,
-		Target:        1,
-		Option:        1,
-		Payload:       payloadData,
-		Broadcast:     broadcastData,
-		ClientID:      currentClient.ID,
-		APPID:         currentClient.GetAPPID(),
-		NeedBroadcast: true,
+		Signal:            ws.SIGNAL_CREATE_STATE,
+		Target:            1,
+		Option:            1,
+		Payload:           payloadData,
+		Broadcast:         broadcastData,
+		ClientID:          currentClient.ID,
+		APPID:             currentClient.GetAPPID(),
+		NeedBroadcast:     true,
+		GeneratedByILLAAI: true,
 	}
 	jsonData, _ := json.Marshal(messageData)
 	fmt.Printf("[DUMP] ws message: %s\n", jsonData)

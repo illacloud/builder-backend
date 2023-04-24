@@ -28,7 +28,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient, hit := hub.Clients[message.ClientID]
 	if !hit {
-		return errors.New("[SignalCreateState] target client("+message.ClientID.String()+") does dot exists.")
+		return errors.New("[SignalCreateState] target client(" + message.ClientID.String() + ") does dot exists.")
 	}
 	stateType := repository.STATE_TYPE_INVALIED
 	teamID := currentClient.TeamID
@@ -140,6 +140,10 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 	hub.AppServiceImpl.UpdateAppModifyTime(appDto)
 
 	// feedback otherClient
+	if message.IsGenratedByAI() {
+		hub.BroadcastToRoomAllClients(message, currentClient)
+		return nil
+	}
 	hub.BroadcastToOtherClients(message, currentClient)
 	return nil
 }
