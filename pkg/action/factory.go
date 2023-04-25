@@ -63,6 +63,7 @@ var (
 	ORACLE_ACTION        = "oracle"
 	APPWRITE_ACTION      = "appwrite"
 	GOOGLESHEETS_ACTION  = "googlesheets"
+	NEON_ACTION          = "neon"
 )
 
 type AbstractActionFactory interface {
@@ -81,7 +82,7 @@ func (f *Factory) Build() common.DataConnector {
 	case MYSQL_ACTION, MARIADB_ACTION, TIDB_ACTION:
 		sqlAction := &mysql.MySQLConnector{}
 		return sqlAction
-	case POSTGRESQL_ACTION, SUPABASEDB_ACTION:
+	case POSTGRESQL_ACTION, SUPABASEDB_ACTION, NEON_ACTION:
 		pgsAction := &postgresql.Connector{}
 		return pgsAction
 	case REDIS_ACTION:
