@@ -22,12 +22,30 @@ import (
 const ACTION_CONFIG_FIELD_PUBLIC = "public"
 
 type ActionConfig struct {
-	Public bool `json:"public"` // switch for public action (which can view by anonymous user)
+	Public         bool            `json:"public"`         // switch for public action (which can view by anonymous user)
+	AdvancedConfig *AdvancedConfig `json:"advancedConfig"` // 2023_4_20: add advanced config for action
+}
+
+type AdvancedConfig struct {
+	Runtime            string   `json:"runtime"`
+	Pages              []string `json:"pages"`
+	DelayWhenLoaded    string   `json:"delayWhenLoaded"`
+	DisplayLoadingPage bool     `json:"displayLoadingPage"`
+	IsPeriodically     bool     `json:"isPeriodically"`
+	PeriodInterval     string   `json:"periodInterval"`
 }
 
 func NewActionConfig() *ActionConfig {
 	return &ActionConfig{
 		Public: false,
+		AdvancedConfig: &AdvancedConfig{
+			Runtime:            "none",
+			Pages:              []string{},
+			DelayWhenLoaded:    "",
+			DisplayLoadingPage: false,
+			IsPeriodically:     false,
+			PeriodInterval:     "",
+		},
 	}
 }
 

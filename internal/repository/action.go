@@ -142,7 +142,10 @@ func (impl *ActionRepositoryImpl) UpdatePublicByTeamIDAndAppIDAndUserID(teamID i
 	}
 	// set status
 	for _, action := range actions {
-		action.Config = actionConfig.ExportToJSONString()
+		tmpActionConfig := NewActionConfig()
+		json.Unmarshal([]byte(action.Config), &tmpActionConfig)
+		tmpActionConfig.Public = actionConfig.Public
+		action.Config = tmpActionConfig.ExportToJSONString()
 		// update
 		errorInUpdate := impl.Update(action)
 		if errorInUpdate != nil {
