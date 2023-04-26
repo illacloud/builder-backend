@@ -3,9 +3,12 @@ package resthandler
 import (
 	"errors"
 	"net/http"
+	"os"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/illacloud/builder-backend/internal/idconvertor"
 	"github.com/illacloud/builder-backend/internal/repository"
 )
@@ -123,6 +126,11 @@ const (
 	ERROR_FLAG_BUILD_USER_INFO_FAILED
 	ERROR_FLAG_BUILD_APP_CONFIG_FAILED
 	ERROR_FLAG_GENERATE_PASSWORD_FAILED
+
+	// google sheets oauth2 failed
+	ERROR_FLAG_CAN_NOT_CREATE_TOKEN
+	ERROR_FLAG_CAN_NOT_AUTHORIZE_GS
+	ERROR_FLAG_CAN_NOT_REFRESH_GS
 )
 
 func GetUserAuthTokenFromHeader(c *gin.Context) (string, error) {
@@ -225,4 +233,55 @@ func FeedbackInternalServerError(c *gin.Context, errorFlag int, errorMessage str
 		"errorMessage": errorMessage,
 	})
 	return
+}
+
+type GSOAuth2Claims struct {
+	User     int    `json:"user"`
+	Resource int    `json:"resource"`
+	Access   int    `json:"access"`
+	URL      string `json:"url"`
+	jwt.RegisteredClaims
+}
+
+func generateGSOAuth2Token(userID, resourceID, accessType int, redirectURL string) (string, error) {
+	claims := &GSOAuth2Claims{
+		User:     userID,
+		Resource: resourceID,
+		Access:   accessType,
+		URL:      redirectURL,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer: "ILLA",
+			ExpiresAt: &jwt.NumericDate{
+				Time: time.Now().Add(time.Minute * 1),
+			},
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	accessToken, err := token.SignedString([]byte(os.Getenv("ILLA_SECRET_KEY")))
+	if err != nil {
+		return "", err
+	}
+
+	return accessToken, nil
+}
+
+func validateGSOAuth2Token(accessToken string) (int, error) {
+	authClaims := &GSOAuth2Claims{}
+	token, err := jwt.ParseWithClaims(accessToken, authClaims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("ILLA_SECRET_KEY")), nil
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	claims, ok := token.Claims.(*GSOAuth2Claims)
+	if !(ok && token.Valid) {
+		return 0, err
+	}
+
+	access := claims.Access
+
+	return access, nil
 }
