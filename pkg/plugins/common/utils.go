@@ -30,7 +30,8 @@ func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 	// pointer of every row values
 	valPointers := make([]interface{}, count)
 	for rows.Next() {
-
+		values = make([]interface{}, count)
+		valPointers = make([]interface{}, count)
 		// get pointer for every row
 		for i := 0; i < count; i++ {
 			valPointers[i] = &values[i]

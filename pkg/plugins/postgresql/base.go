@@ -145,6 +145,8 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 	valuePtrs := make([]interface{}, count)
 
 	for rows.Next() {
+		values = make([]interface{}, count)
+		valuePtrs = make([]interface{}, count)
 		for i := 0; i < count; i++ {
 			valuePtrs[i] = &values[i]
 		}
