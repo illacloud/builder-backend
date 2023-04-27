@@ -54,30 +54,30 @@ func (impl OAuth2RestHandlerImpl) GoogleOAuth2(c *gin.Context) {
 	}
 	teamID, userID, resourceID, url, err := extractGSOAuth2Token(stateToken)
 	if err != nil {
-		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%d", url, 2, resourceID))
+		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%s", url, 2, idconvertor.ConvertIntToString(resourceID)))
 		return
 	}
 	if errorOAuth2Callback != "" || code == "" {
-		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%d", url, 2, resourceID))
+		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%s", url, 2, idconvertor.ConvertIntToString(resourceID)))
 		return
 	}
 	// get resource
 	res, err := impl.resourceService.GetResource(teamID, resourceID)
 	if err != nil {
-		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%d", url, 2, resourceID))
+		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%s", url, 2, idconvertor.ConvertIntToString(resourceID)))
 		return
 	}
 	if res.Type != "googlesheets" {
-		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%d", url, 2, resourceID))
+		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%s", url, 2, idconvertor.ConvertIntToString(resourceID)))
 		return
 	}
 	var googleSheetsResource GoogleSheetsResource
 	if err := mapstructure.Decode(res.Options, &googleSheetsResource); err != nil {
-		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%d", url, 2, resourceID))
+		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%s", url, 2, idconvertor.ConvertIntToString(resourceID)))
 		return
 	}
 	if googleSheetsResource.Authentication != "oauth2" {
-		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%d", url, 2, resourceID))
+		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%s", url, 2, idconvertor.ConvertIntToString(resourceID)))
 		return
 	}
 
@@ -102,7 +102,7 @@ func (impl OAuth2RestHandlerImpl) GoogleOAuth2(c *gin.Context) {
 		}
 		var exchangeTokenSuccessResponse ExchangeTokenSuccessResponse
 		if err := json.Unmarshal(resp.Body(), &exchangeTokenSuccessResponse); err != nil {
-			c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%d", url, 2, resourceID))
+			c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%s", url, 2, idconvertor.ConvertIntToString(resourceID)))
 			return
 		}
 		googleSheetsResource.Opts.RefreshToken = exchangeTokenSuccessResponse.RefreshToken
@@ -110,7 +110,7 @@ func (impl OAuth2RestHandlerImpl) GoogleOAuth2(c *gin.Context) {
 		googleSheetsResource.Opts.AccessToken = exchangeTokenSuccessResponse.AccessToken
 		googleSheetsResource.Opts.Status = 2
 	} else if resp.IsError() {
-		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%d", url, 2, resourceID))
+		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%s", url, 2, idconvertor.ConvertIntToString(resourceID)))
 		return
 	}
 
@@ -132,11 +132,11 @@ func (impl OAuth2RestHandlerImpl) GoogleOAuth2(c *gin.Context) {
 		UpdatedAt: time.Now().UTC(),
 		UpdatedBy: userID,
 	}); err != nil {
-		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%d", url, 2, resourceID))
+		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%s", url, 2, idconvertor.ConvertIntToString(resourceID)))
 		return
 	}
 
 	// redirect
-	c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%d", url, 1, resourceID))
+	c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%s", url, 1, idconvertor.ConvertIntToString(resourceID)))
 	return
 }
