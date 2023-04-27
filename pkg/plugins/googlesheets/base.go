@@ -21,6 +21,7 @@ import (
 	"strconv"
 
 	"github.com/mitchellh/mapstructure"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
@@ -54,7 +55,11 @@ func (g *Connector) getSheetsWithOpts(resourceOpts map[string]interface{}) (*she
 		}
 		return getSheetsWithKey(saOpts.PrivateKey)
 	case OAUTH2_AUTH:
-		return getSheetsWithOAuth2()
+		var oauth2Opts OAuth2Opts
+		if err := mapstructure.Decode(g.ResourceOpts.Opts, &oauth2Opts); err != nil {
+			return nil, err
+		}
+		return getSheetsWithOAuth2(oauth2Opts)
 	default:
 		return nil, errors.New("unsupported authentication method")
 	}
@@ -79,9 +84,16 @@ func getSheetsWithKey(privateKey string) (*sheets.Service, error) {
 	return srv, nil
 }
 
-func getSheetsWithOAuth2() (*sheets.Service, error) {
-	// TODO
-	return nil, nil
+func getSheetsWithOAuth2(opts OAuth2Opts) (*sheets.Service, error) {
+	ctx := context.Background()
+	httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: opts.AccessToken}))
+
+	srv, err := sheets.NewService(ctx, option.WithHTTPClient(httpClient))
+	if err != nil {
+		return nil, err
+	}
+
+	return srv, nil
 }
 
 func (g *Connector) getDriveWithOpts(resourceOpts map[string]interface{}) (*drive.Service, error) {
@@ -96,7 +108,11 @@ func (g *Connector) getDriveWithOpts(resourceOpts map[string]interface{}) (*driv
 		}
 		return getDriveWithKey(saOpts.PrivateKey)
 	case OAUTH2_AUTH:
-		return getDriveWithOAuth2()
+		var oauth2Opts OAuth2Opts
+		if err := mapstructure.Decode(g.ResourceOpts.Opts, &oauth2Opts); err != nil {
+			return nil, err
+		}
+		return getDriveWithOAuth2(oauth2Opts)
 	default:
 		return nil, errors.New("unsupported authentication method")
 	}
@@ -121,9 +137,15 @@ func getDriveWithKey(privateKey string) (*drive.Service, error) {
 	return srv, nil
 }
 
-func getDriveWithOAuth2() (*drive.Service, error) {
-	// TODO
-	return nil, nil
+func getDriveWithOAuth2(opts OAuth2Opts) (*drive.Service, error) {
+	ctx := context.Background()
+	httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: opts.AccessToken}))
+
+	srv, err := drive.NewService(ctx, option.WithHTTPClient(httpClient))
+	if err != nil {
+		return nil, err
+	}
+	return srv, nil
 }
 
 func interfaceToString(i interface{}) string {

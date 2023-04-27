@@ -26,8 +26,9 @@ type SAOpts struct {
 type OAuth2Opts struct {
 	AccessType   string `validate:"required,oneof=rw r"`
 	AccessToken  string
+	TokenType    string
 	RefreshToken string
-	IDToken      string
+	Status       int
 }
 
 type Action struct {

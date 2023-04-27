@@ -71,6 +71,9 @@ func Initialize() (*Server, error) {
 	resourceServiceImpl := resource.NewResourceServiceImpl(sugaredLogger, resourceRepositoryImpl)
 	resourceRestHandlerImpl := resthandler.NewResourceRestHandlerImpl(sugaredLogger, resourceServiceImpl, attrg)
 	resourceRouterImpl := router.NewResourceRouterImpl(resourceRestHandlerImpl)
+	// oauth2
+	oauth2RestHandlerImpl := resthandler.NewOAuth2RestHandlerImpl(sugaredLogger, resourceServiceImpl)
+	oauth2RouterImpl := router.NewOAuth2RouterImpl(oauth2RestHandlerImpl)
 	// actions
 	actionRestHandlerImpl := resthandler.NewActionRestHandlerImpl(sugaredLogger, appServiceImpl, actionServiceImpl, attrg)
 	actionRouterImpl := router.NewActionRouterImpl(actionRestHandlerImpl)
@@ -84,7 +87,7 @@ func Initialize() (*Server, error) {
 	builderServiceImpl := builder.NewBuilderServiceImpl(sugaredLogger, appRepositoryImpl, resourceRepositoryImpl, actionRepositoryImpl)
 	builderRestHandlerImpl := resthandler.NewBuilderRestHandlerImpl(sugaredLogger, builderServiceImpl, attrg)
 	builderRouterImpl := router.NewBuilderRouterImpl(builderRestHandlerImpl)
-	restRouter := router.NewRESTRouter(sugaredLogger, builderRouterImpl, appRouterImpl, publicAppRouterImpl, roomRouterImpl, actionRouterImpl, publicActionRouterImpl, internalActionRouterImpl, resourceRouterImpl, statusRouterImpl)
+	restRouter := router.NewRESTRouter(sugaredLogger, builderRouterImpl, appRouterImpl, publicAppRouterImpl, roomRouterImpl, actionRouterImpl, publicActionRouterImpl, internalActionRouterImpl, resourceRouterImpl, statusRouterImpl, oauth2RouterImpl)
 	server := NewServer(config, engine, restRouter, sugaredLogger)
 	return server, nil
 }
