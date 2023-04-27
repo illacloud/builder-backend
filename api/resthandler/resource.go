@@ -542,9 +542,9 @@ func (impl ResourceRestHandlerImpl) GoogleSheetsOAuth2(c *gin.Context) {
 	redirectURI := os.Getenv("ILLA_GS_REDIRECT_URI")
 	url := ""
 	if access == 1 {
-		url = fmt.Sprintf("https://accounts.google.com/o/oauth2/v2/auth/oauthchooseaccount?response_type=code&client_id=%s&redirect_uri=%s&state=%s&scope=https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets&access_type=offline&prompt=consent&service=lso&o2v=2&flowName=GeneralOAuthFlow", googleOAuthClientID, redirectURI, gsOAuth2Request.AccessToken)
+		url = fmt.Sprintf("https://accounts.google.com/o/oauth2/v2/auth/oauthchooseaccount?response_type=code&client_id=%s&redirect_uri=%s&state=%s&scope=https://www.googleapis.com/auth/drive%20https://www.googleapis.com/auth/drive.file%20https://www.googleapis.com/auth/spreadsheets&access_type=offline&prompt=consent&service=lso&o2v=2&flowName=GeneralOAuthFlow", googleOAuthClientID, redirectURI, gsOAuth2Request.AccessToken)
 	} else {
-		url = fmt.Sprintf("https://accounts.google.com/o/oauth2/v2/auth/oauthchooseaccount?response_type=code&client_id=%s&redirect_uri=%s&state=%s&scope=https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/drive.readonly&access_type=offline&prompt=consent&service=lso&o2v=2&flowName=GeneralOAuthFlow", googleOAuthClientID, redirectURI, gsOAuth2Request.AccessToken)
+		url = fmt.Sprintf("https://accounts.google.com/o/oauth2/v2/auth/oauthchooseaccount?response_type=code&client_id=%s&redirect_uri=%s&state=%s&scope=https://www.googleapis.com/auth/spreadsheets.readonly%20https://www.googleapis.com/auth/drive.readonly&access_type=offline&prompt=consent&service=lso&o2v=2&flowName=GeneralOAuthFlow", googleOAuthClientID, redirectURI, gsOAuth2Request.AccessToken)
 	}
 	c.JSON(200, gin.H{
 		"url": url,
