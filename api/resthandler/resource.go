@@ -458,7 +458,7 @@ func (impl ResourceRestHandlerImpl) CreateOAuthToken(c *gin.Context) {
 	} else {
 		access = 2
 	}
-	token, err := generateGSOAuth2Token(userID, resourceID, access, createOAuthTokenRequest.RedirectURL)
+	token, err := generateGSOAuth2Token(teamID, userID, resourceID, access, createOAuthTokenRequest.RedirectURL)
 	if err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "generate token error: "+err.Error())
 		return
@@ -590,7 +590,6 @@ func (impl ResourceRestHandlerImpl) RefreshGSOAuth(c *gin.Context) {
 		return
 	}
 	var googleSheetsResource GoogleSheetsResource
-	// TODO
 	if err := mapstructure.Decode(res.Options, &googleSheetsResource); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GS, "get resource error: "+err.Error())
 		return

@@ -236,6 +236,7 @@ func FeedbackInternalServerError(c *gin.Context, errorFlag int, errorMessage str
 }
 
 type GSOAuth2Claims struct {
+	Team     int    `json:"team"`
 	User     int    `json:"user"`
 	Resource int    `json:"resource"`
 	Access   int    `json:"access"`
@@ -243,8 +244,9 @@ type GSOAuth2Claims struct {
 	jwt.RegisteredClaims
 }
 
-func generateGSOAuth2Token(userID, resourceID, accessType int, redirectURL string) (string, error) {
+func generateGSOAuth2Token(teamID, userID, resourceID, accessType int, redirectURL string) (string, error) {
 	claims := &GSOAuth2Claims{
+		Team:     teamID,
 		User:     userID,
 		Resource: resourceID,
 		Access:   accessType,
@@ -284,4 +286,21 @@ func validateGSOAuth2Token(accessToken string) (int, error) {
 	access := claims.Access
 
 	return access, nil
+}
+
+func extractGSOAuth2Token(stateToken string) (teamID, userID, resourceID int, url string, err error) {
+	authClaims := &GSOAuth2Claims{}
+	token, err := jwt.ParseWithClaims(stateToken, authClaims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("ILLA_SECRET_KEY")), nil
+	})
+	if err != nil {
+		return 0, 0, 0, "", err
+	}
+
+	claims, ok := token.Claims.(*GSOAuth2Claims)
+	if !(ok && token.Valid) {
+		return 0, 0, 0, "", err
+	}
+
+	return claims.Team, claims.User, claims.Resource, claims.URL, nil
 }
