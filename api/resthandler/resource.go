@@ -647,7 +647,7 @@ func (impl ResourceRestHandlerImpl) RefreshGSOAuth(c *gin.Context) {
 		UpdatedAt: time.Now().UTC(),
 		UpdatedBy: userID,
 	})
-
-	FeedbackOK(c, updateRes)
+	res.Options = updateRes.Options
+	FeedbackOK(c, res)
 	return
 }
