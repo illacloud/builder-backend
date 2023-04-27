@@ -502,10 +502,7 @@ func (impl ResourceRestHandlerImpl) GoogleSheetsOAuth2(c *gin.Context) {
 
 	// parse request body
 	var gsOAuth2Request GoogleSheetsOAuth2Request
-	if err := json.NewDecoder(c.Request.Body).Decode(&gsOAuth2Request); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
-		return
-	}
+	gsOAuth2Request.AccessToken = c.Query("accessToken")
 	// validate request body fields
 	validate := validator.New()
 	if err := validate.Struct(gsOAuth2Request); err != nil {
