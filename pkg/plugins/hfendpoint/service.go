@@ -157,7 +157,7 @@ func (h *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		res.Rows = matrixBody[0]
 	}
 	if !isBase64Encoded(string(resp.Body())) {
-		res.Extra["raw"] = base64Decode(string(resp.Body()))
+		res.Extra["raw"] = base64Encode(resp.Body())
 	} else {
 		res.Extra["raw"] = string(resp.Body())
 	}
@@ -177,7 +177,7 @@ func isBase64Encoded(s string) bool {
 	return err == nil
 }
 
-func base64Decode(s string) string {
-	decoded, _ := base64.StdEncoding.DecodeString(s)
-	return string(decoded)
+func base64Encode(s []byte) string {
+	encoded := base64.StdEncoding.EncodeToString(s)
+	return encoded
 }

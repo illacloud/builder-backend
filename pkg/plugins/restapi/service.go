@@ -243,7 +243,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
 		if !isBase64Encoded(string(resp.Body())) {
-			res.Extra["raw"] = base64Decode(string(resp.Body()))
+			res.Extra["raw"] = base64Encode(resp.Body())
 		} else {
 			res.Extra["raw"] = string(resp.Body())
 		}
@@ -267,7 +267,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
 		if !isBase64Encoded(string(resp.Body())) {
-			res.Extra["raw"] = base64Decode(string(resp.Body()))
+			res.Extra["raw"] = base64Encode(resp.Body())
 		} else {
 			res.Extra["raw"] = string(resp.Body())
 		}
@@ -291,7 +291,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
 		if !isBase64Encoded(string(resp.Body())) {
-			res.Extra["raw"] = base64Decode(string(resp.Body()))
+			res.Extra["raw"] = base64Encode(resp.Body())
 		} else {
 			res.Extra["raw"] = string(resp.Body())
 		}
@@ -315,7 +315,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
 		if !isBase64Encoded(string(resp.Body())) {
-			res.Extra["raw"] = base64Decode(string(resp.Body()))
+			res.Extra["raw"] = base64Encode(resp.Body())
 		} else {
 			res.Extra["raw"] = string(resp.Body())
 		}
@@ -339,7 +339,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
 		if !isBase64Encoded(string(resp.Body())) {
-			res.Extra["raw"] = base64Decode(string(resp.Body()))
+			res.Extra["raw"] = base64Encode(resp.Body())
 		} else {
 			res.Extra["raw"] = string(resp.Body())
 		}
@@ -364,7 +364,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
 		if !isBase64Encoded(string(resp.Body())) {
-			res.Extra["raw"] = base64Decode(string(resp.Body()))
+			res.Extra["raw"] = base64Encode(resp.Body())
 		} else {
 			res.Extra["raw"] = string(resp.Body())
 		}
@@ -388,7 +388,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
 		if !isBase64Encoded(string(resp.Body())) {
-			res.Extra["raw"] = base64Decode(string(resp.Body()))
+			res.Extra["raw"] = base64Encode(resp.Body())
 		} else {
 			res.Extra["raw"] = string(resp.Body())
 		}
@@ -406,7 +406,7 @@ func isBase64Encoded(s string) bool {
 	return err == nil
 }
 
-func base64Decode(s string) string {
-	decoded, _ := base64.StdEncoding.DecodeString(s)
-	return string(decoded)
+func base64Encode(s []byte) string {
+	encoded := base64.StdEncoding.EncodeToString(s)
+	return encoded
 }
