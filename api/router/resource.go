@@ -40,4 +40,7 @@ func (impl ResourceRouterImpl) InitResourceRouter(resourceRouter *gin.RouterGrou
 	resourceRouter.DELETE("/:resourceID", impl.resourceRestHandler.DeleteResource)
 	resourceRouter.POST("/testConnection", impl.resourceRestHandler.TestConnection)
 	resourceRouter.GET("/:resourceID/meta", impl.resourceRestHandler.GetMetaInfo)
+	resourceRouter.POST("/:resourceID/token", impl.resourceRestHandler.CreateOAuthToken)
+	resourceRouter.GET("/:resourceID/oauth2", impl.resourceRestHandler.GoogleSheetsOAuth2)
+	resourceRouter.POST("/:resourceID/refresh", impl.resourceRestHandler.RefreshGSOAuth)
 }

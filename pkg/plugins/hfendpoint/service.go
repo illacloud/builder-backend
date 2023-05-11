@@ -146,18 +146,38 @@ func (h *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	}
 	body := make(map[string]interface{})
 	listBody := make([]map[string]interface{}, 0)
+	matrixBody := make([][]map[string]interface{}, 0)
 	if err := json.Unmarshal(resp.Body(), &body); err == nil {
 		res.Rows = append(res.Rows, body)
 	}
 	if err := json.Unmarshal(resp.Body(), &listBody); err == nil {
 		res.Rows = listBody
 	}
-	res.Extra["raw"] = resp.Body()
+	if err := json.Unmarshal(resp.Body(), &matrixBody); err == nil && len(matrixBody) == 1 {
+		res.Rows = matrixBody[0]
+	}
+	if !isBase64Encoded(string(resp.Body())) {
+		res.Extra["raw"] = base64Encode(resp.Body())
+	} else {
+		res.Extra["raw"] = string(resp.Body())
+	}
 	res.Extra["headers"] = resp.Header()
+	res.Extra["statusCode"] = resp.StatusCode()
+	res.Extra["statusText"] = resp.Status()
 	if err != nil {
 		res.Success = false
 		return res, err
 	}
 
 	return res, nil
+}
+
+func isBase64Encoded(s string) bool {
+	_, err := base64.StdEncoding.DecodeString(s)
+	return err == nil
+}
+
+func base64Encode(s []byte) string {
+	encoded := base64.StdEncoding.EncodeToString(s)
+	return encoded
 }

@@ -16,6 +16,7 @@ package filter
 
 import (
 	"errors"
+
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
 
@@ -23,11 +24,11 @@ func SignalGlobalBroadcastOnly(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient, hit := hub.Clients[message.ClientID]
 	if !hit {
-		return errors.New("[SignalGlobalBroadcastOnly] target client("+message.ClientID.String()+") does dot exists.")
+		return errors.New("[SignalGlobalBroadcastOnly] target client(" + message.ClientID.String() + ") does dot exists.")
 	}
 	message.RewriteBroadcast()
 
 	// feedback to all Client (do not include current client itself)
-	hub.BroadcastToGlobal(message, currentClient, false)
+	hub.BroadcastToTeamAllClients(message, currentClient, false)
 	return nil
 }
