@@ -187,6 +187,30 @@ func (hub *Hub) BroadcastToRoomAllClients(message *Message, currentClient *Clien
 	}
 }
 
+func (hub *Hub) BroadcastToTeamAllClients(message *Message, currentClient *Client, includeCurrentClient bool) {
+	feed := Feedback{
+		ErrorCode:    ERROR_CODE_BROADCAST,
+		ErrorMessage: "",
+		Broadcast:    message.Broadcast,
+		Data:         nil,
+	}
+	feedbyte, _ := feed.Serialization()
+	for clientid, client := range hub.Clients {
+		if client.IsDead() {
+			hub.RemoveClient(client)
+			continue
+		}
+		if client.TeamID != currentClient.TeamID {
+			continue
+		}
+		if clientid == currentClient.ID && !includeCurrentClient {
+			continue
+		}
+		client.Send <- feedbyte
+	}
+}
+
+// WARRING: This method will broadcast to server all clients. Use it carefully.
 func (hub *Hub) BroadcastToGlobal(message *Message, currentClient *Client, includeCurrentClient bool) {
 	feed := Feedback{
 		ErrorCode:    ERROR_CODE_BROADCAST,
