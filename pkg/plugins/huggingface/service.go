@@ -162,6 +162,8 @@ func (h *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		res.Extra["raw"] = string(resp.Body())
 	}
 	res.Extra["headers"] = resp.Header()
+	res.Extra["statusCode"] = resp.StatusCode()
+	res.Extra["statusText"] = resp.Status()
 	if err != nil {
 		res.Success = false
 		return res, err
