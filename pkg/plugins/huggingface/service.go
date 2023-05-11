@@ -156,7 +156,11 @@ func (h *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	if err := json.Unmarshal(resp.Body(), &matrixBody); err == nil && len(matrixBody) == 1 {
 		res.Rows = matrixBody[0]
 	}
-	res.Extra["raw"] = resp.Body()
+	if !isBase64Encoded(string(resp.Body())) {
+		res.Extra["raw"] = base64Decode(string(resp.Body()))
+	} else {
+		res.Extra["raw"] = string(resp.Body())
+	}
 	res.Extra["headers"] = resp.Header()
 	if err != nil {
 		res.Success = false
@@ -165,4 +169,14 @@ func (h *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	res.Success = true
 
 	return res, nil
+}
+
+func isBase64Encoded(s string) bool {
+	_, err := base64.StdEncoding.DecodeString(s)
+	return err == nil
+}
+
+func base64Decode(s string) string {
+	decoded, _ := base64.StdEncoding.DecodeString(s)
+	return string(decoded)
 }

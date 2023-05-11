@@ -15,6 +15,7 @@
 package restapi
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -241,7 +242,11 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		if len(res.Rows) == 0 && len(resp.Body()) > 0 {
 			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
-		res.Extra["body"] = string(resp.Body())
+		if !isBase64Encoded(string(resp.Body())) {
+			res.Extra["raw"] = base64Decode(string(resp.Body()))
+		} else {
+			res.Extra["raw"] = string(resp.Body())
+		}
 		res.Extra["headers"] = resp.Header()
 		res.Extra["statusCode"] = resp.StatusCode()
 		res.Extra["statusText"] = resp.Status()
@@ -261,7 +266,11 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		if len(res.Rows) == 0 && len(resp.Body()) > 0 {
 			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
-		res.Extra["body"] = string(resp.Body())
+		if !isBase64Encoded(string(resp.Body())) {
+			res.Extra["raw"] = base64Decode(string(resp.Body()))
+		} else {
+			res.Extra["raw"] = string(resp.Body())
+		}
 		res.Extra["headers"] = resp.Header()
 		res.Extra["statusCode"] = resp.StatusCode()
 		res.Extra["statusText"] = resp.Status()
@@ -281,7 +290,11 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		if len(res.Rows) == 0 && len(resp.Body()) > 0 {
 			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
-		res.Extra["body"] = string(resp.Body())
+		if !isBase64Encoded(string(resp.Body())) {
+			res.Extra["raw"] = base64Decode(string(resp.Body()))
+		} else {
+			res.Extra["raw"] = string(resp.Body())
+		}
 		res.Extra["headers"] = resp.Header()
 		res.Extra["statusCode"] = resp.StatusCode()
 		res.Extra["statusText"] = resp.Status()
@@ -301,7 +314,11 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		if len(res.Rows) == 0 && len(resp.Body()) > 0 {
 			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
-		res.Extra["body"] = string(resp.Body())
+		if !isBase64Encoded(string(resp.Body())) {
+			res.Extra["raw"] = base64Decode(string(resp.Body()))
+		} else {
+			res.Extra["raw"] = string(resp.Body())
+		}
 		res.Extra["headers"] = resp.Header()
 		res.Extra["statusCode"] = resp.StatusCode()
 		res.Extra["statusText"] = resp.Status()
@@ -321,7 +338,11 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		if len(res.Rows) == 0 && len(resp.Body()) > 0 {
 			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
-		res.Extra["body"] = string(resp.Body())
+		if !isBase64Encoded(string(resp.Body())) {
+			res.Extra["raw"] = base64Decode(string(resp.Body()))
+		} else {
+			res.Extra["raw"] = string(resp.Body())
+		}
 		res.Extra["headers"] = resp.Header()
 		res.Extra["statusCode"] = resp.StatusCode()
 		res.Extra["statusText"] = resp.Status()
@@ -342,7 +363,11 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		if len(res.Rows) == 0 && len(resp.Body()) > 0 {
 			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
-		res.Extra["body"] = string(resp.Body())
+		if !isBase64Encoded(string(resp.Body())) {
+			res.Extra["raw"] = base64Decode(string(resp.Body()))
+		} else {
+			res.Extra["raw"] = string(resp.Body())
+		}
 		res.Extra["headers"] = resp.Header()
 		res.Extra["statusCode"] = resp.StatusCode()
 		res.Extra["statusText"] = resp.Status()
@@ -362,7 +387,11 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		if len(res.Rows) == 0 && len(resp.Body()) > 0 {
 			res.Rows = append(res.Rows, map[string]interface{}{"message": string(resp.Body())})
 		}
-		res.Extra["body"] = string(resp.Body())
+		if !isBase64Encoded(string(resp.Body())) {
+			res.Extra["raw"] = base64Decode(string(resp.Body()))
+		} else {
+			res.Extra["raw"] = string(resp.Body())
+		}
 		res.Extra["headers"] = resp.Header()
 		res.Extra["statusCode"] = resp.StatusCode()
 		res.Extra["statusText"] = resp.Status()
@@ -370,4 +399,14 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 
 	res.Success = true
 	return res, nil
+}
+
+func isBase64Encoded(s string) bool {
+	_, err := base64.StdEncoding.DecodeString(s)
+	return err == nil
+}
+
+func base64Decode(s string) string {
+	decoded, _ := base64.StdEncoding.DecodeString(s)
+	return string(decoded)
 }
