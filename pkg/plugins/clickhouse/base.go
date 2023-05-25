@@ -36,8 +36,21 @@ func (c *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 		return nil, err
 	}
 
-	t := &tls.Config{}
+	opts := clickhouse.Options{
+		Addr: []string{fmt.Sprintf("%s:%d", c.ResourceOpts.Host, c.ResourceOpts.Port)},
+		Auth: clickhouse.Auth{
+			Database: c.ResourceOpts.DatabaseName,
+			Username: c.ResourceOpts.Username,
+			Password: c.ResourceOpts.Password,
+		},
+	}
+
+	if c.ResourceOpts.SSL.SSL {
+		t := &tls.Config{InsecureSkipVerify: false}
+		opts.TLS = t
+	}
 	if c.ResourceOpts.SSL.SSL && c.ResourceOpts.SSL.SelfSigned {
+		t := &tls.Config{}
 		pool := x509.NewCertPool()
 		if ok := pool.AppendCertsFromPEM([]byte(c.ResourceOpts.SSL.CACert)); !ok {
 			return nil, errors.New("clickhouse SSL/TLS Connection failed")
@@ -52,17 +65,10 @@ func (c *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 			}
 			t.Certificates = []tls.Certificate{cert}
 		}
+		opts.TLS = t
 	}
 
-	db := clickhouse.OpenDB(&clickhouse.Options{
-		Addr: []string{fmt.Sprintf("%s:%d", c.ResourceOpts.Host, c.ResourceOpts.Port)},
-		Auth: clickhouse.Auth{
-			Database: c.ResourceOpts.DatabaseName,
-			Username: c.ResourceOpts.Username,
-			Password: c.ResourceOpts.Password,
-		},
-		TLS: t,
-	})
+	db := clickhouse.OpenDB(&opts)
 
 	return db, nil
 }
