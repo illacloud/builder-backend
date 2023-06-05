@@ -25,9 +25,9 @@ import (
 	"go.uber.org/zap"
 )
 
-var type_array = [25]string{"transformer", "restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb",
+var type_array = [26]string{"transformer", "restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb",
 	"tidb", "elasticsearch", "s3", "smtp", "supabasedb", "firebase", "clickhouse", "mssql", "huggingface", "dynamodb",
-	"snowflake", "couchdb", "hfendpoint", "oracle", "appwrite", "googlesheets", "neon"}
+	"snowflake", "couchdb", "hfendpoint", "oracle", "appwrite", "googlesheets", "neon", "upstash"}
 var type_map = map[string]int{
 	"transformer":   0,
 	"restapi":       1,
@@ -54,6 +54,7 @@ var type_map = map[string]int{
 	"appwrite":      22,
 	"googlesheets":  23,
 	"neon":          24,
+	"upstash":       26,
 }
 
 type ActionService interface {
