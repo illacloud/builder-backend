@@ -77,7 +77,7 @@ type ActionDto struct {
 	Version     int                      `json:"-"`
 	Resource    int                      `json:"resourceId,omitempty"`
 	DisplayName string                   `json:"displayName" validate:"required"`
-	Type        string                   `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle appwrite googlesheets neon"`
+	Type        string                   `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle appwrite googlesheets neon upstash"`
 	Template    map[string]interface{}   `json:"content" validate:"required"`
 	Transformer map[string]interface{}   `json:"transformer" validate:"required"`
 	TriggerMode string                   `json:"triggerMode" validate:"oneof=manually automate"`
@@ -96,7 +96,7 @@ type ActionDtoForExport struct {
 	Version     int                      `json:"-"`
 	Resource    string                   `json:"resourceId,omitempty"`
 	DisplayName string                   `json:"displayName" validate:"required"`
-	Type        string                   `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle appwrite googlesheets neon"`
+	Type        string                   `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle appwrite googlesheets neon upstash"`
 	Template    map[string]interface{}   `json:"content" validate:"required"`
 	Transformer map[string]interface{}   `json:"transformer" validate:"required"`
 	TriggerMode string                   `json:"triggerMode" validate:"oneof=manually automate"`
