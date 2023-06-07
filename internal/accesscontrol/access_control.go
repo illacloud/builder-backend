@@ -108,7 +108,8 @@ const (
 	ACTION_MANAGE_APP_DOMAIN  // update app domain
 
 	// Billing Attribute
-	ACTION_MANAGE_PAYMENT_INFO // manage team payment info
+	ACTION_MANAGE_PAYMENT      // manage payment, including create, update, cancel subscribe and purchase
+	ACTION_MANAGE_PAYMENT_INFO // manage team payment info, including get portal info band billing info
 
 	// Dashboard Attribute
 	ACTION_MANAGE_DASHBOARD_BROADCAST
