@@ -34,5 +34,4 @@ func NewPublicActionRouterImpl(publicActionRestHandler resthandler.PublicActionR
 
 func (impl PublicActionRouterImpl) InitPublicActionRouter(publicActionRouter *gin.RouterGroup) {
 	publicActionRouter.POST("/:actionID/run", impl.publicActionRestHandler.RunAction)
-
 }

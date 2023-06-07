@@ -64,6 +64,7 @@ var (
 	APPWRITE_ACTION      = "appwrite"
 	GOOGLESHEETS_ACTION  = "googlesheets"
 	NEON_ACTION          = "neon"
+	UPSTASH_ACTION       = "upstash"
 )
 
 type AbstractActionFactory interface {
@@ -85,7 +86,7 @@ func (f *Factory) Build() common.DataConnector {
 	case POSTGRESQL_ACTION, SUPABASEDB_ACTION, NEON_ACTION:
 		pgsAction := &postgresql.Connector{}
 		return pgsAction
-	case REDIS_ACTION:
+	case REDIS_ACTION, UPSTASH_ACTION:
 		redisAction := &redis.Connector{}
 		return redisAction
 	case MONGODB_ACTION:
