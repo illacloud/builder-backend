@@ -54,7 +54,7 @@ var type_map = map[string]int{
 	"appwrite":      22,
 	"googlesheets":  23,
 	"neon":          24,
-	"upstash":       26,
+	"upstash":       25,
 }
 
 type ActionService interface {
