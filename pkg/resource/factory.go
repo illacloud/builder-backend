@@ -63,6 +63,7 @@ var (
 	APPWRITE_RESOURCE      = "appwrite"
 	GOOGLESHEETS_RESOURCE  = "googlesheets"
 	NEON_RESOURCE          = "neon"
+	UPSTASH_RESOURCE       = "upstash"
 )
 
 type AbstractResourceFactory interface {
@@ -84,7 +85,7 @@ func (f *Factory) Generate() common.DataConnector {
 	case POSTGRES_RESOURCE, SUPABASEDB_RESOURCE, NEON_RESOURCE:
 		pgsRsc := &postgresql.Connector{}
 		return pgsRsc
-	case REDIS_RESOURCE:
+	case REDIS_RESOURCE, UPSTASH_RESOURCE:
 		redisRsc := &redis.Connector{}
 		return redisRsc
 	case MONGODB_RESOURCE:
