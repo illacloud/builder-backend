@@ -108,6 +108,7 @@ const (
 	ACTION_MANAGE_APP_DOMAIN  // update app domain
 
 	// Billing Attribute
+	ACTION_MANAGE_PAYMENT      // manage team payment accessbility, including subscription and payment.
 	ACTION_MANAGE_PAYMENT_INFO // manage team payment info
 
 	// Dashboard Attribute
