@@ -15,6 +15,7 @@
 package action
 
 import (
+	"github.com/illacloud/builder-backend/pkg/plugins/airtable"
 	"github.com/illacloud/builder-backend/pkg/plugins/appwrite"
 	"github.com/illacloud/builder-backend/pkg/plugins/clickhouse"
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
@@ -65,6 +66,7 @@ var (
 	GOOGLESHEETS_ACTION  = "googlesheets"
 	NEON_ACTION          = "neon"
 	UPSTASH_ACTION       = "upstash"
+	AIRTABLE_ACTION      = "airtable"
 )
 
 type AbstractActionFactory interface {
@@ -137,6 +139,9 @@ func (f *Factory) Build() common.DataConnector {
 	case GOOGLESHEETS_ACTION:
 		googlesheetsAction := &googlesheets.Connector{}
 		return googlesheetsAction
+	case AIRTABLE_ACTION:
+		airtableAction := &airtable.Connector{}
+		return airtableAction
 	default:
 		return nil
 	}
