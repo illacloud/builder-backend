@@ -100,7 +100,7 @@ func (a *Connector) ListRecords() (common.RuntimeResult, error) {
 			"baseId":    a.Action.BaseConfig.BaseID,
 			"tableName": a.Action.BaseConfig.TableName,
 		}).
-		Post(AIRTABLE_API)
+		Post(AIRTABLE_API + "/listRecords")
 
 	// handle response
 	if resp.StatusCode() != http.StatusOK {
