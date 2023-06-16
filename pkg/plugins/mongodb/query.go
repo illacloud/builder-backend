@@ -47,6 +47,9 @@ func (q *QueryRunner) aggregate() (common.RuntimeResult, error) {
 	}
 
 	// build `AggregateOptions`
+	if aggregateOptions.Options == "" {
+		aggregateOptions.Options = "{}"
+	}
 	var rawAggregateOptions map[string]interface{}
 	if err := json.Unmarshal([]byte(aggregateOptions.Options), &rawAggregateOptions); err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -221,6 +224,9 @@ func (q *QueryRunner) distinct() (common.RuntimeResult, error) {
 	}
 
 	// build `DistinctOptions`
+	if distinctOptions.Options == "" {
+		distinctOptions.Options = "{}"
+	}
 	var rawDistinctOptions map[string]interface{}
 	if err := json.Unmarshal([]byte(distinctOptions.Options), &rawDistinctOptions); err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -356,6 +362,9 @@ func (q *QueryRunner) findOneAndUpdate() (common.RuntimeResult, error) {
 	}
 
 	// build `FindOneAndUpdateOptions`
+	if fAUOptions.Options == "" {
+		fAUOptions.Options = "{}"
+	}
 	var rawFindOneAndUpdateOptions map[string]interface{}
 	if err := json.Unmarshal([]byte(fAUOptions.Options), &rawFindOneAndUpdateOptions); err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -493,6 +502,9 @@ func (q *QueryRunner) updateMany() (common.RuntimeResult, error) {
 	}
 
 	// build `UpdateManyOptions`
+	if uMOptions.Options == "" {
+		uMOptions.Options = "{}"
+	}
 	var rawUpdateManyOptions map[string]interface{}
 	if err := json.Unmarshal([]byte(uMOptions.Options), &rawUpdateManyOptions); err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -542,7 +554,10 @@ func (q *QueryRunner) updateOne() (common.RuntimeResult, error) {
 		}
 	}
 
-	// build `UpdateManyOptions`
+	// build `UpdateOneOptions`
+	if uOOptions.Options == "" {
+		uOOptions.Options = "{}"
+	}
 	var rawUpdateOneOptions map[string]interface{}
 	if err := json.Unmarshal([]byte(uOOptions.Options), &rawUpdateOneOptions); err != nil {
 		return common.RuntimeResult{Success: false}, err
