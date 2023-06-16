@@ -16,6 +16,7 @@ package mongodb
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
@@ -45,7 +46,27 @@ func (q *QueryRunner) aggregate() (common.RuntimeResult, error) {
 		}
 	}
 
-	cursor, err := coll.Aggregate(context.TODO(), aggregateStage)
+	// build `AggregateOptions`
+	var rawAggregateOptions map[string]interface{}
+	if err := json.Unmarshal([]byte(aggregateOptions.Options), &rawAggregateOptions); err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+	var parsedAggregateOptions AggregateOptions
+	if err := mapstructure.Decode(rawAggregateOptions, &parsedAggregateOptions); err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+	opts := options.Aggregate()
+	if _, ok := rawAggregateOptions["collation"]; ok {
+		opts = opts.SetCollation(parsedAggregateOptions.Collation)
+	}
+	if _, ok := rawAggregateOptions["hint"]; ok {
+		opts = opts.SetHint(parsedAggregateOptions.Hint)
+	}
+	if _, ok := rawAggregateOptions["batchSize"]; ok {
+		opts = opts.SetBatchSize(parsedAggregateOptions.BatchSize)
+	}
+
+	cursor, err := coll.Aggregate(context.TODO(), aggregateStage, opts)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
@@ -199,7 +220,21 @@ func (q *QueryRunner) distinct() (common.RuntimeResult, error) {
 		}
 	}
 
-	results, err := coll.Distinct(context.TODO(), distinctOptions.Field, filter)
+	// build `DistinctOptions`
+	var rawDistinctOptions map[string]interface{}
+	if err := json.Unmarshal([]byte(distinctOptions.Options), &rawDistinctOptions); err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+	var parsedAggregateOptions DistinctOptions
+	if err := mapstructure.Decode(rawDistinctOptions, &parsedAggregateOptions); err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+	opts := options.Distinct()
+	if _, ok := rawDistinctOptions["collation"]; ok {
+		opts = opts.SetCollation(parsedAggregateOptions.Collation)
+	}
+
+	results, err := coll.Distinct(context.TODO(), distinctOptions.Field, filter, opts)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
@@ -320,8 +355,44 @@ func (q *QueryRunner) findOneAndUpdate() (common.RuntimeResult, error) {
 		}
 	}
 
+	// build `FindOneAndUpdateOptions`
+	var rawFindOneAndUpdateOptions map[string]interface{}
+	if err := json.Unmarshal([]byte(fAUOptions.Options), &rawFindOneAndUpdateOptions); err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+	var parsedFindOneAndUpdateOptions FindOneAndUpdateOptions
+	if err := mapstructure.Decode(rawFindOneAndUpdateOptions, &parsedFindOneAndUpdateOptions); err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+	opts := options.FindOneAndUpdate()
+	if _, ok := rawFindOneAndUpdateOptions["collation"]; ok {
+		opts = opts.SetCollation(parsedFindOneAndUpdateOptions.Collation)
+	}
+	if _, ok := rawFindOneAndUpdateOptions["hint"]; ok {
+		opts = opts.SetHint(parsedFindOneAndUpdateOptions.Hint)
+	}
+	if _, ok := rawFindOneAndUpdateOptions["arrayFilters"]; ok {
+		opts = opts.SetArrayFilters(options.ArrayFilters{Filters: parsedFindOneAndUpdateOptions.ArrayFilters})
+	}
+	if _, ok := rawFindOneAndUpdateOptions["upsert"]; ok {
+		opts = opts.SetUpsert(parsedFindOneAndUpdateOptions.Upsert)
+	}
+	if _, ok := rawFindOneAndUpdateOptions["projection"]; ok {
+		opts = opts.SetProjection(parsedFindOneAndUpdateOptions.Projection)
+	}
+	if _, ok := rawFindOneAndUpdateOptions["sort"]; ok {
+		opts = opts.SetSort(parsedFindOneAndUpdateOptions.Sort)
+	}
+	if _, ok := rawFindOneAndUpdateOptions["returnDocument"]; ok {
+		if parsedFindOneAndUpdateOptions.ReturnDocument == "after" {
+			opts = opts.SetReturnDocument(options.After)
+		} else if parsedFindOneAndUpdateOptions.ReturnDocument == "before" {
+			opts = opts.SetReturnDocument(options.Before)
+		}
+	}
+
 	var results bson.M
-	if err := coll.FindOneAndUpdate(context.TODO(), filter, update).Decode(&results); err != nil {
+	if err := coll.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&results); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 	return common.RuntimeResult{Success: true, Rows: []map[string]interface{}{{"result": results}}}, nil
@@ -421,7 +492,30 @@ func (q *QueryRunner) updateMany() (common.RuntimeResult, error) {
 		}
 	}
 
-	results, err := coll.UpdateMany(context.TODO(), filter, update)
+	// build `UpdateManyOptions`
+	var rawUpdateManyOptions map[string]interface{}
+	if err := json.Unmarshal([]byte(uMOptions.Options), &rawUpdateManyOptions); err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+	var parsedUpdateManyOptions UpdateManyOptions
+	if err := mapstructure.Decode(rawUpdateManyOptions, &parsedUpdateManyOptions); err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+	opts := &options.UpdateOptions{}
+	if _, ok := rawUpdateManyOptions["collation"]; ok {
+		opts = opts.SetCollation(parsedUpdateManyOptions.Collation)
+	}
+	if _, ok := rawUpdateManyOptions["hint"]; ok {
+		opts = opts.SetHint(parsedUpdateManyOptions.Hint)
+	}
+	if _, ok := rawUpdateManyOptions["arrayFilters"]; ok {
+		opts = opts.SetArrayFilters(options.ArrayFilters{Filters: parsedUpdateManyOptions.ArrayFilters})
+	}
+	if _, ok := rawUpdateManyOptions["upsert"]; ok {
+		opts = opts.SetUpsert(parsedUpdateManyOptions.Upsert)
+	}
+
+	results, err := coll.UpdateMany(context.TODO(), filter, update, opts)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
@@ -448,7 +542,30 @@ func (q *QueryRunner) updateOne() (common.RuntimeResult, error) {
 		}
 	}
 
-	results, err := coll.UpdateOne(context.TODO(), filter, update)
+	// build `UpdateManyOptions`
+	var rawUpdateOneOptions map[string]interface{}
+	if err := json.Unmarshal([]byte(uOOptions.Options), &rawUpdateOneOptions); err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+	var parsedUpdateOneOptions UpdateOneOptions
+	if err := mapstructure.Decode(rawUpdateOneOptions, &parsedUpdateOneOptions); err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+	opts := &options.UpdateOptions{}
+	if _, ok := rawUpdateOneOptions["collation"]; ok {
+		opts = opts.SetCollation(parsedUpdateOneOptions.Collation)
+	}
+	if _, ok := rawUpdateOneOptions["hint"]; ok {
+		opts = opts.SetHint(parsedUpdateOneOptions.Hint)
+	}
+	if _, ok := rawUpdateOneOptions["arrayFilters"]; ok {
+		opts = opts.SetArrayFilters(options.ArrayFilters{Filters: parsedUpdateOneOptions.ArrayFilters})
+	}
+	if _, ok := rawUpdateOneOptions["upsert"]; ok {
+		opts = opts.SetUpsert(parsedUpdateOneOptions.Upsert)
+	}
+
+	results, err := coll.UpdateOne(context.TODO(), filter, update, opts)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
