@@ -14,6 +14,8 @@
 
 package mongodb
 
+import "go.mongodb.org/mongo-driver/mongo/options"
+
 const (
 	STANDARD_FORMAT    = "standard"
 	DNSSEEDLIST_FORMAT = "mongodb+srv"
@@ -130,4 +132,38 @@ type UpdateOneContent struct {
 
 type CommandContent struct {
 	Document string
+}
+
+type AggregateOptions struct {
+	Collation *options.Collation
+	Hint      interface{}
+	BatchSize int32
+}
+
+type DistinctOptions struct {
+	Collation *options.Collation
+}
+
+type FindOneAndUpdateOptions struct {
+	Collation      *options.Collation
+	Hint           interface{}
+	ArrayFilters   []interface{}
+	Upsert         bool
+	Projection     interface{}
+	Sort           interface{}
+	ReturnDocument string
+}
+
+type UpdateManyOptions struct {
+	Collation    *options.Collation
+	Hint         interface{}
+	ArrayFilters []interface{}
+	Upsert       bool
+}
+
+type UpdateOneOptions struct {
+	Collation    *options.Collation
+	Hint         interface{}
+	ArrayFilters []interface{}
+	Upsert       bool
 }
