@@ -54,10 +54,10 @@ func (a *Connector) ListRecords() (common.RuntimeResult, error) {
 	if listConfig.FilterByFormula != "" {
 		listReqBody["filterByFormula"] = listConfig.FilterByFormula
 	}
-	if listConfig.MaxRecords > 0 {
+	if listConfig.MaxRecords > -1 {
 		listReqBody["maxRecords"] = listConfig.MaxRecords
 	}
-	if listConfig.PageSize > 0 {
+	if listConfig.PageSize > -1 {
 		listReqBody["pageSize"] = listConfig.PageSize
 	}
 	sortObjs := make([]map[string]string, 0)
