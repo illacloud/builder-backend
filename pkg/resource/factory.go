@@ -15,6 +15,7 @@
 package resource
 
 import (
+	"github.com/illacloud/builder-backend/pkg/plugins/airtable"
 	"github.com/illacloud/builder-backend/pkg/plugins/appwrite"
 	"github.com/illacloud/builder-backend/pkg/plugins/clickhouse"
 	"github.com/illacloud/builder-backend/pkg/plugins/common"
@@ -64,6 +65,7 @@ var (
 	GOOGLESHEETS_RESOURCE  = "googlesheets"
 	NEON_RESOURCE          = "neon"
 	UPSTASH_RESOURCE       = "upstash"
+	AIRTABLE_RESOURCE      = "airtable"
 )
 
 type AbstractResourceFactory interface {
@@ -136,6 +138,9 @@ func (f *Factory) Generate() common.DataConnector {
 	case GOOGLESHEETS_RESOURCE:
 		googlesheetsRsc := &googlesheets.Connector{}
 		return googlesheetsRsc
+	case AIRTABLE_RESOURCE:
+		airtableRsc := &airtable.Connector{}
+		return airtableRsc
 	default:
 		return nil
 	}
