@@ -22,6 +22,7 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/golang-jwt/jwt/v4 v4.4.3
+	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.3.0
 	github.com/google/wire v0.5.0
 	github.com/gorilla/mux v1.8.0
@@ -38,7 +39,9 @@ require (
 	github.com/stretchr/testify v1.8.1
 	go.mongodb.org/mongo-driver v1.11.1
 	go.uber.org/zap v1.24.0
+	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783
 	google.golang.org/api v0.105.0
+	google.golang.org/protobuf v1.30.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gorm.io/driver/postgres v1.4.5
 	gorm.io/gorm v1.24.2
@@ -94,11 +97,9 @@ require (
 	github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/flatbuffers v2.0.8+incompatible // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
-	github.com/google/subcommands v1.0.1 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
 	github.com/gsterjov/go-libsecret v0.0.0-20161001094733-a6f4afe4910c // indirect
@@ -141,21 +142,17 @@ require (
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.4.0 // indirect
-	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/net v0.5.0 // indirect
-	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/term v0.4.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
 	golang.org/x/time v0.1.0 // indirect
-	golang.org/x/tools v0.1.12 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/appengine/v2 v2.0.2 // indirect
 	google.golang.org/genproto v0.0.0-20221206210731-b1a01be3a5f6 // indirect
 	google.golang.org/grpc v1.51.0 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

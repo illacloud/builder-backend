@@ -25,9 +25,9 @@ import (
 	"go.uber.org/zap"
 )
 
-var type_array = [25]string{"restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb", "tidb",
+var type_array = [26]string{"restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb", "tidb",
 	"elasticsearch", "s3", "smtp", "supabasedb", "firebase", "clickhouse", "mssql", "huggingface", "dynamodb", "snowflake",
-	"couchdb", "hfendpoint", "oracle", "appwrite", "googlesheets", "neon", "upstash"}
+	"couchdb", "hfendpoint", "oracle", "appwrite", "googlesheets", "neon", "upstash", "airtable"}
 var type_map = map[string]int{
 	"restapi":       1,
 	"graphql":       2,
@@ -54,6 +54,7 @@ var type_map = map[string]int{
 	"googlesheets":  23,
 	"neon":          24,
 	"upstash":       25,
+	"airtable":      26,
 }
 
 type ResourceService interface {
@@ -72,7 +73,7 @@ type ResourceDto struct {
 	UID       uuid.UUID              `json:"uid"`
 	TeamID    int                    `json:"teamID"`
 	Name      string                 `json:"resourceName" validate:"required,min=1,max=128"`
-	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle appwrite googlesheets neon upstash"`
+	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle appwrite googlesheets neon upstash airtable"`
 	Options   map[string]interface{} `json:"content" validate:"required"`
 	CreatedAt time.Time              `json:"createdAt,omitempty"`
 	CreatedBy int                    `json:"createdBy,omitempty"`
@@ -85,7 +86,7 @@ type ResourceDtoForExport struct {
 	UID       uuid.UUID              `json:"uid"`
 	TeamID    string                 `json:"teamID"`
 	Name      string                 `json:"resourceName" validate:"required"`
-	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle appwrite googlesheets neon upstash"`
+	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle appwrite googlesheets neon upstash airtable"`
 	Options   map[string]interface{} `json:"content" validate:"required"`
 	CreatedAt time.Time              `json:"createdAt,omitempty"`
 	CreatedBy string                 `json:"createdBy,omitempty"`
