@@ -45,8 +45,8 @@ type Action struct {
 }
 
 type BaseConfig struct {
-	BaseID    string `mapstructure:"baseId" validate:"required"`
-	TableName string `mapstructure:"tableName" validate:"required"`
+	BaseID    string `mapstructure:"baseId"`
+	TableName string `mapstructure:"tableName"`
 }
 
 type ListConfig struct {
