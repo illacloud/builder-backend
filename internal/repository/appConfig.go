@@ -20,9 +20,11 @@ import (
 )
 
 const APP_CONFIG_FIELD_PUBLIC = "public"
+const APP_CONFIG_FIELD_WATER_MARK = "waterMark"
 
 type AppConfig struct {
-	Public bool `json:"public"` // switch for public app (which can view by anonymous user)
+	Public    bool `json:"public"` // switch for public app (which can view by anonymous user)
+	WaterMark bool `json:"waterMark"`
 }
 
 func (ac *AppConfig) ExportToJSONString() string {
@@ -34,6 +36,14 @@ func (ac *AppConfig) IsPublic() bool {
 	return ac.Public
 }
 
+func (ac *AppConfig) EnableWaterMark() {
+	ac.WaterMark = true
+}
+
+func (ac *AppConfig) DisableWaterMark() {
+	ac.WaterMark = false
+}
+
 func NewAppConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*AppConfig, error) {
 	var assertPass bool
 	appConfig := &AppConfig{}
@@ -41,6 +51,11 @@ func NewAppConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*AppConfi
 		switch key {
 		case APP_CONFIG_FIELD_PUBLIC:
 			appConfig.Public, assertPass = value.(bool)
+			if !assertPass {
+				return nil, errors.New("update app config failed due to assert failed.")
+			}
+		case APP_CONFIG_FIELD_WATER_MARK:
+			appConfig.WaterMark, assertPass = value.(bool)
 			if !assertPass {
 				return nil, errors.New("update app config failed due to assert failed.")
 			}
