@@ -64,3 +64,10 @@ func NewAppConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*AppConfi
 	}
 	return appConfig, nil
 }
+
+func NewAppConfigByDefault() *AppConfig {
+	return &AppConfig{
+		Public:    false,
+		WaterMark: true,
+	}
+}

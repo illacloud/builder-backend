@@ -117,6 +117,10 @@ func (a *AppDto) InitUID() {
 	a.UID = uuid.New()
 }
 
+func (a *AppDto) InitConfig() {
+	a.Config = repository.NewAppConfigByDefault()
+}
+
 func (a *AppDto) InitUpdatedAt() {
 	a.UpdatedAt = time.Now().UTC()
 }

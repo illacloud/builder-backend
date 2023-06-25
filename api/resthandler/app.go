@@ -109,6 +109,7 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 		UpdatedBy: userID,
 	}
 	appDto.InitUID()
+	appDto.InitConfig()
 
 	// Call `app service` create app
 	res, err := impl.appService.CreateApp(appDto)
