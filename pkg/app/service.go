@@ -117,6 +117,10 @@ func (a *AppDto) InitUID() {
 	a.UID = uuid.New()
 }
 
+func (a *AppDto) InitConfig() {
+	a.Config = repository.NewAppConfigByDefault()
+}
+
 func (a *AppDto) InitUpdatedAt() {
 	a.UpdatedAt = time.Now().UTC()
 }
@@ -125,6 +129,10 @@ func (a *AppDto) UpdateAppDTOConfig(appConfig *repository.AppConfig, userID int)
 	a.Config = appConfig
 	a.UpdatedBy = userID
 	a.InitUpdatedAt()
+}
+
+func (a *AppDto) ExportAppDtoConfig() *repository.AppConfig {
+	return a.Config
 }
 
 func (a *AppDto) SetTeamID(teamID int) {

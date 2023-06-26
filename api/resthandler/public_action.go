@@ -64,6 +64,22 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 	}
 	teamID := team.GetID()
 
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(ac.ANONYMOUS_AUTH_TOKEN)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_ACTION)
+	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
+	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_RUN_ACTION)
+	if errInCheckAttr != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canManage {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
 	// check if action is public action
 	if !impl.actionService.IsPublicAction(teamID, publicActionID) {
 		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this action.")
