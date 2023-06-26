@@ -5,6 +5,7 @@ import (
 )
 
 // default
+const ANONYMOUS_AUTH_TOKEN = ""
 const DEFAULT_TEAM_ID = 0
 const DEFAULT_UNIT_ID = 0
 
@@ -34,10 +35,11 @@ const (
 // User Role ID in Team
 // @note: this will extend as role system later.
 const (
-	USER_ROLE_OWNER  = 1
-	USER_ROLE_ADMIN  = 2
-	USER_ROLE_EDITOR = 3
-	USER_ROLE_VIEWER = 4
+	USER_ROLE_ANONYMOUS = -1
+	USER_ROLE_OWNER     = 1
+	USER_ROLE_ADMIN     = 2
+	USER_ROLE_EDITOR    = 3
+	USER_ROLE_VIEWER    = 4
 )
 
 // global invite permission config
