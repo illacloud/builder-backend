@@ -258,19 +258,21 @@ func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 		return
 	}
 
+	// fetch app
+	appDTO, err := impl.appService.FetchAppByID(teamID, appID)
+	if err != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+err.Error())
+		return
+	}
+
 	// update app config
-	appConfig, errInNewAppConfig := repository.NewAppConfigByConfigAppRawRequest(rawRequest)
+	appConfig, errInNewAppConfig := repository.UpdateAppConfigByConfigAppRawRequest(rawRequest, appDTO.ExportAppDtoConfig())
 	if errInNewAppConfig != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_BUILD_APP_CONFIG_FAILED, "new app config failed: "+errInNewAppConfig.Error())
 		return
 	}
 
 	// Call `app service` update app
-	appDTO, err := impl.appService.FetchAppByID(teamID, appID)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+err.Error())
-		return
-	}
 	appDTO.UpdateAppDTOConfig(appConfig, userID)
 	res, err := impl.appService.UpdateApp(appDTO)
 	if err != nil {

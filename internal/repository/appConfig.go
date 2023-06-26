@@ -44,9 +44,8 @@ func (ac *AppConfig) DisableWaterMark() {
 	ac.WaterMark = false
 }
 
-func NewAppConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*AppConfig, error) {
+func UpdateAppConfigByConfigAppRawRequest(rawReq map[string]interface{}, appConfig *AppConfig) (*AppConfig, error) {
 	var assertPass bool
-	appConfig := &AppConfig{}
 	for key, value := range rawReq {
 		switch key {
 		case APP_CONFIG_FIELD_PUBLIC:

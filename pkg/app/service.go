@@ -131,6 +131,10 @@ func (a *AppDto) UpdateAppDTOConfig(appConfig *repository.AppConfig, userID int)
 	a.InitUpdatedAt()
 }
 
+func (a *AppDto) ExportAppDtoConfig() *repository.AppConfig {
+	return a.Config
+}
+
 func (a *AppDto) SetTeamID(teamID int) {
 	a.TeamID = teamID
 }
