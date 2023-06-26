@@ -68,7 +68,7 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 	impl.AttributeGroup.Init()
 	impl.AttributeGroup.SetTeamID(teamID)
 	impl.AttributeGroup.SetUserAuthToken(ac.ANONYMOUS_AUTH_TOKEN)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_APP)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_ACTION)
 	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
 	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_RUN_ACTION)
 	if errInCheckAttr != nil {
