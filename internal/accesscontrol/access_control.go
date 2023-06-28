@@ -5,6 +5,7 @@ import (
 )
 
 // default
+const ANONYMOUS_AUTH_TOKEN = ""
 const DEFAULT_TEAM_ID = 0
 const DEFAULT_UNIT_ID = 0
 
@@ -15,29 +16,42 @@ const STATUS_SUSPEND = 3
 
 // Attirbute Unit List
 const (
-	UNIT_TYPE_TEAM              = iota + 1 // cloud team
-	UNIT_TYPE_TEAM_MEMBER                  // cloud team member
-	UNIT_TYPE_USER                         // cloud user
-	UNIT_TYPE_INVITE                       // cloud invite
-	UNIT_TYPE_DOMAIN                       // cloud domain
-	UNIT_TYPE_BILLING                      // cloud billing
-	UNIT_TYPE_BUILDER_DASHBOARD            // builder dabshboard
-	UNIT_TYPE_APP                          // builder app
-	UNIT_TYPE_COMPONENTS                   // builder components
-	UNIT_TYPE_RESOURCE                     // resource resource
-	UNIT_TYPE_ACTION                       // resource action
-	UNIT_TYPE_INTERNAL_ACTION              // internal action
-	UNIT_TYPE_TRANSFORMER                  // resource transformer
-	UNIT_TYPE_JOB                          // hub job
+	UNIT_TYPE_TEAM                      = 1  // cloud team
+	UNIT_TYPE_TEAM_MEMBER               = 2  // cloud team member
+	UNIT_TYPE_USER                      = 3  // cloud user
+	UNIT_TYPE_INVITE                    = 4  // cloud invite
+	UNIT_TYPE_DOMAIN                    = 5  // cloud domain
+	UNIT_TYPE_BILLING                   = 6  // cloud billing
+	UNIT_TYPE_BUILDER_DASHBOARD         = 7  // builder dabshboard
+	UNIT_TYPE_APP                       = 8  // builder app
+	UNIT_TYPE_COMPONENTS                = 9  // builder components
+	UNIT_TYPE_RESOURCE                  = 10 // resource resource
+	UNIT_TYPE_ACTION                    = 11 // resource action
+	UNIT_TYPE_TRANSFORMER               = 12 // resource transformer
+	UNIT_TYPE_JOB                       = 13 // hub job
+	UNIT_TYPE_TREE_STATES               = 14 // components tree states
+	UNIT_TYPE_KV_STATES                 = 15 // components k-v states
+	UNIT_TYPE_SET_STATES                = 16 // components set states
+	UNIT_TYPE_PROMOTE_CODES             = 17 // promote codes
+	UNIT_TYPE_PROMOTE_CODE_USAGES       = 18 // promote codes usage table
+	UNIT_TYPE_ROLES                     = 19 // team roles table
+	UNIT_TYPE_USER_ROLE_RELATIONS       = 20 // user role relation table
+	UNIT_TYPE_UNIT_ROLE_RELATIONS       = 21 // unit role relation table
+	UNIT_TYPE_COMPENSATING_TRANSACTIONS = 22 // compensating transactions
+	UNIT_TYPE_TRANSACTION_SERIALS       = 23 // transaction serials
+	UNIT_TYPE_CAPACITIES                = 24 // capacity
+	UNIT_TYPE_DRIVE                     = 25 // drive
+	UNIT_TYPE_PERIPHERAL_SERVICE        = 26 // Peripheral service, including sql generate, STMP etc.
 )
 
 // User Role ID in Team
 // @note: this will extend as role system later.
 const (
-	USER_ROLE_OWNER  = 1
-	USER_ROLE_ADMIN  = 2
-	USER_ROLE_EDITOR = 3
-	USER_ROLE_VIEWER = 4
+	USER_ROLE_ANONYMOUS = -1
+	USER_ROLE_OWNER     = 1
+	USER_ROLE_ADMIN     = 2
+	USER_ROLE_EDITOR    = 3
+	USER_ROLE_VIEWER    = 4
 )
 
 // global invite permission config
@@ -108,8 +122,8 @@ const (
 	ACTION_MANAGE_APP_DOMAIN  // update app domain
 
 	// Billing Attribute
-	ACTION_MANAGE_PAYMENT      // manage team payment accessbility, including subscription and payment.
-	ACTION_MANAGE_PAYMENT_INFO // manage team payment info
+	ACTION_MANAGE_PAYMENT      // manage payment, including create, update, cancel subscribe and purchase
+	ACTION_MANAGE_PAYMENT_INFO // manage team payment info, including get portal info band billing info
 
 	// Dashboard Attribute
 	ACTION_MANAGE_DASHBOARD_BROADCAST
@@ -127,6 +141,11 @@ const (
 	ACTION_MANAGE_EDIT_ACTION    // edit action
 	ACTION_MANAGE_PREVIEW_ACTION // preview action
 	ACTION_MANAGE_RUN_ACTION     // run action
+
+	// Drive Attribute
+	ACTION_MANAGE_CREATE_FILE      // create file
+	ACTION_MANAGE_EDIT_FILE        // edit file
+	ACTION_MANAGE_CREATE_SHARELINK // create sharelink
 )
 
 // action delete
@@ -150,7 +169,8 @@ const (
 	ACTION_SPECIAL_INVITE_LINK_RENEW // renew the invite link
 	// APP Attribute
 	ACTION_SPECIAL_RELEASE_APP // release APP
-
+	// SQL Generate
+	ACTION_SPECIAL_GENERATE_SQL // generate sql
 )
 
 type AttributeGroup struct {
