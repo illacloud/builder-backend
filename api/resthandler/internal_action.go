@@ -73,9 +73,9 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 	impl.AttributeGroup.Init()
 	impl.AttributeGroup.SetTeamID(teamID)
 	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_INTERNAL_ACTION)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_PERIPHERAL_SERVICE)
 	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
-	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_SPECIAL_GENERATE_SQL)
 	if errInCheckAttr != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
