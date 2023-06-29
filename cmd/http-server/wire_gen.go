@@ -75,10 +75,10 @@ func Initialize() (*Server, error) {
 	oauth2RestHandlerImpl := resthandler.NewOAuth2RestHandlerImpl(sugaredLogger, resourceServiceImpl)
 	oauth2RouterImpl := router.NewOAuth2RouterImpl(oauth2RestHandlerImpl)
 	// actions
-	actionRestHandlerImpl := resthandler.NewActionRestHandlerImpl(sugaredLogger, appServiceImpl, actionServiceImpl, attrg)
+	actionRestHandlerImpl := resthandler.NewActionRestHandlerImpl(sugaredLogger, appServiceImpl, resourceServiceImpl, actionServiceImpl, attrg)
 	actionRouterImpl := router.NewActionRouterImpl(actionRestHandlerImpl)
 	// public actions
-	publicActionRestHandlerImpl := resthandler.NewPublicActionRestHandlerImpl(sugaredLogger, actionServiceImpl, attrg)
+	publicActionRestHandlerImpl := resthandler.NewPublicActionRestHandlerImpl(sugaredLogger, appServiceImpl, resourceServiceImpl, actionServiceImpl, attrg)
 	publicActionRouterImpl := router.NewPublicActionRouterImpl(publicActionRestHandlerImpl)
 	// internalActions
 	internalActionRestHandlerImpl := resthandler.NewInternalActionRestHandlerImpl(sugaredLogger, resourceServiceImpl, attrg)
