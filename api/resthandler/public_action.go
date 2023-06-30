@@ -103,8 +103,15 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 	}
 	act := actForExport.ExportActionDto()
 
+	// fetch data
+	actionDto, err := impl.actionService.GetAction(teamID, publicActionID)
+	if err != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action error: "+err.Error())
+		return
+	}
+
 	// fetch app
-	appDTO, errInGetApp := impl.appService.FetchAppByID(teamID, act.App)
+	appDTO, errInGetApp := impl.appService.FetchAppByID(teamID, actionDto.ExportActionDto().App)
 	if errInGetApp != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+errInGetApp.Error())
 		return
