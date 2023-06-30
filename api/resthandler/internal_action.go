@@ -20,6 +20,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
+	"github.com/illacloud/builder-backend/internal/auditlogger"
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/internal/tokenvalidator"
 	"github.com/illacloud/builder-backend/pkg/resource"
@@ -50,7 +51,8 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetAuthToken != nil {
+	userID, errInGetUserID := GetUserIDFromAuth(c)
+	if errInGetTeamID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
 	}
 
@@ -103,6 +105,17 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
+
+	// audit log
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType: auditlogger.AUDIT_LOG_TRIGGER_TASK,
+		TeamID:    teamID,
+		UserID:    userID,
+		IP:        c.ClientIP(),
+		TaskName:  auditlogger.TASK_GENERATE_SQL,
+		TaskInput: map[string]interface{}{"content": req.Description},
+	})
 
 	// fetch resource
 	resource, errInGetResource := impl.ResourceService.GetResource(teamID, resourceID)

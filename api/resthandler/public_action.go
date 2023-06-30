@@ -23,8 +23,11 @@ import (
 	"strings"
 
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
+	"github.com/illacloud/builder-backend/internal/auditlogger"
 	dc "github.com/illacloud/builder-backend/internal/datacontrol"
 	"github.com/illacloud/builder-backend/pkg/action"
+	"github.com/illacloud/builder-backend/pkg/app"
+	"github.com/illacloud/builder-backend/pkg/resource"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -35,16 +38,21 @@ type PublicActionRestHandler interface {
 }
 
 type PublicActionRestHandlerImpl struct {
-	logger         *zap.SugaredLogger
-	actionService  action.ActionService
-	AttributeGroup *ac.AttributeGroup
+	logger          *zap.SugaredLogger
+	appService      app.AppService
+	resourceService resource.ResourceService
+	actionService   action.ActionService
+	AttributeGroup  *ac.AttributeGroup
 }
 
-func NewPublicActionRestHandlerImpl(logger *zap.SugaredLogger, actionService action.ActionService, attrg *ac.AttributeGroup) *PublicActionRestHandlerImpl {
+func NewPublicActionRestHandlerImpl(logger *zap.SugaredLogger, appService app.AppService, resourceService resource.ResourceService,
+	actionService action.ActionService, attrg *ac.AttributeGroup) *PublicActionRestHandlerImpl {
 	return &PublicActionRestHandlerImpl{
-		logger:         logger,
-		actionService:  actionService,
-		AttributeGroup: attrg,
+		logger:          logger,
+		appService:      appService,
+		resourceService: resourceService,
+		actionService:   actionService,
+		AttributeGroup:  attrg,
 	}
 }
 
@@ -52,7 +60,8 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 	// fetch needed param
 	teamIdentifier, errInGetTeamIdentifier := GetStringParamFromRequest(c, PARAM_TEAM_IDENTIFIER)
 	publicActionID, errInGetPublicActionID := GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
-	if errInGetTeamIdentifier != nil || errInGetPublicActionID != nil {
+	appID, errInGetAppID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	if errInGetTeamIdentifier != nil || errInGetPublicActionID != nil || errInGetAppID != nil {
 		return
 	}
 
@@ -94,6 +103,34 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 		return
 	}
 	act := actForExport.ExportActionDto()
+
+	// fetch app
+	appDTO, _ := impl.appService.FetchAppByID(teamID, appID)
+
+	// fetch resource data
+	rsc, errInGetRSC := impl.resourceService.GetResource(teamID, act.Resource)
+	if errInGetRSC != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resource error: "+errInGetRSC.Error())
+		return
+	}
+
+	// audit log
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType:       auditlogger.AUDIT_LOG_RUN_ACTION,
+		TeamID:          teamID,
+		UserID:          -1,
+		IP:              c.ClientIP(),
+		AppID:           appID,
+		AppName:         appDTO.Name,
+		ResourceID:      act.Resource,
+		ResourceName:    rsc.Name,
+		ResourceType:    rsc.Type,
+		ActionID:        act.ID,
+		ActionName:      act.DisplayName,
+		ActionParameter: act.Template,
+	})
+
 	res, err := impl.actionService.RunAction(teamID, act)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Error 1064:") {

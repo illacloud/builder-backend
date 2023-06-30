@@ -142,6 +142,9 @@ func (resp *ActionDtoForExport) ExportActionDto() ActionDto {
 		UpdatedAt:   resp.UpdatedAt,
 	}
 	// fill converted fields
+	if resp.App != "" {
+		actionDto.App = idconvertor.ConvertStringToInt(resp.App)
+	}
 	if resp.ID != "" {
 		actionDto.ID = idconvertor.ConvertStringToInt(resp.ID)
 	}
