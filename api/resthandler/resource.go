@@ -24,6 +24,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
+	"github.com/illacloud/builder-backend/internal/auditlogger"
 	"github.com/illacloud/builder-backend/internal/idconvertor"
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/resource"
@@ -150,6 +151,18 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 		return
 	}
 
+	// audit log
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType:    auditlogger.AUDIT_LOG_CREATE_RESOURCE,
+		TeamID:       teamID,
+		UserID:       userID,
+		IP:           c.ClientIP(),
+		ResourceID:   idconvertor.ConvertStringToInt(res.ID),
+		ResourceName: res.Name,
+		ResourceType: res.Type,
+	})
+
 	// feedback
 	FeedbackOK(c, res)
 	return
@@ -249,6 +262,18 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 	res.CreatedAt = originInfo.CreatedAt
 	res.CreatedBy = originInfo.CreatedBy
 
+	// audit log
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType:    auditlogger.AUDIT_LOG_UPDATE_RESOURCE,
+		TeamID:       teamID,
+		UserID:       userID,
+		IP:           c.ClientIP(),
+		ResourceID:   rsc.ID,
+		ResourceName: res.Name,
+		ResourceType: res.Type,
+	})
+
 	// feedback
 	FeedbackOK(c, res)
 	return
@@ -259,7 +284,8 @@ func (impl ResourceRestHandlerImpl) DeleteResource(c *gin.Context) {
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetAuthToken != nil {
+	userID, errInGetUserID := GetUserIDFromAuth(c)
+	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
 	}
 
@@ -278,6 +304,25 @@ func (impl ResourceRestHandlerImpl) DeleteResource(c *gin.Context) {
 		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
+
+	// fetch data
+	res, err := impl.resourceService.GetResource(teamID, resourceID)
+	if err != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
+		return
+	}
+
+	// audit log
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType:    auditlogger.AUDIT_LOG_DELETE_RESOURCE,
+		TeamID:       teamID,
+		UserID:       userID,
+		IP:           c.ClientIP(),
+		ResourceID:   resourceID,
+		ResourceName: res.Name,
+		ResourceType: res.Type,
+	})
 
 	if err := impl.resourceService.DeleteResource(teamID, resourceID); err != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_DELETE_RESOURCE, "delete resources error: "+err.Error())

@@ -19,6 +19,8 @@ import (
 	"net/http"
 
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
+	"github.com/illacloud/builder-backend/internal/auditlogger"
+	"github.com/illacloud/builder-backend/internal/idconvertor"
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/action"
 	"github.com/illacloud/builder-backend/pkg/app"
@@ -118,6 +120,17 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 		return
 	}
 
+	// audit log
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType: auditlogger.AUDIT_LOG_CREATE_APP,
+		TeamID:    teamID,
+		UserID:    userID,
+		IP:        c.ClientIP(),
+		AppID:     res.ID,
+		AppName:   res.Name,
+	})
+
 	if len(payload.InitScheme) > 0 {
 		for _, v := range payload.InitScheme {
 			componentTree := repository.ConstructComponentNodeByMap(v)
@@ -135,7 +148,8 @@ func (impl AppRestHandlerImpl) DeleteApp(c *gin.Context) {
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
+	userID, errInGetUserID := GetUserIDFromAuth(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
 	}
 
@@ -154,6 +168,24 @@ func (impl AppRestHandlerImpl) DeleteApp(c *gin.Context) {
 		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
+
+	// fetch app
+	appDTO, err := impl.appService.FetchAppByID(teamID, appID)
+	if err != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+err.Error())
+		return
+	}
+
+	// audit log
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType: auditlogger.AUDIT_LOG_DELETE_APP,
+		TeamID:    teamID,
+		UserID:    userID,
+		IP:        c.ClientIP(),
+		AppID:     appID,
+		AppName:   appDTO.Name,
+	})
 
 	// Call `app service` delete app
 	if err := impl.appService.DeleteApp(teamID, appID); err != nil {
@@ -205,6 +237,17 @@ func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
 		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
+
+	// audit log
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType: auditlogger.AUDIT_LOG_EDIT_APP,
+		TeamID:    teamID,
+		UserID:    userID,
+		IP:        c.ClientIP(),
+		AppID:     appID,
+		AppName:   payload.Name,
+	})
 
 	// Call `app service` update app
 	appDTO, err := impl.appService.FetchAppByID(teamID, appID)
@@ -337,7 +380,8 @@ func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	version, errInGetVersion := GetIntParamFromRequest(c, PARAM_VERSION)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetVersion != nil || errInGetAuthToken != nil {
+	userID, errInGetUserID := GetUserIDFromAuth(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetVersion != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
 	}
 
@@ -367,6 +411,21 @@ func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app mega data error: "+err.Error())
 		return
 	}
+
+	// audit log
+	eventType := auditlogger.AUDIT_LOG_VIEW_APP
+	if version == 0 {
+		eventType = auditlogger.AUDIT_LOG_EDIT_APP
+	}
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType: eventType,
+		TeamID:    teamID,
+		UserID:    userID,
+		IP:        c.ClientIP(),
+		AppID:     appID,
+		AppName:   res.AppInfo.Name,
+	})
 
 	// feedback
 	FeedbackOK(c, res)
@@ -419,6 +478,18 @@ func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_DUPLICATE_APP, "duplicate app error: "+err.Error())
 		return
 	}
+
+	// audit log
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType: auditlogger.AUDIT_LOG_CREATE_APP,
+		TeamID:    teamID,
+		UserID:    userID,
+		IP:        c.ClientIP(),
+		AppID:     idconvertor.ConvertStringToInt(res.ID),
+		AppName:   res.Name,
+	})
+
 	// feedback
 	FeedbackOK(c, res)
 	return
@@ -429,7 +500,8 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
+	userID, errInGetUserID := GetUserIDFromAuth(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
 	}
 
@@ -448,6 +520,24 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
+
+	// fetch app
+	appDTO, err := impl.appService.FetchAppByID(teamID, appID)
+	if err != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+err.Error())
+		return
+	}
+
+	// audit log
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType: auditlogger.AUDIT_LOG_DEPLOY_APP,
+		TeamID:    teamID,
+		UserID:    userID,
+		IP:        c.ClientIP(),
+		AppID:     appID,
+		AppName:   appDTO.Name,
+	})
 
 	// Call `app service` to release app
 	version, err := impl.appService.ReleaseApp(teamID, appID)
