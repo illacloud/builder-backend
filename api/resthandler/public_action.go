@@ -60,7 +60,8 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 	// fetch needed param
 	teamIdentifier, errInGetTeamIdentifier := GetStringParamFromRequest(c, PARAM_TEAM_IDENTIFIER)
 	publicActionID, errInGetPublicActionID := GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
-	if errInGetTeamIdentifier != nil || errInGetPublicActionID != nil {
+	appID, errInGetAppID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	if errInGetTeamIdentifier != nil || errInGetPublicActionID != nil || errInGetAppID != nil {
 		return
 	}
 
@@ -103,24 +104,13 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 	}
 	act := actForExport.ExportActionDto()
 
-	// fetch data
-	actionDto, err := impl.actionService.GetAction(teamID, publicActionID)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action error: "+err.Error())
-		return
-	}
-
 	// fetch app
-	appDTO, errInGetApp := impl.appService.FetchAppByID(teamID, actionDto.ExportActionDto().App)
-	if errInGetApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+errInGetApp.Error())
-		return
-	}
+	appDTO, _ := impl.appService.FetchAppByID(teamID, appID)
 
 	// fetch resource data
 	rsc, errInGetRSC := impl.resourceService.GetResource(teamID, act.Resource)
 	if errInGetRSC != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+errInGetRSC.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+errInGetRSC.Error())
 		return
 	}
 
@@ -131,7 +121,7 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 		TeamID:          teamID,
 		UserID:          -1,
 		IP:              c.ClientIP(),
-		AppID:           act.App,
+		AppID:           appID,
 		AppName:         appDTO.Name,
 		ResourceID:      act.Resource,
 		ResourceName:    rsc.Name,
