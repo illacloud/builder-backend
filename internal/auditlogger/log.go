@@ -16,6 +16,7 @@ package auditlogger
 
 import (
 	"encoding/json"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -174,6 +175,9 @@ func anonymousUser() *UserInfo {
 }
 
 func (a *AuditLogger) Log(logInfo *LogInfo) {
+	if os.Getenv("ILLA_DEPLOY_MODE") != ILLA_DEPLOY_MODE_CLOUD {
+		return
+	}
 	// Get teamName via teamId
 	teamName := a.getTeamName(logInfo.TeamID)
 
