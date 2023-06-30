@@ -16,6 +16,7 @@ package resthandler
 
 import (
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
+	"github.com/illacloud/builder-backend/internal/auditlogger"
 	dc "github.com/illacloud/builder-backend/internal/datacontrol"
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/app"
@@ -101,6 +102,17 @@ func (impl PublicAppRestHandlerImpl) GetMegaData(c *gin.Context) {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get publicApp mega data error: "+err.Error())
 		return
 	}
+
+	// audit log
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType: auditlogger.AUDIT_LOG_VIEW_APP,
+		TeamID:    teamID,
+		UserID:    -1,
+		IP:        c.ClientIP(),
+		AppID:     publicAppID,
+		AppName:   res.AppInfo.Name,
+	})
 
 	// feedback
 	FeedbackOK(c, res)
