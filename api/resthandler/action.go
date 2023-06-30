@@ -394,11 +394,7 @@ func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 	act := actForExport.ExportActionDto()
 
 	// fetch app
-	appDTO, errInGetApp := impl.appService.FetchAppByID(teamID, appID)
-	if errInGetApp != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+errInGetApp.Error())
-		return
-	}
+	appDTO, _ := impl.appService.FetchAppByID(teamID, appID)
 
 	// fetch resource data
 	rsc, errInGetRSC := impl.resourceService.GetResource(teamID, act.Resource)

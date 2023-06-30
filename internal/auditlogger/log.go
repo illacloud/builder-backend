@@ -193,6 +193,10 @@ func (a *AuditLogger) Log(logInfo *LogInfo) {
 	contextData := make(map[string]interface{})
 	switch logInfo.EventType {
 	case AUDIT_LOG_CREATE_APP, AUDIT_LOG_EDIT_APP, AUDIT_LOG_DELETE_APP, AUDIT_LOG_VIEW_APP, AUDIT_LOG_DEPLOY_APP:
+		if logInfo.AppName == "" {
+			logInfo.AppID = -1
+			logInfo.AppName = "Tutorial App"
+		}
 		contextData["appInfo"] = map[string]interface{}{
 			"appId":   logInfo.AppID,
 			"appName": logInfo.AppName,
@@ -204,6 +208,10 @@ func (a *AuditLogger) Log(logInfo *LogInfo) {
 			"resourceType": logInfo.ResourceType,
 		}
 	case AUDIT_LOG_RUN_ACTION:
+		if logInfo.AppName == "" {
+			logInfo.AppID = -1
+			logInfo.AppName = "Tutorial App"
+		}
 		contextData["appInfo"] = map[string]interface{}{
 			"appId":   logInfo.AppID,
 			"appName": logInfo.AppName,
