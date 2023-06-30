@@ -39,7 +39,7 @@ const ILLA_DEPLOY_MODE_CLOUD = "cloud"
 func GetInstance() *AuditLogger {
 	once.Do(func() {
 		var err error
-		if instance == nil && os.Getenv("ILLA_DEPLOY_MODE") == ILLA_DEPLOY_MODE_CLOUD {
+		if instance == nil {
 			instance, err = getLogger() // not thread safe
 			if err != nil {
 				panic(err)
@@ -59,7 +59,7 @@ type Config struct {
 
 func getLogger() (*AuditLogger, error) {
 	if os.Getenv("ILLA_DEPLOY_MODE") != ILLA_DEPLOY_MODE_CLOUD {
-		return nil, nil
+		return &AuditLogger{db: nil}, nil
 	}
 	config := &Config{}
 	err := env.Parse(config)
