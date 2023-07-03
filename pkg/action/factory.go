@@ -67,6 +67,7 @@ var (
 	NEON_ACTION          = "neon"
 	UPSTASH_ACTION       = "upstash"
 	AIRTABLE_ACTION      = "airtable"
+	HYDRA_ACTION         = "hydra"
 )
 
 type AbstractActionFactory interface {
@@ -85,7 +86,7 @@ func (f *Factory) Build() common.DataConnector {
 	case MYSQL_ACTION, MARIADB_ACTION, TIDB_ACTION:
 		sqlAction := &mysql.MySQLConnector{}
 		return sqlAction
-	case POSTGRESQL_ACTION, SUPABASEDB_ACTION, NEON_ACTION:
+	case POSTGRESQL_ACTION, SUPABASEDB_ACTION, NEON_ACTION, HYDRA_ACTION:
 		pgsAction := &postgresql.Connector{}
 		return pgsAction
 	case REDIS_ACTION, UPSTASH_ACTION:
