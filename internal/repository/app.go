@@ -19,8 +19,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 const APP_EDIT_VERSION = 0           // the editable version app ID always be 0
@@ -34,10 +32,11 @@ type App struct {
 	ReleaseVersion  int       `json:"releaseVersion" 	gorm:"column:release_version;type:bigserial"`
 	MainlineVersion int       `json:"mainlineVersion" 	gorm:"column:mainline_version;type:bigserial"`
 	Config          string    `json:"config" 	        gorm:"column:config;type:jsonb"`
-	CreatedAt       time.Time `json:"created_at" 		gorm:"column:created_at;type:timestamp"`
-	CreatedBy       int       `json:"created_by" 		gorm:"column:created_by;type:bigserial"`
-	UpdatedAt       time.Time `json:"updated_at" 		gorm:"column:updated_at;type:timestamp"`
-	UpdatedBy       int       `json:"updated_by" 		gorm:"column:updated_by;type:bigserial"`
+	CreatedAt       time.Time `json:"createdAt" 		gorm:"column:created_at;type:timestamp"`
+	CreatedBy       int       `json:"createdBy" 		gorm:"column:created_by;type:bigserial"`
+	UpdatedAt       time.Time `json:"updatedAt" 		gorm:"column:updated_at;type:timestamp"`
+	UpdatedBy       int       `json:"updatedBy" 		gorm:"column:updated_by;type:bigserial"`
+	EditedBy        string    `json:"editedBy"          gorm:"column:edited_by;type:jsonb"`
 }
 
 func (app *App) UpdateAppConfig(appConfig *AppConfig, userID int) {
@@ -79,104 +78,16 @@ func (app *App) SetPrivate(userID int) {
 	app.InitUpdatedAt()
 }
 
-type AppRepository interface {
-	Create(app *App) (int, error)
-	Delete(teamID int, appID int) error
-	Update(app *App) error
-	UpdateUpdatedAt(app *App) error
-	RetrieveAll(teamID int) ([]*App, error)
-	RetrieveAppByIDAndTeamID(appID int, teamID int) (*App, error)
-	RetrieveAllByUpdatedTime(teamID int) ([]*App, error)
-	CountAPPByTeamID(teamID int) (int, error)
-	RetrieveAppLastModifiedTime(teamID int) (time.Time, error)
-}
-
-type AppRepositoryImpl struct {
-	logger *zap.SugaredLogger
-	db     *gorm.DB
-}
-
-func NewAppRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *AppRepositoryImpl {
-	return &AppRepositoryImpl{
-		logger: logger,
-		db:     db,
+func (app *App) ExportModifiedAllUserIDs() []int {
+	ret := make([]int , 0)
+	appEditedBys := make([]*AppEditedBy, 0)
+	json.Unmarshal([]byte(app.EditedBy), &appEditedBys)
+	if len(appEditedBys) == 0 {
+		return ret
 	}
-}
-
-func (impl *AppRepositoryImpl) Create(app *App) (int, error) {
-	if err := impl.db.Create(app).Error; err != nil {
-		return 0, err
+	// pick up user ids
+	for _, appEditedBy := appEditedBys {
+		ret = append(ret, appEditedBy.UserID)
 	}
-	return app.ID, nil
-}
-
-func (impl *AppRepositoryImpl) Delete(teamID int, appID int) error {
-	if err := impl.db.Where("team_id = ? AND id = ?", teamID, appID).Delete(&App{}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (impl *AppRepositoryImpl) Update(app *App) error {
-	if err := impl.db.Model(app).UpdateColumns(App{
-		Name:            app.Name,
-		ReleaseVersion:  app.ReleaseVersion,
-		MainlineVersion: app.MainlineVersion,
-		Config:          app.Config,
-		UpdatedBy:       app.UpdatedBy,
-		UpdatedAt:       app.UpdatedAt,
-	}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (impl *AppRepositoryImpl) RetrieveAll(teamID int) ([]*App, error) {
-	var apps []*App
-	if err := impl.db.Where("team_id = ?", teamID).Find(&apps).Error; err != nil {
-		return nil, err
-	}
-	return apps, nil
-}
-
-func (impl *AppRepositoryImpl) RetrieveAppByIDAndTeamID(appID int, teamID int) (*App, error) {
-	var app *App
-	if err := impl.db.Where("id = ? AND team_id = ?", appID, teamID).Find(&app).Error; err != nil {
-		return nil, err
-	}
-	return app, nil
-}
-
-func (impl *AppRepositoryImpl) RetrieveAllByUpdatedTime(teamID int) ([]*App, error) {
-	var apps []*App
-	if err := impl.db.Where("team_id = ?", teamID).Order("updated_at desc").Find(&apps).Error; err != nil {
-		return nil, err
-	}
-	return apps, nil
-}
-
-func (impl *AppRepositoryImpl) UpdateUpdatedAt(app *App) error {
-	if err := impl.db.Model(app).UpdateColumns(App{
-		UpdatedBy: app.UpdatedBy,
-		UpdatedAt: app.UpdatedAt,
-	}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (impl *AppRepositoryImpl) CountAPPByTeamID(teamID int) (int, error) {
-	var count int64
-	if err := impl.db.Model(&App{}).Where("team_id = ?", teamID).Count(&count).Error; err != nil {
-		return 0, err
-	}
-	return int(count), nil
-}
-
-func (impl *AppRepositoryImpl) RetrieveAppLastModifiedTime(teamID int) (time.Time, error) {
-	var app *App
-	if err := impl.db.Where("team_id = ?", teamID).Order("updated_at desc").First(&app).Error; err != nil {
-		return time.Time{}, err
-	}
-	return app.ExportUpdatedAt(), nil
+	return ret
 }

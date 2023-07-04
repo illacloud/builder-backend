@@ -2,6 +2,7 @@ package repository
 
 import (
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,6 +29,10 @@ type RawUser struct {
 	UpdatedAt      time.Time `gorm:"column:updated_at;type:timestamp"`
 }
 
+type RawUsers struct {
+	Users map[string]*RawUser `json:"users"`
+}
+
 type User struct {
 	ID             int       `json:"id" gorm:"column:id;type:bigserial;primary_key;index:users_ukey"`
 	UID            uuid.UUID `json:"uid" gorm:"column:uid;type:uuid;not null;index:users_ukey"`
@@ -39,6 +44,14 @@ type User struct {
 	Customization  string    `json:"customization" gorm:"column:customization;type:jsonb"` // for user itself customization config, including: Language, IsSubscribed
 	CreatedAt      time.Time `gorm:"column:created_at;type:timestamp"`
 	UpdatedAt      time.Time `gorm:"column:updated_at;type:timestamp"`
+}
+
+type UserForEditedBy struct {
+	ID       int       `json:"id"`
+	Nickname string    `json:"nickname"`
+	Email    string    `json:"email"`
+	Avatar   string    `json:"avatar"`
+	EditedAt time.Time `json:"editedAt"`
 }
 
 func NewUser(u *RawUser) *User {
@@ -56,6 +69,25 @@ func NewUser(u *RawUser) *User {
 	}
 }
 
+func NewInvaliedUser() *User {
+	return &User{
+		ID:       -1,
+		Nickname: "invalied",
+		Email:    "invalied",
+		Avatar:   "invalied",
+	}
+}
+
+func NewUserForEditedBy(user *User, editedBy time.Time) *UserForEditedBy {
+	return &UserForEditedBy{
+		ID:       user.ID,
+		Nickname: user.Nickname,
+		Email:    user.Email,
+		Avatar:   user.Avatar,
+		EditedAt: editedBy,
+	}
+}
+
 func NewUserByDataControlRawData(rawUserString string) (*User, error) {
 	rawUser := RawUser{}
 	errInUnmarshal := json.Unmarshal([]byte(rawUserString), &rawUser)
@@ -63,6 +95,20 @@ func NewUserByDataControlRawData(rawUserString string) (*User, error) {
 		return nil, errInUnmarshal
 	}
 	return NewUser(&rawUser), nil
+}
+
+func NewUsersByDataControlRawData(rawUsersString string) (map[int]*User, error) {
+	RawUsers := RawUsers{}
+	errInUnmarshal := json.Unmarshal([]byte(rawUsersString), &RawUsers)
+	if errInUnmarshal != nil {
+		return nil, errInUnmarshal
+	}
+	usersRet := make(map[int]*User, len(RawUsers.Users))
+	for userIDString, rawUser := range RawUsers.Users {
+		userIDInt, _ := strconv.Atoi(userIDString)
+		usersRet[userIDInt] = NewUser(rawUser)
+	}
+	return usersRet, nil
 }
 
 func (u *User) ExportIDToString() string {

@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
+	"github.com/illacloud/builder-backend/internal/datacontrol"
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/action"
 	"github.com/illacloud/builder-backend/pkg/app"
@@ -48,6 +49,7 @@ type AppRestHandler interface {
 type AppRestHandlerImpl struct {
 	logger           *zap.SugaredLogger
 	appService       app.AppService
+	appRepository    repository.AppRepository
 	actionService    action.ActionService
 	AttributeGroup   *ac.AttributeGroup
 	treeStateService state.TreeStateService
@@ -214,6 +216,9 @@ func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
 	}
 	appDTO.Name = payload.Name
 	appDTO.UpdatedBy = userID
+	// construct editedBy
+	appEditedBy := repository.NewAppEditedByUser(user)
+	app.AddEditedBy(appEditedBy)
 	res, err := impl.appService.UpdateApp(appDTO)
 	if err != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "rename app error: "+err.Error())
@@ -320,7 +325,59 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 		return
 	}
 
-	// Call `app service` get all apps
+	// get all apps
+	allApps, errInRetrieveAllApps := impl.appRepository.RetrieveAllByUpdatedTime(teamID)
+	if errInRetrieveAllApps != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get apps by team id failed: "+errInRetrieveAllApps.Error())
+		return
+	}
+
+	// extract all target user id from apps
+	allUserIDsHashT := make(map[int]int, 0)
+	allUserIDs := make([]int, 0)
+	for _, app := range allApps {
+		ids := app.ExportModifiedAllUserIDs()
+		for _, id := range ids {
+			allUserIDsHashT[id] = id
+		}
+	}
+	for _, id := range allUserIDsHashT {
+		allUserIDs = append(allUserIDs, id)
+	}
+
+	// fet all user id mapped user info, and build user info lookup table
+	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
+	if errInGetMultiUserInfo != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+		return
+	}
+
+	AppDtoForExportSlice := make([]*app.AppDtoForExport, 0, len(allApps))
+	for _, value := range allApps {
+		// fetch user remote data
+		user, errInGetUserInfo := datacontrol.GetUserInfo(value.UpdatedBy)
+		if errInGetUserInfo != nil {
+			return nil, errInGetUserInfo
+		}
+		// fill data
+		appDto := AppDto{
+			ID:              value.ID,
+			UID:             value.UID,
+			TeamID:          value.TeamID,
+			Name:            value.Name,
+			ReleaseVersion:  value.ReleaseVersion,
+			MainlineVersion: value.MainlineVersion,
+			Config:          value.ExportConfig(),
+			UpdatedAt:       value.UpdatedAt,
+			UpdatedBy:       value.UpdatedBy,
+			AppActivity: AppActivity{
+				Modifier:   user.Nickname,
+				ModifiedAt: value.UpdatedAt,
+			},
+		}
+		AppDtoForExportSlice = append(AppDtoForExportSlice, NewAppDtoForExport(&appDto))
+
+	}
 	res, err := impl.appService.GetAllApps(teamID)
 	if err != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "get all apps error: "+err.Error())
@@ -433,6 +490,15 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 		return
 	}
 
+	// get request body
+	var rawRequest map[string]interface{}
+	public := false
+	json.NewDecoder(c.Request.Body).Decode(&rawRequest)
+	isPublicRaw, hitIsPublic := rawRequest["public"]
+	if hitIsPublic {
+		public = isPublicRaw.(bool)
+	}
+
 	// validate
 	impl.AttributeGroup.Init()
 	impl.AttributeGroup.SetTeamID(teamID)
@@ -450,7 +516,7 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	}
 
 	// Call `app service` to release app
-	version, err := impl.appService.ReleaseApp(teamID, appID)
+	version, err := impl.appService.ReleaseApp(teamID, appID, public)
 	if err != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_RELEASE_APP, "release app error: "+err.Error())
 		return

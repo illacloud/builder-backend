@@ -1,6 +1,9 @@
 package datacontrol
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/illacloud/builder-backend/internal/repository"
 
 	supervisior "github.com/illacloud/builder-backend/internal/util/supervisior"
@@ -25,6 +28,34 @@ func GetUserInfo(targetUserID int) (*repository.User, error) {
 		return nil, errInNewUser
 	}
 	return user, nil
+}
+
+func GetMultiUserInfo(targetUserIDs []int) (map[int]*repository.User, error) {
+	// init sdk
+	instance, err := supervisior.NewSupervisior()
+	if err != nil {
+		return nil, err
+	}
+
+	// convert to query param
+	targetUserIDsInString := make([]string, len(targetUserIDs))
+	for _, userIDInt := range targetUserIDs {
+		targetUserIDsInString = append(targetUserIDsInString, strconv.Itoa(userIDInt))
+	}
+	requestParams := strings.Join(targetUserIDsInString, ",")
+
+	// fetch raw data
+	usersRaw, errInGetTargetUser := instance.GetMultiUser(requestParams)
+	if errInGetTargetUser != nil {
+		return nil, errInGetTargetUser
+	}
+
+	// construct
+	users, errInNewUsers := repository.NewUsersByDataControlRawData(usersRaw)
+	if errInNewUsers != nil {
+		return nil, errInNewUsers
+	}
+	return users, nil
 }
 
 func GetTeamInfoByIdentifier(targetTeamIdentifier string) (*repository.Team, error) {
