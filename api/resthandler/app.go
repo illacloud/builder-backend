@@ -168,68 +168,6 @@ func (impl AppRestHandlerImpl) DeleteApp(c *gin.Context) {
 	return
 }
 
-func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
-	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
-	userID, errInGetUserID := GetUserIDFromAuth(c)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
-		return
-	}
-
-	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_APP)
-	impl.AttributeGroup.SetUnitID(appID)
-	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_APP)
-	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
-		return
-	}
-	if !canManage {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
-		return
-	}
-
-	// Parse request body
-	var payload AppRequest
-	if err := json.NewDecoder(c.Request.Body).Decode(&payload); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
-		return
-	}
-
-	// Validate request body
-	validate := validator.New()
-	if err := validate.Struct(payload); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
-		return
-	}
-
-	// Call `app service` update app
-	appDTO, err := impl.appService.FetchAppByID(teamID, appID)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+err.Error())
-		return
-	}
-	appDTO.Name = payload.Name
-	appDTO.UpdatedBy = userID
-	// construct editedBy
-	appEditedBy := repository.NewAppEditedByUser(user)
-	app.AddEditedBy(appEditedBy)
-	res, err := impl.appService.UpdateApp(appDTO)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "rename app error: "+err.Error())
-		return
-	}
-
-	// feedback
-	FeedbackOK(c, res)
-	return
-}
-
 func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
@@ -279,6 +217,7 @@ func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 
 	// Call `app service` update app
 	appDTO.UpdateAppDTOConfig(appConfig, userID)
+	appDTO.UpdateAppDtoByConfigAppRawRequest(rawRequest)
 	res, err := impl.appService.UpdateApp(appDTO)
 	if err != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "config app error: "+err.Error())
