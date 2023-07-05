@@ -291,13 +291,9 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 		return
 	}
 
+	// construct return data structure
 	AppDtoForExportSlice := make([]*app.AppDtoForExport, 0, len(allApps))
 	for _, value := range allApps {
-		// fetch user remote data
-		user, errInGetUserInfo := datacontrol.GetUserInfo(value.UpdatedBy)
-		if errInGetUserInfo != nil {
-			return nil, errInGetUserInfo
-		}
 		// fill data
 		appDto := AppDto{
 			ID:              value.ID,
@@ -317,14 +313,9 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 		AppDtoForExportSlice = append(AppDtoForExportSlice, NewAppDtoForExport(&appDto))
 
 	}
-	res, err := impl.appService.GetAllApps(teamID)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "get all apps error: "+err.Error())
-		return
-	}
 
 	// feedback
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, AppDtoForExportSlice)
 }
 
 func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
@@ -425,17 +416,18 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
+	userID, errInGetUserID := GetUserIDFromAuth(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
 	}
 
 	// get request body
 	var rawRequest map[string]interface{}
-	public := false
+	publicApp := false
 	json.NewDecoder(c.Request.Body).Decode(&rawRequest)
 	isPublicRaw, hitIsPublic := rawRequest["public"]
 	if hitIsPublic {
-		public = isPublicRaw.(bool)
+		publicApp = isPublicRaw.(bool)
 	}
 
 	// validate
@@ -455,7 +447,7 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	}
 
 	// Call `app service` to release app
-	version, err := impl.appService.ReleaseApp(teamID, appID, public)
+	version, err := impl.appService.ReleaseApp(teamID, appID, userID, publicApp)
 	if err != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_RELEASE_APP, "release app error: "+err.Error())
 		return
