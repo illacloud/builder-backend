@@ -271,18 +271,8 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 		return
 	}
 
-	// extract all target user id from apps
-	allUserIDsHashT := make(map[int]int, 0)
-	allUserIDs := make([]int, 0)
-	for _, app := range allApps {
-		ids := app.ExportModifiedAllUserIDs()
-		for _, id := range ids {
-			allUserIDsHashT[id] = id
-		}
-	}
-	for _, id := range allUserIDsHashT {
-		allUserIDs = append(allUserIDs, id)
-	}
+	// get all modifier user ids from all apps
+	allUserIDs := repository.ExtractAllEditorIDFromApps(allApps)
 
 	// fet all user id mapped user info, and build user info lookup table
 	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
@@ -292,30 +282,10 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 	}
 
 	// construct return data structure
-	AppDtoForExportSlice := make([]*app.AppDtoForExport, 0, len(allApps))
-	for _, value := range allApps {
-		// fill data
-		appDto := AppDto{
-			ID:              value.ID,
-			UID:             value.UID,
-			TeamID:          value.TeamID,
-			Name:            value.Name,
-			ReleaseVersion:  value.ReleaseVersion,
-			MainlineVersion: value.MainlineVersion,
-			Config:          value.ExportConfig(),
-			UpdatedAt:       value.UpdatedAt,
-			UpdatedBy:       value.UpdatedBy,
-			AppActivity: AppActivity{
-				Modifier:   user.Nickname,
-				ModifiedAt: value.UpdatedAt,
-			},
-		}
-		AppDtoForExportSlice = append(AppDtoForExportSlice, NewAppDtoForExport(&appDto))
-
-	}
+	appsForExport := repository.GenerateGetAllAppsResponse(allApps, usersLT)
 
 	// feedback
-	c.JSON(http.StatusOK, AppDtoForExportSlice)
+	c.JSON(http.StatusOK, appsForExport)
 }
 
 func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {

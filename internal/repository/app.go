@@ -16,6 +16,7 @@ package repository
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -81,22 +82,31 @@ func (app *App) SetPrivate(userID int) {
 	app.InitUpdatedAt()
 }
 
+func (app *App) ExportUpdatedBy() int {
+	return app.UpdatedBy
+}
+
 func (app *App) ExportModifiedAllUserIDs() []int {
-	ret := make([]int , 0)
+	ret := make([]int, 0)
 	appEditedBys := make([]*AppEditedBy, 0)
 	json.Unmarshal([]byte(app.EditedBy), &appEditedBys)
 	if len(appEditedBys) == 0 {
 		return ret
 	}
 	// pick up user ids
-	for _, appEditedBy := appEditedBys {
+	for _, appEditedBy := range appEditedBys {
 		ret = append(ret, appEditedBy.UserID)
 	}
 	return ret
 }
 
+func (app *App) ExportEditedBy() []*AppEditedBy {
+	appEditedBys := make([]*AppEditedBy, 0)
+	json.Unmarshal([]byte(app.EditedBy), &appEditedBys)
+	return appEditedBys
+}
 
-func (app *App) UpdateAppByConfigAppRawRequest(rawReq map[string]interface{}) (error) {
+func (app *App) UpdateAppByConfigAppRawRequest(rawReq map[string]interface{}) error {
 	var assertPass bool
 	for key, value := range rawReq {
 		switch key {
@@ -109,4 +119,20 @@ func (app *App) UpdateAppByConfigAppRawRequest(rawReq map[string]interface{}) (e
 		}
 	}
 	return nil
+}
+
+func ExtractAllEditorIDFromApps(apps []*App) []int {
+	// extract all target user id from apps
+	allUserIDsHashT := make(map[int]int, 0)
+	allUserIDs := make([]int, 0)
+	for _, app := range apps {
+		ids := app.ExportModifiedAllUserIDs()
+		for _, id := range ids {
+			allUserIDsHashT[id] = id
+		}
+	}
+	for _, id := range allUserIDsHashT {
+		allUserIDs = append(allUserIDs, id)
+	}
+	return allUserIDs
 }

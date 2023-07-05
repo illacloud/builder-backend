@@ -15,6 +15,7 @@ type AppDtoForExport struct {
 	Name            string                        `json:"appName" validate:"required"`
 	ReleaseVersion  int                           `json:"releaseVersion"`  // release version used for mark the app release version.
 	MainlineVersion int                           `json:"mainlineVersion"` // mainline version keep the newest app version in database.
+	Deployed        bool                          `json:"deployed"`
 	Config          *repository.AppConfig         `json:"config"`
 	CreatedBy       string                        `json:"-" `
 	CreatedAt       time.Time                     `json:"-"`
