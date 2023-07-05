@@ -31,6 +31,13 @@ func NewAppEditedByUser(user *User) *AppEditedBy {
 	}
 }
 
+func NewAppEditedByUserID(userID int) *AppEditedBy {
+	return &AppEditedBy{
+		UserID:   userID,
+		EditedAt: time.Now(),
+	}
+}
+
 func (a *AppEditedBy) ExportToJSONString() string {
 	r, _ := json.Marshal(a)
 	return string(r)

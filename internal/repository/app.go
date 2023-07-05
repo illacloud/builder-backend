@@ -27,6 +27,7 @@ const APP_AUTO_MAINLINE_VERSION = -1 // -1 for get mainline version automaticall
 const APP_AUTO_RELEASE_VERSION = -2  // -1 for get release version automatically
 
 const APP_FIELD_NAME = "name"
+const APP_EDITED_BY_MAX_LENGTH = 4
 
 type App struct {
 	ID              int       `json:"id" 				gorm:"column:id;type:bigserial;primary_key;unique"`
@@ -43,10 +44,34 @@ type App struct {
 	EditedBy        string    `json:"editedBy"          gorm:"column:edited_by;type:jsonb"`
 }
 
+func NewApp(appName string, teamID int, modifyUserID int) *App {
+	app := &App{
+		TeamID:          teamID,
+		Name:            appName,
+		ReleaseVersion:  APP_EDIT_VERSION,
+		MainlineVersion: APP_EDIT_VERSION,
+		Config:          NewAppConfig().ExportToJSONString(),
+		CreatedBy:       modifyUserID,
+		UpdatedBy:       modifyUserID,
+	}
+	app.PushEditedBy(NewAppEditedByUserID(modifyUserID))
+	app.InitUID()
+	app.InitCreatedAt()
+	app.InitUpdatedAt()
+}
+
 func (app *App) UpdateAppConfig(appConfig *AppConfig, userID int) {
 	app.Config = appConfig.ExportToJSONString()
 	app.UpdatedBy = userID
 	app.InitUpdatedAt()
+}
+
+func (app *App) InitUID() {
+	app.UID = uuid.New()
+}
+
+func (app *App) InitCreatedAt() {
+	app.CreatedAt = time.Now().UTC()
 }
 
 func (app *App) InitUpdatedAt() {
@@ -104,6 +129,33 @@ func (app *App) ExportEditedBy() []*AppEditedBy {
 	appEditedBys := make([]*AppEditedBy, 0)
 	json.Unmarshal([]byte(app.EditedBy), &appEditedBys)
 	return appEditedBys
+}
+
+func (app *App) ImportEditedBy(appEditedBys []*AppEditedBy) {
+	payload, _ := json.Marshal(appEditedBys)
+	app.EditedBy = string(payload)
+}
+
+func (app *App) PushEditedBy(currentEditedBy *AppEditedBy) {
+	editedByList := app.ExportEditedBy()
+	// remove exists
+	for serial, editedBy := range editedByList {
+		if editedBy.UserID == currentEditedBy.UserID {
+			editedByList = append(editedByList[serial:], editedByList[:serial+1]...)
+			break
+		}
+	}
+
+	// insert
+	editedByList = append([]*AppEditedBy{currentEditedBy}, editedByList...)
+
+	// check length
+	if len(editedByList) > APP_AUTO_MAINLINE_VERSION {
+		editedByList = editedByList[:len(editedByList)-1]
+	}
+
+	// ok, set it
+	app.ImportEditedBy(editedByList)
 }
 
 func (app *App) UpdateAppByConfigAppRawRequest(rawReq map[string]interface{}) error {

@@ -30,11 +30,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type AppRequest struct {
-	Name       string        `json:"appName" validate:"required"`
-	InitScheme []interface{} `json:"initScheme"`
-}
-
 type AppRestHandler interface {
 	CreateApp(c *gin.Context)
 	DeleteApp(c *gin.Context)
@@ -67,15 +62,15 @@ func NewAppRestHandlerImpl(logger *zap.SugaredLogger, appService app.AppService,
 
 func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 	// Parse request body
-	var payload AppRequest
-	if err := json.NewDecoder(c.Request.Body).Decode(&payload); err != nil {
+	req := repository.NewCreateAppRequest()
+	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// Validate request body
 	validate := validator.New()
-	if err := validate.Struct(payload); err != nil {
+	if err := validate.Struct(req); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
@@ -104,14 +99,16 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 		return
 	}
 
-	appDto := app.AppDto{
-		TeamID:    teamID,
-		Name:      payload.Name,
-		CreatedBy: userID,
-		UpdatedBy: userID,
+	// construct app object
+	newApp := repository.NewApp(req.ExportAppName(), teamID, userID)
+
+	// storage app
+	newAppID, errInCreateApp := impl.appRepository.Create(newApp)
+	if errInCreateApp != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_APP, "error in create app: "+errInCreateApp.Error())
+		return
 	}
-	appDto.InitUID()
-	appDto.InitConfig()
+	// init ky_states & tree_states for new app
 
 	// Call `app service` create app
 	res, err := impl.appService.CreateApp(appDto)

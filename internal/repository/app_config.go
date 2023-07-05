@@ -29,6 +29,14 @@ type AppConfig struct {
 	Description string `json:"description"`
 }
 
+func NewAppConfig() *AppConfig {
+	return &AppConfig{
+		Public:      false,
+		WaterMark:   true,
+		Description: "",
+	}
+}
+
 func (ac *AppConfig) ExportToJSONString() string {
 	r, _ := json.Marshal(ac)
 	return string(r)
