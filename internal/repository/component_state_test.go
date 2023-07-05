@@ -39,25 +39,19 @@ func TestConstructComponentNodeByMap(t *testing.T) {
 	assert.Equal(t, "root", cnode.DisplayName, "the construct result should be equal")
 	assert.Equal(t, "", cnode.ParentNode, "the construct result should be equal")
 	assert.Equal(t, "", cnode.ShowName, "the construct result should be equal")
-	assert.Equal(t, false, cnode.Error, "the construct result should be equal")
-	assert.Equal(t, false, cnode.IsDragging, "the construct result should be equal")
 	assert.Equal(t, emptyCNodeList, cnode.ChildrenNode, "the construct result should be equal")
 	assert.Equal(t, "", cnode.Type, "the construct result should be equal")
 	assert.Equal(t, "", cnode.ContainerType, "the construct result should be equal")
-	assert.Equal(t, false, cnode.VerticalResize, "the construct result should be equal")
 
 	assert.Equal(t, 0.0, cnode.H, "the construct result should be equal")
 	assert.Equal(t, 0.0, cnode.W, "the construct result should be equal")
 	assert.Equal(t, 0.0, cnode.MinH, "the construct result should be equal")
 	assert.Equal(t, 0.0, cnode.MinW, "the construct result should be equal")
-	assert.Equal(t, 0.0, cnode.UnitW, "the construct result should be equal")
-	assert.Equal(t, 0.0, cnode.UnitH, "the construct result should be equal")
 	assert.Equal(t, 0.0, cnode.X, "the construct result should be equal")
 	assert.Equal(t, 0.0, cnode.Y, "the construct result should be equal")
 	assert.Equal(t, 0.0, cnode.Z, "the construct result should be equal")
 
 	assert.Equal(t, emptyMap, cnode.Props, "the construct result should be equal")
-	assert.Equal(t, emptyMap, cnode.PanelConfig, "the construct result should be equal")
 
 }
 

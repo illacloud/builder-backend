@@ -32,8 +32,8 @@ import (
 )
 
 type AppRequest struct {
-	Name       string        `json:"appName" validate:"required"`
-	InitScheme []interface{} `json:"initScheme"`
+	Name       string      `json:"appName" validate:"required"`
+	InitScheme interface{} `json:"initScheme"`
 }
 
 type AppRestHandler interface {
@@ -131,12 +131,8 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 		AppName:   res.Name,
 	})
 
-	if len(payload.InitScheme) > 0 {
-		for _, v := range payload.InitScheme {
-			componentTree := repository.ConstructComponentNodeByMap(v)
-			_ = impl.treeStateService.CreateComponentTree(&res, 0, componentTree)
-		}
-	}
+	componentTree := repository.ConstructComponentNodeByMap(payload.InitScheme)
+	_ = impl.treeStateService.CreateComponentTree(&res, 0, componentTree)
 
 	// feedback
 	FeedbackOK(c, app.NewAppDtoForExport(&res))
