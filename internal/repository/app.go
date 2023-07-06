@@ -169,7 +169,7 @@ func (app *App) PushEditedBy(currentEditedBy *AppEditedBy) {
 	// remove exists
 	for serial, editedBy := range editedByList {
 		if editedBy.UserID == currentEditedBy.UserID {
-			editedByList = append(editedByList[:serial], editedByList[:serial+1]...)
+			editedByList = append(editedByList[:serial], editedByList[serial+1:]...)
 		}
 	}
 
@@ -180,6 +180,11 @@ func (app *App) PushEditedBy(currentEditedBy *AppEditedBy) {
 	// check length
 	if len(editedByList) > APP_EDITED_BY_MAX_LENGTH {
 		editedByList = editedByList[:len(editedByList)-1]
+	}
+
+	fmt.Printf("[DUMP] finalEditedByList: \n")
+	for serial, editedBy := range editedByList {
+		fmt.Printf("    [%d] editedByList: %+v\n ", serial, editedBy)
 	}
 
 	// ok, set it
