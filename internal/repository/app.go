@@ -62,6 +62,24 @@ func NewApp(appName string, teamID int, modifyUserID int) *App {
 	return app
 }
 
+func NewAppWithID(appID int, teamID int, modifyUserID int) *App {
+	app := &App{
+		ID:              appID,
+		TeamID:          teamID,
+		Name:            "",
+		ReleaseVersion:  APP_EDIT_VERSION,
+		MainlineVersion: APP_EDIT_VERSION,
+		Config:          NewAppConfig().ExportToJSONString(),
+		CreatedBy:       modifyUserID,
+		UpdatedBy:       modifyUserID,
+	}
+	app.PushEditedBy(NewAppEditedByUserID(modifyUserID))
+	app.InitUID()
+	app.InitCreatedAt()
+	app.InitUpdatedAt()
+	return app
+}
+
 func (app *App) UpdateAppConfig(appConfig *AppConfig, userID int) {
 	app.Config = appConfig.ExportToJSONString()
 	app.UpdatedBy = userID

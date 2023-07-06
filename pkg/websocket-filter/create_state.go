@@ -37,7 +37,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 	appDto.ConstructWithID(currentClient.APPID)
 	appDto.ConstructWithUpdateBy(currentClient.MappedUserID)
 	appDto.SetTeamID(currentClient.TeamID)
-	app := repository.NewApp("", currentClient.TeamID, currentClient.MappedUserID)
+	app := repository.NewAppWithID(currentClient.APPID, currentClient.TeamID, currentClient.MappedUserID)
 	message.RewriteBroadcast()
 
 	// target switch
