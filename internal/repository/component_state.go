@@ -20,32 +20,33 @@ import (
 	"strconv"
 )
 
+const ROOT_COMPONET_NODE_IN_SERIAL = "{\"version\":0,\"displayName\":\"root\",\"parentNode\":\"\",\"showName\":\"root\",\"type\":\"DOT_PANEL\",\"childrenNode\":[],\"containerType\":\"EDITOR_DOT_PANEL\",\"h\":0,\"w\":0,\"minH\":0,\"minW\":0,\"x\":-1,\"y\":-1,\"z\":0,\"props\":{\"currentPageIndex\":0,\"pageSortedKey\":[\"page1\"]}}"
+
 type ComponentNode struct {
-	DisplayName    string                 `json:"displayName"`
-	ParentNode     string                 `json:"parentNode"`
-	ShowName       string                 `json:"showName"`
-	Error          bool                   `json:"error"`
-	IsDragging     bool                   `json:"isDragging"`
-	ChildrenNode   []*ComponentNode       `json:"childrenNode"`
-	Type           string                 `json:"type"`
-	ContainerType  string                 `json:"containerType"`
-	VerticalResize bool                   `json:"verticalResize"`
-	H              float64                `json:"h"`
-	W              float64                `json:"w"`
-	MinH           float64                `json:"minH"`
-	MinW           float64                `json:"minW"`
-	UnitW          float64                `json:"unitW"`
-	UnitH          float64                `json:"unitH"`
-	X              float64                `json:"x"`
-	Y              float64                `json:"y"`
-	Z              float64                `json:"z"`
-	Props          map[string]interface{} `json:"props"`
-	PanelConfig    map[string]interface{} `json:"panelConfig"`
+	Version       float64                `json:"version"` // default is 0
+	DisplayName   string                 `json:"displayName"`
+	ParentNode    string                 `json:"parentNode"`
+	ShowName      string                 `json:"showName"`
+	ChildrenNode  []*ComponentNode       `json:"childrenNode"`
+	Type          string                 `json:"type"`
+	ContainerType string                 `json:"containerType"`
+	H             float64                `json:"h"`
+	W             float64                `json:"w"`
+	MinH          float64                `json:"minH"`
+	MinW          float64                `json:"minW"`
+	X             float64                `json:"x"`
+	Y             float64                `json:"y"`
+	Z             float64                `json:"z"`
+	Props         map[string]interface{} `json:"props"`
 }
 
 type ComponentStateForUpdate struct {
 	Before interface{} `json:"before"`
 	After  interface{} `json:"after"`
+}
+
+func GetInitialComponent() string {
+	return ROOT_COMPONET_NODE_IN_SERIAL
 }
 
 func NewComponentNode() *ComponentNode {
@@ -91,16 +92,14 @@ func ConstructComponentNodeByMap(data interface{}) *ComponentNode {
 	}
 	for k, v := range udata {
 		switch k {
+		case "version":
+			cnode.Version, _ = v.(float64)
 		case "displayName":
 			cnode.DisplayName, _ = v.(string)
 		case "parentNode":
 			cnode.ParentNode, _ = v.(string)
 		case "showName":
 			cnode.ShowName, _ = v.(string)
-		case "error":
-			cnode.Error, _ = v.(bool)
-		case "isDragging":
-			cnode.IsDragging, _ = v.(bool)
 		case "childrenNode":
 			childrenNode, _ := v.([]interface{})
 			for _, node := range childrenNode {
@@ -110,8 +109,6 @@ func ConstructComponentNodeByMap(data interface{}) *ComponentNode {
 			cnode.Type, _ = v.(string)
 		case "containerType":
 			cnode.ContainerType, _ = v.(string)
-		case "verticalResize":
-			cnode.VerticalResize, _ = v.(bool)
 		case "h":
 			cnode.H, _ = v.(float64)
 		case "w":
@@ -120,10 +117,6 @@ func ConstructComponentNodeByMap(data interface{}) *ComponentNode {
 			cnode.MinH, _ = v.(float64)
 		case "minW":
 			cnode.MinW, _ = v.(float64)
-		case "unitW":
-			cnode.UnitW, _ = v.(float64)
-		case "unitH":
-			cnode.UnitH, _ = v.(float64)
 		case "x":
 			cnode.X, _ = v.(float64)
 		case "y":
@@ -132,8 +125,6 @@ func ConstructComponentNodeByMap(data interface{}) *ComponentNode {
 			cnode.Z, _ = v.(float64)
 		case "props":
 			cnode.Props, _ = v.(map[string]interface{})
-		case "panelConfig":
-			cnode.PanelConfig, _ = v.(map[string]interface{})
 		}
 	}
 	return &cnode

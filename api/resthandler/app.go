@@ -42,12 +42,13 @@ type AppRestHandler interface {
 }
 
 type AppRestHandlerImpl struct {
-	logger           *zap.SugaredLogger
-	appService       app.AppService
-	appRepository    repository.AppRepository
-	actionService    action.ActionService
-	AttributeGroup   *ac.AttributeGroup
-	treeStateService state.TreeStateService
+	logger              *zap.SugaredLogger
+	appService          app.AppService
+	appRepository       repository.AppRepository
+	treeStateRepository repository.TreeStateRepository
+	actionService       action.ActionService
+	AttributeGroup      *ac.AttributeGroup
+	treeStateService    state.TreeStateService
 }
 
 func NewAppRestHandlerImpl(logger *zap.SugaredLogger, appService app.AppService, actionService action.ActionService, attrg *ac.AttributeGroup, treeStateService state.TreeStateService) *AppRestHandlerImpl {
@@ -103,12 +104,19 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 	newApp := repository.NewApp(req.ExportAppName(), teamID, userID)
 
 	// storage app
-	newAppID, errInCreateApp := impl.appRepository.Create(newApp)
+	_, errInCreateApp := impl.appRepository.Create(newApp)
 	if errInCreateApp != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_APP, "error in create app: "+errInCreateApp.Error())
 		return
 	}
+
 	// init ky_states & tree_states for new app
+	newTreeState := repository.NewTreeStateByApp(newApp)
+	_, errInCreateTreeState := impl.treeStateRepository.Create(newTreeState)
+	if errInCreateTreeState != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_STATE, "error in init app states: "+errInCreateTreeState.Error())
+		return
+	}
 
 	// Call `app service` create app
 	res, err := impl.appService.CreateApp(appDto)

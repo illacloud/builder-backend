@@ -107,6 +107,18 @@ func (app *App) SetPrivate(userID int) {
 	app.InitUpdatedAt()
 }
 
+func (app *App) ExportID() int {
+	return app.ID
+}
+
+func (app *App) ExportTeamID() int {
+	return app.TeamID
+}
+
+func (app *App) ExportCreatedBy() int {
+	return app.CreatedBy
+}
+
 func (app *App) ExportUpdatedBy() int {
 	return app.UpdatedBy
 }

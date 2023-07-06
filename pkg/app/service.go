@@ -263,7 +263,6 @@ func (impl *AppServiceImpl) UpdateApp(app AppDto, usersLT map[int]*repository.Us
 	if !hit {
 		user = repository.NewInvaliedUser()
 	}
-
 	// fill data
 	app.AppActivity.Modifier = user.Nickname
 	app.AppActivity.ModifiedAt = app.UpdatedAt // TODO: find last modified time in another record with version 0
