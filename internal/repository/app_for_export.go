@@ -56,8 +56,11 @@ func NewAppForExport(a *App, usersLT map[int]*User) *AppForExport {
 	}
 	// construct edited by
 	appEditedBys := a.ExportEditedBy()
-	editedByUsers := make([]*UserForEditedBy, len(a.EditedBy))
+	editedByUsers := make([]*UserForEditedBy, 0)
 	for _, appEditedBy := range appEditedBys {
+		if appEditedBy == nil {
+			continue
+		}
 		userID := appEditedBy.UserID
 		user, hit := usersLT[userID]
 		if !hit {

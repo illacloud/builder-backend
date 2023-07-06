@@ -360,6 +360,8 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 		return
 	}
 
+	fmt.Printf("[DUMP] GetAllApps.allUserIDs: %+v\n", allUserIDs)
+
 	// feedback
 	c.JSON(http.StatusOK, repository.GenerateGetAllAppsResponse(allApps, usersLT))
 }
