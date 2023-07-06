@@ -16,6 +16,7 @@ package resthandler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
@@ -314,6 +315,8 @@ func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 
 	// get all modifier user ids from all apps
 	allUserIDs := repository.ExtractAllEditorIDFromApps([]*repository.App{app})
+
+	fmt.Printf("[DUMP] allUserIDs: %+v\n", allUserIDs)
 
 	// fet all user id mapped user info, and build user info lookup table
 	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)

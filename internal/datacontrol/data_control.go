@@ -1,6 +1,7 @@
 package datacontrol
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -43,9 +44,12 @@ func GetMultiUserInfo(targetUserIDs []int) (map[int]*repository.User, error) {
 		targetUserIDsInString = append(targetUserIDsInString, strconv.Itoa(userIDInt))
 	}
 	requestParams := strings.Join(targetUserIDsInString, ",")
+	fmt.Printf("[DUMP] datacontrol.GetMultiUserInfo.requestParams: %+v\n", requestParams)
 
 	// fetch raw data
 	usersRaw, errInGetTargetUser := instance.GetMultiUser(requestParams)
+	fmt.Printf("[DUMP] datacontrol.GetMultiUserInfo.usersRaw: %+v\n", usersRaw)
+
 	if errInGetTargetUser != nil {
 		return nil, errInGetTargetUser
 	}
