@@ -47,7 +47,7 @@ type User struct {
 }
 
 type UserForEditedBy struct {
-	ID       int       `json:"id"`
+	ID       string    `json:"userID"`
 	Nickname string    `json:"nickname"`
 	Email    string    `json:"email"`
 	Avatar   string    `json:"avatar"`
@@ -78,13 +78,13 @@ func NewInvaliedUser() *User {
 	}
 }
 
-func NewUserForEditedBy(user *User, editedBy time.Time) *UserForEditedBy {
+func NewUserForEditedBy(user *User, editedAt time.Time) *UserForEditedBy {
 	return &UserForEditedBy{
-		ID:       user.ID,
+		ID:       idconvertor.ConvertIntToString(user.ID),
 		Nickname: user.Nickname,
 		Email:    user.Email,
 		Avatar:   user.Avatar,
-		EditedAt: editedBy,
+		EditedAt: editedAt,
 	}
 }
 

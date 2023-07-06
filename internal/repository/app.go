@@ -169,7 +169,7 @@ func (app *App) PushEditedBy(currentEditedBy *AppEditedBy) {
 	// remove exists
 	for serial, editedBy := range editedByList {
 		if editedBy.UserID == currentEditedBy.UserID {
-			editedByList = append(editedByList[serial:], editedByList[:serial+1]...)
+			editedByList = append(editedByList[:serial], editedByList[:serial+1]...)
 			break
 		}
 	}
