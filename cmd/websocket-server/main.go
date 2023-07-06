@@ -60,10 +60,9 @@ func initEnv() error {
 	treestateRepositoryImpl := repository.NewTreeStateRepositoryImpl(sugaredLogger, gormDB)
 	kvstateRepositoryImpl := repository.NewKVStateRepositoryImpl(sugaredLogger, gormDB)
 	setstateRepositoryImpl := repository.NewSetStateRepositoryImpl(sugaredLogger, gormDB)
-	appRepositoryImpl := repository.NewAppRepositoryImpl(sugaredLogger, gormDB)
+	appRepositoryImpl = repository.NewAppRepositoryImpl(sugaredLogger, gormDB)
 	resourceRepositoryImpl := repository.NewResourceRepositoryImpl(sugaredLogger, gormDB)
 	actionRepositoryImpl := repository.NewActionRepositoryImpl(sugaredLogger, gormDB)
-	appRepositoryImpl = appRepositoryImpl
 	// init service
 	tssi = state.NewTreeStateServiceImpl(sugaredLogger, treestateRepositoryImpl)
 	kvssi = state.NewKVStateServiceImpl(sugaredLogger, kvstateRepositoryImpl)
