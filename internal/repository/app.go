@@ -203,6 +203,8 @@ func ExtractAllEditorIDFromApps(apps []*App) []int {
 		for _, id := range ids {
 			allUserIDsHashT[id] = id
 		}
+		updatedByID := app.ExportUpdatedBy()
+		allUserIDsHashT[updatedByID] = updatedByID
 	}
 	for _, id := range allUserIDsHashT {
 		allUserIDs = append(allUserIDs, id)
