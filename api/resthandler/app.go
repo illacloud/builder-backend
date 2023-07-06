@@ -121,6 +121,7 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 
 	// construct app object
 	newApp := repository.NewApp(req.ExportAppName(), teamID, userID)
+	fmt.Printf("[DUMP] CreateApp.newApp: %+v\n", newApp)
 
 	// storage app
 	_, errInCreateApp := impl.AppRepository.Create(newApp)

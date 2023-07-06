@@ -16,6 +16,7 @@ package filter
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/app"
@@ -47,6 +48,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 		// build component tree from json
 		for _, v := range message.Payload {
 			componentTree := repository.ConstructComponentNodeByMap(v)
+			fmt.Printf("[DUMP] componentTree: %+v\n", componentTree)
 			if err := hub.TreeStateServiceImpl.CreateComponentTree(app, 0, componentTree); err != nil {
 				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 				return err
