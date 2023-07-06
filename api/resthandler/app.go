@@ -464,7 +464,7 @@ func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 	if errInRetrieveActions != nil {
 		actions = []*repository.Action{}
 	}
-	actionsForExport := make([]*repository.ActionForExport, len(actions))
+	actionsForExport := make([]*repository.ActionForExport, 0)
 	for _, action := range actions {
 		actionsForExport = append(actionsForExport, repository.NewActionForExport(action))
 	}
