@@ -179,7 +179,7 @@ func (app *App) PushEditedBy(currentEditedBy *AppEditedBy) {
 	fmt.Printf("[DUMP] PushEditedBy.insert.editedByList: %+v\n ", editedByList)
 
 	// check length
-	if len(editedByList) > APP_AUTO_MAINLINE_VERSION {
+	if len(editedByList) > APP_EDITED_BY_MAX_LENGTH {
 		editedByList = editedByList[:len(editedByList)-1]
 	}
 
