@@ -17,6 +17,7 @@ package repository
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -163,6 +164,8 @@ func (app *App) ImportEditedBy(appEditedBys []*AppEditedBy) {
 
 func (app *App) PushEditedBy(currentEditedBy *AppEditedBy) {
 	editedByList := app.ExportEditedBy()
+	fmt.Printf("[DUMP] PushEditedBy.editedByList: %+v\n ", editedByList)
+	fmt.Printf("[DUMP] PushEditedBy.currentEditedBy: %+v\n ", currentEditedBy)
 	// remove exists
 	for serial, editedBy := range editedByList {
 		if editedBy.UserID == currentEditedBy.UserID {
@@ -173,6 +176,7 @@ func (app *App) PushEditedBy(currentEditedBy *AppEditedBy) {
 
 	// insert
 	editedByList = append([]*AppEditedBy{currentEditedBy}, editedByList...)
+	fmt.Printf("[DUMP] PushEditedBy.insert.editedByList: %+v\n ", editedByList)
 
 	// check length
 	if len(editedByList) > APP_AUTO_MAINLINE_VERSION {
