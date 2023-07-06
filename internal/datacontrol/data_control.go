@@ -39,9 +39,12 @@ func GetMultiUserInfo(targetUserIDs []int) (map[int]*repository.User, error) {
 	}
 
 	// convert to query param
-	targetUserIDsInString := make([]string, len(targetUserIDs))
+	targetUserIDsInString := make([]string, 0)
 	for _, userIDInt := range targetUserIDs {
-		targetUserIDsInString = append(targetUserIDsInString, strconv.Itoa(userIDInt))
+		userIDString := strconv.Itoa(userIDInt)
+		if len(userIDString) != 0 {
+			targetUserIDsInString = append(targetUserIDsInString, strconv.Itoa(userIDInt))
+		}
 	}
 	requestParams := strings.Join(targetUserIDsInString, ",")
 	fmt.Printf("[DUMP] datacontrol.GetMultiUserInfo.requestParams: %+v\n", requestParams)
