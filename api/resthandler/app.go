@@ -131,7 +131,7 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 
 	// fill component node by given init schema
 	// @NOTE: that the root node will created by InitScheme in request
-	componentTree := repository.ConstructComponentNodeByMap(req.ExportAppName())
+	componentTree := repository.ConstructComponentNodeByMap(req.ExportInitScheme())
 	_ = impl.TreeStateService.CreateComponentTree(newApp, 0, componentTree)
 
 	// audit log
