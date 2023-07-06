@@ -54,29 +54,29 @@ func (ac *AppConfig) DisableWaterMark() {
 	ac.WaterMark = false
 }
 
-func UpdateAppConfigByConfigAppRawRequest(rawReq map[string]interface{}, appConfig *AppConfig) (*AppConfig, error) {
+func (appConfig *AppConfig) UpdateAppConfigByConfigAppRawRequest(rawReq map[string]interface{}) error {
 	var assertPass bool
 	for key, value := range rawReq {
 		switch key {
 		case APP_CONFIG_FIELD_PUBLIC:
 			appConfig.Public, assertPass = value.(bool)
 			if !assertPass {
-				return nil, errors.New("update app config failed due to assert failed.")
+				return errors.New("update app config failed due to assert failed.")
 			}
 		case APP_CONFIG_FIELD_WATER_MARK:
 			appConfig.WaterMark, assertPass = value.(bool)
 			if !assertPass {
-				return nil, errors.New("update app config failed due to assert failed.")
+				return errors.New("update app config failed due to assert failed.")
 			}
 		case APP_CONFIG_FIELD_DESCRIPTION:
 			appConfig.Description, assertPass = value.(string)
 			if !assertPass {
-				return nil, errors.New("update app config failed due to assert failed.")
+				return errors.New("update app config failed due to assert failed.")
 			}
 		default:
 		}
 	}
-	return appConfig, nil
+	return nil
 }
 
 func NewAppConfigByDefault() *AppConfig {

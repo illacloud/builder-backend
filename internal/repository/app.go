@@ -58,6 +58,7 @@ func NewApp(appName string, teamID int, modifyUserID int) *App {
 	app.InitUID()
 	app.InitCreatedAt()
 	app.InitUpdatedAt()
+	return app
 }
 
 func (app *App) UpdateAppConfig(appConfig *AppConfig, userID int) {
@@ -91,6 +92,10 @@ func (app *App) ExportConfig() *AppConfig {
 func (app *App) IsPublic() bool {
 	ac := app.ExportConfig()
 	return ac.Public
+}
+
+func (app *App) SetID(appID int) {
+	app.ID = appID
 }
 
 func (app *App) SetPublic(userID int) {

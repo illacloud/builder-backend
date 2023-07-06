@@ -121,3 +121,22 @@ func (treeState *TreeState) RemoveChildrenNodeRefIDs(id int) error {
 	treeState.ChildrenNodeRefIDs = string(idsjsonb)
 	return nil
 }
+
+func BuildTreeStateLookupTable(treeStates []*TreeState) map[int]*TreeState {
+	tempMap := make(map[int]*TreeState, len(treeStates))
+	for _, component := range treeStates {
+		tempMap[component.ID] = component
+	}
+	return tempMap
+}
+
+func PickUpTreeStatesRootNode(treeStates []*TreeState) *TreeState {
+	root := &TreeState{}
+	for _, component := range treeStates {
+		if component.Name == TREE_STATE_SUMMIT_NAME {
+			root = component
+			break
+		}
+	}
+	return root
+}

@@ -31,12 +31,10 @@ import (
 type AppService interface {
 	CreateApp(app AppDto) (AppDto, error)
 	IsPublicApp(teamID int, appID int) bool
-	UpdateApp(app AppDto) (*AppDtoForExport, error)
 	FetchAppByID(teamID int, appID int) (AppDto, error)
-	DeleteApp(teamID int, appID int) error
 	GetAllApps(teamID int) ([]*AppDtoForExport, error)
-	DuplicateApp(teamID int, appID, userID int, name string) (*AppDtoForExport, error)
-	ReleaseApp(teamID int, appID int) (int, error)
+	DuplicateApp(teamID int, appID, userID int, name string) (int, error)
+	ReleaseApp(teamID int, appID int, userID int, public bool) (int, error)
 	GetMegaData(teamID int, appID int, version int) (*EditorForExport, error)
 }
 
@@ -242,7 +240,7 @@ func (impl *AppServiceImpl) IsPublicApp(teamID int, appID int) bool {
 	return app.IsPublic()
 }
 
-func (impl *AppServiceImpl) UpdateApp(app AppDto, usersLT map[int]*repository.User) (*AppDtoForExport, error) {
+func (impl *AppServiceImpl) UpdateApp(app AppDto) (*AppDtoForExport, error) {
 	app.UpdatedAt = time.Now().UTC()
 	if err := impl.appRepository.Update(&repository.App{
 		ID:              app.ID,
@@ -258,17 +256,18 @@ func (impl *AppServiceImpl) UpdateApp(app AppDto, usersLT map[int]*repository.Us
 		return nil, err
 	}
 
-	// fetch user
-	user, hit := usersLT[app.UpdatedBy]
-	if !hit {
-		user = repository.NewInvaliedUser()
+	// fetch user remote data
+	user, errInGetUserInfo := datacontrol.GetUserInfo(app.UpdatedBy)
+	if errInGetUserInfo != nil {
+		return nil, errInGetUserInfo
 	}
+
 	// fill data
 	app.AppActivity.Modifier = user.Nickname
 	app.AppActivity.ModifiedAt = app.UpdatedAt // TODO: find last modified time in another record with version 0
 
 	// feedback
-	return NewAppDtoForExport(&app, usersLT), nil
+	return NewAppDtoForExport(&app), nil
 }
 
 // call this method when action (over HTTP) and state (over websocket) changed
@@ -345,10 +344,10 @@ func (impl *AppServiceImpl) GetAllApps(teamID int) ([]*AppDtoForExport, error) {
 	return AppDtoForExportSlice, nil
 }
 
-func (impl *AppServiceImpl) DuplicateApp(teamID int, appID int, userID int, name string) (*AppDtoForExport, error) {
+func (impl *AppServiceImpl) DuplicateApp(teamID int, appID int, userID int, name string) (int, error) {
 	appA, err := impl.appRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	appA.ReleaseVersion = 0 // the draft version will always be 0, so the release version and mainline version are 0 by default when app init.
 	appA.MainlineVersion = 0
@@ -369,12 +368,12 @@ func (impl *AppServiceImpl) DuplicateApp(teamID int, appID int, userID int, name
 		UpdatedAt:       appA.UpdatedAt,
 	})
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	// fetch user remote data
 	user, errInGetUserInfo := datacontrol.GetUserInfo(appA.UpdatedBy)
 	if errInGetUserInfo != nil {
-		return nil, errInGetUserInfo
+		return 0, errInGetUserInfo
 	}
 	// fill data
 	appB := AppDto{
@@ -398,7 +397,7 @@ func (impl *AppServiceImpl) DuplicateApp(teamID int, appID int, userID int, name
 	_ = impl.copyActions(teamID, appID, appB.ID, userID)
 
 	// feedback
-	return NewAppDtoForExport(&appB), nil
+	return appB.ID, nil
 }
 
 func (impl *AppServiceImpl) copyAllTreeState(teamID, appA, appB, user int) error {
