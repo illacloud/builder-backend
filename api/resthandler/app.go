@@ -351,14 +351,19 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 		return
 	}
 
-	// get all modifier user ids from all apps
-	allUserIDs := repository.ExtractAllEditorIDFromApps(allApps)
+	// build user look up table
+	usersLT := make(map[int]*repository.User)
+	if len(allApps) > 0 {
+		// get all modifier user ids from all apps
+		allUserIDs := repository.ExtractAllEditorIDFromApps(allApps)
 
-	// fet all user id mapped user info, and build user info lookup table
-	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
-	if errInGetMultiUserInfo != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
-		return
+		// fet all user id mapped user info, and build user info lookup table
+		var errInGetMultiUserInfo error
+		usersLT, errInGetMultiUserInfo = datacontrol.GetMultiUserInfo(allUserIDs)
+		if errInGetMultiUserInfo != nil {
+			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+			return
+		}
 	}
 
 	fmt.Printf("[DUMP] GetAllApps.allUserIDs: %+v\n", allUserIDs)
