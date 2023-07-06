@@ -99,17 +99,21 @@ func (app *App) SetID(appID int) {
 }
 
 func (app *App) SetPublic(userID int) {
-	ac := app.ExportConfig()
-	ac.Public = true
+	appConfig := app.ExportConfig()
+	appConfig.Public = true
 	app.UpdatedBy = userID
 	app.InitUpdatedAt()
+	app.PushEditedBy(NewAppEditedByUserID(userID))
+	app.Config = appConfig.ExportToJSONString()
 }
 
 func (app *App) SetPrivate(userID int) {
-	ac := app.ExportConfig()
-	ac.Public = false
+	appConfig := app.ExportConfig()
+	appConfig.Public = false
 	app.UpdatedBy = userID
 	app.InitUpdatedAt()
+	app.PushEditedBy(NewAppEditedByUserID(userID))
+	app.Config = appConfig.ExportToJSONString()
 }
 
 func (app *App) ExportID() int {
