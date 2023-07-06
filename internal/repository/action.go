@@ -25,6 +25,10 @@ import (
 	"gorm.io/gorm"
 )
 
+var action_type_array = [27]string{"transformer", "restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb",
+	"tidb", "elasticsearch", "s3", "smtp", "supabasedb", "firebase", "clickhouse", "mssql", "huggingface", "dynamodb",
+	"snowflake", "couchdb", "hfendpoint", "oracle", "appwrite", "googlesheets", "neon", "upstash", "airtable"}
+
 type Action struct {
 	ID          int       `gorm:"column:id;type:bigserial;primary_key"`
 	UID         uuid.UUID `gorm:"column:uid;type:uuid;not null"`
@@ -83,6 +87,14 @@ func (action *Action) ExportConfig() *ActionConfig {
 	ac := NewActionConfig()
 	json.Unmarshal([]byte(action.Config), ac)
 	return ac
+}
+
+func (action *Action) ExportDisplayName() string {
+	return action.Name
+}
+
+func (action *Action) ExportTypeInString() string {
+	return action_type_array[action.Type]
 }
 
 func (action *Action) IsPublic() bool {

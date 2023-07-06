@@ -16,13 +16,10 @@ package repository
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/internal/util"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 const TREE_STATE_SUMMIT_ID = 0
@@ -45,26 +42,40 @@ type TreeState struct {
 	UpdatedBy          int       `json:"updated_by" 					 gorm:"column:updated_by;type:bigint"`
 }
 
-type TreeStateRepository interface {
-	Create(treestate *TreeState) (int, error)
-	Delete(teamID int, treestateID int) error
-	Update(treestate *TreeState) error
-	RetrieveByID(teamID int, treestateID int) (*TreeState, error)
-	RetrieveTreeStatesByVersion(teamID int, versionID int) ([]*TreeState, error)
-	RetrieveTreeStatesByName(teamID int, name string) ([]*TreeState, error)
-	RetrieveTreeStatesByApp(teamID int, apprefid int, statetype int, version int) ([]*TreeState, error)
-	RetrieveEditVersionByAppAndName(teamID int, apprefid int, statetype int, name string) (*TreeState, error)
-	RetrieveAllTypeTreeStatesByApp(teamID int, apprefid int, version int) ([]*TreeState, error)
-	DeleteAllTypeTreeStatesByApp(teamID int, apprefid int) error
-}
-
-type TreeStateRepositoryImpl struct {
-	logger *zap.SugaredLogger
-	db     *gorm.DB
-}
-
 func NewTreeState() *TreeState {
 	return &TreeState{}
+}
+
+func NewTreeStateByApp(app *App) *TreeState {
+	treeState := &TreeState{
+		StateType:          TREE_STATE_TYPE_COMPONENTS,
+		ParentNodeRefID:    0,
+		ChildrenNodeRefIDs: "[]",
+		TeamID:             app.ExportTeamID(),
+		AppRefID:           app.ExportID(),
+		Version:            APP_EDIT_VERSION,
+		Name:               TREE_STATE_SUMMIT_NAME,
+		Content:            GetInitialComponent(),
+		CreatedBy:          app.ExportCreatedBy(),
+		UpdatedBy:          app.ExportUpdatedBy(),
+	}
+
+	treeState.InitUID()
+	treeState.InitCreatedAt()
+	treeState.InitUpdatedAt()
+	return treeState
+}
+
+func (treeState *TreeState) InitUID() {
+	treeState.UID = uuid.New()
+}
+
+func (treeState *TreeState) InitCreatedAt() {
+	treeState.CreatedAt = time.Now().UTC()
+}
+
+func (treeState *TreeState) InitUpdatedAt() {
+	treeState.UpdatedAt = time.Now().UTC()
 }
 
 func (treeState *TreeState) ExportContentAsComponentState() (*ComponentNode, error) {
@@ -111,97 +122,21 @@ func (treeState *TreeState) RemoveChildrenNodeRefIDs(id int) error {
 	return nil
 }
 
-func NewTreeStateRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *TreeStateRepositoryImpl {
-	return &TreeStateRepositoryImpl{
-		logger: logger,
-		db:     db,
+func BuildTreeStateLookupTable(treeStates []*TreeState) map[int]*TreeState {
+	tempMap := make(map[int]*TreeState, len(treeStates))
+	for _, component := range treeStates {
+		tempMap[component.ID] = component
 	}
+	return tempMap
 }
 
-func (impl *TreeStateRepositoryImpl) Create(treestate *TreeState) (int, error) {
-	fmt.Printf("Createing tree_state: uid: %v, team_id: %v, app_id: %v, name: %v. \n", treestate.UID, treestate.TeamID, treestate.AppRefID, treestate.Name)
-	if err := impl.db.Create(treestate).Error; err != nil {
-		return 0, err
+func PickUpTreeStatesRootNode(treeStates []*TreeState) *TreeState {
+	root := &TreeState{}
+	for _, component := range treeStates {
+		if component.Name == TREE_STATE_SUMMIT_NAME {
+			root = component
+			break
+		}
 	}
-	return treestate.ID, nil
-}
-
-func (impl *TreeStateRepositoryImpl) Delete(teamID int, treestateID int) error {
-	if err := impl.db.Where("id = ? AND team_id = ?", treestateID, teamID).Delete(&TreeState{}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (impl *TreeStateRepositoryImpl) Update(treestate *TreeState) error {
-	if err := impl.db.Model(treestate).UpdateColumns(TreeState{
-		ID:                 treestate.ID,
-		StateType:          treestate.StateType,
-		ParentNodeRefID:    treestate.ParentNodeRefID,
-		ChildrenNodeRefIDs: treestate.ChildrenNodeRefIDs,
-		AppRefID:           treestate.AppRefID,
-		Version:            treestate.Version,
-		Name:               treestate.Name,
-		Content:            treestate.Content,
-		UpdatedAt:          treestate.UpdatedAt,
-		UpdatedBy:          treestate.UpdatedBy,
-	}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (impl *TreeStateRepositoryImpl) RetrieveByID(teamID int, treestateID int) (*TreeState, error) {
-	treestate := &TreeState{}
-	if err := impl.db.Where("team_id = ? AND id = ?", teamID, treestateID).First(&treestate).Error; err != nil {
-		return &TreeState{}, err
-	}
-	return treestate, nil
-}
-
-func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByVersion(teamID int, version int) ([]*TreeState, error) {
-	var treestates []*TreeState
-	if err := impl.db.Where("team_id = ? AND version = ?", teamID, version).Find(&treestates).Error; err != nil {
-		return nil, err
-	}
-	return treestates, nil
-}
-
-func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByName(teamID int, name string) ([]*TreeState, error) {
-	var treestates []*TreeState
-	if err := impl.db.Where("team_id = ? AND name = ?", teamID, name).Find(&treestates).Error; err != nil {
-		return nil, err
-	}
-	return treestates, nil
-}
-
-func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByApp(teamID int, apprefid int, statetype int, version int) ([]*TreeState, error) {
-	var treestates []*TreeState
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ?", teamID, apprefid, statetype, version).Find(&treestates).Error; err != nil {
-		return nil, err
-	}
-	return treestates, nil
-}
-
-func (impl *TreeStateRepositoryImpl) RetrieveEditVersionByAppAndName(teamID int, apprefid int, statetype int, name string) (*TreeState, error) {
-	var treestate *TreeState
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ? AND name = ?", teamID, apprefid, statetype, APP_EDIT_VERSION, name).First(&treestate).Error; err != nil {
-		return nil, err
-	}
-	return treestate, nil
-}
-
-func (impl *TreeStateRepositoryImpl) RetrieveAllTypeTreeStatesByApp(teamID int, apprefid int, version int) ([]*TreeState, error) {
-	var treestates []*TreeState
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, apprefid, version).Find(&treestates).Error; err != nil {
-		return nil, err
-	}
-	return treestates, nil
-}
-
-func (impl *TreeStateRepositoryImpl) DeleteAllTypeTreeStatesByApp(teamID int, apprefid int) error {
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, apprefid).Delete(&TreeState{}).Error; err != nil {
-		return err
-	}
-	return nil
+	return root
 }

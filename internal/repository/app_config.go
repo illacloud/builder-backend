@@ -21,10 +21,20 @@ import (
 
 const APP_CONFIG_FIELD_PUBLIC = "public"
 const APP_CONFIG_FIELD_WATER_MARK = "waterMark"
+const APP_CONFIG_FIELD_DESCRIPTION = "description"
 
 type AppConfig struct {
-	Public    bool `json:"public"` // switch for public app (which can view by anonymous user)
-	WaterMark bool `json:"waterMark"`
+	Public      bool   `json:"public"` // switch for public app (which can view by anonymous user)
+	WaterMark   bool   `json:"waterMark"`
+	Description string `json:"description"`
+}
+
+func NewAppConfig() *AppConfig {
+	return &AppConfig{
+		Public:      false,
+		WaterMark:   true,
+		Description: "",
+	}
 }
 
 func (ac *AppConfig) ExportToJSONString() string {
@@ -44,29 +54,35 @@ func (ac *AppConfig) DisableWaterMark() {
 	ac.WaterMark = false
 }
 
-func UpdateAppConfigByConfigAppRawRequest(rawReq map[string]interface{}, appConfig *AppConfig) (*AppConfig, error) {
+func (appConfig *AppConfig) UpdateAppConfigByConfigAppRawRequest(rawReq map[string]interface{}) error {
 	var assertPass bool
 	for key, value := range rawReq {
 		switch key {
 		case APP_CONFIG_FIELD_PUBLIC:
 			appConfig.Public, assertPass = value.(bool)
 			if !assertPass {
-				return nil, errors.New("update app config failed due to assert failed.")
+				return errors.New("update app config failed due to assert failed.")
 			}
 		case APP_CONFIG_FIELD_WATER_MARK:
 			appConfig.WaterMark, assertPass = value.(bool)
 			if !assertPass {
-				return nil, errors.New("update app config failed due to assert failed.")
+				return errors.New("update app config failed due to assert failed.")
+			}
+		case APP_CONFIG_FIELD_DESCRIPTION:
+			appConfig.Description, assertPass = value.(string)
+			if !assertPass {
+				return errors.New("update app config failed due to assert failed.")
 			}
 		default:
 		}
 	}
-	return appConfig, nil
+	return nil
 }
 
 func NewAppConfigByDefault() *AppConfig {
 	return &AppConfig{
-		Public:    false,
-		WaterMark: true,
+		Public:      false,
+		WaterMark:   true,
+		Description: "",
 	}
 }

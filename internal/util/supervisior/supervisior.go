@@ -35,6 +35,7 @@ const (
 	CAN_DELETE            = "/accessControl/teams/%s/unitType/%s/unitID/%s/attribute/canDelete/%s"
 	// data control part
 	GET_USER               = "/dataControl/users/%s"
+	GET_MULTI_USER         = "/dataControl/users/multi/%s"
 	GET_TEAM_BY_IDENTIFIER = "/dataControl/teams/byIdentifier/%s"
 )
 
@@ -201,6 +202,20 @@ func (supervisior *Supervisior) GetUser(targetUserID int) (string, error) {
 	resp, err := client.R().
 		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(targetUserIDString)).
 		Get(supervisior.Config.SupervisiorInternalAPI + fmt.Sprintf(GET_USER, targetUserIDString))
+	if resp.StatusCode() != http.StatusOK {
+		if err != nil {
+			return "", errors.New("request illa supervisior failed.")
+		}
+		return "", errors.New("validate failed.")
+	}
+	return resp.String(), nil
+}
+
+func (supervisior *Supervisior) GetMultiUser(targetUserIDsInString string) (string, error) {
+	client := resty.New()
+	resp, err := client.R().
+		SetHeader("Request-Token", supervisior.Validator.GenerateValidateToken(targetUserIDsInString)).
+		Get(supervisior.Config.SupervisiorInternalAPI + fmt.Sprintf(GET_MULTI_USER, targetUserIDsInString))
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
 			return "", errors.New("request illa supervisior failed.")
