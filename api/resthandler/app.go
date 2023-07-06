@@ -615,6 +615,7 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	var rawRequest map[string]interface{}
 	publicApp := false
 	json.NewDecoder(c.Request.Body).Decode(&rawRequest)
+	fmt.Printf("[DUMP] ReleaseApp.rawRequest: %+v\n", rawRequest)
 	isPublicRaw, hitIsPublic := rawRequest["public"]
 	if hitIsPublic {
 		publicApp = isPublicRaw.(bool)
