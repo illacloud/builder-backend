@@ -335,7 +335,7 @@ func (impl *AppServiceImpl) DuplicateApp(teamID int, appID int, userID int, name
 	appA.UpdatedAt = time.Now().UTC()
 	appA.CreatedBy = userID
 	appA.UpdatedBy = userID
-	id, err := impl.appRepository.Create(&repository.App{
+	newAppB := &repository.App{
 		UID:             uuid.New(),
 		TeamID:          teamID,
 		Name:            name,
@@ -346,7 +346,9 @@ func (impl *AppServiceImpl) DuplicateApp(teamID int, appID int, userID int, name
 		CreatedAt:       appA.CreatedAt,
 		UpdatedBy:       appA.UpdatedBy,
 		UpdatedAt:       appA.UpdatedAt,
-	})
+	}
+	newAppB.PushEditedBy(repository.NewAppEditedByUserID(userID))
+	id, err := impl.appRepository.Create(newAppB)
 	if err != nil {
 		return 0, err
 	}
