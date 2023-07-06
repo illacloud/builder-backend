@@ -22,30 +22,22 @@ import (
 	"github.com/illacloud/builder-backend/internal/repository"
 )
 
-var initialComponet = "{\"displayName\":\"root\",\"showName\":\"root\",\"error\":false,\"isDragging\":false,\"isResizing\":false,\"type\":\"DOT_PANEL\",\"parentNode\":\"\",\"childrenNode\":[],\"containerType\":\"EDITOR_DOT_PANEL\",\"verticalResize\":true,\"h\":0,\"w\":0,\"minH\":0,\"minW\":0,\"unitW\":0,\"unitH\":0,\"x\":-1,\"y\":-1,\"z\":0,\"props\":{\"currentPageIndex\":0,\"pageSortedKey\":[\"page1\"]}}"
-
 type ComponentNode struct {
-	DisplayName    string                 `json:"displayName"`
-	ParentNode     string                 `json:"parentNode"`
-	ShowName       string                 `json:"showName"`
-	Cerror         bool                   `json:"error"`
-	IsDragging     bool                   `json:"isDragging"`
-	IsResizing     bool                   `json:"isResizing"`
-	ChildrenNode   []*ComponentNode       `json:"childrenNode"`
-	Ctype          string                 `json:"type"`
-	ContainerType  string                 `json:"containerType"`
-	VerticalResize bool                   `json:"verticalResize"`
-	H              float64                `json:"h"`
-	W              float64                `json:"w"`
-	MinH           float64                `json:"minH"`
-	MinW           float64                `json:"minW"`
-	UnitW          float64                `json:"unitW"`
-	UnitH          float64                `json:"unitH"`
-	X              float64                `json:"x"`
-	Y              float64                `json:"y"`
-	Z              float64                `json:"z"`
-	Props          map[string]interface{} `json:"props"`
-	PanelConfig    map[string]interface{} `json:"panelConfig"`
+	Version       int                    `json:"version"`
+	DisplayName   string                 `json:"displayName"`
+	ParentNode    string                 `json:"parentNode"`
+	ShowName      string                 `json:"showName"`
+	ChildrenNode  []*ComponentNode       `json:"childrenNode"`
+	Ctype         string                 `json:"type"`
+	ContainerType string                 `json:"containerType"`
+	H             float64                `json:"h"`
+	W             float64                `json:"w"`
+	MinH          float64                `json:"minH"`
+	MinW          float64                `json:"minW"`
+	X             float64                `json:"x"`
+	Y             float64                `json:"y"`
+	Z             float64                `json:"z"`
+	Props         map[string]interface{} `json:"props"`
 }
 
 func newComponentNodeFromJSON(cnodebyte []byte) (*ComponentNode, error) {

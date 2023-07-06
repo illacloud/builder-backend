@@ -66,6 +66,7 @@ var (
 	NEON_RESOURCE          = "neon"
 	UPSTASH_RESOURCE       = "upstash"
 	AIRTABLE_RESOURCE      = "airtable"
+	HYDRA_RESOURCE         = "hydra"
 )
 
 type AbstractResourceFactory interface {
@@ -84,7 +85,7 @@ func (f *Factory) Generate() common.DataConnector {
 	case MYSQL_RESOURCE, MARIADB_RESOURCE, TIDB_RESOURCE:
 		sqlRsc := &mysql.MySQLConnector{}
 		return sqlRsc
-	case POSTGRES_RESOURCE, SUPABASEDB_RESOURCE, NEON_RESOURCE:
+	case POSTGRES_RESOURCE, SUPABASEDB_RESOURCE, NEON_RESOURCE, HYDRA_RESOURCE:
 		pgsRsc := &postgresql.Connector{}
 		return pgsRsc
 	case REDIS_RESOURCE, UPSTASH_RESOURCE:
