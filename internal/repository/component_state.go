@@ -20,8 +20,6 @@ import (
 	"strconv"
 )
 
-const ROOT_COMPONET_NODE_IN_SERIAL = "{\"version\":0,\"displayName\":\"root\",\"parentNode\":\"\",\"showName\":\"root\",\"type\":\"DOT_PANEL\",\"childrenNode\":[],\"containerType\":\"EDITOR_DOT_PANEL\",\"h\":0,\"w\":0,\"minH\":0,\"minW\":0,\"x\":-1,\"y\":-1,\"z\":0,\"props\":{\"currentPageIndex\":0,\"pageSortedKey\":[\"page1\"]}}"
-
 type ComponentNode struct {
 	Version       float64                `json:"version"` // default is 0
 	DisplayName   string                 `json:"displayName"`
@@ -43,10 +41,6 @@ type ComponentNode struct {
 type ComponentStateForUpdate struct {
 	Before interface{} `json:"before"`
 	After  interface{} `json:"after"`
-}
-
-func GetInitialComponent() string {
-	return ROOT_COMPONET_NODE_IN_SERIAL
 }
 
 func NewComponentNode() *ComponentNode {

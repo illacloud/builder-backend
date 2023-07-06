@@ -1,8 +1,8 @@
 package repository
 
 type CreateAppRequest struct {
-	Name       string        `json:"appName" validate:"required"`
-	InitScheme []interface{} `json:"initScheme"`
+	Name       string      `json:"appName" validate:"required"`
+	InitScheme interface{} `json:"initScheme"`
 }
 
 func NewCreateAppRequest() *CreateAppRequest {
@@ -13,6 +13,6 @@ func (req *CreateAppRequest) ExportAppName() string {
 	return req.Name
 }
 
-func (req *CreateAppRequest) ExportInitScheme() []interface{} {
+func (req *CreateAppRequest) ExportInitScheme() interface{} {
 	return req.InitScheme
 }

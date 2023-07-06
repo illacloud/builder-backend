@@ -55,7 +55,7 @@ func NewTreeStateByApp(app *App) *TreeState {
 		AppRefID:           app.ExportID(),
 		Version:            APP_EDIT_VERSION,
 		Name:               TREE_STATE_SUMMIT_NAME,
-		Content:            GetInitialComponent(),
+		Content:            "",
 		CreatedBy:          app.ExportCreatedBy(),
 		UpdatedBy:          app.ExportUpdatedBy(),
 	}

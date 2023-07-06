@@ -129,21 +129,10 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 		return
 	}
 
-	// init ky_states & tree_states for new app
-	newTreeState := repository.NewTreeStateByApp(newApp)
-	_, errInCreateTreeState := impl.TreeStateRepository.Create(newTreeState)
-	if errInCreateTreeState != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_STATE, "error in init app states: "+errInCreateTreeState.Error())
-		return
-	}
-
 	// fill component node by given init schema
-	if len(req.InitScheme) > 0 {
-		for _, v := range req.InitScheme {
-			componentTree := repository.ConstructComponentNodeByMap(v)
-			_ = impl.TreeStateService.CreateComponentTree(newApp, 0, componentTree)
-		}
-	}
+	// @NOTE: that the root node will created by InitScheme in request
+	componentTree := repository.ConstructComponentNodeByMap(req.ExportAppName())
+	_ = impl.TreeStateService.CreateComponentTree(newApp, 0, componentTree)
 
 	// audit log
 	auditLogger := auditlogger.GetInstance()
