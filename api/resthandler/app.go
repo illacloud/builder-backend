@@ -638,9 +638,31 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	}
 
 	// fetch app
-	appDTO, err := impl.AppService.FetchAppByID(teamID, appID)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+err.Error())
+	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
+	if errInRetrieveApp != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get user info failed: "+errInRetrieveApp.Error())
+		return
+	}
+
+	// config app
+	app.MainlineVersion += 1
+	app.ReleaseVersion = app.MainlineVersion
+	if publicApp {
+		app.SetPublic(userID)
+	} else {
+		app.SetPrivate(userID)
+	}
+
+	// release app following components & actions
+	_ = impl.AppService.ReleaseTreeStateByApp(teamID, appID, app.MainlineVersion)
+	_ = impl.AppService.ReleaseKVStateByApp(teamID, appID, app.MainlineVersion)
+	_ = impl.AppService.ReleaseSetStateByApp(teamID, appID, app.MainlineVersion)
+	_ = impl.AppService.ReleaseActionsByApp(teamID, appID, app.MainlineVersion)
+
+	// release app
+	errInUpdateApp := impl.AppRepository.UpdateWholeApp(app)
+	if errInUpdateApp != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
 		return
 	}
 
@@ -652,17 +674,10 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 		UserID:    userID,
 		IP:        c.ClientIP(),
 		AppID:     appID,
-		AppName:   appDTO.Name,
+		AppName:   app.ExportAppName(),
 	})
 
-	// Call `app service` to release app
-	version, err := impl.AppService.ReleaseApp(teamID, appID, userID, publicApp)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_RELEASE_APP, "release app error: "+err.Error())
-		return
-	}
-
 	// feedback
-	FeedbackOK(c, repository.NewReleaseAppResponse(version))
+	FeedbackOK(c, repository.NewReleaseAppResponse(app.ReleaseVersion))
 	return
 }

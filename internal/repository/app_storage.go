@@ -11,6 +11,7 @@ type AppRepository interface {
 	Create(app *App) (int, error)
 	Delete(teamID int, appID int) error
 	Update(app *App) error
+	UpdateWholeApp(app *App) error
 	UpdateUpdatedAt(app *App) error
 	RetrieveAll(teamID int) ([]*App, error)
 	RetrieveAppByIDAndTeamID(appID int, teamID int) (*App, error)
@@ -54,6 +55,13 @@ func (impl *AppRepositoryImpl) Update(app *App) error {
 		UpdatedBy:       app.UpdatedBy,
 		UpdatedAt:       app.UpdatedAt,
 	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (impl *AppRepositoryImpl) UpdateWholeApp(app *App) error {
+	if err := impl.db.Model(&App{}).Where("id = ?", app.ID).UpdateColumns(app).Error; err != nil {
 		return err
 	}
 	return nil

@@ -36,6 +36,10 @@ type AppService interface {
 	DuplicateApp(teamID int, appID, userID int, name string) (int, error)
 	ReleaseApp(teamID int, appID int, userID int, public bool) (int, error)
 	GetMegaData(teamID int, appID int, version int) (*EditorForExport, error)
+	ReleaseTreeStateByApp(teamID int, appID int, mainlineVersion int) error
+	ReleaseKVStateByApp(teamID int, appID int, mainlineVersion int) error
+	ReleaseSetStateByApp(teamID int, appID int, mainlineVersion int) error
+	ReleaseActionsByApp(teamID int, appID int, mainlineVersion int) error
 }
 
 type AppServiceImpl struct {
@@ -514,10 +518,10 @@ func (impl *AppServiceImpl) ReleaseApp(teamID int, appID int, userID int, public
 	}
 
 	// exec release process
-	_ = impl.releaseTreeStateByApp(teamID, AppDto{ID: appID, MainlineVersion: app.MainlineVersion})
-	_ = impl.releaseKVStateByApp(teamID, AppDto{ID: appID, MainlineVersion: app.MainlineVersion})
-	_ = impl.releaseSetStateByApp(teamID, AppDto{ID: appID, MainlineVersion: app.MainlineVersion})
-	_ = impl.releaseActionsByApp(teamID, AppDto{ID: appID, MainlineVersion: app.MainlineVersion})
+	_ = impl.ReleaseTreeStateByApp(teamID, appID, app.MainlineVersion)
+	_ = impl.ReleaseKVStateByApp(teamID, appID, app.MainlineVersion)
+	_ = impl.ReleaseSetStateByApp(teamID, appID, app.MainlineVersion)
+	_ = impl.ReleaseActionsByApp(teamID, appID, app.MainlineVersion)
 	if err := impl.appRepository.Update(app); err != nil {
 		return -1, nil
 	}
@@ -525,9 +529,9 @@ func (impl *AppServiceImpl) ReleaseApp(teamID int, appID int, userID int, public
 	return app.ReleaseVersion, nil
 }
 
-func (impl *AppServiceImpl) releaseTreeStateByApp(teamID int, app AppDto) error {
+func (impl *AppServiceImpl) ReleaseTreeStateByApp(teamID int, appID int, mainlineVersion int) error {
 	// get edit version K-V state from database
-	treestates, err := impl.treestateRepository.RetrieveAllTypeTreeStatesByApp(teamID, app.ID, repository.APP_EDIT_VERSION)
+	treestates, err := impl.treestateRepository.RetrieveAllTypeTreeStatesByApp(teamID, appID, repository.APP_EDIT_VERSION)
 	if err != nil {
 		return err
 	}
@@ -538,7 +542,7 @@ func (impl *AppServiceImpl) releaseTreeStateByApp(teamID int, app AppDto) error 
 		indexIDMap[serial] = treestates[serial].ID
 		treestates[serial].ID = 0
 		treestates[serial].UID = uuid.New()
-		treestates[serial].Version = app.MainlineVersion
+		treestates[serial].Version = mainlineVersion
 	}
 	// and put them to the database as duplicate
 	for i, treestate := range treestates {
@@ -560,9 +564,9 @@ func (impl *AppServiceImpl) releaseTreeStateByApp(teamID int, app AppDto) error 
 	return nil
 }
 
-func (impl *AppServiceImpl) releaseKVStateByApp(teamID int, app AppDto) error {
+func (impl *AppServiceImpl) ReleaseKVStateByApp(teamID int, appID int, mainlineVersion int) error {
 	// get edit version K-V state from database
-	kvstates, err := impl.kvstateRepository.RetrieveAllTypeKVStatesByApp(teamID, app.ID, repository.APP_EDIT_VERSION)
+	kvstates, err := impl.kvstateRepository.RetrieveAllTypeKVStatesByApp(teamID, appID, repository.APP_EDIT_VERSION)
 	if err != nil {
 		return err
 	}
@@ -570,7 +574,7 @@ func (impl *AppServiceImpl) releaseKVStateByApp(teamID int, app AppDto) error {
 	for serial, _ := range kvstates {
 		kvstates[serial].ID = 0
 		kvstates[serial].UID = uuid.New()
-		kvstates[serial].Version = app.MainlineVersion
+		kvstates[serial].Version = mainlineVersion
 	}
 	// and put them to the database as duplicate
 	for _, kvstate := range kvstates {
@@ -581,8 +585,8 @@ func (impl *AppServiceImpl) releaseKVStateByApp(teamID int, app AppDto) error {
 	return nil
 }
 
-func (impl *AppServiceImpl) releaseSetStateByApp(teamID int, app AppDto) error {
-	setstates, err := impl.setstateRepository.RetrieveSetStatesByApp(teamID, app.ID, repository.SET_STATE_TYPE_DISPLAY_NAME, repository.APP_EDIT_VERSION)
+func (impl *AppServiceImpl) ReleaseSetStateByApp(teamID int, appID int, mainlineVersion int) error {
+	setstates, err := impl.setstateRepository.RetrieveSetStatesByApp(teamID, appID, repository.SET_STATE_TYPE_DISPLAY_NAME, repository.APP_EDIT_VERSION)
 	if err != nil {
 		return err
 	}
@@ -590,7 +594,7 @@ func (impl *AppServiceImpl) releaseSetStateByApp(teamID int, app AppDto) error {
 	for serial, _ := range setstates {
 		setstates[serial].ID = 0
 		setstates[serial].UID = uuid.New()
-		setstates[serial].Version = app.MainlineVersion
+		setstates[serial].Version = mainlineVersion
 	}
 	// and put them to the database as duplicate
 	for _, setstate := range setstates {
@@ -601,9 +605,9 @@ func (impl *AppServiceImpl) releaseSetStateByApp(teamID int, app AppDto) error {
 	return nil
 }
 
-func (impl *AppServiceImpl) releaseActionsByApp(teamID int, app AppDto) error {
+func (impl *AppServiceImpl) ReleaseActionsByApp(teamID int, appID int, mainlineVersion int) error {
 	// get edit version K-V state from database
-	actions, err := impl.actionRepository.RetrieveActionsByAppVersion(teamID, app.ID, repository.APP_EDIT_VERSION)
+	actions, err := impl.actionRepository.RetrieveActionsByAppVersion(teamID, appID, repository.APP_EDIT_VERSION)
 	if err != nil {
 		return err
 	}
@@ -611,7 +615,7 @@ func (impl *AppServiceImpl) releaseActionsByApp(teamID int, app AppDto) error {
 	for serial, _ := range actions {
 		actions[serial].ID = 0
 		actions[serial].UID = uuid.New()
-		actions[serial].Version = app.MainlineVersion
+		actions[serial].Version = mainlineVersion
 	}
 	// and put them to the database as duplicate
 	for _, action := range actions {
