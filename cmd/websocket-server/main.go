@@ -44,6 +44,7 @@ var kvssi *state.KVStateServiceImpl
 var sssi *state.SetStateServiceImpl
 var asi *app.AppServiceImpl
 var rsi *resource.ResourceServiceImpl
+var appRepositoryImpl *repository.AppRepositoryImpl
 
 func initEnv() error {
 	sugaredLogger := util.NewSugardLogger()
@@ -62,6 +63,7 @@ func initEnv() error {
 	appRepositoryImpl := repository.NewAppRepositoryImpl(sugaredLogger, gormDB)
 	resourceRepositoryImpl := repository.NewResourceRepositoryImpl(sugaredLogger, gormDB)
 	actionRepositoryImpl := repository.NewActionRepositoryImpl(sugaredLogger, gormDB)
+	appRepositoryImpl = appRepositoryImpl
 	// init service
 	tssi = state.NewTreeStateServiceImpl(sugaredLogger, treestateRepositoryImpl)
 	kvssi = state.NewKVStateServiceImpl(sugaredLogger, kvstateRepositoryImpl)
@@ -73,13 +75,14 @@ func initEnv() error {
 
 var hub *ws.Hub
 
-func InitHub(asi *app.AppServiceImpl, rsi *resource.ResourceServiceImpl, tssi *state.TreeStateServiceImpl, kvssi *state.KVStateServiceImpl, sssi *state.SetStateServiceImpl) {
+func InitHub(asi *app.AppServiceImpl, rsi *resource.ResourceServiceImpl, tssi *state.TreeStateServiceImpl, kvssi *state.KVStateServiceImpl, sssi *state.SetStateServiceImpl, appRepository *repository.AppRepositoryImpl) {
 	hub = ws.NewHub()
 	hub.SetAppServiceImpl(asi)
 	hub.SetResourceServiceImpl(rsi)
 	hub.SetTreeStateServiceImpl(tssi)
 	hub.SetKVStateServiceImpl(kvssi)
 	hub.SetSetStateServiceImpl(sssi)
+	hub.SetAppRepositoryImpl(appRepositoryImpl)
 	go filter.Run(hub)
 }
 
@@ -131,7 +134,7 @@ func main() {
 
 	// init
 	initEnv()
-	InitHub(asi, rsi, tssi, kvssi, sssi)
+	InitHub(asi, rsi, tssi, kvssi, sssi, appRepositoryImpl)
 
 	// listen and serve
 	r := mux.NewRouter()
