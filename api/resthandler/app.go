@@ -356,6 +356,7 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 	if len(allApps) > 0 {
 		// get all modifier user ids from all apps
 		allUserIDs := repository.ExtractAllEditorIDFromApps(allApps)
+		fmt.Printf("[DUMP] GetAllApps.allUserIDs: %+v\n", allUserIDs)
 
 		// fet all user id mapped user info, and build user info lookup table
 		var errInGetMultiUserInfo error
@@ -365,8 +366,6 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 			return
 		}
 	}
-
-	fmt.Printf("[DUMP] GetAllApps.allUserIDs: %+v\n", allUserIDs)
 
 	// feedback
 	c.JSON(http.StatusOK, repository.GenerateGetAllAppsResponse(allApps, usersLT))
