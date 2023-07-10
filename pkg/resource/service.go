@@ -197,7 +197,7 @@ func (impl *ResourceServiceImpl) GetResource(teamID, id int) (*ResourceDtoForExp
 		UID:       res.UID,
 		TeamID:    res.TeamID,
 		Name:      res.Name,
-		Type:      resourcelist.GetResourceIDMappedType(res.Type - 1),
+		Type:      resourcelist.GetResourceIDMappedType(res.Type),
 		Options:   res.Options,
 		CreatedAt: res.CreatedAt,
 		CreatedBy: res.CreatedBy,
@@ -219,7 +219,7 @@ func (impl *ResourceServiceImpl) FindAllResources(teamID int) ([]*ResourceDtoFor
 			UID:       value.UID,
 			TeamID:    value.TeamID,
 			Name:      value.Name,
-			Type:      resourcelist.GetResourceIDMappedType(value.Type - 1),
+			Type:      resourcelist.GetResourceIDMappedType(value.Type),
 			Options:   value.Options,
 			CreatedAt: value.CreatedAt,
 			CreatedBy: value.CreatedBy,
@@ -267,7 +267,7 @@ func (impl *ResourceServiceImpl) GetMetaInfo(teamID int, id int) (map[string]int
 	if err != nil {
 		return map[string]interface{}{}, err
 	}
-	rscFactory := Factory{Type: resourcelist.GetResourceIDMappedType(rsc.Type - 1)}
+	rscFactory := Factory{Type: resourcelist.GetResourceIDMappedType(rsc.Type)}
 	dbResource := rscFactory.Generate()
 	if dbResource == nil {
 		return map[string]interface{}{}, errors.New("invalid ResourceType: unsupported type")
