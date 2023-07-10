@@ -21,41 +21,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/internal/idconvertor"
 	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/builder-backend/internal/util/resourcelist"
 
 	"go.uber.org/zap"
 )
-
-var type_array = [26]string{"restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb", "tidb",
-	"elasticsearch", "s3", "smtp", "supabasedb", "firebase", "clickhouse", "mssql", "huggingface", "dynamodb", "snowflake",
-	"couchdb", "hfendpoint", "oracle", "appwrite", "googlesheets", "neon", "upstash", "airtable"}
-var type_map = map[string]int{
-	"restapi":       1,
-	"graphql":       2,
-	"redis":         3,
-	"mysql":         4,
-	"mariadb":       5,
-	"postgresql":    6,
-	"mongodb":       7,
-	"tidb":          8,
-	"elasticsearch": 9,
-	"s3":            10,
-	"smtp":          11,
-	"supabasedb":    12,
-	"firebase":      13,
-	"clickhouse":    14,
-	"mssql":         15,
-	"huggingface":   16,
-	"dynamodb":      17,
-	"snowflake":     18,
-	"couchdb":       19,
-	"hfendpoint":    20,
-	"oracle":        21,
-	"appwrite":      22,
-	"googlesheets":  23,
-	"neon":          24,
-	"upstash":       25,
-	"airtable":      26,
-}
 
 type ResourceService interface {
 	CreateResource(resource ResourceDto) (*ResourceDtoForExport, error)
@@ -73,7 +42,7 @@ type ResourceDto struct {
 	UID       uuid.UUID              `json:"uid"`
 	TeamID    int                    `json:"teamID"`
 	Name      string                 `json:"resourceName" validate:"required,min=1,max=128"`
-	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle appwrite googlesheets neon upstash airtable"`
+	Type      string                 `json:"resourceType" validate:"required"`
 	Options   map[string]interface{} `json:"content" validate:"required"`
 	CreatedAt time.Time              `json:"createdAt,omitempty"`
 	CreatedBy int                    `json:"createdBy,omitempty"`
@@ -86,7 +55,7 @@ type ResourceDtoForExport struct {
 	UID       uuid.UUID              `json:"uid"`
 	TeamID    string                 `json:"teamID"`
 	Name      string                 `json:"resourceName" validate:"required"`
-	Type      string                 `json:"resourceType" validate:"oneof=restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle appwrite googlesheets neon upstash airtable"`
+	Type      string                 `json:"resourceType" validate:"required"`
 	Options   map[string]interface{} `json:"content" validate:"required"`
 	CreatedAt time.Time              `json:"createdAt,omitempty"`
 	CreatedBy string                 `json:"createdBy,omitempty"`
@@ -183,7 +152,7 @@ func (impl *ResourceServiceImpl) CreateResource(resource ResourceDto) (*Resource
 		UID:       resource.UID,
 		TeamID:    resource.TeamID,
 		Name:      resource.Name,
-		Type:      type_map[resource.Type],
+		Type:      resourcelist.GetResourceNameMappedID(resource.Type),
 		Options:   resource.Options,
 		CreatedAt: resource.CreatedAt,
 		CreatedBy: resource.CreatedBy,
@@ -208,7 +177,7 @@ func (impl *ResourceServiceImpl) UpdateResource(resource ResourceDto) (*Resource
 	if err := impl.resourceRepository.Update(&repository.Resource{
 		ID:        resource.ID,
 		Name:      resource.Name,
-		Type:      type_map[resource.Type],
+		Type:      resourcelist.GetResourceNameMappedID(resource.Type),
 		Options:   resource.Options,
 		UpdatedAt: resource.UpdatedAt,
 		UpdatedBy: resource.UpdatedBy,
@@ -228,7 +197,7 @@ func (impl *ResourceServiceImpl) GetResource(teamID, id int) (*ResourceDtoForExp
 		UID:       res.UID,
 		TeamID:    res.TeamID,
 		Name:      res.Name,
-		Type:      type_array[res.Type-1],
+		Type:      resourcelist.GetResourceIDMappedType(res.Type),
 		Options:   res.Options,
 		CreatedAt: res.CreatedAt,
 		CreatedBy: res.CreatedBy,
@@ -250,7 +219,7 @@ func (impl *ResourceServiceImpl) FindAllResources(teamID int) ([]*ResourceDtoFor
 			UID:       value.UID,
 			TeamID:    value.TeamID,
 			Name:      value.Name,
-			Type:      type_array[value.Type-1],
+			Type:      resourcelist.GetResourceIDMappedType(value.Type),
 			Options:   value.Options,
 			CreatedAt: value.CreatedAt,
 			CreatedBy: value.CreatedBy,
@@ -298,7 +267,7 @@ func (impl *ResourceServiceImpl) GetMetaInfo(teamID int, id int) (map[string]int
 	if err != nil {
 		return map[string]interface{}{}, err
 	}
-	rscFactory := Factory{Type: type_array[rsc.Type-1]}
+	rscFactory := Factory{Type: resourcelist.GetResourceIDMappedType(rsc.Type)}
 	dbResource := rscFactory.Generate()
 	if dbResource == nil {
 		return map[string]interface{}{}, errors.New("invalid ResourceType: unsupported type")

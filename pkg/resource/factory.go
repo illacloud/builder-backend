@@ -15,6 +15,7 @@
 package resource
 
 import (
+	"github.com/illacloud/builder-backend/internal/util/resourcelist"
 	"github.com/illacloud/builder-backend/pkg/plugins/airtable"
 	"github.com/illacloud/builder-backend/pkg/plugins/appwrite"
 	"github.com/illacloud/builder-backend/pkg/plugins/clickhouse"
@@ -39,35 +40,6 @@ import (
 	"github.com/illacloud/builder-backend/pkg/plugins/snowflake"
 )
 
-var (
-	REST_RESOURCE          = "restapi"
-	MYSQL_RESOURCE         = "mysql"
-	MARIADB_RESOURCE       = "mariadb"
-	TIDB_RESOURCE          = "tidb"
-	POSTGRES_RESOURCE      = "postgresql"
-	REDIS_RESOURCE         = "redis"
-	MONGODB_RESOURCE       = "mongodb"
-	ELASTICSEARCH_RESOURCE = "elasticsearch"
-	S3_RESOURCE            = "s3"
-	SMTP_RESOURCE          = "smtp"
-	SUPABASEDB_RESOURCE    = "supabasedb"
-	FIREBASE_RESOURCE      = "firebase"
-	CLICKHOUSE_RESOURCE    = "clickhouse"
-	GRAPHQL_RESOURCE       = "graphql"
-	MSSQL_RESOURCE         = "mssql"
-	HUGGINGFACE_RESOURCE   = "huggingface"
-	DYNAMODB_RESOURCE      = "dynamodb"
-	SNOWFLAKE_RESOURCE     = "snowflake"
-	COUCHDB_RESOURCE       = "couchdb"
-	HFENDPOINT_RESOURCE    = "hfendpoint"
-	ORACLE_RESOURCE        = "oracle"
-	APPWRITE_RESOURCE      = "appwrite"
-	GOOGLESHEETS_RESOURCE  = "googlesheets"
-	NEON_RESOURCE          = "neon"
-	UPSTASH_RESOURCE       = "upstash"
-	AIRTABLE_RESOURCE      = "airtable"
-)
-
 type AbstractResourceFactory interface {
 	Build() common.DataConnector
 }
@@ -78,67 +50,67 @@ type Factory struct {
 
 func (f *Factory) Generate() common.DataConnector {
 	switch f.Type {
-	case REST_RESOURCE:
+	case resourcelist.TYPE_RESTAPI:
 		restapiRsc := &restapi.RESTAPIConnector{}
 		return restapiRsc
-	case MYSQL_RESOURCE, MARIADB_RESOURCE, TIDB_RESOURCE:
+	case resourcelist.TYPE_MYSQL, resourcelist.TYPE_MARIADB, resourcelist.TYPE_TIDB:
 		sqlRsc := &mysql.MySQLConnector{}
 		return sqlRsc
-	case POSTGRES_RESOURCE, SUPABASEDB_RESOURCE, NEON_RESOURCE:
+	case resourcelist.TYPE_POSTGRESQL, resourcelist.TYPE_SUPABASEDB, resourcelist.TYPE_NEON, resourcelist.TYPE_HYDRA:
 		pgsRsc := &postgresql.Connector{}
 		return pgsRsc
-	case REDIS_RESOURCE, UPSTASH_RESOURCE:
+	case resourcelist.TYPE_REDIS, resourcelist.TYPE_UPSTASH:
 		redisRsc := &redis.Connector{}
 		return redisRsc
-	case MONGODB_RESOURCE:
+	case resourcelist.TYPE_MONGODB:
 		mongoRsc := &mongodb.Connector{}
 		return mongoRsc
-	case ELASTICSEARCH_RESOURCE:
+	case resourcelist.TYPE_ELASTICSEARCH:
 		esRsc := &elasticsearch.Connector{}
 		return esRsc
-	case S3_RESOURCE:
+	case resourcelist.TYPE_S3:
 		s3Rsc := &s3.Connector{}
 		return s3Rsc
-	case SMTP_RESOURCE:
+	case resourcelist.TYPE_SMTP:
 		smtpRsc := &smtp.Connector{}
 		return smtpRsc
-	case FIREBASE_RESOURCE:
+	case resourcelist.TYPE_FIREBASE:
 		firebaseRsc := &firebase.Connector{}
 		return firebaseRsc
-	case CLICKHOUSE_RESOURCE:
+	case resourcelist.TYPE_CLICKHOUSE:
 		clickhouseRsc := &clickhouse.Connector{}
 		return clickhouseRsc
-	case GRAPHQL_RESOURCE:
+	case resourcelist.TYPE_GRAPHQL:
 		graphqlRsc := &graphql.Connector{}
 		return graphqlRsc
-	case MSSQL_RESOURCE:
+	case resourcelist.TYPE_MSSQL:
 		mssqlRsc := &mssql.Connector{}
 		return mssqlRsc
-	case HUGGINGFACE_RESOURCE:
+	case resourcelist.TYPE_HUGGINGFACE:
 		hfRsc := &huggingface.Connector{}
 		return hfRsc
-	case DYNAMODB_RESOURCE:
+	case resourcelist.TYPE_DYNAMODB:
 		dynamodbRsc := &dynamodb.Connector{}
 		return dynamodbRsc
-	case SNOWFLAKE_RESOURCE:
+	case resourcelist.TYPE_SNOWFLAKE:
 		snowflakeRsc := &snowflake.Connector{}
 		return snowflakeRsc
-	case COUCHDB_RESOURCE:
+	case resourcelist.TYPE_COUCHDB:
 		couchdbRsc := &couchdb.Connector{}
 		return couchdbRsc
-	case HFENDPOINT_RESOURCE:
+	case resourcelist.TYPE_HFENDPOINT:
 		hfendpointRsc := &hfendpoint.Connector{}
 		return hfendpointRsc
-	case ORACLE_RESOURCE:
+	case resourcelist.TYPE_ORACLE:
 		oracleRsc := &oracle.Connector{}
 		return oracleRsc
-	case APPWRITE_RESOURCE:
+	case resourcelist.TYPE_APPWRITE:
 		appwriteRsc := &appwrite.Connector{}
 		return appwriteRsc
-	case GOOGLESHEETS_RESOURCE:
+	case resourcelist.TYPE_GOOGLESHEETS:
 		googlesheetsRsc := &googlesheets.Connector{}
 		return googlesheetsRsc
-	case AIRTABLE_RESOURCE:
+	case resourcelist.TYPE_AIRTABLE:
 		airtableRsc := &airtable.Connector{}
 		return airtableRsc
 	default:

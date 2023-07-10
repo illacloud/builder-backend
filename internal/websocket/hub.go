@@ -16,6 +16,7 @@ package ws
 
 import (
 	"github.com/google/uuid"
+	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/resource"
 	"github.com/illacloud/builder-backend/pkg/state"
@@ -52,6 +53,7 @@ type Hub struct {
 	SetStateServiceImpl  *state.SetStateServiceImpl
 	AppServiceImpl       *app.AppServiceImpl
 	ResourceServiceImpl  *resource.ResourceServiceImpl
+	AppRepositoryImpl    *repository.AppRepositoryImpl
 }
 
 func NewHub() *Hub {
@@ -86,6 +88,10 @@ func (hub *Hub) SetAppServiceImpl(asi *app.AppServiceImpl) {
 
 func (hub *Hub) SetResourceServiceImpl(rsi *resource.ResourceServiceImpl) {
 	hub.ResourceServiceImpl = rsi
+}
+
+func (hub *Hub) SetAppRepositoryImpl(appRepositoryImpl *repository.AppRepositoryImpl) {
+	hub.AppRepositoryImpl = appRepositoryImpl
 }
 
 func (hub *Hub) GetInRoomUsersByRoomID(roomID int) *InRoomUsers {

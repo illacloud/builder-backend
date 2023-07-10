@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/illacloud/builder-backend/internal/util/resourcelist"
 	"github.com/illacloud/builder-backend/pkg/db"
 
 	"go.uber.org/zap"
@@ -83,6 +84,14 @@ func (action *Action) ExportConfig() *ActionConfig {
 	ac := NewActionConfig()
 	json.Unmarshal([]byte(action.Config), ac)
 	return ac
+}
+
+func (action *Action) ExportDisplayName() string {
+	return action.Name
+}
+
+func (action *Action) ExportTypeInString() string {
+	return resourcelist.GetResourceIDMappedType(action.Type)
 }
 
 func (action *Action) IsPublic() bool {
