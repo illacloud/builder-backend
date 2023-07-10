@@ -21,43 +21,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/internal/idconvertor"
 	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/builder-backend/internal/util/resourcelist"
 
 	"go.uber.org/zap"
 )
-
-var type_array = [28]string{"transformer", "restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb",
-	"tidb", "elasticsearch", "s3", "smtp", "supabasedb", "firebase", "clickhouse", "mssql", "huggingface", "dynamodb",
-	"snowflake", "couchdb", "hfendpoint", "oracle", "appwrite", "googlesheets", "neon", "upstash", "airtable", "hydra"}
-var type_map = map[string]int{
-	"transformer":   0,
-	"restapi":       1,
-	"graphql":       2,
-	"redis":         3,
-	"mysql":         4,
-	"mariadb":       5,
-	"postgresql":    6,
-	"mongodb":       7,
-	"tidb":          8,
-	"elasticsearch": 9,
-	"s3":            10,
-	"smtp":          11,
-	"supabasedb":    12,
-	"firebase":      13,
-	"clickhouse":    14,
-	"mssql":         15,
-	"huggingface":   16,
-	"dynamodb":      17,
-	"snowflake":     18,
-	"couchdb":       19,
-	"hfendpoint":    20,
-	"oracle":        21,
-	"appwrite":      22,
-	"googlesheets":  23,
-	"neon":          24,
-	"upstash":       25,
-	"airtable":      26,
-	"hydra":         27,
-}
 
 type ActionService interface {
 	IsPublicAction(teamID int, actionID int) bool
@@ -79,7 +46,7 @@ type ActionDto struct {
 	Version     int                      `json:"-"`
 	Resource    int                      `json:"resourceId,omitempty"`
 	DisplayName string                   `json:"displayName" validate:"required"`
-	Type        string                   `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle appwrite googlesheets neon upstash airtable hydra"`
+	Type        string                   `json:"actionType" validate:"required"`
 	Template    map[string]interface{}   `json:"content" validate:"required"`
 	Transformer map[string]interface{}   `json:"transformer" validate:"required"`
 	TriggerMode string                   `json:"triggerMode" validate:"oneof=manually automate"`
@@ -98,7 +65,7 @@ type ActionDtoForExport struct {
 	Version     int                      `json:"-"`
 	Resource    string                   `json:"resourceId,omitempty"`
 	DisplayName string                   `json:"displayName" validate:"required"`
-	Type        string                   `json:"actionType" validate:"oneof=transformer restapi graphql redis mysql mariadb postgresql mongodb tidb elasticsearch s3 smtp supabasedb firebase clickhouse mssql huggingface dynamodb snowflake couchdb hfendpoint oracle appwrite googlesheets neon upstash airtable hydra"`
+	Type        string                   `json:"actionType" validate:"required"`
 	Template    map[string]interface{}   `json:"content" validate:"required"`
 	Transformer map[string]interface{}   `json:"transformer" validate:"required"`
 	TriggerMode string                   `json:"triggerMode" validate:"oneof=manually automate"`
@@ -221,7 +188,7 @@ func (impl *ActionServiceImpl) CreateAction(action ActionDto) (*ActionDtoForExpo
 		return nil, errors.New("app not found")
 	}
 	// validate resource
-	if rscDto, err := impl.resourceRepository.RetrieveByID(action.TeamID, action.Resource); (err != nil || rscDto.ID != action.Resource) && action.Type != type_array[0] {
+	if rscDto, err := impl.resourceRepository.RetrieveByID(action.TeamID, action.Resource); (err != nil || rscDto.ID != action.Resource) && action.Type != resourcelist.TYPE_TRANSFORMER {
 		return nil, errors.New("resource not found")
 	}
 
@@ -233,7 +200,7 @@ func (impl *ActionServiceImpl) CreateAction(action ActionDto) (*ActionDtoForExpo
 		Version:     action.Version,
 		Resource:    action.Resource,
 		Name:        action.DisplayName,
-		Type:        type_map[action.Type],
+		Type:        resourcelist.GetResourceNameMappedID(action.Type),
 		TriggerMode: action.TriggerMode,
 		Transformer: action.Transformer,
 		Template:    action.Template,
@@ -281,7 +248,7 @@ func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (*ActionDtoForExpo
 		return nil, errors.New("app not found")
 	}
 	// validate resource
-	if rscDto, err := impl.resourceRepository.RetrieveByID(action.TeamID, action.Resource); (err != nil || rscDto.ID != action.Resource) && action.Type != type_array[0] {
+	if rscDto, err := impl.resourceRepository.RetrieveByID(action.TeamID, action.Resource); (err != nil || rscDto.ID != action.Resource) && action.Type != resourcelist.TYPE_TRANSFORMER {
 		return nil, errors.New("resource not found")
 	}
 
@@ -291,7 +258,7 @@ func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (*ActionDtoForExpo
 		TeamID:      action.TeamID,
 		Resource:    action.Resource,
 		Name:        action.DisplayName,
-		Type:        type_map[action.Type],
+		Type:        resourcelist.GetResourceNameMappedID(action.Type),
 		TriggerMode: action.TriggerMode,
 		Transformer: action.Transformer,
 		Template:    action.Template,
@@ -327,7 +294,7 @@ func (impl *ActionServiceImpl) GetAction(teamID int, actionID int) (*ActionDtoFo
 		TeamID:      res.TeamID,
 		Resource:    res.Resource,
 		DisplayName: res.Name,
-		Type:        type_array[res.Type],
+		Type:        resourcelist.GetResourceIDMappedType(res.Type),
 		TriggerMode: res.TriggerMode,
 		Transformer: res.Transformer,
 		Template:    res.Template,
@@ -355,7 +322,7 @@ func (impl *ActionServiceImpl) FindActionsByAppVersion(teamID int, appID int, ve
 			TeamID:      value.TeamID,
 			Resource:    value.Resource,
 			DisplayName: value.Name,
-			Type:        type_array[value.Type],
+			Type:        resourcelist.GetResourceIDMappedType(value.Type),
 			TriggerMode: value.TriggerMode,
 			Transformer: value.Transformer,
 			Template:    value.Template,
@@ -400,7 +367,7 @@ func (impl *ActionServiceImpl) RunAction(teamID int, action ActionDto) (interfac
 }
 
 func (impl *ActionServiceImpl) ValidateActionOptions(actionType string, options map[string]interface{}) error {
-	if actionType == TRANSFORMER_ACTION {
+	if actionType == resourcelist.TYPE_TRANSFORMER {
 		return nil
 	}
 	actionFactory := Factory{Type: actionType}

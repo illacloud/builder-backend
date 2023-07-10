@@ -19,15 +19,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/illacloud/builder-backend/internal/util/resourcelist"
 	"github.com/illacloud/builder-backend/pkg/db"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
-
-var action_type_array = [27]string{"transformer", "restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb",
-	"tidb", "elasticsearch", "s3", "smtp", "supabasedb", "firebase", "clickhouse", "mssql", "huggingface", "dynamodb",
-	"snowflake", "couchdb", "hfendpoint", "oracle", "appwrite", "googlesheets", "neon", "upstash", "airtable"}
 
 type Action struct {
 	ID          int       `gorm:"column:id;type:bigserial;primary_key"`
@@ -94,7 +91,7 @@ func (action *Action) ExportDisplayName() string {
 }
 
 func (action *Action) ExportTypeInString() string {
-	return action_type_array[action.Type]
+	return resourcelist.GetResourceIDMappedType(action.Type)
 }
 
 func (action *Action) IsPublic() bool {

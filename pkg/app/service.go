@@ -24,6 +24,7 @@ import (
 	"github.com/illacloud/builder-backend/internal/datacontrol"
 	"github.com/illacloud/builder-backend/internal/idconvertor"
 	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/builder-backend/internal/util/resourcelist"
 
 	"go.uber.org/zap"
 )
@@ -50,10 +51,6 @@ type AppServiceImpl struct {
 	setstateRepository  repository.SetStateRepository
 	actionRepository    repository.ActionRepository
 }
-
-var type_array = [28]string{"transformer", "restapi", "graphql", "redis", "mysql", "mariadb", "postgresql", "mongodb",
-	"tidb", "elasticsearch", "s3", "smtp", "supabasedb", "firebase", "clickhouse", "mssql", "huggingface", "dynamodb",
-	"snowflake", "couchdb", "hfendpoint", "oracle", "appwrite", "googlesheets", "neon", "upstash", "airtable", "hydra"}
 
 type AppActivity struct {
 	Modifier   string    `json:"modifier"`
@@ -697,7 +694,7 @@ func (impl *AppServiceImpl) formatActions(teamID, appID, version int) ([]Action,
 			TeamID:      value.TeamID,
 			Resource:    value.Resource,
 			DisplayName: value.Name,
-			Type:        type_array[value.Type],
+			Type:        resourcelist.GetResourceIDMappedType(value.Type),
 			Transformer: value.Transformer,
 			TriggerMode: value.TriggerMode,
 			Template:    value.Template,

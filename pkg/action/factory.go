@@ -15,6 +15,7 @@
 package action
 
 import (
+	"github.com/illacloud/builder-backend/internal/util/resourcelist"
 	"github.com/illacloud/builder-backend/pkg/plugins/airtable"
 	"github.com/illacloud/builder-backend/pkg/plugins/appwrite"
 	"github.com/illacloud/builder-backend/pkg/plugins/clickhouse"
@@ -39,37 +40,6 @@ import (
 	"github.com/illacloud/builder-backend/pkg/plugins/snowflake"
 )
 
-var (
-	REST_ACTION          = "restapi"
-	MYSQL_ACTION         = "mysql"
-	MARIADB_ACTION       = "mariadb"
-	TIDB_ACTION          = "tidb"
-	TRANSFORMER_ACTION   = "transformer"
-	POSTGRESQL_ACTION    = "postgresql"
-	REDIS_ACTION         = "redis"
-	MONGODB_ACTION       = "mongodb"
-	ELASTICSEARCH_ACTION = "elasticsearch"
-	S3_ACTION            = "s3"
-	SMTP_ACTION          = "smtp"
-	SUPABASEDB_ACTION    = "supabasedb"
-	FIREBASE_ACTION      = "firebase"
-	CLICKHOUSE_ACTION    = "clickhouse"
-	GRAPHQL_ACTION       = "graphql"
-	MSSQL_ACTION         = "mssql"
-	HUGGINGFACE_ACTION   = "huggingface"
-	DYNAMODB_ACTION      = "dynamodb"
-	SNOWFLAKE_ACTION     = "snowflake"
-	COUCHDB_ACTION       = "couchdb"
-	HFENDPOINT_ACTION    = "hfendpoint"
-	ORACLE_ACTION        = "oracle"
-	APPWRITE_ACTION      = "appwrite"
-	GOOGLESHEETS_ACTION  = "googlesheets"
-	NEON_ACTION          = "neon"
-	UPSTASH_ACTION       = "upstash"
-	AIRTABLE_ACTION      = "airtable"
-	HYDRA_ACTION         = "hydra"
-)
-
 type AbstractActionFactory interface {
 	Build() common.DataConnector
 }
@@ -80,67 +50,67 @@ type Factory struct {
 
 func (f *Factory) Build() common.DataConnector {
 	switch f.Type {
-	case REST_ACTION:
+	case resourcelist.TYPE_RESTAPI:
 		restapiAction := &restapi.RESTAPIConnector{}
 		return restapiAction
-	case MYSQL_ACTION, MARIADB_ACTION, TIDB_ACTION:
+	case resourcelist.TYPE_MYSQL, resourcelist.TYPE_MARIADB, resourcelist.TYPE_TIDB:
 		sqlAction := &mysql.MySQLConnector{}
 		return sqlAction
-	case POSTGRESQL_ACTION, SUPABASEDB_ACTION, NEON_ACTION, HYDRA_ACTION:
+	case resourcelist.TYPE_POSTGRESQL, resourcelist.TYPE_SUPABASEDB, resourcelist.TYPE_NEON, resourcelist.TYPE_HYDRA:
 		pgsAction := &postgresql.Connector{}
 		return pgsAction
-	case REDIS_ACTION, UPSTASH_ACTION:
+	case resourcelist.TYPE_REDIS, resourcelist.TYPE_UPSTASH:
 		redisAction := &redis.Connector{}
 		return redisAction
-	case MONGODB_ACTION:
+	case resourcelist.TYPE_MONGODB:
 		mongoAction := &mongodb.Connector{}
 		return mongoAction
-	case ELASTICSEARCH_ACTION:
+	case resourcelist.TYPE_ELASTICSEARCH:
 		esAction := &elasticsearch.Connector{}
 		return esAction
-	case S3_ACTION:
+	case resourcelist.TYPE_S3:
 		s3Action := &s3.Connector{}
 		return s3Action
-	case SMTP_ACTION:
+	case resourcelist.TYPE_SMTP:
 		smtpAction := &smtp.Connector{}
 		return smtpAction
-	case FIREBASE_ACTION:
+	case resourcelist.TYPE_FIREBASE:
 		firebaseAction := &firebase.Connector{}
 		return firebaseAction
-	case CLICKHOUSE_ACTION:
+	case resourcelist.TYPE_CLICKHOUSE:
 		clickhouseAction := &clickhouse.Connector{}
 		return clickhouseAction
-	case GRAPHQL_ACTION:
+	case resourcelist.TYPE_GRAPHQL:
 		graphqlAction := &graphql.Connector{}
 		return graphqlAction
-	case MSSQL_ACTION:
+	case resourcelist.TYPE_MSSQL:
 		mssqlAction := &mssql.Connector{}
 		return mssqlAction
-	case HUGGINGFACE_ACTION:
+	case resourcelist.TYPE_HUGGINGFACE:
 		hfAction := &huggingface.Connector{}
 		return hfAction
-	case DYNAMODB_ACTION:
+	case resourcelist.TYPE_DYNAMODB:
 		dynamodbAction := &dynamodb.Connector{}
 		return dynamodbAction
-	case SNOWFLAKE_ACTION:
+	case resourcelist.TYPE_SNOWFLAKE:
 		snowflakeAction := &snowflake.Connector{}
 		return snowflakeAction
-	case COUCHDB_ACTION:
+	case resourcelist.TYPE_COUCHDB:
 		couchdbAction := &couchdb.Connector{}
 		return couchdbAction
-	case HFENDPOINT_ACTION:
+	case resourcelist.TYPE_HFENDPOINT:
 		hfendpointAction := &hfendpoint.Connector{}
 		return hfendpointAction
-	case ORACLE_ACTION:
+	case resourcelist.TYPE_ORACLE:
 		oracleAction := &oracle.Connector{}
 		return oracleAction
-	case APPWRITE_ACTION:
+	case resourcelist.TYPE_APPWRITE:
 		appwriteAction := &appwrite.Connector{}
 		return appwriteAction
-	case GOOGLESHEETS_ACTION:
+	case resourcelist.TYPE_GOOGLESHEETS:
 		googlesheetsAction := &googlesheets.Connector{}
 		return googlesheetsAction
-	case AIRTABLE_ACTION:
+	case resourcelist.TYPE_AIRTABLE:
 		airtableAction := &airtable.Connector{}
 		return airtableAction
 	default:
