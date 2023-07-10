@@ -35,7 +35,7 @@ type TreeStateService interface {
 	GetAllTypeTreeStateByApp(app *app.AppDto, version int) ([]*TreeStateDto, error)
 	GetTreeStateByApp(app *app.AppDto, statetype int, version int) ([]*TreeStateDto, error)
 	ReleaseTreeStateByApp(app *app.AppDto) error
-	CreateComponentTree(appDto *app.AppDto, parentNodeID int, componentNodeTree *repository.ComponentNode) error
+	CreateComponentTree(appDto *repository.App, parentNodeID int, componentNodeTree *repository.ComponentNode) error
 	GetTreeStateByName(currentNode *TreeStateDto) (*TreeStateDto, error)
 }
 
@@ -155,7 +155,7 @@ func NewTreeStateServiceImpl(logger *zap.SugaredLogger, treestateRepository repo
 	}
 }
 
-func (impl *TreeStateServiceImpl) NewTreeStateByComponentState(appDto *app.AppDto, cnode *repository.ComponentNode) (*TreeStateDto, error) {
+func (impl *TreeStateServiceImpl) NewTreeStateByComponentState(app *repository.App, cnode *repository.ComponentNode) (*TreeStateDto, error) {
 	var cnodeserilized []byte
 	var err error
 	if cnodeserilized, err = cnode.SerializationForDatabase(); err != nil {
@@ -164,9 +164,9 @@ func (impl *TreeStateServiceImpl) NewTreeStateByComponentState(appDto *app.AppDt
 
 	treestatedto := &TreeStateDto{
 		UID:       uuid.New(),
-		TeamID:    appDto.TeamID,
+		TeamID:    app.ExportTeamID(),
 		StateType: repository.TREE_STATE_TYPE_COMPONENTS,
-		AppRefID:  appDto.ID,
+		AppRefID:  app.ExportID(),
 		Version:   repository.APP_EDIT_VERSION,
 		Name:      cnode.DisplayName,
 		Content:   string(cnodeserilized),
@@ -485,7 +485,7 @@ func (impl *TreeStateServiceImpl) retrieveChildrenNodes(treeState *repository.Tr
 	return nil
 }
 
-func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parentNodeID int, componentNodeTree *repository.ComponentNode) error {
+func (impl *TreeStateServiceImpl) CreateComponentTree(app *repository.App, parentNodeID int, componentNodeTree *repository.ComponentNode) error {
 	// summit node
 	if parentNodeID == 0 {
 		parentNodeID = repository.TREE_STATE_SUMMIT_ID
@@ -493,11 +493,11 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 
 	// convert ComponentNode to TreeState
 	currentNode := NewTreeStateDto()
-	currentNode.SetTeamID(appDto.TeamID)
+	currentNode.SetTeamID(app.ExportTeamID())
 	currentNode.InitUID()
 	currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS)
 	var err error
-	if currentNode, err = impl.NewTreeStateByComponentState(appDto, componentNodeTree); err != nil {
+	if currentNode, err = impl.NewTreeStateByComponentState(app, componentNodeTree); err != nil {
 		return err
 	}
 
@@ -506,12 +506,12 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 	isSummitNode := true
 	if parentNodeID != 0 || currentNode.ParentNode == repository.TREE_STATE_SUMMIT_NAME { // parentNode is in database
 		isSummitNode = false
-		if parentTreeState, err = impl.treestateRepository.RetrieveByID(appDto.TeamID, parentNodeID); err != nil {
+		if parentTreeState, err = impl.treestateRepository.RetrieveByID(app.ExportTeamID(), parentNodeID); err != nil {
 			return err
 		}
 	} else if componentNodeTree.ParentNode != "" && componentNodeTree.ParentNode != repository.TREE_STATE_SUMMIT_NAME { // or parentNode is exist
 		isSummitNode = false
-		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(appDto.TeamID, currentNode.AppRefID, currentNode.StateType, componentNodeTree.ParentNode); err != nil {
+		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(app.ExportTeamID(), currentNode.AppRefID, currentNode.StateType, componentNodeTree.ParentNode); err != nil {
 			return err
 		}
 	}
@@ -520,7 +520,7 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 	if isSummitNode && currentNode.Name != repository.TREE_STATE_SUMMIT_NAME {
 
 		// get root node
-		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(appDto.TeamID, currentNode.AppRefID, currentNode.StateType, repository.TREE_STATE_SUMMIT_NAME); err != nil {
+		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(app.ExportTeamID(), currentNode.AppRefID, currentNode.StateType, repository.TREE_STATE_SUMMIT_NAME); err != nil {
 			return err
 		}
 	}
@@ -546,7 +546,7 @@ func (impl *TreeStateServiceImpl) CreateComponentTree(appDto *app.AppDto, parent
 
 	// create currentNode.ChildrenNode
 	for _, childrenComponentNode := range componentNodeTree.ChildrenNode {
-		if err := impl.CreateComponentTree(appDto, currentNode.ID, childrenComponentNode); err != nil {
+		if err := impl.CreateComponentTree(app, currentNode.ID, childrenComponentNode); err != nil {
 			return err
 		}
 	}

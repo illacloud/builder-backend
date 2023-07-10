@@ -21,7 +21,7 @@ import (
 )
 
 type ComponentNode struct {
-	Version       int                    `json:"version"`
+	Version       float64                `json:"version"` // default is 0
 	DisplayName   string                 `json:"displayName"`
 	ParentNode    string                 `json:"parentNode"`
 	ShowName      string                 `json:"showName"`
@@ -86,6 +86,8 @@ func ConstructComponentNodeByMap(data interface{}) *ComponentNode {
 	}
 	for k, v := range udata {
 		switch k {
+		case "version":
+			cnode.Version, _ = v.(float64)
 		case "displayName":
 			cnode.DisplayName, _ = v.(string)
 		case "parentNode":

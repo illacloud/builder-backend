@@ -16,11 +16,12 @@ package resthandler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/internal/auditlogger"
-	"github.com/illacloud/builder-backend/internal/idconvertor"
+	"github.com/illacloud/builder-backend/internal/datacontrol"
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/action"
 	"github.com/illacloud/builder-backend/pkg/app"
@@ -31,15 +32,9 @@ import (
 	"go.uber.org/zap"
 )
 
-type AppRequest struct {
-	Name       string      `json:"appName" validate:"required"`
-	InitScheme interface{} `json:"initScheme"`
-}
-
 type AppRestHandler interface {
 	CreateApp(c *gin.Context)
 	DeleteApp(c *gin.Context)
-	RenameApp(c *gin.Context)
 	ConfigApp(c *gin.Context)
 	GetAllApps(c *gin.Context)
 	GetMegaData(c *gin.Context)
@@ -48,34 +43,54 @@ type AppRestHandler interface {
 }
 
 type AppRestHandlerImpl struct {
-	logger           *zap.SugaredLogger
-	appService       app.AppService
-	actionService    action.ActionService
-	AttributeGroup   *ac.AttributeGroup
-	treeStateService state.TreeStateService
+	Logger              *zap.SugaredLogger
+	AttributeGroup      *ac.AttributeGroup
+	AppService          app.AppService
+	ActionService       action.ActionService
+	TreeStateService    state.TreeStateService
+	AppRepository       repository.AppRepository
+	ActionRepository    repository.ActionRepository
+	TreeStateRepository repository.TreeStateRepository
+	KVStateRepository   repository.KVStateRepository
+	SetStateRepository  repository.SetStateRepository
 }
 
-func NewAppRestHandlerImpl(logger *zap.SugaredLogger, appService app.AppService, actionService action.ActionService, attrg *ac.AttributeGroup, treeStateService state.TreeStateService) *AppRestHandlerImpl {
+func NewAppRestHandlerImpl(Logger *zap.SugaredLogger,
+	attrg *ac.AttributeGroup,
+	AppService app.AppService,
+	ActionService action.ActionService,
+	TreeStateService state.TreeStateService,
+	AppRepository repository.AppRepository,
+	ActionRepository repository.ActionRepository,
+	TreeStateRepository repository.TreeStateRepository,
+	KVStateRepository repository.KVStateRepository,
+	SetStateRepository repository.SetStateRepository,
+) *AppRestHandlerImpl {
 	return &AppRestHandlerImpl{
-		logger:           logger,
-		appService:       appService,
-		actionService:    actionService,
-		AttributeGroup:   attrg,
-		treeStateService: treeStateService,
+		Logger:              Logger,
+		AttributeGroup:      attrg,
+		AppService:          AppService,
+		ActionService:       ActionService,
+		TreeStateService:    TreeStateService,
+		AppRepository:       AppRepository,
+		ActionRepository:    ActionRepository,
+		TreeStateRepository: TreeStateRepository,
+		KVStateRepository:   KVStateRepository,
+		SetStateRepository:  SetStateRepository,
 	}
 }
 
 func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 	// Parse request body
-	var payload AppRequest
-	if err := json.NewDecoder(c.Request.Body).Decode(&payload); err != nil {
+	req := repository.NewCreateAppRequest()
+	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// Validate request body
 	validate := validator.New()
-	if err := validate.Struct(payload); err != nil {
+	if err := validate.Struct(req); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
@@ -104,21 +119,21 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 		return
 	}
 
-	appDto := app.AppDto{
-		TeamID:    teamID,
-		Name:      payload.Name,
-		CreatedBy: userID,
-		UpdatedBy: userID,
-	}
-	appDto.InitUID()
-	appDto.InitConfig()
+	// construct app object
+	newApp := repository.NewApp(req.ExportAppName(), teamID, userID)
+	fmt.Printf("[DUMP] CreateApp.newApp: %+v\n", newApp)
 
-	// Call `app service` create app
-	res, err := impl.appService.CreateApp(appDto)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_APP, "create app error: "+err.Error())
+	// storage app
+	_, errInCreateApp := impl.AppRepository.Create(newApp)
+	if errInCreateApp != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_APP, "error in create app: "+errInCreateApp.Error())
 		return
 	}
+
+	// fill component node by given init schema
+	// @NOTE: that the root node will created by InitScheme in request
+	componentTree := repository.ConstructComponentNodeByMap(req.ExportInitScheme())
+	_ = impl.TreeStateService.CreateComponentTree(newApp, 0, componentTree)
 
 	// audit log
 	auditLogger := auditlogger.GetInstance()
@@ -127,15 +142,22 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 		TeamID:    teamID,
 		UserID:    userID,
 		IP:        c.ClientIP(),
-		AppID:     res.ID,
-		AppName:   res.Name,
+		AppID:     newApp.ExportID(),
+		AppName:   newApp.ExportAppName(),
 	})
 
-	componentTree := repository.ConstructComponentNodeByMap(payload.InitScheme)
-	_ = impl.treeStateService.CreateComponentTree(&res, 0, componentTree)
+	// get all modifier user ids from all apps
+	allUserIDs := repository.ExtractAllEditorIDFromApps([]*repository.App{newApp})
+
+	// fet all user id mapped user info, and build user info lookup table
+	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
+	if errInGetMultiUserInfo != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+		return
+	}
 
 	// feedback
-	FeedbackOK(c, app.NewAppDtoForExport(&res))
+	FeedbackOK(c, repository.NewAppForExport(newApp, usersLT))
 	return
 }
 
@@ -166,7 +188,7 @@ func (impl AppRestHandlerImpl) DeleteApp(c *gin.Context) {
 	}
 
 	// fetch app
-	appDTO, err := impl.appService.FetchAppByID(teamID, appID)
+	app, err := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if err != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+err.Error())
 		return
@@ -180,87 +202,22 @@ func (impl AppRestHandlerImpl) DeleteApp(c *gin.Context) {
 		UserID:    userID,
 		IP:        c.ClientIP(),
 		AppID:     appID,
-		AppName:   appDTO.Name,
+		AppName:   app.ExportAppName(),
 	})
 
-	// Call `app service` delete app
-	if err := impl.appService.DeleteApp(teamID, appID); err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_DELETE_APP, "delete app error: "+err.Error())
+	// delete app related states and action
+	_ = impl.TreeStateRepository.DeleteAllTypeTreeStatesByApp(teamID, appID)
+	_ = impl.KVStateRepository.DeleteAllTypeKVStatesByApp(teamID, appID)
+	_ = impl.ActionRepository.DeleteActionsByApp(teamID, appID)
+	_ = impl.SetStateRepository.DeleteAllTypeSetStatesByApp(teamID, appID)
+	errInDeleteApp := impl.AppRepository.Delete(teamID, appID)
+	if errInDeleteApp != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_DELETE_APP, "delete app error: "+errInDeleteApp.Error())
 		return
 	}
 
 	// feedback
 	FeedbackOK(c, repository.NewDeleteAppResponse(appID))
-	return
-}
-
-func (impl AppRestHandlerImpl) RenameApp(c *gin.Context) {
-	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
-	userID, errInGetUserID := GetUserIDFromAuth(c)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
-		return
-	}
-
-	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_APP)
-	impl.AttributeGroup.SetUnitID(appID)
-	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_APP)
-	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
-		return
-	}
-	if !canManage {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
-		return
-	}
-
-	// Parse request body
-	var payload AppRequest
-	if err := json.NewDecoder(c.Request.Body).Decode(&payload); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
-		return
-	}
-
-	// Validate request body
-	validate := validator.New()
-	if err := validate.Struct(payload); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
-		return
-	}
-
-	// audit log
-	auditLogger := auditlogger.GetInstance()
-	auditLogger.Log(&auditlogger.LogInfo{
-		EventType: auditlogger.AUDIT_LOG_EDIT_APP,
-		TeamID:    teamID,
-		UserID:    userID,
-		IP:        c.ClientIP(),
-		AppID:     appID,
-		AppName:   payload.Name,
-	})
-
-	// Call `app service` update app
-	appDTO, err := impl.appService.FetchAppByID(teamID, appID)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+err.Error())
-		return
-	}
-	appDTO.Name = payload.Name
-	appDTO.UpdatedBy = userID
-	res, err := impl.appService.UpdateApp(appDTO)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "rename app error: "+err.Error())
-		return
-	}
-
-	// feedback
-	FeedbackOK(c, res)
 	return
 }
 
@@ -298,24 +255,28 @@ func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 	}
 
 	// fetch app
-	appDTO, err := impl.appService.FetchAppByID(teamID, appID)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+err.Error())
+	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
+	if errInRetrieveApp != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+errInRetrieveApp.Error())
 		return
 	}
 
 	// update app config
-	appConfig, errInNewAppConfig := repository.UpdateAppConfigByConfigAppRawRequest(rawRequest, appDTO.ExportAppDtoConfig())
+	appConfig := app.ExportConfig()
+	errInNewAppConfig := appConfig.UpdateAppConfigByConfigAppRawRequest(rawRequest)
 	if errInNewAppConfig != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_BUILD_APP_CONFIG_FAILED, "new app config failed: "+errInNewAppConfig.Error())
 		return
 	}
 
-	// Call `app service` update app
-	appDTO.UpdateAppDTOConfig(appConfig, userID)
-	res, err := impl.appService.UpdateApp(appDTO)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "config app error: "+err.Error())
+	// update app all field
+	app.UpdateAppConfig(appConfig, userID)
+	app.UpdateAppByConfigAppRawRequest(rawRequest) // for app name the field which not in config struct
+
+	// execute update
+	errInUpdateApp := impl.AppRepository.Update(app)
+	if errInUpdateApp != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "config app error: "+errInUpdateApp.Error())
 		return
 	}
 
@@ -325,13 +286,37 @@ func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 		FeedbackBadRequest(c, ERROR_FLAG_BUILD_APP_CONFIG_FAILED, "new action config failed: "+errInNewActionConfig.Error())
 		return
 	}
-	errInUpdatePublic := impl.actionService.UpdatePublic(teamID, appID, userID, actionConfig)
+	errInUpdatePublic := impl.ActionService.UpdatePublic(teamID, appID, userID, actionConfig)
 	if errInUpdatePublic != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "config action error: "+errInUpdatePublic.Error())
 		return
 	}
+
+	// audit log
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType: auditlogger.AUDIT_LOG_EDIT_APP,
+		TeamID:    teamID,
+		UserID:    userID,
+		IP:        c.ClientIP(),
+		AppID:     appID,
+		AppName:   app.ExportAppName(),
+	})
+
+	// get all modifier user ids from all apps
+	allUserIDs := repository.ExtractAllEditorIDFromApps([]*repository.App{app})
+
+	fmt.Printf("[DUMP] allUserIDs: %+v\n", allUserIDs)
+
+	// fet all user id mapped user info, and build user info lookup table
+	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
+	if errInGetMultiUserInfo != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+		return
+	}
+
 	// feedback
-	FeedbackOK(c, res)
+	FeedbackOK(c, repository.NewAppForExport(app, usersLT))
 	return
 }
 
@@ -359,15 +344,31 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 		return
 	}
 
-	// Call `app service` get all apps
-	res, err := impl.appService.GetAllApps(teamID)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "get all apps error: "+err.Error())
+	// get all apps
+	allApps, errInRetrieveAllApps := impl.AppRepository.RetrieveAllByUpdatedTime(teamID)
+	if errInRetrieveAllApps != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get apps by team id failed: "+errInRetrieveAllApps.Error())
 		return
 	}
 
+	// build user look up table
+	usersLT := make(map[int]*repository.User)
+	if len(allApps) > 0 {
+		// get all modifier user ids from all apps
+		allUserIDs := repository.ExtractAllEditorIDFromApps(allApps)
+		fmt.Printf("[DUMP] GetAllApps.allUserIDs: %+v\n", allUserIDs)
+
+		// fet all user id mapped user info, and build user info lookup table
+		var errInGetMultiUserInfo error
+		usersLT, errInGetMultiUserInfo = datacontrol.GetMultiUserInfo(allUserIDs)
+		if errInGetMultiUserInfo != nil {
+			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+			return
+		}
+	}
+
 	// feedback
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, repository.GenerateGetAllAppsResponse(allApps, usersLT))
 }
 
 func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
@@ -397,14 +398,10 @@ func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 		return
 	}
 
-	// Fetch Mega data via `app` and `version`
-	res, err := impl.appService.GetMegaData(teamID, appID, version)
-	if err != nil {
-		if err.Error() == "content not found" {
-			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app mega data error: "+err.Error())
-			return
-		}
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app mega data error: "+err.Error())
+	// fetch app
+	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
+	if errInRetrieveApp != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app mega data error: "+errInRetrieveApp.Error())
 		return
 	}
 
@@ -420,11 +417,114 @@ func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 		UserID:    userID,
 		IP:        c.ClientIP(),
 		AppID:     appID,
-		AppName:   res.AppInfo.Name,
+		AppName:   app.ExportAppName(),
 	})
 
+	// check app version
+	if app.ID == 0 || version > app.MainlineVersion {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app mega data error, app version invalied.")
+		return
+	}
+	if version == repository.APP_AUTO_MAINLINE_VERSION {
+		version = app.MainlineVersion
+	}
+	if version == repository.APP_AUTO_RELEASE_VERSION {
+		version = app.ReleaseVersion
+	}
+
+	// form editor object field appForExport
+	//
+	// We need:
+	//     AppInfo               which is: *AppForExport
+	//     Actions               which is: []*ActionForExport
+	//     Components            which is: *ComponentNode
+	//     DependenciesState     which is: map[string][]string
+	//     DragShadowState       which is: map[string]interface{}
+	//     DottedLineSquareState which is: map[string]interface{}
+	//     DisplayNameState      which is: []string
+
+	// get all modifier user ids from all apps
+	allUserIDs := repository.ExtractAllEditorIDFromApps([]*repository.App{app})
+
+	// fet all user id mapped user info, and build user info lookup table
+	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
+	if errInGetMultiUserInfo != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+		return
+	}
+
+	appForExport := repository.NewAppForExport(app, usersLT)
+
+	// form editor object field actions
+	actions, errInRetrieveActions := impl.ActionRepository.RetrieveActionsByAppVersion(teamID, appID, version)
+	if errInRetrieveActions != nil {
+		actions = []*repository.Action{}
+	}
+	actionsForExport := make([]*repository.ActionForExport, 0)
+	for _, action := range actions {
+		actionsForExport = append(actionsForExport, repository.NewActionForExport(action))
+	}
+
+	// form editor object field components
+	treeStateComponents, errInRetrieveTreeStateComponents := impl.TreeStateRepository.RetrieveTreeStatesByApp(teamID, appID, repository.TREE_STATE_TYPE_COMPONENTS, version)
+	if errInRetrieveTreeStateComponents != nil {
+		treeStateComponents = []*repository.TreeState{}
+	}
+	treeStateLT := repository.BuildTreeStateLookupTable(treeStateComponents)
+	rootOfTreeState := repository.PickUpTreeStatesRootNode(treeStateComponents)
+	componentTree, _ := repository.BuildComponentTree(rootOfTreeState, treeStateLT, nil)
+
+	// form editor object field dependenciesState
+	dependenciesState := map[string][]string{}
+	dependenciesKVStates, errInRetrieveDependenciesKVStates := impl.KVStateRepository.RetrieveKVStatesByApp(teamID, appID, repository.KV_STATE_TYPE_DEPENDENCIES, version)
+	if errInRetrieveDependenciesKVStates != nil {
+		dependenciesKVStates = []*repository.KVState{}
+	}
+	for _, dependency := range dependenciesKVStates {
+		var revMsg []string
+		json.Unmarshal([]byte(dependency.Value), &revMsg)
+		dependenciesState[dependency.Key] = revMsg // value convert to []string
+	}
+
+	// form editor object field dragShadowState
+	dragShadowState := map[string]interface{}{}
+	dragShadowKVStates, errInRetrieveDragShadowKVStates := impl.KVStateRepository.RetrieveKVStatesByApp(teamID, appID, repository.KV_STATE_TYPE_DRAG_SHADOW, version)
+	if errInRetrieveDragShadowKVStates != nil {
+		dragShadowKVStates = []*repository.KVState{}
+	}
+	for _, dragShadow := range dragShadowKVStates {
+		var revMsg []string
+		json.Unmarshal([]byte(dragShadow.Value), &revMsg)
+		dragShadowState[dragShadow.Key] = revMsg // value convert to []string
+	}
+
+	// form editor object field dottedLineSquareState
+	dottedLineSquareState := map[string]interface{}{}
+	dottedLineSquareKVStates, errInRetrieveDottedLineSquareKVStates := impl.KVStateRepository.RetrieveKVStatesByApp(teamID, appID, repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE, version)
+	if errInRetrieveDottedLineSquareKVStates != nil {
+		dottedLineSquareKVStates = []*repository.KVState{}
+	}
+	for _, dottedLineSquare := range dottedLineSquareKVStates {
+		var revMsg []string
+		json.Unmarshal([]byte(dottedLineSquare.Value), &revMsg)
+		dottedLineSquareState[dottedLineSquare.Key] = revMsg // value convert to []string
+	}
+
+	// form editor object field displayNameState
+	displayNameSetStates, errInRetrieveDisplayNameSetState := impl.SetStateRepository.RetrieveSetStatesByApp(teamID, appID, repository.SET_STATE_TYPE_DISPLAY_NAME, version)
+	if errInRetrieveDisplayNameSetState != nil {
+		displayNameSetStates = []*repository.SetState{}
+	}
+	displayNameState := make([]string, 0, len(displayNameSetStates))
+	for _, displayName := range displayNameSetStates {
+		displayNameState = append(displayNameState, displayName.Value)
+	}
+
+	// finally, make a brand new editor object
+	editorForExport := repository.NewEditorForExport(appForExport, actionsForExport, componentTree, dependenciesState, dragShadowState, dottedLineSquareState, displayNameState)
+
 	// feedback
-	FeedbackOK(c, res)
+	FeedbackOK(c, editorForExport)
 	return
 }
 
@@ -455,23 +555,30 @@ func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
 	}
 
 	// Parse request body
-	var payload AppRequest
-	if err := json.NewDecoder(c.Request.Body).Decode(&payload); err != nil {
+	req := repository.NewDuplicateAppRequest()
+	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// Validate request body
 	validate := validator.New()
-	if err := validate.Struct(payload); err != nil {
+	if err := validate.Struct(req); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 
 	// Call `app service` to duplicate app
-	res, err := impl.appService.DuplicateApp(teamID, appID, userID, payload.Name)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_DUPLICATE_APP, "duplicate app error: "+err.Error())
+	duplicatedAppID, errInDuplicateApp := impl.AppService.DuplicateApp(teamID, appID, userID, req.ExportAppName())
+	if errInDuplicateApp != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_DUPLICATE_APP, "duplicate app error: "+errInDuplicateApp.Error())
+		return
+	}
+
+	// get duplicated app
+	duplicatedApp, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(duplicatedAppID, teamID)
+	if errInRetrieveApp != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get user info failed: "+errInRetrieveApp.Error())
 		return
 	}
 
@@ -482,12 +589,22 @@ func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
 		TeamID:    teamID,
 		UserID:    userID,
 		IP:        c.ClientIP(),
-		AppID:     idconvertor.ConvertStringToInt(res.ID),
-		AppName:   res.Name,
+		AppID:     duplicatedApp.ExportID(),
+		AppName:   duplicatedApp.ExportAppName(),
 	})
 
+	// get all modifier user ids from all apps
+	allUserIDs := repository.ExtractAllEditorIDFromApps([]*repository.App{duplicatedApp})
+
+	// fet all user id mapped user info, and build user info lookup table
+	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
+	if errInGetMultiUserInfo != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+		return
+	}
+
 	// feedback
-	FeedbackOK(c, res)
+	FeedbackOK(c, repository.NewAppForExport(duplicatedApp, usersLT))
 	return
 }
 
@@ -499,6 +616,16 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
+	}
+
+	// get request body
+	var rawRequest map[string]interface{}
+	publicApp := false
+	json.NewDecoder(c.Request.Body).Decode(&rawRequest)
+	fmt.Printf("[DUMP] ReleaseApp.rawRequest: %+v\n", rawRequest)
+	isPublicRaw, hitIsPublic := rawRequest["public"]
+	if hitIsPublic {
+		publicApp = isPublicRaw.(bool)
 	}
 
 	// validate
@@ -518,9 +645,31 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	}
 
 	// fetch app
-	appDTO, err := impl.appService.FetchAppByID(teamID, appID)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+err.Error())
+	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
+	if errInRetrieveApp != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get user info failed: "+errInRetrieveApp.Error())
+		return
+	}
+
+	// config app
+	app.MainlineVersion += 1
+	app.ReleaseVersion = app.MainlineVersion
+	if publicApp {
+		app.SetPublic(userID)
+	} else {
+		app.SetPrivate(userID)
+	}
+
+	// release app following components & actions
+	_ = impl.AppService.ReleaseTreeStateByApp(teamID, appID, app.MainlineVersion)
+	_ = impl.AppService.ReleaseKVStateByApp(teamID, appID, app.MainlineVersion)
+	_ = impl.AppService.ReleaseSetStateByApp(teamID, appID, app.MainlineVersion)
+	_ = impl.AppService.ReleaseActionsByApp(teamID, appID, app.MainlineVersion)
+
+	// release app
+	errInUpdateApp := impl.AppRepository.UpdateWholeApp(app)
+	if errInUpdateApp != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
 		return
 	}
 
@@ -532,17 +681,10 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 		UserID:    userID,
 		IP:        c.ClientIP(),
 		AppID:     appID,
-		AppName:   appDTO.Name,
+		AppName:   app.ExportAppName(),
 	})
 
-	// Call `app service` to release app
-	version, err := impl.appService.ReleaseApp(teamID, appID)
-	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_RELEASE_APP, "release app error: "+err.Error())
-		return
-	}
-
 	// feedback
-	FeedbackOK(c, repository.NewReleaseAppResponse(version))
+	FeedbackOK(c, repository.NewReleaseAppResponse(app.ReleaseVersion))
 	return
 }

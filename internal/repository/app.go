@@ -16,16 +16,20 @@ package repository
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 const APP_EDIT_VERSION = 0           // the editable version app ID always be 0
 const APP_AUTO_MAINLINE_VERSION = -1 // -1 for get mainline version automatically
 const APP_AUTO_RELEASE_VERSION = -2  // -1 for get release version automatically
+
+const APP_FIELD_NAME = "appName"
+const APP_EDITED_BY_MAX_LENGTH = 4
+
 type App struct {
 	ID              int       `json:"id" 				gorm:"column:id;type:bigserial;primary_key;unique"`
 	UID             uuid.UUID `json:"uid"   		    gorm:"column:uid;type:uuid;not null"`
@@ -34,16 +38,60 @@ type App struct {
 	ReleaseVersion  int       `json:"releaseVersion" 	gorm:"column:release_version;type:bigserial"`
 	MainlineVersion int       `json:"mainlineVersion" 	gorm:"column:mainline_version;type:bigserial"`
 	Config          string    `json:"config" 	        gorm:"column:config;type:jsonb"`
-	CreatedAt       time.Time `json:"created_at" 		gorm:"column:created_at;type:timestamp"`
-	CreatedBy       int       `json:"created_by" 		gorm:"column:created_by;type:bigserial"`
-	UpdatedAt       time.Time `json:"updated_at" 		gorm:"column:updated_at;type:timestamp"`
-	UpdatedBy       int       `json:"updated_by" 		gorm:"column:updated_by;type:bigserial"`
+	CreatedAt       time.Time `json:"createdAt" 		gorm:"column:created_at;type:timestamp"`
+	CreatedBy       int       `json:"createdBy" 		gorm:"column:created_by;type:bigserial"`
+	UpdatedAt       time.Time `json:"updatedAt" 		gorm:"column:updated_at;type:timestamp"`
+	UpdatedBy       int       `json:"updatedBy" 		gorm:"column:updated_by;type:bigserial"`
+	EditedBy        string    `json:"editedBy"          gorm:"column:edited_by;type:jsonb"`
+}
+
+func NewApp(appName string, teamID int, modifyUserID int) *App {
+	app := &App{
+		TeamID:          teamID,
+		Name:            appName,
+		ReleaseVersion:  APP_EDIT_VERSION,
+		MainlineVersion: APP_EDIT_VERSION,
+		Config:          NewAppConfig().ExportToJSONString(),
+		CreatedBy:       modifyUserID,
+		UpdatedBy:       modifyUserID,
+	}
+	app.PushEditedBy(NewAppEditedByUserID(modifyUserID))
+	app.InitUID()
+	app.InitCreatedAt()
+	app.InitUpdatedAt()
+	return app
+}
+
+func NewAppWithID(appID int, teamID int, modifyUserID int) *App {
+	app := &App{
+		ID:              appID,
+		TeamID:          teamID,
+		Name:            "",
+		ReleaseVersion:  APP_EDIT_VERSION,
+		MainlineVersion: APP_EDIT_VERSION,
+		Config:          NewAppConfig().ExportToJSONString(),
+		CreatedBy:       modifyUserID,
+		UpdatedBy:       modifyUserID,
+	}
+	app.PushEditedBy(NewAppEditedByUserID(modifyUserID))
+	app.InitUID()
+	app.InitCreatedAt()
+	app.InitUpdatedAt()
+	return app
 }
 
 func (app *App) UpdateAppConfig(appConfig *AppConfig, userID int) {
 	app.Config = appConfig.ExportToJSONString()
 	app.UpdatedBy = userID
 	app.InitUpdatedAt()
+}
+
+func (app *App) InitUID() {
+	app.UID = uuid.New()
+}
+
+func (app *App) InitCreatedAt() {
+	app.CreatedAt = time.Now().UTC()
 }
 
 func (app *App) InitUpdatedAt() {
@@ -65,118 +113,131 @@ func (app *App) IsPublic() bool {
 	return ac.Public
 }
 
+func (app *App) SetID(appID int) {
+	app.ID = appID
+}
+
 func (app *App) SetPublic(userID int) {
-	ac := app.ExportConfig()
-	ac.Public = true
+	appConfig := app.ExportConfig()
+	appConfig.Public = true
 	app.UpdatedBy = userID
 	app.InitUpdatedAt()
+	app.PushEditedBy(NewAppEditedByUserID(userID))
+	app.Config = appConfig.ExportToJSONString()
 }
 
 func (app *App) SetPrivate(userID int) {
-	ac := app.ExportConfig()
-	ac.Public = false
+	appConfig := app.ExportConfig()
+	appConfig.Public = false
 	app.UpdatedBy = userID
 	app.InitUpdatedAt()
+	app.PushEditedBy(NewAppEditedByUserID(userID))
+	app.Config = appConfig.ExportToJSONString()
 }
 
-type AppRepository interface {
-	Create(app *App) (int, error)
-	Delete(teamID int, appID int) error
-	Update(app *App) error
-	UpdateUpdatedAt(app *App) error
-	RetrieveAll(teamID int) ([]*App, error)
-	RetrieveAppByIDAndTeamID(appID int, teamID int) (*App, error)
-	RetrieveAllByUpdatedTime(teamID int) ([]*App, error)
-	CountAPPByTeamID(teamID int) (int, error)
-	RetrieveAppLastModifiedTime(teamID int) (time.Time, error)
+func (app *App) ExportID() int {
+	return app.ID
 }
 
-type AppRepositoryImpl struct {
-	logger *zap.SugaredLogger
-	db     *gorm.DB
+func (app *App) ExportAppName() string {
+	return app.Name
 }
 
-func NewAppRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *AppRepositoryImpl {
-	return &AppRepositoryImpl{
-		logger: logger,
-		db:     db,
+func (app *App) ExportTeamID() int {
+	return app.TeamID
+}
+
+func (app *App) ExportCreatedBy() int {
+	return app.CreatedBy
+}
+
+func (app *App) ExportUpdatedBy() int {
+	return app.UpdatedBy
+}
+
+func (app *App) ExportModifiedAllUserIDs() []int {
+	ret := make([]int, 0)
+	appEditedBys := make([]*AppEditedBy, 0)
+	json.Unmarshal([]byte(app.EditedBy), &appEditedBys)
+	if len(appEditedBys) == 0 {
+		return ret
 	}
-}
-
-func (impl *AppRepositoryImpl) Create(app *App) (int, error) {
-	if err := impl.db.Create(app).Error; err != nil {
-		return 0, err
+	// pick up user ids
+	for _, appEditedBy := range appEditedBys {
+		ret = append(ret, appEditedBy.UserID)
 	}
-	return app.ID, nil
+	return ret
 }
 
-func (impl *AppRepositoryImpl) Delete(teamID int, appID int) error {
-	if err := impl.db.Where("team_id = ? AND id = ?", teamID, appID).Delete(&App{}).Error; err != nil {
-		return err
+func (app *App) ExportEditedBy() []*AppEditedBy {
+	appEditedBys := make([]*AppEditedBy, 0)
+	json.Unmarshal([]byte(app.EditedBy), &appEditedBys)
+	return appEditedBys
+}
+
+func (app *App) ImportEditedBy(appEditedBys []*AppEditedBy) {
+	payload, _ := json.Marshal(appEditedBys)
+	app.EditedBy = string(payload)
+}
+
+func (app *App) PushEditedBy(currentEditedBy *AppEditedBy) {
+	editedByList := app.ExportEditedBy()
+	fmt.Printf("[DUMP] PushEditedBy.editedByList: %+v\n ", editedByList)
+	fmt.Printf("[DUMP] PushEditedBy.currentEditedBy: %+v\n ", currentEditedBy)
+	// remove exists
+	for serial, editedBy := range editedByList {
+		if editedBy.UserID == currentEditedBy.UserID {
+			editedByList = append(editedByList[:serial], editedByList[serial+1:]...)
+		}
+	}
+
+	// insert
+	editedByList = append([]*AppEditedBy{currentEditedBy}, editedByList...)
+	fmt.Printf("[DUMP] PushEditedBy.insert.editedByList: %+v\n ", editedByList)
+
+	// check length
+	if len(editedByList) > APP_EDITED_BY_MAX_LENGTH {
+		editedByList = editedByList[:len(editedByList)-1]
+	}
+
+	fmt.Printf("[DUMP] finalEditedByList: \n")
+	for serial, editedBy := range editedByList {
+		fmt.Printf("    [%d] editedByList: %+v\n ", serial, editedBy)
+	}
+
+	// ok, set it
+	app.ImportEditedBy(editedByList)
+}
+
+func (app *App) UpdateAppByConfigAppRawRequest(rawReq map[string]interface{}) error {
+	var assertPass bool
+	for key, value := range rawReq {
+		switch key {
+		case APP_FIELD_NAME:
+			app.Name, assertPass = value.(string)
+			if !assertPass {
+				return errors.New("update app name failed due to assert failed.")
+			}
+		default:
+		}
 	}
 	return nil
 }
 
-func (impl *AppRepositoryImpl) Update(app *App) error {
-	if err := impl.db.Model(app).UpdateColumns(App{
-		Name:            app.Name,
-		ReleaseVersion:  app.ReleaseVersion,
-		MainlineVersion: app.MainlineVersion,
-		Config:          app.Config,
-		UpdatedBy:       app.UpdatedBy,
-		UpdatedAt:       app.UpdatedAt,
-	}).Error; err != nil {
-		return err
+func ExtractAllEditorIDFromApps(apps []*App) []int {
+	// extract all target user id from apps
+	allUserIDsHashT := make(map[int]int, 0)
+	allUserIDs := make([]int, 0)
+	for _, app := range apps {
+		ids := app.ExportModifiedAllUserIDs()
+		for _, id := range ids {
+			allUserIDsHashT[id] = id
+		}
+		updatedByID := app.ExportUpdatedBy()
+		allUserIDsHashT[updatedByID] = updatedByID
 	}
-	return nil
-}
-
-func (impl *AppRepositoryImpl) RetrieveAll(teamID int) ([]*App, error) {
-	var apps []*App
-	if err := impl.db.Where("team_id = ?", teamID).Find(&apps).Error; err != nil {
-		return nil, err
+	for _, id := range allUserIDsHashT {
+		allUserIDs = append(allUserIDs, id)
 	}
-	return apps, nil
-}
-
-func (impl *AppRepositoryImpl) RetrieveAppByIDAndTeamID(appID int, teamID int) (*App, error) {
-	var app *App
-	if err := impl.db.Where("id = ? AND team_id = ?", appID, teamID).Find(&app).Error; err != nil {
-		return nil, err
-	}
-	return app, nil
-}
-
-func (impl *AppRepositoryImpl) RetrieveAllByUpdatedTime(teamID int) ([]*App, error) {
-	var apps []*App
-	if err := impl.db.Where("team_id = ?", teamID).Order("updated_at desc").Find(&apps).Error; err != nil {
-		return nil, err
-	}
-	return apps, nil
-}
-
-func (impl *AppRepositoryImpl) UpdateUpdatedAt(app *App) error {
-	if err := impl.db.Model(app).UpdateColumns(App{
-		UpdatedBy: app.UpdatedBy,
-		UpdatedAt: app.UpdatedAt,
-	}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (impl *AppRepositoryImpl) CountAPPByTeamID(teamID int) (int, error) {
-	var count int64
-	if err := impl.db.Model(&App{}).Where("team_id = ?", teamID).Count(&count).Error; err != nil {
-		return 0, err
-	}
-	return int(count), nil
-}
-
-func (impl *AppRepositoryImpl) RetrieveAppLastModifiedTime(teamID int) (time.Time, error) {
-	var app *App
-	if err := impl.db.Where("team_id = ?", teamID).Order("updated_at desc").First(&app).Error; err != nil {
-		return time.Time{}, err
-	}
-	return app.ExportUpdatedAt(), nil
+	return allUserIDs
 }

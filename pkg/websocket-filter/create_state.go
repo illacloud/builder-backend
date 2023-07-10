@@ -16,6 +16,7 @@ package filter
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/app"
@@ -28,7 +29,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient, hit := hub.Clients[message.ClientID]
 	if !hit {
-		return errors.New("[SignalCreateState] target client("+message.ClientID.String()+") does dot exists.")
+		return errors.New("[SignalCreateState] target client(" + message.ClientID.String() + ") does dot exists.")
 	}
 	stateType := repository.STATE_TYPE_INVALIED
 	teamID := currentClient.TeamID
@@ -36,6 +37,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 	appDto.ConstructWithID(currentClient.APPID)
 	appDto.ConstructWithUpdateBy(currentClient.MappedUserID)
 	appDto.SetTeamID(currentClient.TeamID)
+	app := repository.NewAppWithID(currentClient.APPID, currentClient.TeamID, currentClient.MappedUserID)
 	message.RewriteBroadcast()
 
 	// target switch
@@ -46,7 +48,8 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 		// build component tree from json
 		for _, v := range message.Payload {
 			componentTree := repository.ConstructComponentNodeByMap(v)
-			if err := hub.TreeStateServiceImpl.CreateComponentTree(appDto, 0, componentTree); err != nil {
+			fmt.Printf("[DUMP] componentTree: %+v\n", componentTree)
+			if err := hub.TreeStateServiceImpl.CreateComponentTree(app, 0, componentTree); err != nil {
 				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 				return err
 			}

@@ -16,8 +16,10 @@ package filter
 
 import (
 	"errors"
-	"github.com/illacloud/builder-backend/internal/util/supervisior"
+
 	"github.com/illacloud/builder-backend/internal/datacontrol"
+	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/builder-backend/internal/util/supervisior"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 	"github.com/illacloud/builder-backend/pkg/user"
 )
@@ -26,7 +28,7 @@ func SignalEnter(hub *ws.Hub, message *ws.Message) error {
 	// init
 	currentClient, hit := hub.Clients[message.ClientID]
 	if !hit {
-		return errors.New("[SignalEnter] target client("+message.ClientID.String()+") does dot exists.")
+		return errors.New("[SignalEnter] target client(" + message.ClientID.String() + ") does dot exists.")
 	}
 	var ok bool
 	if len(message.Payload) == 0 {
@@ -41,8 +43,8 @@ func SignalEnter(hub *ws.Hub, message *ws.Message) error {
 		return err
 	}
 	token, _ := authToken["authToken"].(string)
-	
-	// init supervisior clienr
+
+	// init supervisior client
 	sv, err := supervisior.NewSupervisior()
 	if err != nil {
 		currentClient.Feedback(message, ws.ERROR_CODE_LOGIN_FAILED, err)
@@ -79,6 +81,14 @@ func SignalEnter(hub *ws.Hub, message *ws.Message) error {
 	currentClient.IsLoggedIn = true
 	currentClient.MappedUserID = userID
 	currentClient.MappedUserUID = userUID
+
+	// storage user to app edited by lists
+	app, errInRetrieveApp := hub.AppRepositoryImpl.RetrieveAppByIDAndTeamID(currentClient.APPID, currentClient.TeamID)
+	if errInRetrieveApp == nil {
+		appEditedBy := repository.NewAppEditedByUserID(userID)
+		app.PushEditedBy(appEditedBy)
+		hub.AppRepositoryImpl.UpdateWholeApp(app)
+	}
 
 	// broadcast in room users
 	inRoomUsers := hub.GetInRoomUsersByRoomID(currentClient.APPID)

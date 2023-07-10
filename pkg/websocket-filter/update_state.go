@@ -36,6 +36,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 	appDto.ConstructWithID(currentClient.APPID)
 	appDto.ConstructWithUpdateBy(currentClient.MappedUserID)
 	appDto.SetTeamID(currentClient.TeamID)
+	app := repository.NewApp("", currentClient.TeamID, currentClient.MappedUserID)
 	message.RewriteBroadcast()
 
 	// target switch
@@ -72,7 +73,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 
 			// construct update data
 			component := repository.ConstructComponentNodeByMap(csfu.After)
-			afterTreeState, err := hub.TreeStateServiceImpl.NewTreeStateByComponentState(appDto, component)
+			afterTreeState, err := hub.TreeStateServiceImpl.NewTreeStateByComponentState(app, component)
 			if err != nil {
 				return err
 			}
