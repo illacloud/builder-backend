@@ -98,6 +98,14 @@ func (app *App) InitUpdatedAt() {
 	app.UpdatedAt = time.Now().UTC()
 }
 
+func (app *App) BumpMainlineVersion() {
+	app.MainlineVersion += 1
+}
+
+func (app *App) ReleaseMainlineVersion() {
+	app.ReleaseVersion = app.MainlineVersion
+}
+
 func (app *App) ExportUpdatedAt() time.Time {
 	return app.UpdatedAt
 }
@@ -153,6 +161,10 @@ func (app *App) ExportCreatedBy() int {
 
 func (app *App) ExportUpdatedBy() int {
 	return app.UpdatedBy
+}
+
+func (app *App) ExportMainlineVersion() int {
+	return app.MainlineVersion
 }
 
 func (app *App) ExportModifiedAllUserIDs() []int {

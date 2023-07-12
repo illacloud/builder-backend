@@ -345,6 +345,7 @@ func (impl *AppServiceImpl) DuplicateApp(teamID int, appID int, userID int, name
 		UpdatedAt:       appA.UpdatedAt,
 	}
 	newAppB.PushEditedBy(repository.NewAppEditedByUserID(userID))
+	newAppB.SetPrivate()
 	id, err := impl.appRepository.Create(newAppB)
 	if err != nil {
 		return 0, err

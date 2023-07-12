@@ -647,13 +647,13 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	// fetch app
 	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if errInRetrieveApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get user info failed: "+errInRetrieveApp.Error())
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
 		return
 	}
 
 	// config app
-	app.MainlineVersion += 1
-	app.ReleaseVersion = app.MainlineVersion
+	app.BumpMainlineVersion()
+	app.ReleaseMainlineVersion()
 	if publicApp {
 		app.SetPublic(userID)
 	} else {
@@ -687,4 +687,53 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	// feedback
 	FeedbackOK(c, repository.NewReleaseAppResponse(app.ReleaseVersion))
 	return
+}
+
+func (impl AppRestHandlerImpl) TakeSnapshot(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	userID, errInGetUserID := GetUserIDFromAuth(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
+		return
+	}
+
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_APP)
+	impl.AttributeGroup.SetUnitID(appID)
+	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_APP)
+	if errInCheckAttr != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canManage {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// fetch app
+	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
+	if errInRetrieveApp != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
+		return
+	}
+
+	// config app
+	app.BumpMainlineVersion()
+
+	// do snapshot for app following components and actions
+
+}
+
+func (impl AppRestHandlerImpl) GetSnapshotList(c *gin.Context) {
+}
+
+func (impl AppRestHandlerImpl) GetSnapshot(c *gin.Context) {
+}
+
+func (impl AppRestHandlerImpl) RecoverSnapshot(c *gin.Context) {
 }
