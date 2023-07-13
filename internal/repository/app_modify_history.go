@@ -27,6 +27,7 @@ type AppModifyHistory struct {
 	Operation           int       `json:"operation"  	        gorm:"column:operation;type:smallint"`              // same as websocket protol signal
 	OperationTarget     int       `json:"operationTarget"       gorm:"column:operation_target;type:smallint"`     // same as websocket protol target
 	OperationTargetName string    `json:"operationTargetName"   gorm:"column:operation_target_name;type:varchar"` // smae as app name or components display name
+	ModifiedBy          int       `json:"modifiedBy" 		    gorm:"column:modified_by;type:timestamp"`
 	ModifiedAt          time.Time `json:"modifiedAt" 		    gorm:"column:modified_at;type:timestamp"`
 }
 

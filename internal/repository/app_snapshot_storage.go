@@ -47,6 +47,14 @@ func (impl *AppSnapshotRepositoryImpl) RetrieveByTeamIDAndAppID(teamID int, appI
 	return appSnapshots, nil
 }
 
+func (impl *AppSnapshotRepositoryImpl) RetrieveByTeamIDAppIDAndTargetVersion(teamID int, appID int, targetVersion int) ([]*AppSnapshot, error) {
+	var appSnapshot *AppSnapshot
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND target_version = ?", teamID, appID, targetVersion).First(&appSnapshot).Error; err != nil {
+		return nil, err
+	}
+	return appSnapshot, nil
+}
+
 func (impl *AppSnapshotRepositoryImpl) RetrieveByTeamIDAppIDAndPage(teamID int, appID int, pagination *Pagination) ([]*AppSnapshot, error) {
 	var appSnapshots []*AppSnapshot
 	if err := impl.db.Scope(paginate(impl.db, pagination)).Where("team_id = ? AND app_ref_id = ?", teamID, appID).Find(&appSnapshots).Error; err != nil {
@@ -54,3 +62,11 @@ func (impl *AppSnapshotRepositoryImpl) RetrieveByTeamIDAppIDAndPage(teamID int, 
 	}
 	return appSnapshots, nil
 }
+
+func (impl *AppSnapshotRepositoryImpl) UpdateWholeSnapshot(appSnapshot *AppSnapshot) error {
+	if err := impl.db.Model(appSnapshot).Where("id = ?", appSnapshot.ID).UpdateColumns(appSnapshot).Error; err != nil {
+		return err
+	}
+	return nil
+}
+``

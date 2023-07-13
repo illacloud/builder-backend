@@ -45,33 +45,30 @@ type Action struct {
 	UpdatedBy   int       `gorm:"column:updated_by;type:bigint;not null"`
 }
 
-type ActionRepository interface {
-	Create(action *Action) (int, error)
-	Delete(teamID int, actionID int) error
-	Update(action *Action) error
-	UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, actionConfig *ActionConfig) error
-	RetrieveActionByIDAndTeamID(actionID int, teamID int) (*Action, error)
-	RetrieveAll(teamID int, appID int) ([]*Action, error)
-	RetrieveByID(teamID int, actionID int) (*Action, error)
-	RetrieveActionsByAppVersion(teamID int, appID int, version int) ([]*Action, error)
-	DeleteActionsByApp(teamID int, appID int) error
-	CountActionByTeamID(teamID int) (int, error)
+func (action *Action) CleanID() {
+	action.ID = 0
 }
 
-type ActionRepositoryImpl struct {
-	logger *zap.SugaredLogger
-	db     *gorm.DB
+func (action *Action) InitUID() {
+	action.UID = uuid.New()
 }
 
-func NewActionRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *ActionRepositoryImpl {
-	return &ActionRepositoryImpl{
-		logger: logger,
-		db:     db,
-	}
+func (action *Action) InitCreatedAt() {
+	action.CreatedAt = time.Now().UTC()
 }
 
 func (action *Action) InitUpdatedAt() {
 	action.UpdatedAt = time.Now().UTC()
+}
+
+func (action *Action) AppendNewVersion(newVersion int) {
+	action.CleanID()
+	action.InitUID()
+	action.Version = newVersion
+}
+
+func (action *Action) ExportID() int {
+	return action.ID
 }
 
 func (action *Action) UpdateAppConfig(actionConfig *ActionConfig, userID int) {
@@ -111,103 +108,4 @@ func (action *Action) SetPrivate(userID int) {
 	ac.Public = false
 	action.UpdatedBy = userID
 	action.InitUpdatedAt()
-}
-
-func (impl *ActionRepositoryImpl) Create(action *Action) (int, error) {
-	if err := impl.db.Create(action).Error; err != nil {
-		return 0, err
-	}
-	return action.ID, nil
-}
-
-func (impl *ActionRepositoryImpl) Delete(teamID int, actionID int) error {
-	if err := impl.db.Where("id = ? AND team_id = ?", actionID, teamID).Delete(&Action{}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (impl *ActionRepositoryImpl) Update(action *Action) error {
-	if err := impl.db.Model(action).UpdateColumns(Action{
-		Resource:    action.Resource,
-		Type:        action.Type,
-		Name:        action.Name,
-		TriggerMode: action.TriggerMode,
-		Transformer: action.Transformer,
-		Template:    action.Template,
-		Config:      action.Config,
-		UpdatedBy:   action.UpdatedBy,
-		UpdatedAt:   action.UpdatedAt,
-	}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (impl *ActionRepositoryImpl) UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, actionConfig *ActionConfig) error {
-	actions, errInGetAll := impl.RetrieveAll(teamID, appID)
-	if errInGetAll != nil {
-		return errInGetAll
-	}
-	// set status
-	for _, action := range actions {
-		tmpActionConfig := NewActionConfig()
-		json.Unmarshal([]byte(action.Config), &tmpActionConfig)
-		tmpActionConfig.Public = actionConfig.Public
-		action.Config = tmpActionConfig.ExportToJSONString()
-		// update
-		errorInUpdate := impl.Update(action)
-		if errorInUpdate != nil {
-			return errorInUpdate
-		}
-
-	}
-	return nil
-}
-
-func (impl *ActionRepositoryImpl) RetrieveActionByIDAndTeamID(actionID int, teamID int) (*Action, error) {
-	var action *Action
-	if err := impl.db.Where("id = ? AND team_id = ?", actionID, teamID).Find(&action).Error; err != nil {
-		return nil, err
-	}
-	return action, nil
-}
-
-func (impl *ActionRepositoryImpl) RetrieveAll(teamID int, appID int) ([]*Action, error) {
-	var actions []*Action
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, appID).Find(&actions).Error; err != nil {
-		return nil, err
-	}
-	return actions, nil
-}
-
-func (impl *ActionRepositoryImpl) RetrieveByID(teamID int, actionID int) (*Action, error) {
-	var action *Action
-	if err := impl.db.Where("id = ? AND team_id = ?", actionID, teamID).First(&action).Error; err != nil {
-		return &Action{}, err
-	}
-	return action, nil
-}
-
-func (impl *ActionRepositoryImpl) RetrieveActionsByAppVersion(teamID int, appID int, version int) ([]*Action, error) {
-	var actions []*Action
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, appID, version).Find(&actions).Error; err != nil {
-		return nil, err
-	}
-	return actions, nil
-}
-
-func (impl *ActionRepositoryImpl) DeleteActionsByApp(teamID int, appID int) error {
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, appID).Delete(&Action{}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (impl *ActionRepositoryImpl) CountActionByTeamID(teamID int) (int, error) {
-	var count int64
-	if err := impl.db.Model(&Action{}).Where("team_id = ?", teamID).Count(&count).Error; err != nil {
-		return 0, err
-	}
-	return int(count), nil
 }

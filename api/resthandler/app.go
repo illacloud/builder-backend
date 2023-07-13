@@ -398,12 +398,8 @@ func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 		return
 	}
 
-	// fetch app
-	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
-	if errInRetrieveApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app mega data error: "+errInRetrieveApp.Error())
-		return
-	}
+	// do get app for editor method
+	app, _ := impl.GetTargetVersionApp(c, teamID, appID, version)
 
 	// audit log
 	eventType := auditlogger.AUDIT_LOG_VIEW_APP
@@ -420,112 +416,6 @@ func (impl AppRestHandlerImpl) GetMegaData(c *gin.Context) {
 		AppName:   app.ExportAppName(),
 	})
 
-	// check app version
-	if app.ID == 0 || version > app.MainlineVersion {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app mega data error, app version invalied.")
-		return
-	}
-	if version == repository.APP_AUTO_MAINLINE_VERSION {
-		version = app.MainlineVersion
-	}
-	if version == repository.APP_AUTO_RELEASE_VERSION {
-		version = app.ReleaseVersion
-	}
-
-	// form editor object field appForExport
-	//
-	// We need:
-	//     AppInfo               which is: *AppForExport
-	//     Actions               which is: []*ActionForExport
-	//     Components            which is: *ComponentNode
-	//     DependenciesState     which is: map[string][]string
-	//     DragShadowState       which is: map[string]interface{}
-	//     DottedLineSquareState which is: map[string]interface{}
-	//     DisplayNameState      which is: []string
-
-	// get all modifier user ids from all apps
-	allUserIDs := repository.ExtractAllEditorIDFromApps([]*repository.App{app})
-
-	// fet all user id mapped user info, and build user info lookup table
-	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
-	if errInGetMultiUserInfo != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
-		return
-	}
-
-	appForExport := repository.NewAppForExport(app, usersLT)
-
-	// form editor object field actions
-	actions, errInRetrieveActions := impl.ActionRepository.RetrieveActionsByAppVersion(teamID, appID, version)
-	if errInRetrieveActions != nil {
-		actions = []*repository.Action{}
-	}
-	actionsForExport := make([]*repository.ActionForExport, 0)
-	for _, action := range actions {
-		actionsForExport = append(actionsForExport, repository.NewActionForExport(action))
-	}
-
-	// form editor object field components
-	treeStateComponents, errInRetrieveTreeStateComponents := impl.TreeStateRepository.RetrieveTreeStatesByApp(teamID, appID, repository.TREE_STATE_TYPE_COMPONENTS, version)
-	if errInRetrieveTreeStateComponents != nil {
-		treeStateComponents = []*repository.TreeState{}
-	}
-	treeStateLT := repository.BuildTreeStateLookupTable(treeStateComponents)
-	rootOfTreeState := repository.PickUpTreeStatesRootNode(treeStateComponents)
-	componentTree, _ := repository.BuildComponentTree(rootOfTreeState, treeStateLT, nil)
-
-	// form editor object field dependenciesState
-	dependenciesState := map[string][]string{}
-	dependenciesKVStates, errInRetrieveDependenciesKVStates := impl.KVStateRepository.RetrieveKVStatesByApp(teamID, appID, repository.KV_STATE_TYPE_DEPENDENCIES, version)
-	if errInRetrieveDependenciesKVStates != nil {
-		dependenciesKVStates = []*repository.KVState{}
-	}
-	for _, dependency := range dependenciesKVStates {
-		var revMsg []string
-		json.Unmarshal([]byte(dependency.Value), &revMsg)
-		dependenciesState[dependency.Key] = revMsg // value convert to []string
-	}
-
-	// form editor object field dragShadowState
-	dragShadowState := map[string]interface{}{}
-	dragShadowKVStates, errInRetrieveDragShadowKVStates := impl.KVStateRepository.RetrieveKVStatesByApp(teamID, appID, repository.KV_STATE_TYPE_DRAG_SHADOW, version)
-	if errInRetrieveDragShadowKVStates != nil {
-		dragShadowKVStates = []*repository.KVState{}
-	}
-	for _, dragShadow := range dragShadowKVStates {
-		var revMsg []string
-		json.Unmarshal([]byte(dragShadow.Value), &revMsg)
-		dragShadowState[dragShadow.Key] = revMsg // value convert to []string
-	}
-
-	// form editor object field dottedLineSquareState
-	dottedLineSquareState := map[string]interface{}{}
-	dottedLineSquareKVStates, errInRetrieveDottedLineSquareKVStates := impl.KVStateRepository.RetrieveKVStatesByApp(teamID, appID, repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE, version)
-	if errInRetrieveDottedLineSquareKVStates != nil {
-		dottedLineSquareKVStates = []*repository.KVState{}
-	}
-	for _, dottedLineSquare := range dottedLineSquareKVStates {
-		var revMsg []string
-		json.Unmarshal([]byte(dottedLineSquare.Value), &revMsg)
-		dottedLineSquareState[dottedLineSquare.Key] = revMsg // value convert to []string
-	}
-
-	// form editor object field displayNameState
-	displayNameSetStates, errInRetrieveDisplayNameSetState := impl.SetStateRepository.RetrieveSetStatesByApp(teamID, appID, repository.SET_STATE_TYPE_DISPLAY_NAME, version)
-	if errInRetrieveDisplayNameSetState != nil {
-		displayNameSetStates = []*repository.SetState{}
-	}
-	displayNameState := make([]string, 0, len(displayNameSetStates))
-	for _, displayName := range displayNameSetStates {
-		displayNameState = append(displayNameState, displayName.Value)
-	}
-
-	// finally, make a brand new editor object
-	editorForExport := repository.NewEditorForExport(appForExport, actionsForExport, componentTree, dependenciesState, dragShadowState, dottedLineSquareState, displayNameState)
-
-	// feedback
-	FeedbackOK(c, editorForExport)
-	return
 }
 
 func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
@@ -726,14 +616,119 @@ func (impl AppRestHandlerImpl) TakeSnapshot(c *gin.Context) {
 	app.BumpMainlineVersion()
 
 	// do snapshot for app following components and actions
+	if impl.SnapshotTreeState(c, teamID, appID, app.ExportMainlineVersion()) != nil {
+		return
+	}
+	if impl.SnapshotKVState(c, teamID, appID, app.ExportMainlineVersion()) != nil {
+		return
+	}
+	if impl.SnapshotSetState(c, teamID, appID, app.ExportMainlineVersion()) != nil {
+		return
+	}
+	if impl.SnapshotAction(c, teamID, appID, app.ExportMainlineVersion()) != nil {
+		return
+	}
+
+	// release app
+	errInUpdateApp := impl.AppRepository.UpdateWholeApp(app)
+	if errInUpdateApp != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
+		return
+	}
+
+	// update snapshot
+	errInTakeSnapshot := impl.TakeSnapshot(c, teamID, appID, app.ExportMainlineVersion(), repository.SNAPSHOT_TRIGGER_MODE_MANUAL)
+	if errInTakeSnapshot != nil {
+		return
+	}
+
+	// feedback
+	FeedbackOK(c, nil)
+	return
 
 }
 
 func (impl AppRestHandlerImpl) GetSnapshotList(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	pageLimit, errInGetPageLimit := GetIntParamFromRequest(c, PARAM_PAGE_LIMIT)
+	page, errInGetPage := GetIntParamFromRequest(c, PARAM_PAGE)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	userID, errInGetUserID := GetUserIDFromAuth(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil || errInGetUserID != nil || errInGetPageLimit != nil || errInGetPage != nil {
+		return
+	}
+
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_APP)
+	impl.AttributeGroup.SetUnitID(appID)
+	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	if errInCheckAttr != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canAccess {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// retrieve by page
+	pagination := repository.NewPagiNation(pageLimit, page)
+	snapshots, errInRetrieveSnapshot := impl.AppSnapshotRepository.RetrieveByTeamIDAppIDAndPage(teamID, appID, pagination)
+	if errInRetrieveSnapshot != -nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveApp.Error())
+		return
+	}
+
+	// feedback
+	FeedbackOK(c, repository.NewGetSnapshotListResponse(snapshots))
+	return
+
 }
 
 func (impl AppRestHandlerImpl) GetSnapshot(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	snapshotID, errInGetSnapshotID := GetIntParamFromRequest(c, PARAM_SNAPSHOT_ID)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	userID, errInGetUserID := GetUserIDFromAuth(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetVersion != nil || errInGetAuthToken != nil || errInGetUserID != nil {
+		return
+	}
+
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_APP)
+	impl.AttributeGroup.SetUnitID(appID)
+	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	if errInCheckAttr != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canAccess {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// get target snapshot
+	snapshot, errInRetrieveSnapshot := impl.AppSnapshotRepository.RetrieveByID(snapshotID)
+	if errInRetrieveSnapshot != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
+		return
+	}
+
+	// get app
+	impl.GetTargetVersionApp(c, teamID, appID, snapshot.ExportTargetVersion())
+	return
 }
 
 func (impl AppRestHandlerImpl) RecoverSnapshot(c *gin.Context) {
+
 }
