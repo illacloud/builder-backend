@@ -23,9 +23,9 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/mitchellh/mapstructure"
-	uuid "github.com/satori/go.uuid"
 )
 
 const (
