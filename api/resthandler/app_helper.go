@@ -27,6 +27,19 @@ func (impl AppRestHandlerImpl) SnapshotTreeState(c *gin.Context, teamID int, app
 	impl.DuplicateTreeStateByVersion(c, teamID, appID, repository.APP_EDIT_VERSION, appMainLineVersion)
 }
 
+func (impl AppRestHandlerImpl) SnapshotKVState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
+	return impl.DuplicateKVStateByVersion(c, teamID, appID, repository.APP_EDIT_VERSION, appMainLineVersion)
+}
+
+func (impl AppRestHandlerImpl) SnapshotSetState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
+	impl.DuplicateSetStateByVersion(c, teamID, appID, repository.APP_EDIT_VERSION, appMainLineVersion)
+}
+
+func (impl AppRestHandlerImpl) SnapshotAction(c *gin.Context, teamID int, appID int, mainlineVersion int) error {
+	return impl.DuplicateActionByVersion(c, teamID, appID, repository.APP_EDIT_VERSION, mainlineVersion)
+}
+
+
 // recover edit version treestate to target version (coby target version data to edit version)
 func (impl AppRestHandlerImpl) DuplicateTreeStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
 	// get from version tree state from database
@@ -68,10 +81,6 @@ func (impl AppRestHandlerImpl) DuplicateTreeStateByVersion(c *gin.Context, teamI
 	return nil
 }
 
-func (impl AppRestHandlerImpl) SnapshotKVState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
-	return impl.DuplicateKVStateByVersion(c, teamID, appID, repository.APP_EDIT_VERSION, appMainLineVersion)
-}
-
 func (impl AppRestHandlerImpl) DuplicateKVStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
 	// get edit version K-V state from database
 	kvstates, errInRetrieveKVState := impl.kvstateRepository.RetrieveAllTypeKVStatesByApp(teamID, appID, fromVersion)
@@ -96,9 +105,6 @@ func (impl AppRestHandlerImpl) DuplicateKVStateByVersion(c *gin.Context, teamID 
 	return nil
 }
 
-func (impl AppRestHandlerImpl) SnapshotSetState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
-	impl.DuplicateSetStateByVersion(c, teamID, appID, repository.APP_EDIT_VERSION, appMainLineVersion)
-}
 
 func (impl AppRestHandlerImpl) DuplicateSetStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
 	setstates, errInRetrieveSetState := impl.setstateRepository.RetrieveSetStatesByApp(teamID, appID, repository.SET_STATE_TYPE_DISPLAY_NAME, fromVersion)
@@ -123,9 +129,10 @@ func (impl AppRestHandlerImpl) DuplicateSetStateByVersion(c *gin.Context, teamID
 	return nil
 }
 
-func (impl AppRestHandlerImpl) SnapshotAction(c *gin.Context, teamID int, appID int, mainlineVersion int) error {
+
+func (impl AppRestHandlerImpl) DuplicateActionByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion) error {
 	// get edit version K-V state from database
-	actions, errinRetrieveAction := impl.actionRepository.RetrieveActionsByAppVersion(teamID, appID, repository.APP_EDIT_VERSION)
+	actions, errinRetrieveAction := impl.actionRepository.RetrieveActionsByAppVersion(teamID, appID, fromVersion)
 	if errinRetrieveAction != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errinRetrieveAction.Error())
 		return errinRetrieveAction
@@ -133,7 +140,7 @@ func (impl AppRestHandlerImpl) SnapshotAction(c *gin.Context, teamID int, appID 
 
 	// set version as mainline version
 	for serial, _ := range actions {
-		actions[serial].AppendNewVersion(mainlineVersion)
+		actions[serial].AppendNewVersion(toVersion)
 	}
 
 	// and put them to the database as duplicate
