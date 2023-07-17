@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -62,7 +61,6 @@ func (impl *AppRepositoryImpl) Update(app *App) error {
 }
 
 func (impl *AppRepositoryImpl) UpdateWholeApp(app *App) error {
-	fmt.Printf("[DUMP] app: %+v\n", app)
 	if err := impl.db.Model(app).Where("id = ?", app.ID).UpdateColumns(app).Error; err != nil {
 		return err
 	}

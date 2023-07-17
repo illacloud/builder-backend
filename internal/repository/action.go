@@ -73,14 +73,16 @@ func (action *Action) IsPublic() bool {
 
 func (action *Action) SetPublic(userID int) {
 	ac := action.ExportConfig()
-	ac.Public = true
+	ac.SetPublic()
+	action.Config = ac.ExportToJSONString()
 	action.UpdatedBy = userID
 	action.InitUpdatedAt()
 }
 
 func (action *Action) SetPrivate(userID int) {
 	ac := action.ExportConfig()
-	ac.Public = false
+	ac.SetPrivate()
+	action.Config = ac.ExportToJSONString()
 	action.UpdatedBy = userID
 	action.InitUpdatedAt()
 }
