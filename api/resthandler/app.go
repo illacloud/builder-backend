@@ -542,15 +542,8 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	}
 
 	// config app
-	app.BumpMainlineVersion()
-	app.ReleaseMainlineVersion()
-	if publicApp {
-		app.SetPublic(userID)
-		impl.ActionRepository.MakeActionPublicByTeamIDAndAppID(teamID, appID, userID)
-	} else {
-		app.SetPrivate(userID)
-		impl.ActionRepository.MakeActionPrivateByTeamIDAndAppID(teamID, appID, userID)
-	}
+	app.MainlineVersion += 1
+	app.ReleaseVersion = app.MainlineVersion
 
 	// release app following components & actions
 	_ = impl.AppService.ReleaseTreeStateByApp(teamID, appID, app.MainlineVersion)
@@ -558,7 +551,14 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	_ = impl.AppService.ReleaseSetStateByApp(teamID, appID, app.MainlineVersion)
 	_ = impl.AppService.ReleaseActionsByApp(teamID, appID, app.MainlineVersion)
 
-	// config action
+	// config app & action public status
+	if publicApp {
+		app.SetPublic(userID)
+		impl.ActionRepository.MakeActionPublicByTeamIDAndAppID(teamID, appID, userID)
+	} else {
+		app.SetPrivate(userID)
+		impl.ActionRepository.MakeActionPrivateByTeamIDAndAppID(teamID, appID, userID)
+	}
 
 	// release app
 	errInUpdateApp := impl.AppRepository.UpdateWholeApp(app)

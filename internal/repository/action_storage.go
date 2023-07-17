@@ -25,6 +25,7 @@ type ActionRepository interface {
 	Create(action *Action) (int, error)
 	Delete(teamID int, actionID int) error
 	Update(action *Action) error
+	UpdateWholeAction(action *Action) error
 	UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, actionConfig *ActionConfig) error
 	MakeActionPublicByTeamIDAndAppID(teamID int, appID int, userID int) error
 	MakeActionPrivateByTeamIDAndAppID(teamID int, appID int, userID int) error
@@ -79,6 +80,13 @@ func (impl *ActionRepositoryImpl) Update(action *Action) error {
 	return nil
 }
 
+func (impl *ActionRepositoryImpl) UpdateWholeAction(action *Action) error {
+	if err := impl.db.Model(action).Where("id = ?", action.ID).UpdateColumns(action).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (impl *ActionRepositoryImpl) UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, actionConfig *ActionConfig) error {
 	actions, errInGetAll := impl.RetrieveAll(teamID, appID)
 	if errInGetAll != nil {
@@ -109,7 +117,7 @@ func (impl *ActionRepositoryImpl) MakeActionPublicByTeamIDAndAppID(teamID int, a
 	for _, action := range actions {
 		action.SetPublic(userID)
 		// update
-		errorInUpdate := impl.Update(action)
+		errorInUpdate := impl.UpdateWholeAction(action)
 		if errorInUpdate != nil {
 			return errorInUpdate
 		}
@@ -127,7 +135,7 @@ func (impl *ActionRepositoryImpl) MakeActionPrivateByTeamIDAndAppID(teamID int, 
 	for _, action := range actions {
 		action.SetPrivate(userID)
 		// update
-		errorInUpdate := impl.Update(action)
+		errorInUpdate := impl.UpdateWholeAction(action)
 		if errorInUpdate != nil {
 			return errorInUpdate
 		}
