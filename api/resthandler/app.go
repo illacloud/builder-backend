@@ -656,8 +656,10 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	app.ReleaseVersion = app.MainlineVersion
 	if publicApp {
 		app.SetPublic(userID)
+		impl.ActionRepository.MakeActionPublicByTeamIDAndAppID(teamID, appID, userID)
 	} else {
 		app.SetPrivate(userID)
+		impl.ActionRepository.MakeActionPrivateByTeamIDAndAppID(teamID, appID, userID)
 	}
 
 	// release app following components & actions
