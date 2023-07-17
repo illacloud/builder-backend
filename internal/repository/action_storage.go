@@ -25,7 +25,7 @@ type ActionRepository interface {
 	Create(action *Action) (int, error)
 	Delete(teamID int, actionID int) error
 	Update(action *Action) error
-	UpdateWholeAction(action *Action)
+	UpdateWholeAction(action *Action) error
 	UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, actionConfig *ActionConfig) error
 	MakeActionPublicByTeamIDAndAppID(teamID int, appID int, userID int) error
 	MakeActionPrivateByTeamIDAndAppID(teamID int, appID int, userID int) error
