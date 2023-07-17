@@ -546,8 +546,10 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	app.ReleaseMainlineVersion()
 	if publicApp {
 		app.SetPublic(userID)
+		impl.ActionRepository.MakeActionPublicByTeamIDAndAppID(teamID, appID, userID)
 	} else {
 		app.SetPrivate(userID)
+		impl.ActionRepository.MakeActionPrivateByTeamIDAndAppID(teamID, appID, userID)
 	}
 
 	// release app following components & actions
@@ -555,6 +557,8 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	_ = impl.AppService.ReleaseKVStateByApp(teamID, appID, app.MainlineVersion)
 	_ = impl.AppService.ReleaseSetStateByApp(teamID, appID, app.MainlineVersion)
 	_ = impl.AppService.ReleaseActionsByApp(teamID, appID, app.MainlineVersion)
+
+	// config action
 
 	// release app
 	errInUpdateApp := impl.AppRepository.UpdateWholeApp(app)
@@ -629,16 +633,16 @@ func (impl AppRestHandlerImpl) TakeSnapshot(c *gin.Context) {
 		return
 	}
 
-	// release app
-	errInUpdateApp := impl.AppRepository.UpdateWholeApp(app)
-	if errInUpdateApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
+	// snapshot App
+	errInTakeSnapshot := impl.SnapshotApp(c, teamID, appID, app.ExportMainlineVersion(), repository.SNAPSHOT_TRIGGER_MODE_MANUAL)
+	if errInTakeSnapshot != nil {
 		return
 	}
 
-	// update snapshot
-	errInTakeSnapshot := impl.TakeSnapshot(c, teamID, appID, app.ExportMainlineVersion(), repository.SNAPSHOT_TRIGGER_MODE_MANUAL)
-	if errInTakeSnapshot != nil {
+	// update app version
+	errInUpdateApp := impl.AppRepository.UpdateWholeApp(app)
+	if errInUpdateApp != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
 		return
 	}
 
@@ -679,7 +683,7 @@ func (impl AppRestHandlerImpl) GetSnapshotList(c *gin.Context) {
 	// retrieve by page
 	pagination := repository.NewPagiNation(pageLimit, page)
 	snapshots, errInRetrieveSnapshot := impl.AppSnapshotRepository.RetrieveByTeamIDAppIDAndPage(teamID, appID, pagination)
-	if errInRetrieveSnapshot != -nil {
+	if errInRetrieveSnapshot != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveApp.Error())
 		return
 	}
@@ -697,7 +701,7 @@ func (impl AppRestHandlerImpl) GetSnapshot(c *gin.Context) {
 	snapshotID, errInGetSnapshotID := GetIntParamFromRequest(c, PARAM_SNAPSHOT_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
-	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetVersion != nil || errInGetAuthToken != nil || errInGetUserID != nil {
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetSnapshotID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
 	}
 
@@ -730,5 +734,80 @@ func (impl AppRestHandlerImpl) GetSnapshot(c *gin.Context) {
 }
 
 func (impl AppRestHandlerImpl) RecoverSnapshot(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	snapshotID, errInGetSnapshotID := GetIntParamFromRequest(c, PARAM_SNAPSHOT_ID)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	userID, errInGetUserID := GetUserIDFromAuth(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetSnapshotID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
+		return
+	}
+
+	// validate
+	impl.AttributeGroup.Init()
+	impl.AttributeGroup.SetTeamID(teamID)
+	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
+	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_APP)
+	impl.AttributeGroup.SetUnitID(appID)
+	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_APP)
+	if errInCheckAttr != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canManage {
+		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// fetch app
+	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
+	if errInRetrieveApp != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
+		return
+	}
+
+	// get target snapshot
+	snapshot, errInRetrieveSnapshot := impl.AppSnapshotRepository.RetrieveByID(snapshotID)
+	if errInRetrieveSnapshot != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
+		return
+	}
+
+	// config app
+	app.BumpMainlineVersion()
+
+	// do snapshot for app following components and actions
+	if impl.SnapshotTreeState(c, teamID, appID, app.ExportMainlineVersion()) != nil {
+		return
+	}
+	if impl.SnapshotKVState(c, teamID, appID, app.ExportMainlineVersion()) != nil {
+		return
+	}
+	if impl.SnapshotSetState(c, teamID, appID, app.ExportMainlineVersion()) != nil {
+		return
+	}
+	if impl.SnapshotAction(c, teamID, appID, app.ExportMainlineVersion()) != nil {
+		return
+	}
+
+	// do snapshot for app
+	errInTakeSnapshot := impl.SnapshotApp(c, teamID, appID, app.ExportMainlineVersion(), repository.SNAPSHOT_TRIGGER_MODE_MANUAL)
+	if errInTakeSnapshot != nil {
+		return
+	}
+
+	// update app version
+	errInUpdateApp := impl.AppRepository.UpdateWholeApp(app)
+	if errInUpdateApp != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
+		return
+	}
+
+	// duplicate snapshot to edit version
+
+	// feedback
+	FeedbackOK(c, nil)
+	return
 
 }

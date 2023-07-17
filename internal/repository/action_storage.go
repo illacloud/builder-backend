@@ -16,11 +16,6 @@ package repository
 
 import (
 	"encoding/json"
-	"time"
-
-	"github.com/google/uuid"
-	"github.com/illacloud/builder-backend/internal/util/resourcelist"
-	"github.com/illacloud/builder-backend/pkg/db"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -31,6 +26,8 @@ type ActionRepository interface {
 	Delete(teamID int, actionID int) error
 	Update(action *Action) error
 	UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, actionConfig *ActionConfig) error
+	MakeActionPublicByTeamIDAndAppID(teamID int, appID int, userID int) error
+	MakeActionPrivateByTeamIDAndAppID(teamID int, appID int, userID int) error
 	RetrieveActionByIDAndTeamID(actionID int, teamID int) (*Action, error)
 	RetrieveAll(teamID int, appID int) ([]*Action, error)
 	RetrieveByID(teamID int, actionID int) (*Action, error)
@@ -99,6 +96,41 @@ func (impl *ActionRepositoryImpl) UpdatePublicByTeamIDAndAppIDAndUserID(teamID i
 			return errorInUpdate
 		}
 
+	}
+	return nil
+}
+
+func (impl *ActionRepositoryImpl) MakeActionPublicByTeamIDAndAppID(teamID int, appID int, userID int) error {
+	actions, errInGetAll := impl.RetrieveAll(teamID, appID)
+	if errInGetAll != nil {
+		return errInGetAll
+	}
+	// set status
+	for _, action := range actions {
+		action.SetPublic(userID)
+		// update
+		errorInUpdate := impl.Update(action)
+		if errorInUpdate != nil {
+			return errorInUpdate
+		}
+
+	}
+	return nil
+}
+
+func (impl *ActionRepositoryImpl) MakeActionPrivateByTeamIDAndAppID(teamID int, appID int, userID int) error {
+	actions, errInGetAll := impl.RetrieveAll(teamID, appID)
+	if errInGetAll != nil {
+		return errInGetAll
+	}
+	// set status
+	for _, action := range actions {
+		action.SetPrivate(userID)
+		// update
+		errorInUpdate := impl.Update(action)
+		if errorInUpdate != nil {
+			return errorInUpdate
+		}
 	}
 	return nil
 }

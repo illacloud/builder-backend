@@ -16,35 +16,31 @@ package resthandler
 
 import (
 	"encoding/json"
-	"fmt"
-	"net/http"
 
-	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
-	"github.com/illacloud/builder-backend/internal/auditlogger"
 	"github.com/illacloud/builder-backend/internal/datacontrol"
 	"github.com/illacloud/builder-backend/internal/repository"
-	"github.com/illacloud/builder-backend/pkg/action"
-	"github.com/illacloud/builder-backend/pkg/app"
-	"github.com/illacloud/builder-backend/pkg/state"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
-	"go.uber.org/zap"
 )
 
 func (impl AppRestHandlerImpl) SnapshotTreeState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
-	// get edit version tree state from database
-	treestates, err := impl.treestateRepository.RetrieveAllTypeTreeStatesByApp(teamID, appID, repository.APP_EDIT_VERSION)
+	impl.DuplicateTreeStateByVersion(c, teamID, appID, repository.APP_EDIT_VERSION, appMainLineVersion)
+}
+
+// recover edit version treestate to target version (coby target version data to edit version)
+func (impl AppRestHandlerImpl) DuplicateTreeStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
+	// get from version tree state from database
+	treestates, err := impl.treestateRepository.RetrieveAllTypeTreeStatesByApp(teamID, appID, fromVersion)
 	if err != nil {
 		return err
 	}
 	oldIDMap := map[int]int{}
 	releaseIDMap := map[int]int{}
 
-	// set version as mainline version
+	// set version to target version
 	for serial, _ := range treestates {
 		oldIDMap[serial] = treestates[serial].ExportID()
-		treestates[serial].AppendNewVersion(appMainLineVersion)
+		treestates[serial].AppendNewVersion(toVersion)
 	}
 
 	// put them to the database as duplicate, and record the old-new id map
@@ -73,23 +69,27 @@ func (impl AppRestHandlerImpl) SnapshotTreeState(c *gin.Context, teamID int, app
 }
 
 func (impl AppRestHandlerImpl) SnapshotKVState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
+	return impl.DuplicateKVStateByVersion(c, teamID, appID, repository.APP_EDIT_VERSION, appMainLineVersion)
+}
+
+func (impl AppRestHandlerImpl) DuplicateKVStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
 	// get edit version K-V state from database
-	kvstates, errInRetrieveKVState := impl.kvstateRepository.RetrieveAllTypeKVStatesByApp(teamID, appID, repository.APP_EDIT_VERSION)
+	kvstates, errInRetrieveKVState := impl.kvstateRepository.RetrieveAllTypeKVStatesByApp(teamID, appID, fromVersion)
 	if errInRetrieveKVState != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_KV_STATE, "get kv state failed: "+errInRetrieveKVState.Error())
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get kv state failed: "+errInRetrieveKVState.Error())
 		return errInRetrieveKVState
 	}
 
 	// set version as mainline version
 	for serial, _ := range kvstates {
-		kvstates[serial].AppendNewVersion(appMainLineVersion)
+		kvstates[serial].AppendNewVersion(toVersion)
 	}
 
 	// and put them to the database as duplicate
 	for _, kvstate := range kvstates {
 		errInCreateKVState := impl.kvstateRepository.Create(kvstate)
 		if errInCreateKVState != nil {
-			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_KV_STATE, "create kv state failed: "+errInCreateKVState.Error())
+			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_STATE, "create kv state failed: "+errInCreateKVState.Error())
 			return errInCreateKVState
 		}
 	}
@@ -97,22 +97,26 @@ func (impl AppRestHandlerImpl) SnapshotKVState(c *gin.Context, teamID int, appID
 }
 
 func (impl AppRestHandlerImpl) SnapshotSetState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
-	setstates, errInRetrieveSetState := impl.setstateRepository.RetrieveSetStatesByApp(teamID, appID, repository.SET_STATE_TYPE_DISPLAY_NAME, repository.APP_EDIT_VERSION)
+	impl.DuplicateSetStateByVersion(c, teamID, appID, repository.APP_EDIT_VERSION, appMainLineVersion)
+}
+
+func (impl AppRestHandlerImpl) DuplicateSetStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
+	setstates, errInRetrieveSetState := impl.setstateRepository.RetrieveSetStatesByApp(teamID, appID, repository.SET_STATE_TYPE_DISPLAY_NAME, fromVersion)
 	if errInRetrieveSetState != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SET_STATE, "get set state failed: "+errInRetrieveSetState.Error())
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get set state failed: "+errInRetrieveSetState.Error())
 		return errInRetrieveSetState
 	}
 
 	// update some fields
 	for serial, _ := range setstates {
-		setstates[serial].AppendNewVersion(mainlineVersion)
+		setstates[serial].AppendNewVersion(toVersion)
 	}
 
 	// and put them to the database as duplicate
 	for _, setstate := range setstates {
 		errInCreateSetState := impl.setstateRepository.Create(setstate)
 		if errInCreateSetState != nil {
-			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_SET_STATE, "create set state failed: "+errInCreateSetState.Error())
+			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_STATE, "create set state failed: "+errInCreateSetState.Error())
 			return errInCreateSetState
 		}
 	}
@@ -143,7 +147,7 @@ func (impl AppRestHandlerImpl) SnapshotAction(c *gin.Context, teamID int, appID 
 	return nil
 }
 
-func (impl AppRestHandlerImpl) TakeSnapshot(c *gin.Context, teamID int, appID int, mainlineVersion int, snapshotTriggerMode int) error {
+func (impl AppRestHandlerImpl) SnapshotApp(c *gin.Context, teamID int, appID int, mainlineVersion int, snapshotTriggerMode int) error {
 	// retrieve app mainline version snapshot
 	editVersionAppSnapshot, errInRetrieveSnapshot := impl.AppSnapshotRepository.RetrieveByTeamIDAppIDAndTargetVersion(teamID, appID, repository.APP_EDIT_VERSION)
 	if errInRetrieveSnapshot != nil {
@@ -179,7 +183,7 @@ func (impl AppRestHandlerImpl) GetTargetVersionApp(c *gin.Context, teamID int, a
 	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if errInRetrieveApp != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app mega data error: "+errInRetrieveApp.Error())
-		return errInRetrieveApp
+		return nil, errInRetrieveApp
 	}
 
 	// set for auto-version
@@ -208,7 +212,7 @@ func (impl AppRestHandlerImpl) GetTargetVersionApp(c *gin.Context, teamID int, a
 	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
 	if errInGetMultiUserInfo != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
-		return errInGetMultiUserInfo
+		return nil, errInGetMultiUserInfo
 	}
 
 	appForExport := repository.NewAppForExport(app, usersLT)
