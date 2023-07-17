@@ -16,8 +16,6 @@ package repository
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -34,7 +32,7 @@ type AppSnapshot struct {
 	ID            int       `json:"id" 				gorm:"column:id;type:bigserial;primary_key;unique"`
 	UID           uuid.UUID `json:"uid"   		   	gorm:"column:uid;type:uuid;not null"`
 	TeamID        int       `json:"teamID" 		   	gorm:"column:team_id;type:bigserial"`
-	AppRefID      int       `json:"appRefID" 		gorm:"column:app_ref_id;type:bigserial"`
+	AppRefID      int       `json:"appID" 		gorm:"column:app_ref_id;type:bigserial"`
 	TargetVersion int       `json:"targetVersion" 	gorm:"column:target_version;type:bigserial"`
 	TriggerMode   int       `json:"triggerMode"     gorm:"column:trigger_mode;type:smallint"`
 	ModifyHistory string    `json:"modifyHistory" 	gorm:"column:modify_history;type:jsonb"`
