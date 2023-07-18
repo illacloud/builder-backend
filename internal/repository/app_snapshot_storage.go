@@ -61,7 +61,7 @@ func (impl *AppSnapshotRepositoryImpl) RetrieveByTeamIDAndAppID(teamID int, appI
 
 func (impl *AppSnapshotRepositoryImpl) RetrieveCountByTeamIDAndAppID(teamID int, appID int) (int64, error) {
 	var count int64
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, appID).Count(&count).Error; err != nil {
+	if err := impl.db.Model(&AppSnapshot{}).Where("team_id = ? AND app_ref_id = ?", teamID, appID).Count(&count).Error; err != nil {
 		return 0, err
 	}
 	return count, nil
