@@ -745,7 +745,7 @@ func (impl AppRestHandlerImpl) GetSnapshot(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
-	snapshotID, errInGetSnapshotID := GetIntParamFromRequest(c, PARAM_SNAPSHOT_ID)
+	snapshotID, errInGetSnapshotID := GetMagicIntParamFromRequest(c, PARAM_SNAPSHOT_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetSnapshotID != nil || errInGetAuthToken != nil {
 		return
