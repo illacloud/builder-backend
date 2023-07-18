@@ -99,3 +99,19 @@ func (appSnapshot *AppSnapshot) PushModifyHistory(currentAppModifyHistory *AppMo
 	// ok, set it
 	appSnapshot.ImportModifyHistory(appModifyHistoryList)
 }
+
+func ExtractAllModifierIDFromAppSnapshot(appSnapshots []*AppSnapshot) []int {
+	allUserIDsHashT := make(map[int]int, 0)
+	userIDs := make([]int, 0)
+	for _, appSnapshot := range appSnapshots {
+		modifyHistorys := appSnapshot.ExportModifyHistory()
+		for _, modifyHistory := range modifyHistorys {
+			modifiedBy := modifyHistory.ExportModifiedBy()
+			allUserIDsHashT[modifiedBy] = modifiedBy
+		}
+	}
+	for _, userID := range allUserIDsHashT {
+		userIDs = append(userIDs, userID)
+	}
+	return userIDs
+}

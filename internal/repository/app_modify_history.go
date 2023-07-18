@@ -31,6 +31,10 @@ type AppModifyHistory struct {
 	ModifiedAt          time.Time `json:"modifiedAt" 		    gorm:"column:modified_at;type:timestamp"`
 }
 
+func (appModifyHistory *AppModifyHistory) ExportModifiedBy() int {
+	return appModifyHistory.ModifiedBy
+}
+
 func NewAppModifyHistory(operation int, target int, name string, modifyBy int) *AppModifyHistory {
 	appModifyHistory := &AppModifyHistory{
 		Operation:           operation,

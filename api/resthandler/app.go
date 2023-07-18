@@ -725,8 +725,18 @@ func (impl AppRestHandlerImpl) GetSnapshotList(c *gin.Context) {
 		return
 	}
 
+	// get all modifier user ids from all apps
+	allUserIDs := repository.ExtractAllModifierIDFromAppSnapshot(snapshots)
+
+	// fet all user id mapped user info, and build user info lookup table
+	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
+	if errInGetMultiUserInfo != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+		return
+	}
+
 	// feedback
-	FeedbackOK(c, repository.NewGetSnapshotListResponse(snapshots))
+	FeedbackOK(c, repository.NewGetSnapshotListResponse(snapshots, usersLT))
 	return
 
 }
