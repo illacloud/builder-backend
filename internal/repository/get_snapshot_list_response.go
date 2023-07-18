@@ -8,6 +8,7 @@ import (
 
 type GetSnapshotListResponse struct {
 	SnapshotList []*AppSnapshotForExport `json:"snapshotList"`
+	TotalPages   int                     `json:"totalPages"`
 }
 
 type AppSnapshotForExport struct {
@@ -34,7 +35,7 @@ func NewAppSnapshotForExport(appSnapshot *AppSnapshot) *AppSnapshotForExport {
 
 func NewGetSnapshotListResponse(appSnapshots []*AppSnapshot) *GetSnapshotListResponse {
 	resp := &GetSnapshotListResponse{}
-	resp.SnapshotList = make([]*AppSnapshotForExport, len(appSnapshots))
+	resp.SnapshotList = make([]*AppSnapshotForExport, 0)
 	for _, appSnapshot := range appSnapshots {
 		appSnapshotForExport := NewAppSnapshotForExport(appSnapshot)
 		resp.SnapshotList = append(resp.SnapshotList, appSnapshotForExport)

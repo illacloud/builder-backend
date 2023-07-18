@@ -713,6 +713,12 @@ func (impl AppRestHandlerImpl) GetSnapshotList(c *gin.Context) {
 
 	// retrieve by page
 	pagination := repository.NewPagiNation(pageLimit, page)
+	snapshotTotalRows, errInRetrieveSnapshotCount := impl.AppSnapshotRepository.RetrieveCountByTeamIDAndAppID(teamID, appID)
+	if errInRetrieveSnapshotCount != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshotCount.Error())
+		return
+	}
+	pagination.CalculateTotalPagesByTotalRows(snapshotTotalRows)
 	snapshots, errInRetrieveSnapshot := impl.AppSnapshotRepository.RetrieveByTeamIDAppIDAndPage(teamID, appID, pagination)
 	if errInRetrieveSnapshot != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())

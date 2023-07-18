@@ -13,6 +13,7 @@ type AppSnapshotRepository interface {
 	RetrieveByTeamIDAppIDAndTargetVersion(teamID int, appID int, targetVersion int) (*AppSnapshot, error)
 	RetrieveByTeamIDAppIDAndPage(teamID int, appID int, pagination *Pagination) ([]*AppSnapshot, error)
 	UpdateWholeSnapshot(appSnapshot *AppSnapshot) error
+	RetrieveCountByTeamIDAndAppID(teamID int, appID int) (int64, error)
 }
 
 type AppSnapshotRepositoryImpl struct {
@@ -56,6 +57,14 @@ func (impl *AppSnapshotRepositoryImpl) RetrieveByTeamIDAndAppID(teamID int, appI
 		return nil, err
 	}
 	return appSnapshots, nil
+}
+
+func (impl *AppSnapshotRepositoryImpl) RetrieveCountByTeamIDAndAppID(teamID int, appID int) (int64, error) {
+	var count int64
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, appID).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func (impl *AppSnapshotRepositoryImpl) RetrieveEditVersion(teamID int, appID int) (*AppSnapshot, error) {

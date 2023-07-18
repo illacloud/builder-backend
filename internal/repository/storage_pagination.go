@@ -47,6 +47,10 @@ func (p *Pagination) GetTotalRows() int64 {
 	return p.TotalRows
 }
 
+func (p *Pagination) GetTotalPages() int {
+	return p.TotalPages
+}
+
 func (p *Pagination) GetSort() string {
 	if p.Sort == "" {
 		p.Sort = DEFAULT_SORT_ORDER
@@ -66,7 +70,7 @@ func (p *Pagination) SetSort(field string, vec string) {
 	}
 }
 
-func (p *Pagination) SetTotalPages(totalRows int64) {
+func (p *Pagination) CalculateTotalPagesByTotalRows(totalRows int64) {
 	p.TotalPages = int(math.Ceil(float64(totalRows) / float64(p.Limit)))
 }
 
