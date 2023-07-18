@@ -192,7 +192,7 @@ func (impl *ActionRepositoryImpl) CountActionByTeamID(teamID int) (int, error) {
 }
 
 func (impl *ActionRepositoryImpl) DeleteAllActionsByTeamIDAppIDAndVersion(teamID int, appID int, targetVersion int) error {
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND versoin = ?", teamID, appID, targetVersion).Delete(&Action{}).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, appID, targetVersion).Delete(&Action{}).Error; err != nil {
 		return err
 	}
 	return nil
