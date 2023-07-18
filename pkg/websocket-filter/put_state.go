@@ -21,6 +21,7 @@ import (
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/state"
 
+	"github.com/illacloud/builder-backend/internal/util/builderoperation"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
 
@@ -28,7 +29,7 @@ func SignalPutState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient, hit := hub.Clients[message.ClientID]
 	if !hit {
-		return errors.New("[SignalPutState] target client("+message.ClientID.String()+") does dot exists.")
+		return errors.New("[SignalPutState] target client(" + message.ClientID.String() + ") does dot exists.")
 	}
 	stateType := repository.STATE_TYPE_INVALIED
 	teamID := currentClient.TeamID
@@ -40,12 +41,12 @@ func SignalPutState(hub *ws.Hub, message *ws.Message) error {
 
 	// target switch
 	switch message.Target {
-	case ws.TARGET_NOTNING:
+	case builderoperation.TARGET_NOTNING:
 		return nil
-	case ws.TARGET_COMPONENTS:
+	case builderoperation.TARGET_COMPONENTS:
 		return nil
 
-	case ws.TARGET_DEPENDENCIES:
+	case builderoperation.TARGET_DEPENDENCIES:
 		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
 		// delete all
 		kvStateDto := state.NewKVStateDto()
@@ -79,18 +80,18 @@ func SignalPutState(hub *ws.Hub, message *ws.Message) error {
 				}
 			}
 		}
-	case ws.TARGET_DRAG_SHADOW:
+	case builderoperation.TARGET_DRAG_SHADOW:
 		return nil
 
-	case ws.TARGET_DOTTED_LINE_SQUARE:
+	case builderoperation.TARGET_DOTTED_LINE_SQUARE:
 		return nil
 
-	case ws.TARGET_DISPLAY_NAME:
+	case builderoperation.TARGET_DISPLAY_NAME:
 		return nil
 
-	case ws.TARGET_APPS:
+	case builderoperation.TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast
-	case ws.TARGET_RESOURCE:
+	case builderoperation.TARGET_RESOURCE:
 		// serve on HTTP API, this signal only for broadcast
 	}
 

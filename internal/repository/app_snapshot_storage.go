@@ -1,15 +1,18 @@
 package repository
 
 import (
-	"fmt"
-	"time"
-
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type AppSnapshotRepository interface {
 	Create(appSnapshot *AppSnapshot) (int, error)
+	RetrieveByID(id int) (*AppSnapshot, error)
+	RetrieveAll(teamID int) ([]*AppSnapshot, error)
+	RetrieveByTeamIDAndAppID(teamID int, appID int) ([]*AppSnapshot, error)
+	RetrieveByTeamIDAppIDAndTargetVersion(teamID int, appID int, targetVersion int) (*AppSnapshot, error)
+	RetrieveByTeamIDAppIDAndPage(teamID int, appID int, pagination *Pagination) ([]*AppSnapshot, error)
+	UpdateWholeSnapshot(appSnapshot *AppSnapshot) error
 }
 
 type AppSnapshotRepositoryImpl struct {
@@ -28,15 +31,23 @@ func (impl *AppSnapshotRepositoryImpl) Create(appSnapshot *AppSnapshot) (int, er
 	if err := impl.db.Create(appSnapshot).Error; err != nil {
 		return 0, err
 	}
-	return app.ID, nil
+	return appSnapshot.ID, nil
 }
 
-func (impl *AppSnapshotRepositoryImpl) RetrieveAll(teamID int) ([]*App, error) {
+func (impl *AppSnapshotRepositoryImpl) RetrieveByID(id int) (*AppSnapshot, error) {
+	var appSnapshot *AppSnapshot
+	if err := impl.db.Where("id = ?", id).First(&appSnapshot).Error; err != nil {
+		return nil, err
+	}
+	return appSnapshot, nil
+}
+
+func (impl *AppSnapshotRepositoryImpl) RetrieveAll(teamID int) ([]*AppSnapshot, error) {
 	var appSnapshots []*AppSnapshot
 	if err := impl.db.Where("team_id = ?", teamID).Find(&appSnapshots).Error; err != nil {
 		return nil, err
 	}
-	return apps, nil
+	return appSnapshots, nil
 }
 
 func (impl *AppSnapshotRepositoryImpl) RetrieveByTeamIDAndAppID(teamID int, appID int) ([]*AppSnapshot, error) {
@@ -47,7 +58,7 @@ func (impl *AppSnapshotRepositoryImpl) RetrieveByTeamIDAndAppID(teamID int, appI
 	return appSnapshots, nil
 }
 
-func (impl *AppSnapshotRepositoryImpl) RetrieveByTeamIDAppIDAndTargetVersion(teamID int, appID int, targetVersion int) ([]*AppSnapshot, error) {
+func (impl *AppSnapshotRepositoryImpl) RetrieveByTeamIDAppIDAndTargetVersion(teamID int, appID int, targetVersion int) (*AppSnapshot, error) {
 	var appSnapshot *AppSnapshot
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND target_version = ?", teamID, appID, targetVersion).First(&appSnapshot).Error; err != nil {
 		return nil, err
@@ -57,7 +68,7 @@ func (impl *AppSnapshotRepositoryImpl) RetrieveByTeamIDAppIDAndTargetVersion(tea
 
 func (impl *AppSnapshotRepositoryImpl) RetrieveByTeamIDAppIDAndPage(teamID int, appID int, pagination *Pagination) ([]*AppSnapshot, error) {
 	var appSnapshots []*AppSnapshot
-	if err := impl.db.Scope(paginate(impl.db, pagination)).Where("team_id = ? AND app_ref_id = ?", teamID, appID).Find(&appSnapshots).Error; err != nil {
+	if err := impl.db.Scopes(paginate(impl.db, pagination)).Where("team_id = ? AND app_ref_id = ?", teamID, appID).Find(&appSnapshots).Error; err != nil {
 		return nil, err
 	}
 	return appSnapshots, nil
@@ -69,4 +80,3 @@ func (impl *AppSnapshotRepositoryImpl) UpdateWholeSnapshot(appSnapshot *AppSnaps
 	}
 	return nil
 }
-``

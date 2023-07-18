@@ -18,6 +18,7 @@ import (
 	"errors"
 
 	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/builder-backend/internal/util/builderoperation"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/state"
@@ -41,9 +42,9 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 
 	// target switch
 	switch message.Target {
-	case ws.TARGET_NOTNING:
+	case builderoperation.TARGET_NOTNING:
 		return nil
-	case ws.TARGET_COMPONENTS:
+	case builderoperation.TARGET_COMPONENTS:
 		stateType = repository.TREE_STATE_TYPE_COMPONENTS
 		for _, v := range message.Payload {
 			// construct payload
@@ -86,7 +87,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 			}
 		}
 
-	case ws.TARGET_DEPENDENCIES:
+	case builderoperation.TARGET_DEPENDENCIES:
 		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
 		// update k-v state
 		for _, v := range message.Payload {
@@ -111,14 +112,14 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 			}
 		}
 
-	case ws.TARGET_DRAG_SHADOW:
+	case builderoperation.TARGET_DRAG_SHADOW:
 		fallthrough
 
-	case ws.TARGET_DOTTED_LINE_SQUARE:
+	case builderoperation.TARGET_DOTTED_LINE_SQUARE:
 		// fill type
-		if message.Target == ws.TARGET_DEPENDENCIES {
+		if message.Target == builderoperation.TARGET_DEPENDENCIES {
 			stateType = repository.KV_STATE_TYPE_DEPENDENCIES
-		} else if message.Target == ws.TARGET_DRAG_SHADOW {
+		} else if message.Target == builderoperation.TARGET_DRAG_SHADOW {
 			stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
 		} else {
 			stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
@@ -139,7 +140,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 			}
 		}
 
-	case ws.TARGET_DISPLAY_NAME:
+	case builderoperation.TARGET_DISPLAY_NAME:
 		stateType = repository.SET_STATE_TYPE_DISPLAY_NAME
 		for _, v := range message.Payload {
 			// resolve payload
@@ -165,11 +166,11 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 			}
 		}
 
-	case ws.TARGET_APPS:
+	case builderoperation.TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast
-	case ws.TARGET_RESOURCE:
+	case builderoperation.TARGET_RESOURCE:
 		// serve on HTTP API, this signal only for broadcast
-	case ws.TARGET_ACTION:
+	case builderoperation.TARGET_ACTION:
 		// serve on HTTP API, this signal only for broadcast
 	}
 

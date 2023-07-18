@@ -43,16 +43,17 @@ type AppRestHandler interface {
 }
 
 type AppRestHandlerImpl struct {
-	Logger              *zap.SugaredLogger
-	AttributeGroup      *ac.AttributeGroup
-	AppService          app.AppService
-	ActionService       action.ActionService
-	TreeStateService    state.TreeStateService
-	AppRepository       repository.AppRepository
-	ActionRepository    repository.ActionRepository
-	TreeStateRepository repository.TreeStateRepository
-	KVStateRepository   repository.KVStateRepository
-	SetStateRepository  repository.SetStateRepository
+	Logger                *zap.SugaredLogger
+	AttributeGroup        *ac.AttributeGroup
+	AppService            app.AppService
+	ActionService         action.ActionService
+	TreeStateService      state.TreeStateService
+	AppRepository         repository.AppRepository
+	ActionRepository      repository.ActionRepository
+	TreeStateRepository   repository.TreeStateRepository
+	KVStateRepository     repository.KVStateRepository
+	SetStateRepository    repository.SetStateRepository
+	AppSnapshotRepository repository.AppSnapshotRepository
 }
 
 func NewAppRestHandlerImpl(Logger *zap.SugaredLogger,
@@ -65,18 +66,20 @@ func NewAppRestHandlerImpl(Logger *zap.SugaredLogger,
 	TreeStateRepository repository.TreeStateRepository,
 	KVStateRepository repository.KVStateRepository,
 	SetStateRepository repository.SetStateRepository,
+	AppSnapshotRepository repository.AppSnapshotRepository,
 ) *AppRestHandlerImpl {
 	return &AppRestHandlerImpl{
-		Logger:              Logger,
-		AttributeGroup:      attrg,
-		AppService:          AppService,
-		ActionService:       ActionService,
-		TreeStateService:    TreeStateService,
-		AppRepository:       AppRepository,
-		ActionRepository:    ActionRepository,
-		TreeStateRepository: TreeStateRepository,
-		KVStateRepository:   KVStateRepository,
-		SetStateRepository:  SetStateRepository,
+		Logger:                Logger,
+		AttributeGroup:        attrg,
+		AppService:            AppService,
+		ActionService:         ActionService,
+		TreeStateService:      TreeStateService,
+		AppRepository:         AppRepository,
+		ActionRepository:      ActionRepository,
+		TreeStateRepository:   TreeStateRepository,
+		KVStateRepository:     KVStateRepository,
+		SetStateRepository:    SetStateRepository,
+		AppSnapshotRepository: AppSnapshotRepository,
 	}
 }
 
@@ -145,6 +148,13 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 		AppID:     newApp.ExportID(),
 		AppName:   newApp.ExportAppName(),
 	})
+
+	// init app snapshot
+	_, errInInitAppSnapSHot := impl.InitAppSnapshot(c, teamID, newApp.ExportID())
+	if errInInitAppSnapSHot != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_SNAPSHOT, "error in create app snapshot: "+errInInitAppSnapSHot.Error())
+
+	}
 
 	// get all modifier user ids from all apps
 	allUserIDs := repository.ExtractAllEditorIDFromApps([]*repository.App{newApp})
@@ -483,6 +493,13 @@ func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
 		AppName:   duplicatedApp.ExportAppName(),
 	})
 
+	// init app snapshot
+	_, errInInitAppSnapSHot := impl.InitAppSnapshot(c, teamID, duplicatedApp.ExportID())
+	if errInInitAppSnapSHot != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_SNAPSHOT, "error in create app snapshot: "+errInInitAppSnapSHot.Error())
+
+	}
+
 	// get all modifier user ids from all apps
 	allUserIDs := repository.ExtractAllEditorIDFromApps([]*repository.App{duplicatedApp})
 
@@ -583,6 +600,17 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	return
 }
 
+// For take snapshot for app, we should:
+// - get target app
+// - bump target app mainline version
+// - snapshot all following components & actions by app mainline version
+//   - snapshot tree state
+//   - snapshot k-v state
+//   - snapshot set state
+//   - snapshot actions
+// - save app snapshot
+// - update app for version bump
+
 func (impl AppRestHandlerImpl) TakeSnapshot(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
@@ -633,13 +661,13 @@ func (impl AppRestHandlerImpl) TakeSnapshot(c *gin.Context) {
 		return
 	}
 
-	// snapshot App
-	errInTakeSnapshot := impl.SnapshotApp(c, teamID, appID, app.ExportMainlineVersion(), repository.SNAPSHOT_TRIGGER_MODE_MANUAL)
+	// save snapshot
+	_, errInTakeSnapshot := impl.SaveAppSnapshot(c, teamID, appID, userID, app.ExportMainlineVersion(), repository.SNAPSHOT_TRIGGER_MODE_MANUAL)
 	if errInTakeSnapshot != nil {
 		return
 	}
 
-	// update app version
+	// update app for version bump
 	errInUpdateApp := impl.AppRepository.UpdateWholeApp(app)
 	if errInUpdateApp != nil {
 		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
@@ -659,8 +687,7 @@ func (impl AppRestHandlerImpl) GetSnapshotList(c *gin.Context) {
 	pageLimit, errInGetPageLimit := GetIntParamFromRequest(c, PARAM_PAGE_LIMIT)
 	page, errInGetPage := GetIntParamFromRequest(c, PARAM_PAGE)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	userID, errInGetUserID := GetUserIDFromAuth(c)
-	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil || errInGetUserID != nil || errInGetPageLimit != nil || errInGetPage != nil {
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil || errInGetPageLimit != nil || errInGetPage != nil {
 		return
 	}
 
@@ -684,7 +711,7 @@ func (impl AppRestHandlerImpl) GetSnapshotList(c *gin.Context) {
 	pagination := repository.NewPagiNation(pageLimit, page)
 	snapshots, errInRetrieveSnapshot := impl.AppSnapshotRepository.RetrieveByTeamIDAppIDAndPage(teamID, appID, pagination)
 	if errInRetrieveSnapshot != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveApp.Error())
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
 		return
 	}
 
@@ -700,8 +727,7 @@ func (impl AppRestHandlerImpl) GetSnapshot(c *gin.Context) {
 	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	snapshotID, errInGetSnapshotID := GetIntParamFromRequest(c, PARAM_SNAPSHOT_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	userID, errInGetUserID := GetUserIDFromAuth(c)
-	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetSnapshotID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetSnapshotID != nil || errInGetAuthToken != nil {
 		return
 	}
 
@@ -733,11 +759,36 @@ func (impl AppRestHandlerImpl) GetSnapshot(c *gin.Context) {
 	return
 }
 
+// For recover snapshot for app, we should:
+// - phrase 1: take snapshot for current edit version
+//   - get target app
+//   - bump app mainline versoin
+//   - snapshot all following components & actions by app mainline version
+//     - snapshot tree state
+//     - snapshot k-v state
+//     - snapshot set state
+//     - snapshot actions
+//   - save app snapshot
+//   - update app for version bump
+// - phrase 2: clean edit version app following components & actions
+//   - clean edit version tree state
+//   - clean edit version k-v state
+//   - clean edit version set state
+//   - clean edit version actions
+// - phrase 3: duplicate target version app data to edit version
+//   - get target snapshot for export target app version
+//   - copy target version app following components & actions to edit version
+//     - copy target version tree state to edit version
+//     - copy target version k-v state to edit version
+//     - copy target version set state to edit version
+//     - copy target version actions to edit version
+//   - create a snapshot.ModifyHistory for recover snapshot
+
 func (impl AppRestHandlerImpl) RecoverSnapshot(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
-	snapshotID, errInGetSnapshotID := GetIntParamFromRequest(c, PARAM_SNAPSHOT_ID)
+	snapshotID, errInGetSnapshotID := GetMagicIntParamFromRequest(c, PARAM_SNAPSHOT_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetSnapshotID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
@@ -760,6 +811,8 @@ func (impl AppRestHandlerImpl) RecoverSnapshot(c *gin.Context) {
 		return
 	}
 
+	// phrase 1: take snapshot for current edit version
+
 	// fetch app
 	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if errInRetrieveApp != nil {
@@ -767,14 +820,7 @@ func (impl AppRestHandlerImpl) RecoverSnapshot(c *gin.Context) {
 		return
 	}
 
-	// get target snapshot
-	snapshot, errInRetrieveSnapshot := impl.AppSnapshotRepository.RetrieveByID(snapshotID)
-	if errInRetrieveSnapshot != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
-		return
-	}
-
-	// config app
+	// bump app mainline versoin
 	app.BumpMainlineVersion()
 
 	// do snapshot for app following components and actions
@@ -791,8 +837,8 @@ func (impl AppRestHandlerImpl) RecoverSnapshot(c *gin.Context) {
 		return
 	}
 
-	// do snapshot for app
-	errInTakeSnapshot := impl.SnapshotApp(c, teamID, appID, app.ExportMainlineVersion(), repository.SNAPSHOT_TRIGGER_MODE_MANUAL)
+	// save app snapshot
+	newAppSnapshot, errInTakeSnapshot := impl.SaveAppSnapshot(c, teamID, appID, userID, app.ExportMainlineVersion(), repository.SNAPSHOT_TRIGGER_MODE_MANUAL)
 	if errInTakeSnapshot != nil {
 		return
 	}
@@ -804,7 +850,38 @@ func (impl AppRestHandlerImpl) RecoverSnapshot(c *gin.Context) {
 		return
 	}
 
-	// duplicate snapshot to edit version
+	// phrase 2: clean edit version app following components & actions
+	impl.TreeStateRepository.DeleteAllTypeTreeStatesByTeamIDAppIDAndVersion(teamID, appID, repository.APP_EDIT_VERSION)
+	impl.KVStateRepository.DeleteAllTypeKVStatesByTeamIDAppIDAndVersion(teamID, appID, repository.APP_EDIT_VERSION)
+	impl.SetStateRepository.DeleteAllTypeSetStatesByTeamIDAppIDAndVersion(teamID, appID, repository.APP_EDIT_VERSION)
+	impl.ActionRepository.DeleteAllActionsByTeamIDAppIDAndVersion(teamID, appID, repository.APP_EDIT_VERSION)
+
+	// phrase 3: duplicate target version app data to edit version
+
+	// get target snapshot
+	targetSnapshot, errInRetrieveSnapshot := impl.AppSnapshotRepository.RetrieveByID(snapshotID)
+	if errInRetrieveSnapshot != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
+		return
+	}
+	targetVersion := targetSnapshot.ExportTargetVersion()
+
+	// copy target version app following components & actions to edit version
+	impl.DuplicateTreeStateByVersion(c, teamID, appID, targetVersion, repository.APP_EDIT_VERSION)
+	impl.DuplicateKVStateByVersion(c, teamID, appID, targetVersion, repository.APP_EDIT_VERSION)
+	impl.DuplicateSetStateByVersion(c, teamID, appID, targetVersion, repository.APP_EDIT_VERSION)
+	impl.DuplicateActionByVersion(c, teamID, appID, targetVersion, repository.APP_EDIT_VERSION)
+
+	// create a snapshot.ModifyHistory for recover snapshot
+	modifyHistoryLog := repository.NewRecoverAppSnapshotModifyHistory(userID)
+	newAppSnapshot.PushModifyHistory(modifyHistoryLog)
+
+	// update app snapshot
+	errInUpdateSnapshot := impl.AppSnapshotRepository.UpdateWholeSnapshot(newAppSnapshot)
+	if errInUpdateSnapshot != nil {
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_SNAPSHOT, "update app snapshot failed: "+errInUpdateSnapshot.Error())
+		return
+	}
 
 	// feedback
 	FeedbackOK(c, nil)

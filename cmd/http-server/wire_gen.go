@@ -54,8 +54,10 @@ func Initialize() (*Server, error) {
 	actionServiceImpl := action.NewActionServiceImpl(sugaredLogger, appRepositoryImpl, actionRepositoryImpl, resourceRepositoryImpl)
 	appServiceImpl := app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, kvStateRepositoryImpl, treeStateRepositoryImpl, setStateRepositoryImpl, actionRepositoryImpl)
 	treeStateServiceImpl := state.NewTreeStateServiceImpl(sugaredLogger, treeStateRepositoryImpl)
+	appSnapshotRepositoryImpl := repository.NewAppSnapshotRepositoryImpl(sugaredLogger, gormDB)
+
 	// App
-	appRestHandlerImpl := resthandler.NewAppRestHandlerImpl(sugaredLogger, attrg, appServiceImpl, actionServiceImpl, treeStateServiceImpl, appRepositoryImpl, actionRepositoryImpl, treeStateRepositoryImpl, kvStateRepositoryImpl, setStateRepositoryImpl)
+	appRestHandlerImpl := resthandler.NewAppRestHandlerImpl(sugaredLogger, attrg, appServiceImpl, actionServiceImpl, treeStateServiceImpl, appRepositoryImpl, actionRepositoryImpl, treeStateRepositoryImpl, kvStateRepositoryImpl, setStateRepositoryImpl, appSnapshotRepositoryImpl)
 	appRouterImpl := router.NewAppRouterImpl(appRestHandlerImpl)
 	// public App
 	publicAppRestHandlerImpl := resthandler.NewPublicAppRestHandlerImpl(sugaredLogger, appServiceImpl, attrg, treeStateServiceImpl)

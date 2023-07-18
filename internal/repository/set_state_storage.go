@@ -15,9 +15,6 @@
 package repository
 
 import (
-	"time"
-
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -33,6 +30,7 @@ type SetStateRepository interface {
 	RetrieveByValue(setState *SetState) (*SetState, error)
 	RetrieveSetStatesByApp(teamID int, apprefid int, statetype int, version int) ([]*SetState, error)
 	DeleteAllTypeSetStatesByApp(teamID int, apprefid int) error
+	DeleteAllTypeSetStatesByTeamIDAppIDAndVersion(teamID int, apprefid int, targetVersion int) error
 }
 
 type SetStateRepositoryImpl struct {
@@ -137,6 +135,13 @@ func (impl *SetStateRepositoryImpl) RetrieveSetStatesByApp(teamID int, apprefid 
 
 func (impl *SetStateRepositoryImpl) DeleteAllTypeSetStatesByApp(teamID int, apprefid int) error {
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, apprefid).Delete(&SetState{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (impl *SetStateRepositoryImpl) DeleteAllTypeSetStatesByTeamIDAppIDAndVersion(teamID int, apprefid int, targetVersion int) error {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, apprefid, targetVersion).Delete(&SetState{}).Error; err != nil {
 		return err
 	}
 	return nil

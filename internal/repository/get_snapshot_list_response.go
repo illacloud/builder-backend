@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/illacloud/builder-backend/internal/idconvertor"
 )
 
@@ -9,24 +11,24 @@ type GetSnapshotListResponse struct {
 }
 
 type AppSnapshotForExport struct {
-	ID            string           `json:"snapshotID"`
-	TeamID        string           `json:"teamID"`
-	AppRefID      string           `json:"appRefID"`
-	TargetVersion int              `json:"targetVersion"`
-	TriggerMode   int              `json:"snapshotTriggerMode"`
-	ModifyHistory []*ModifyHistory `json:"modifyHistory"`
-	CreatedAt     time.TIme        `json:"createdAt"`
+	ID            string              `json:"snapshotID"`
+	TeamID        string              `json:"teamID"`
+	AppRefID      string              `json:"appRefID"`
+	TargetVersion int                 `json:"targetVersion"`
+	TriggerMode   int                 `json:"snapshotTriggerMode"`
+	ModifyHistory []*AppModifyHistory `json:"modifyHistory"`
+	CreatedAt     time.Time           `json:"createdAt"`
 }
 
-func NewAppSnapshotForExport(appSnapshot *AppSnapshot) *AppSnapshotForExport{
+func NewAppSnapshotForExport(appSnapshot *AppSnapshot) *AppSnapshotForExport {
 	return &AppSnapshotForExport{
-		ID: idconvertor.ConvertIntToString(appSnapshot.ID),
-		TeamID: idconvertor.ConvertIntToString(appSnapshot.TeamID),
-		AppRefID: idconvertor.ConvertIntToString(appSnapshot.AppRefID),
+		ID:            idconvertor.ConvertIntToString(appSnapshot.ID),
+		TeamID:        idconvertor.ConvertIntToString(appSnapshot.TeamID),
+		AppRefID:      idconvertor.ConvertIntToString(appSnapshot.AppRefID),
 		TargetVersion: appSnapshot.TargetVersion,
-		TriggerMode: appSnapshot.TriggerMode,
-		ModifyHistory: appSnapshot.ExportModifyHistory()
-		CreatedAt: appSnapshot.CreatedAt,
+		TriggerMode:   appSnapshot.TriggerMode,
+		ModifyHistory: appSnapshot.ExportModifyHistory(),
+		CreatedAt:     appSnapshot.CreatedAt,
 	}
 }
 

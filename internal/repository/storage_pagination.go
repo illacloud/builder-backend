@@ -1,5 +1,11 @@
 package repository
 
+import (
+	"math"
+
+	"gorm.io/gorm"
+)
+
 const DEFAULT_PAGE_LIMIT = 10
 const DEFAULT_SORT_ORDER = "id desc"
 
@@ -48,7 +54,7 @@ func (p *Pagination) GetSort() string {
 	return p.Sort
 }
 
-func (p *Pagination) SetTotalRows(totalRows int64)  {
+func (p *Pagination) SetTotalRows(totalRows int64) {
 	p.TotalRows = totalRows
 }
 
@@ -56,15 +62,15 @@ func (p *Pagination) SetSort(field string, vec string) {
 	if len(p.Sort) == 0 {
 		p.Sort += field + " " + vec
 	} else {
-		p.Sort += ", "field + " " + vec
+		p.Sort += ", " + field + " " + vec
 	}
 }
 
 func (p *Pagination) SetTotalPages(totalRows int64) {
-	pagination.TotalPages = int(math.Ceil(float64(totalRows) / float64(pagination.Limit)))
+	p.TotalPages = int(math.Ceil(float64(totalRows) / float64(p.Limit)))
 }
 
-func paginate(db *gorm.DB, pagination *pkg.Pagination, ) func(db *gorm.DB) *gorm.DB {
+func paginate(db *gorm.DB, pagination *Pagination) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Offset(pagination.GetOffset()).Limit(pagination.GetLimit()).Order(pagination.GetSort())
 	}

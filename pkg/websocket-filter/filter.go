@@ -18,6 +18,7 @@ import (
 	"log"
 
 	proto "github.com/golang/protobuf/proto"
+	"github.com/illacloud/builder-backend/internal/util/builderoperation"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
 
@@ -57,31 +58,31 @@ func Run(hub *ws.Hub) {
 
 func SignalFilter(hub *ws.Hub, message *ws.Message) error {
 	switch message.Signal {
-	case ws.SIGNAL_PING:
+	case builderoperation.SIGNAL_PING:
 		return SignalPing(hub, message)
-	case ws.SIGNAL_ENTER:
+	case builderoperation.SIGNAL_ENTER:
 		return SignalEnter(hub, message)
-	case ws.SIGNAL_LEAVE:
+	case builderoperation.SIGNAL_LEAVE:
 		return SignalLeave(hub, message)
-	case ws.SIGNAL_CREATE_STATE:
+	case builderoperation.SIGNAL_CREATE_STATE:
 		return SignalCreateState(hub, message)
-	case ws.SIGNAL_DELETE_STATE:
+	case builderoperation.SIGNAL_DELETE_STATE:
 		return SignalDeleteState(hub, message)
-	case ws.SIGNAL_UPDATE_STATE:
+	case builderoperation.SIGNAL_UPDATE_STATE:
 		return SignalUpdateState(hub, message)
-	case ws.SIGNAL_MOVE_STATE:
+	case builderoperation.SIGNAL_MOVE_STATE:
 		return SignalMoveState(hub, message)
-	case ws.SIGNAL_CREATE_OR_UPDATE_STATE:
+	case builderoperation.SIGNAL_CREATE_OR_UPDATE_STATE:
 		return SignalCreateOrUpdateState(hub, message)
-	case ws.SIGNAL_BROADCAST_ONLY:
+	case builderoperation.SIGNAL_BROADCAST_ONLY:
 		return SignalBroadcastOnly(hub, message)
-	case ws.SIGNAL_PUT_STATE:
+	case builderoperation.SIGNAL_PUT_STATE:
 		return SignalPutState(hub, message)
-	case ws.SIGNAL_GLOBAL_BROADCAST_ONLY:
+	case builderoperation.SIGNAL_GLOBAL_BROADCAST_ONLY:
 		return SignalGlobalBroadcastOnly(hub, message)
-	case ws.SIGNAL_COOPERATE_ATTACH:
+	case builderoperation.SIGNAL_COOPERATE_ATTACH:
 		return SignalCooperateAttach(hub, message)
-	case ws.SIGNAL_COOPERATE_DISATTACH:
+	case builderoperation.SIGNAL_COOPERATE_DISATTACH:
 		return SignalCooperateDisattach(hub, message)
 	default:
 		return nil
@@ -112,9 +113,9 @@ func BinarySignalFilter(hub *ws.Hub, message []byte) error {
 
 func MovingMessageFilter(hub *ws.Hub, message *ws.MovingMessageBin) error {
 	switch message.Signal {
-	case ws.SIGNAL_MOVE_STATE:
+	case builderoperation.SIGNAL_MOVE_STATE:
 		return SignalMoveStateBinary(hub, message)
-	case ws.SIGNAL_MOVE_CURSOR:
+	case builderoperation.SIGNAL_MOVE_CURSOR:
 		return SignalMoveCursorBinary(hub, message)
 	default:
 		return nil

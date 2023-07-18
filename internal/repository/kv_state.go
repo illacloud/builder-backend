@@ -18,8 +18,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type KVState struct {

@@ -15,9 +15,6 @@
 package repository
 
 import (
-	"time"
-
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -34,6 +31,7 @@ type KVStateRepository interface {
 	RetrieveAllTypeKVStatesByApp(teamID int, apprefid int, version int) ([]*KVState, error)
 	DeleteAllTypeKVStatesByApp(teamID int, apprefid int) error
 	DeleteAllKVStatesByAppVersionAndType(teamID int, apprefid int, version int, stateType int) error
+	DeleteAllTypeKVStatesByTeamIDAppIDAndVersion(teamID int, apprefid int, targetVersion int) error
 }
 
 type KVStateRepositoryImpl struct {
@@ -135,6 +133,13 @@ func (impl *KVStateRepositoryImpl) DeleteAllTypeKVStatesByApp(teamID int, appref
 
 func (impl *KVStateRepositoryImpl) DeleteAllKVStatesByAppVersionAndType(teamID int, apprefid int, version int, stateType int) error {
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ? AND state_type = ?", teamID, apprefid, version, stateType).Delete(&KVState{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (impl *KVStateRepositoryImpl) DeleteAllTypeKVStatesByTeamIDAppIDAndVersion(teamID int, apprefid int, targetVersion int) error {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, apprefid, targetVersion).Delete(&KVState{}).Error; err != nil {
 		return err
 	}
 	return nil

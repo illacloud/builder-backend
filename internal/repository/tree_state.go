@@ -144,7 +144,7 @@ func (treeState *TreeState) RemapChildrenNodeRefIDs(idMap map[int]int) {
 	// convert string to []int
 	var oldIDs []int
 	if err := json.Unmarshal([]byte(treeState.ChildrenNodeRefIDs), &oldIDs); err != nil {
-		return ""
+		return
 	}
 
 	// map old id to new id
@@ -156,7 +156,7 @@ func (treeState *TreeState) RemapChildrenNodeRefIDs(idMap map[int]int) {
 	// convert []int to string
 	idsjsonb, err := json.Marshal(newIDs)
 	if err != nil {
-		return ""
+		return
 	}
 
 	// set new

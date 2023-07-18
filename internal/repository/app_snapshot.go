@@ -29,27 +29,27 @@ const (
 )
 
 type AppSnapshot struct {
-	ID            int       `json:"id" 				gorm:"column:id;type:bigserial;primary_key;unique"`
-	UID           uuid.UUID `json:"uid"   		   	gorm:"column:uid;type:uuid;not null"`
-	TeamID        int       `json:"teamID" 		   	gorm:"column:team_id;type:bigserial"`
-	AppRefID      int       `json:"appID" 		gorm:"column:app_ref_id;type:bigserial"`
-	TargetVersion int       `json:"targetVersion" 	gorm:"column:target_version;type:bigserial"`
-	TriggerMode   int       `json:"triggerMode"     gorm:"column:trigger_mode;type:smallint"`
-	ModifyHistory string    `json:"modifyHistory" 	gorm:"column:modify_history;type:jsonb"`
-	CreatedAt     time.Time `json:"createdAt" 		gorm:"column:created_at;type:timestamp"`
+	ID            int       `json:"id" 						gorm:"column:id;type:bigserial;primary_key;unique"`
+	UID           uuid.UUID `json:"uid"   		   			gorm:"column:uid;type:uuid;not null"`
+	TeamID        int       `json:"teamID" 		   			gorm:"column:team_id;type:bigserial"`
+	AppRefID      int       `json:"appID" 		    		gorm:"column:app_ref_id;type:bigserial"`
+	TargetVersion int       `json:"targetVersion" 			gorm:"column:target_version;type:bigserial"`
+	TriggerMode   int       `json:"snapshotTriggerMode"     gorm:"column:trigger_mode;type:smallint"`
+	ModifyHistory string    `json:"modifyHistory" 			gorm:"column:modify_history;type:jsonb"`
+	CreatedAt     time.Time `json:"createdAt" 				gorm:"column:created_at;type:timestamp"`
 }
 
 func NewAppSnapshot(teamID int, appID int, targetVersion int, triggerMode int) *AppSnapshot {
 	appSnapshot := &AppSnapshot{
 		TeamID:        teamID,
-		AppRefID:      appName,
+		AppRefID:      appID,
 		TargetVersion: targetVersion,
 		TriggerMode:   triggerMode,
 	}
 	appSnapshot.InitUID()
 	appSnapshot.InitCreatedAt()
 	appSnapshot.InitModifyHistory()
-	return app
+	return appSnapshot
 }
 
 func (appSnapshot *AppSnapshot) InitUID() {
@@ -61,8 +61,9 @@ func (appSnapshot *AppSnapshot) InitCreatedAt() {
 }
 
 func (appSnapshot *AppSnapshot) InitModifyHistory() {
-	enptyModifyHistory := make([]interface{}, 0)
-	appSnapshot.ModifyHistory, _ = json.Marshal(enptyModifyHistory)
+	emptyModifyHistory := make([]interface{}, 0)
+	encodingByte, _ := json.Marshal(emptyModifyHistory)
+	appSnapshot.ModifyHistory = string(encodingByte)
 }
 
 func (appSnapshot *AppSnapshot) SetTargetVersion(targetVersion int) {
@@ -71,7 +72,7 @@ func (appSnapshot *AppSnapshot) SetTargetVersion(targetVersion int) {
 
 func (appSnapshot *AppSnapshot) ExportModifyHistory() []*AppModifyHistory {
 	appModifyHistorys := make([]*AppModifyHistory, 0)
-	json.Unmarshal([]byte(app.ModifyHistory), &appModifyHistorys)
+	json.Unmarshal([]byte(appSnapshot.ModifyHistory), &appModifyHistorys)
 	return appModifyHistorys
 }
 
@@ -81,11 +82,11 @@ func (appSnapshot *AppSnapshot) ExportTargetVersion() int {
 
 func (appSnapshot *AppSnapshot) ImportModifyHistory(appModifyHistorys []*AppModifyHistory) {
 	payload, _ := json.Marshal(appModifyHistorys)
-	app.ModifyHistory = string(payload)
+	appSnapshot.ModifyHistory = string(payload)
 }
 
-func (app *App) PushModifyHistory(currentAppModifyHistory *AppModifyHistory) {
-	appModifyHistoryList := app.ExportModifyHistory()
+func (appSnapshot *AppSnapshot) PushModifyHistory(currentAppModifyHistory *AppModifyHistory) {
+	appModifyHistoryList := appSnapshot.ExportModifyHistory()
 
 	// insert
 	appModifyHistoryList = append([]*AppModifyHistory{currentAppModifyHistory}, appModifyHistoryList...)
@@ -96,5 +97,5 @@ func (app *App) PushModifyHistory(currentAppModifyHistory *AppModifyHistory) {
 	}
 
 	// ok, set it
-	app.ImportModifyHistory(appModifyHistoryList)
+	appSnapshot.ImportModifyHistory(appModifyHistoryList)
 }

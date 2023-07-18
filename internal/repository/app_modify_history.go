@@ -16,12 +16,12 @@ package repository
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/illacloud/builder-backend/internal/util/builderoperation"
 )
+
+const SNAPSHOT_TARGET_APP = "app"
 
 type AppModifyHistory struct {
 	Operation           int       `json:"operation"  	        gorm:"column:operation;type:smallint"`              // same as websocket protol signal
@@ -31,18 +31,41 @@ type AppModifyHistory struct {
 	ModifiedAt          time.Time `json:"modifiedAt" 		    gorm:"column:modified_at;type:timestamp"`
 }
 
-func NewAppModifyHistory(operation int, target int, name string) *AppModifyHistory {
-	appSnapshotHistory := &AppModifyHistory{
+func NewAppModifyHistory(operation int, target int, name string, modifyBy int) *AppModifyHistory {
+	appModifyHistory := &AppModifyHistory{
 		Operation:           operation,
 		OperationTarget:     target,
 		OperationTargetName: name,
+		ModifiedBy:          modifyBy,
 	}
-	appSnapshotHistory.InitModifiedAt()
-	return app
+	appModifyHistory.InitModifiedAt()
+	return appModifyHistory
 }
 
-func (app *App) InitModifiedAt() {
-	app.ModifiedAt = time.Now().UTC()
+func NewTakeAppSnapshotModifyHistory(modifyBy int) *AppModifyHistory {
+	appModifyHistory := &AppModifyHistory{
+		Operation:           builderoperation.SIGNAL_TAKE_APP_SNAPSHOT,
+		OperationTarget:     builderoperation.TARGET_APPS,
+		OperationTargetName: SNAPSHOT_TARGET_APP,
+		ModifiedBy:          modifyBy,
+	}
+	appModifyHistory.InitModifiedAt()
+	return appModifyHistory
+}
+
+func NewRecoverAppSnapshotModifyHistory(modifyBy int) *AppModifyHistory {
+	appModifyHistory := &AppModifyHistory{
+		Operation:           builderoperation.SIGNAL_REVOCER_APP_SNAPSHOT,
+		OperationTarget:     builderoperation.TARGET_APPS,
+		OperationTargetName: SNAPSHOT_TARGET_APP,
+		ModifiedBy:          modifyBy,
+	}
+	appModifyHistory.InitModifiedAt()
+	return appModifyHistory
+}
+
+func (appModifyHistory *AppModifyHistory) InitModifiedAt() {
+	appModifyHistory.ModifiedAt = time.Now().UTC()
 }
 
 func (a *AppModifyHistory) ExportToJSONString() string {
