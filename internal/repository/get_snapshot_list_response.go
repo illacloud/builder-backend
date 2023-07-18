@@ -42,8 +42,10 @@ func NewAppSnapshotForExport(appSnapshot *AppSnapshot, usersLT map[int]*User) *A
 	}
 }
 
-func NewGetSnapshotListResponse(appSnapshots []*AppSnapshot, usersLT map[int]*User) *GetSnapshotListResponse {
-	resp := &GetSnapshotListResponse{}
+func NewGetSnapshotListResponse(appSnapshots []*AppSnapshot, totalPages int, usersLT map[int]*User) *GetSnapshotListResponse {
+	resp := &GetSnapshotListResponse{
+		TotalPages: totalPages,
+	}
 	resp.SnapshotList = make([]*AppSnapshotForExport, 0)
 	for _, appSnapshot := range appSnapshots {
 		appSnapshotForExport := NewAppSnapshotForExport(appSnapshot, usersLT)

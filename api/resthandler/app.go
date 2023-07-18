@@ -736,7 +736,7 @@ func (impl AppRestHandlerImpl) GetSnapshotList(c *gin.Context) {
 	}
 
 	// feedback
-	FeedbackOK(c, repository.NewGetSnapshotListResponse(snapshots, usersLT))
+	FeedbackOK(c, repository.NewGetSnapshotListResponse(snapshots, pagination.GetTotalPages(), usersLT))
 	return
 
 }
