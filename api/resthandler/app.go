@@ -40,6 +40,10 @@ type AppRestHandler interface {
 	GetMegaData(c *gin.Context)
 	DuplicateApp(c *gin.Context)
 	ReleaseApp(c *gin.Context)
+	TakeSnapshot(c *gin.Context)
+	GetSnapshotList(c *gin.Context)
+	GetSnapshot(c *gin.Context)
+	RecoverSnapshot(c *gin.Context)
 }
 
 type AppRestHandlerImpl struct {
