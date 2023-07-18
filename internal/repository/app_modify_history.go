@@ -59,7 +59,7 @@ func NewTakeAppSnapshotModifyHistory(modifyBy int) *AppModifyHistory {
 
 func NewRecoverAppSnapshotModifyHistory(modifyBy int) *AppModifyHistory {
 	appModifyHistory := &AppModifyHistory{
-		Operation:           builderoperation.SIGNAL_REVOCER_APP_SNAPSHOT,
+		Operation:           builderoperation.SIGNAL_RECOVER_APP_SNAPSHOT,
 		OperationTarget:     builderoperation.TARGET_APPS,
 		OperationTargetName: SNAPSHOT_TARGET_APP,
 		ModifiedBy:          modifyBy,
