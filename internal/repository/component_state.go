@@ -154,7 +154,13 @@ func (cnode *ComponentNode) SerializationForDatabase() ([]byte, error) {
 		return nil, err
 	}
 	return jsonbyte, nil
+}
 
+func ExportComponentTreeAllDisplayNames(cnode *ComponentNode, displayNames []string) {
+	displayNames = append(displayNames, cnode.DisplayName)
+	for _, subCNode := range cnode.ChildrenNode {
+		ExportComponentTreeAllDisplayNames(subCNode, displayNames)
+	}
 }
 
 func BuildComponentTree(treeState *TreeState, treeStateMap map[int]*TreeState, parentComponentNode *ComponentNode) (*ComponentNode, error) {

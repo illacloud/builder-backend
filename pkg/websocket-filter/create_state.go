@@ -16,7 +16,6 @@ package filter
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/app"
@@ -34,9 +33,11 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 	}
 	stateType := repository.STATE_TYPE_INVALIED
 	teamID := currentClient.TeamID
+	appID := currentClient.APPID
+	userID := currentClient.MappedUserID
 	appDto := app.NewAppDto()
-	appDto.ConstructWithID(currentClient.APPID)
-	appDto.ConstructWithUpdateBy(currentClient.MappedUserID)
+	appDto.ConstructWithID(appID)
+	appDto.ConstructWithUpdateBy(userID)
 	appDto.SetTeamID(currentClient.TeamID)
 	app := repository.NewAppWithID(currentClient.APPID, currentClient.TeamID, currentClient.MappedUserID)
 	message.RewriteBroadcast()
@@ -47,17 +48,21 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 		return nil
 	case builderoperation.TARGET_COMPONENTS:
 		// build component tree from json
+		displayNames := make([]string, 0)
 		for _, v := range message.Payload {
 			componentTree := repository.ConstructComponentNodeByMap(v)
-			fmt.Printf("[DUMP] componentTree: %+v\n", componentTree)
 			if err := hub.TreeStateServiceImpl.CreateComponentTree(app, 0, componentTree); err != nil {
 				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 				return err
 			}
+			// collect display names
+			repository.ExportComponentTreeAllDisplayNames(componentTree, displayNames)
 		}
-
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	case builderoperation.TARGET_DEPENDENCIES:
 		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
+		displayNames := make([]string, 0)
 		// create k-v state
 		for _, v := range message.Payload {
 			subv, ok := v.(map[string]interface{})
@@ -66,6 +71,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 				return err
 			}
 			for key, depState := range subv {
+				displayNames = append(displayNames, key)
 				// fill KVStateDto
 				kvStateDto := state.NewKVStateDto()
 				kvStateDto.InitUID()
@@ -81,6 +87,8 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 				}
 			}
 		}
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	case builderoperation.TARGET_DRAG_SHADOW:
 		fallthrough
 

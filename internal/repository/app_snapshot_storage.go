@@ -58,6 +58,14 @@ func (impl *AppSnapshotRepositoryImpl) RetrieveByTeamIDAndAppID(teamID int, appI
 	return appSnapshots, nil
 }
 
+func (impl *AppSnapshotRepositoryImpl) RetrieveEditVersion(teamID int, appID int) (*AppSnapshot, error) {
+	var appSnapshot *AppSnapshot
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND target_version = ?", teamID, appID, APP_EDIT_VERSION).First(&appSnapshot).Error; err != nil {
+		return nil, err
+	}
+	return appSnapshot, nil
+}
+
 func (impl *AppSnapshotRepositoryImpl) RetrieveByTeamIDAppIDAndTargetVersion(teamID int, appID int, targetVersion int) (*AppSnapshot, error) {
 	var appSnapshot *AppSnapshot
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND target_version = ?", teamID, appID, targetVersion).First(&appSnapshot).Error; err != nil {

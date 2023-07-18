@@ -45,6 +45,7 @@ var sssi *state.SetStateServiceImpl
 var asi *app.AppServiceImpl
 var rsi *resource.ResourceServiceImpl
 var appRepositoryImpl *repository.AppRepositoryImpl
+var appSnapshotRepositoryImpl *repository.AppSnapshotRepositoryImpl
 
 func initEnv() error {
 	sugaredLogger := util.NewSugardLogger()
@@ -56,6 +57,7 @@ func initEnv() error {
 	if err != nil {
 		return err
 	}
+
 	// init repo
 	treestateRepositoryImpl := repository.NewTreeStateRepositoryImpl(sugaredLogger, gormDB)
 	kvstateRepositoryImpl := repository.NewKVStateRepositoryImpl(sugaredLogger, gormDB)
@@ -63,6 +65,8 @@ func initEnv() error {
 	appRepositoryImpl = repository.NewAppRepositoryImpl(sugaredLogger, gormDB)
 	resourceRepositoryImpl := repository.NewResourceRepositoryImpl(sugaredLogger, gormDB)
 	actionRepositoryImpl := repository.NewActionRepositoryImpl(sugaredLogger, gormDB)
+	appSnapshotRepositoryImpl = repository.NewAppSnapshotRepositoryImpl(sugaredLogger, gormDB)
+
 	// init service
 	tssi = state.NewTreeStateServiceImpl(sugaredLogger, treestateRepositoryImpl)
 	kvssi = state.NewKVStateServiceImpl(sugaredLogger, kvstateRepositoryImpl)
@@ -74,7 +78,7 @@ func initEnv() error {
 
 var hub *ws.Hub
 
-func InitHub(asi *app.AppServiceImpl, rsi *resource.ResourceServiceImpl, tssi *state.TreeStateServiceImpl, kvssi *state.KVStateServiceImpl, sssi *state.SetStateServiceImpl, appRepository *repository.AppRepositoryImpl) {
+func InitHub(asi *app.AppServiceImpl, rsi *resource.ResourceServiceImpl, tssi *state.TreeStateServiceImpl, kvssi *state.KVStateServiceImpl, sssi *state.SetStateServiceImpl, appRepository *repository.AppRepositoryImpl, appSnapshotRepositoryImpl *repository.AppSnapshotRepositoryImpl) {
 	hub = ws.NewHub()
 	hub.SetAppServiceImpl(asi)
 	hub.SetResourceServiceImpl(rsi)
@@ -82,6 +86,7 @@ func InitHub(asi *app.AppServiceImpl, rsi *resource.ResourceServiceImpl, tssi *s
 	hub.SetKVStateServiceImpl(kvssi)
 	hub.SetSetStateServiceImpl(sssi)
 	hub.SetAppRepositoryImpl(appRepositoryImpl)
+	hub.SetAppSnapshotRepositoryImpl(appSnapshotRepositoryImpl)
 	go filter.Run(hub)
 }
 
@@ -133,7 +138,7 @@ func main() {
 
 	// init
 	initEnv()
-	InitHub(asi, rsi, tssi, kvssi, sssi, appRepositoryImpl)
+	InitHub(asi, rsi, tssi, kvssi, sssi, appRepositoryImpl, appSnapshotRepositoryImpl)
 
 	// listen and serve
 	r := mux.NewRouter()

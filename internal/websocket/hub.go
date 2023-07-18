@@ -48,12 +48,13 @@ type Hub struct {
 	InRoomUsersMap map[int]*InRoomUsers // map[roomID]*InRoomUsers
 
 	// impl
-	TreeStateServiceImpl *state.TreeStateServiceImpl
-	KVStateServiceImpl   *state.KVStateServiceImpl
-	SetStateServiceImpl  *state.SetStateServiceImpl
-	AppServiceImpl       *app.AppServiceImpl
-	ResourceServiceImpl  *resource.ResourceServiceImpl
-	AppRepositoryImpl    *repository.AppRepositoryImpl
+	TreeStateServiceImpl      *state.TreeStateServiceImpl
+	KVStateServiceImpl        *state.KVStateServiceImpl
+	SetStateServiceImpl       *state.SetStateServiceImpl
+	AppServiceImpl            *app.AppServiceImpl
+	ResourceServiceImpl       *resource.ResourceServiceImpl
+	AppRepositoryImpl         *repository.AppRepositoryImpl
+	AppSnapshotRepositoryImpl *repository.AppSnapshotRepositoryImpl
 }
 
 func NewHub() *Hub {
@@ -92,6 +93,10 @@ func (hub *Hub) SetResourceServiceImpl(rsi *resource.ResourceServiceImpl) {
 
 func (hub *Hub) SetAppRepositoryImpl(appRepositoryImpl *repository.AppRepositoryImpl) {
 	hub.AppRepositoryImpl = appRepositoryImpl
+}
+
+func (hub *Hub) SetAppSnapshotRepositoryImpl(appSnapshotRepositoryImpl *repository.AppSnapshotRepositoryImpl) {
+	hub.AppSnapshotRepositoryImpl = appSnapshotRepositoryImpl
 }
 
 func (hub *Hub) GetInRoomUsersByRoomID(roomID int) *InRoomUsers {
