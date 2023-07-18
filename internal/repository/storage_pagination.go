@@ -72,6 +72,9 @@ func (p *Pagination) SetSort(field string, vec string) {
 
 func (p *Pagination) CalculateTotalPagesByTotalRows(totalRows int64) {
 	p.TotalPages = int(math.Ceil(float64(totalRows) / float64(p.Limit)))
+	if p.TotalPages == 0 {
+		p.TotalPages = 1
+	}
 }
 
 func paginate(db *gorm.DB, pagination *Pagination) func(db *gorm.DB) *gorm.DB {
