@@ -117,6 +117,7 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 
 	case builderoperation.TARGET_DISPLAY_NAME:
 		stateType = repository.SET_STATE_TYPE_DISPLAY_NAME
+		displayNames := make([]string, 0)
 		// create set state
 		for _, v := range message.Payload {
 			// resolve payload
@@ -136,14 +137,43 @@ func SignalCreateState(hub *ws.Hub, message *ws.Message) error {
 				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 				return err
 			}
+			displayNames = append(displayNames, displayName)
 		}
-
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	case builderoperation.TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast
+		displayNames := make([]string, 0)
+		for _, v := range message.Payload {
+			appForExport, errInNewAppForExport := repository.NewAppForExportByMap(v)
+			if errInNewAppForExport == nil {
+				displayNames = append(displayNames, appForExport.ExportName())
+			}
+		}
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	case builderoperation.TARGET_RESOURCE:
 		// serve on HTTP API, this signal only for broadcast
+		displayNames := make([]string, 0)
+		for _, v := range message.Payload {
+			resourceForExport, errInNewResourceForExport := repository.NewResourceForExportByMap(v)
+			if errInNewResourceForExport == nil {
+				displayNames = append(displayNames, resourceForExport.ExportName())
+			}
+		}
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	case builderoperation.TARGET_ACTION:
 		// serve on HTTP API, this signal only for broadcast
+		displayNames := make([]string, 0)
+		for _, v := range message.Payload {
+			actionForExport, errInNewActionForExport := repository.NewActionForExportByMap(v)
+			if errInNewActionForExport == nil {
+				displayNames = append(displayNames, actionForExport.ExportDisplayName())
+			}
+		}
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	}
 
 	// the currentClient does not need feedback when operation success

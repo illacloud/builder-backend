@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -87,6 +88,28 @@ func NewAppForExport(a *App, usersLT map[int]*User) *AppForExport {
 	}
 	ret.CalculateIsDeployed()
 	return ret
+}
+
+func NewAppForExportByMap(data interface{}) (*AppForExport, error) {
+	udata, ok := data.(map[string]interface{})
+	if !ok {
+		err := errors.New("NewAppForExportByMap failed, please check your input.")
+		return nil, err
+	}
+	name, mapok := udata["name"].(string)
+	if !mapok {
+		err := errors.New("NewAppForExportByMap failed, can not find name field.")
+		return nil, err
+	}
+	// fill field
+	appForExport := &AppForExport{
+		Name: name,
+	}
+	return appForExport, nil
+}
+
+func (resp *AppForExport) ExportName() string {
+	return resp.Name
 }
 
 func (resp *AppForExport) ExportForFeedback() interface{} {

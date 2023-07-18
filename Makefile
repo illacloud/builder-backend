@@ -2,7 +2,9 @@
 
 all: build build-websocket-server
 
-build:
+build: build-http-server build-websocket-server
+
+build-http-server:
 	go build -o bin/illa-builder-backend cmd/http-server/main.go cmd/http-server/wire_gen.go cmd/http-server/server.go
 
 build-websocket-server:

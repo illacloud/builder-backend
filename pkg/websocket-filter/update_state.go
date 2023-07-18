@@ -46,6 +46,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 		return nil
 	case builderoperation.TARGET_COMPONENTS:
 		stateType = repository.TREE_STATE_TYPE_COMPONENTS
+		displayNames := make([]string, 0)
 		for _, v := range message.Payload {
 			// construct payload
 			csfu, err := repository.ConstructComponentStateForUpdateByPayload(v)
@@ -85,10 +86,14 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 				currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
 				return err
 			}
+			// collect display names
+			displayNames = append(displayNames, beforeTreeState.ExportName())
 		}
-
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	case builderoperation.TARGET_DEPENDENCIES:
 		stateType = repository.KV_STATE_TYPE_DEPENDENCIES
+		displayNames := make([]string, 0)
 		// update k-v state
 		for _, v := range message.Payload {
 			subv, ok := v.(map[string]interface{})
@@ -97,6 +102,7 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 				return err
 			}
 			for key, depState := range subv {
+				displayNames = append(displayNames, key)
 				// fill KVStateDto
 				kvStateDto := state.NewKVStateDto()
 				kvStateDto.ConstructWithKey(key)
@@ -111,7 +117,8 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 				}
 			}
 		}
-
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	case builderoperation.TARGET_DRAG_SHADOW:
 		fallthrough
 
@@ -142,7 +149,13 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 
 	case builderoperation.TARGET_DISPLAY_NAME:
 		stateType = repository.SET_STATE_TYPE_DISPLAY_NAME
+		displayNames := make([]string, 0)
 		for _, v := range message.Payload {
+			// resolve payload
+			displayName, err := repository.ResolveDisplayNameByPayload(v)
+			if err != nil {
+				return err
+			}
 			// resolve payload
 			dnsfu, err := repository.ConstructDisplayNameStateForUpdateByPayload(v)
 
@@ -164,14 +177,43 @@ func SignalUpdateState(hub *ws.Hub, message *ws.Message) error {
 				currentClient.Feedback(message, ws.ERROR_UPDATE_STATE_FAILED, err)
 				return err
 			}
+			displayNames = append(displayNames, displayName)
 		}
-
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	case builderoperation.TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast
+		displayNames := make([]string, 0)
+		for _, v := range message.Payload {
+			appForExport, errInNewAppForExport := repository.NewAppForExportByMap(v)
+			if errInNewAppForExport == nil {
+				displayNames = append(displayNames, appForExport.ExportName())
+			}
+		}
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	case builderoperation.TARGET_RESOURCE:
 		// serve on HTTP API, this signal only for broadcast
+		displayNames := make([]string, 0)
+		for _, v := range message.Payload {
+			resourceForExport, errInNewResourceForExport := repository.NewResourceForExportByMap(v)
+			if errInNewResourceForExport == nil {
+				displayNames = append(displayNames, resourceForExport.ExportName())
+			}
+		}
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	case builderoperation.TARGET_ACTION:
 		// serve on HTTP API, this signal only for broadcast
+		displayNames := make([]string, 0)
+		for _, v := range message.Payload {
+			actionForExport, errInNewActionForExport := repository.NewActionForExportByMap(v)
+			if errInNewActionForExport == nil {
+				displayNames = append(displayNames, actionForExport.ExportDisplayName())
+			}
+		}
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	}
 
 	// the currentClient does not need feedback when operation success

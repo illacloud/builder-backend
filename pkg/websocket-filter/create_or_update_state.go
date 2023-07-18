@@ -34,14 +34,16 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 	}
 	stateType := repository.STATE_TYPE_INVALIED
 	teamID := currentClient.TeamID
+	appID := currentClient.APPID
+	userID := currentClient.MappedUserID
 
 	appDto := app.NewAppDto()
 	appDto.InitUID()
-	appDto.ConstructWithID(currentClient.APPID)
+	appDto.ConstructWithID(appID)
 	appDto.SetTeamID(currentClient.TeamID)
-	appDto.ConstructWithUpdateBy(currentClient.MappedUserID)
+	appDto.ConstructWithUpdateBy(userID)
 	message.RewriteBroadcast()
-	app := repository.NewApp("", currentClient.TeamID, currentClient.MappedUserID)
+	app := repository.NewApp("", teamID, userID)
 
 	// target switch
 	switch message.Target {
@@ -49,6 +51,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 		return nil
 
 	case builderoperation.TARGET_COMPONENTS:
+		displayNames := make([]string, 0)
 		for _, v := range message.Payload {
 			// construct TreeStateDto
 			var inDBTreeStateDto *state.TreeStateDto
@@ -87,8 +90,10 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 					return err
 				}
 			}
+			displayNames = append(displayNames, currentNode.ExportName())
 		}
-
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	case builderoperation.TARGET_DEPENDENCIES:
 		// dependencies can not create or update by this method
 
@@ -136,6 +141,7 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 
 	case builderoperation.TARGET_DISPLAY_NAME:
 		stateType = repository.SET_STATE_TYPE_DISPLAY_NAME
+		displayNames := make([]string, 0)
 		for _, v := range message.Payload {
 			var err error
 			var displayName string
@@ -174,13 +180,43 @@ func SignalCreateOrUpdateState(hub *ws.Hub, message *ws.Message) error {
 					return err
 				}
 			}
+			displayNames = append(displayNames, displayName)
 		}
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	case builderoperation.TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast
+		displayNames := make([]string, 0)
+		for _, v := range message.Payload {
+			appForExport, errInNewAppForExport := repository.NewAppForExportByMap(v)
+			if errInNewAppForExport == nil {
+				displayNames = append(displayNames, appForExport.ExportName())
+			}
+		}
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	case builderoperation.TARGET_RESOURCE:
 		// serve on HTTP API, this signal only for broadcast
+		displayNames := make([]string, 0)
+		for _, v := range message.Payload {
+			resourceForExport, errInNewResourceForExport := repository.NewResourceForExportByMap(v)
+			if errInNewResourceForExport == nil {
+				displayNames = append(displayNames, resourceForExport.ExportName())
+			}
+		}
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	case builderoperation.TARGET_ACTION:
 		// serve on HTTP API, this signal only for broadcast
+		displayNames := make([]string, 0)
+		for _, v := range message.Payload {
+			actionForExport, errInNewActionForExport := repository.NewActionForExportByMap(v)
+			if errInNewActionForExport == nil {
+				displayNames = append(displayNames, actionForExport.ExportDisplayName())
+			}
+		}
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	}
 
 	// the currentClient does not need feedback when operation success
