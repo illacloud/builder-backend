@@ -32,6 +32,11 @@ func GetUserInfo(targetUserID int) (*repository.User, error) {
 }
 
 func GetMultiUserInfo(targetUserIDs []int) (map[int]*repository.User, error) {
+	// empty input
+	if len(targetUserIDs) == 0 {
+		ret := make(map[int]*repository.User, 0)
+		return ret, nil
+	}
 	// init sdk
 	instance, err := supervisior.NewSupervisior()
 	if err != nil {
