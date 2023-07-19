@@ -193,8 +193,8 @@ func main() {
 	srv := &http.Server{
 		Handler:      r,
 		Addr:         *addr,
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 60 * time.Second,
+		ReadTimeout:  60 * time.Second,
 	}
 
 	log.Printf("[START] websocket service serve on %s", *addr)
