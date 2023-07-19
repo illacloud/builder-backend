@@ -43,6 +43,7 @@ func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 	case builderoperation.TARGET_NOTNING:
 		return nil
 	case builderoperation.TARGET_COMPONENTS:
+		displayNames := make([]string, 0)
 		for _, v := range message.Payload {
 			currentNode := state.NewTreeStateDto()
 			currentNode.InitUID()
@@ -55,8 +56,11 @@ func SignalMoveState(hub *ws.Hub, message *ws.Message) error {
 				currentClient.Feedback(message, ws.ERROR_MOVE_STATE_FAILED, err)
 				return err
 			}
+			// collect display names
+			displayNames = append(displayNames, currentNode.ExportName())
 		}
-
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	case builderoperation.TARGET_DEPENDENCIES:
 		fallthrough
 	case builderoperation.TARGET_DRAG_SHADOW:
