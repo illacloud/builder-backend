@@ -25,6 +25,7 @@ import (
 // - user description, like "A query to list the names of the departments which employed more than 10 employees in the last 3 months"
 // - action: like "INSERT, UPDATE ... "
 const GENERATE_SQL_DESCRIPTION_TEMPALTE = "### %s tables, with their properties: #%s #### %s %s"
+const TABLE_DESC_CHARACTER_LIMIT = 1000
 
 type GenerateSQLPeripheralRequest struct {
 	Description   string `json:"description" validate:"required"`
@@ -105,6 +106,9 @@ func NewGenerateSQLPeripheralRequest(resourceType string, metaInfo map[string]in
 				}
 				tableDesc := generateTableDescription(tableName, tableFields)
 				allTableDesc += tableDesc
+				if len(allTableDesc) > TABLE_DESC_CHARACTER_LIMIT {
+					break
+				}
 			}
 		}
 	}
