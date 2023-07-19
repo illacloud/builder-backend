@@ -197,11 +197,14 @@ func (app *App) PushEditedBy(currentEditedBy *AppEditedBy) {
 	fmt.Printf("[DUMP] PushEditedBy.editedByList: %+v\n ", editedByList)
 	fmt.Printf("[DUMP] PushEditedBy.currentEditedBy: %+v\n ", currentEditedBy)
 	// remove exists
-	for serial, editedBy := range editedByList {
-		if editedBy.UserID == currentEditedBy.UserID {
-			editedByList = append(editedByList[:serial], editedByList[serial+1:]...)
+	serial := 0
+	for _, editedBy := range editedByList {
+		if editedBy.UserID != currentEditedBy.UserID {
+			editedByList[serial] = editedBy
+			serial++
 		}
 	}
+	editedByList = editedByList[:serial]
 
 	// insert
 	editedByList = append([]*AppEditedBy{currentEditedBy}, editedByList...)
