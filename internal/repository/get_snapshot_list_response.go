@@ -14,7 +14,7 @@ type GetSnapshotListResponse struct {
 type AppSnapshotForExport struct {
 	ID            string                       `json:"snapshotID"`
 	TeamID        string                       `json:"teamID"`
-	AppRefID      string                       `json:"appRefID"`
+	AppRefID      string                       `json:"appID"`
 	TargetVersion int                          `json:"targetVersion"`
 	TriggerMode   int                          `json:"snapshotTriggerMode"`
 	ModifyHistory []*AppModifyHistoryForExport `json:"modifyHistory"`
