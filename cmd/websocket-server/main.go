@@ -44,6 +44,10 @@ var kvssi *state.KVStateServiceImpl
 var sssi *state.SetStateServiceImpl
 var asi *app.AppServiceImpl
 var rsi *resource.ResourceServiceImpl
+var treeStateRepositoryImpl *repository.TreeStateRepositoryImpl
+var kvstateRepositoryImpl *repository.KVStateRepositoryImpl
+var setStateRepositoryImpl *repository.SetStateRepositoryImpl
+var actionRepositoryImpl *repository.ActionRepositoryImpl
 var appRepositoryImpl *repository.AppRepositoryImpl
 var appSnapshotRepositoryImpl *repository.AppSnapshotRepositoryImpl
 
@@ -59,32 +63,47 @@ func initEnv() error {
 	}
 
 	// init repo
-	treestateRepositoryImpl := repository.NewTreeStateRepositoryImpl(sugaredLogger, gormDB)
-	kvstateRepositoryImpl := repository.NewKVStateRepositoryImpl(sugaredLogger, gormDB)
-	setstateRepositoryImpl := repository.NewSetStateRepositoryImpl(sugaredLogger, gormDB)
-	appRepositoryImpl = repository.NewAppRepositoryImpl(sugaredLogger, gormDB)
 	resourceRepositoryImpl := repository.NewResourceRepositoryImpl(sugaredLogger, gormDB)
-	actionRepositoryImpl := repository.NewActionRepositoryImpl(sugaredLogger, gormDB)
+	treeStateRepositoryImpl = repository.NewTreeStateRepositoryImpl(sugaredLogger, gormDB)
+	kvstateRepositoryImpl = repository.NewKVStateRepositoryImpl(sugaredLogger, gormDB)
+	setStateRepositoryImpl = repository.NewSetStateRepositoryImpl(sugaredLogger, gormDB)
+	actionRepositoryImpl = repository.NewActionRepositoryImpl(sugaredLogger, gormDB)
+	appRepositoryImpl = repository.NewAppRepositoryImpl(sugaredLogger, gormDB)
 	appSnapshotRepositoryImpl = repository.NewAppSnapshotRepositoryImpl(sugaredLogger, gormDB)
 
 	// init service
-	tssi = state.NewTreeStateServiceImpl(sugaredLogger, treestateRepositoryImpl)
+	tssi = state.NewTreeStateServiceImpl(sugaredLogger, treeStateRepositoryImpl)
 	kvssi = state.NewKVStateServiceImpl(sugaredLogger, kvstateRepositoryImpl)
-	sssi = state.NewSetStateServiceImpl(sugaredLogger, setstateRepositoryImpl)
-	asi = app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, kvstateRepositoryImpl, treestateRepositoryImpl, setstateRepositoryImpl, actionRepositoryImpl)
+	sssi = state.NewSetStateServiceImpl(sugaredLogger, setStateRepositoryImpl)
+	asi = app.NewAppServiceImpl(sugaredLogger, appRepositoryImpl, kvstateRepositoryImpl, treeStateRepositoryImpl, setStateRepositoryImpl, actionRepositoryImpl)
 	rsi = resource.NewResourceServiceImpl(sugaredLogger, resourceRepositoryImpl)
 	return nil
 }
 
 var hub *ws.Hub
 
-func InitHub(asi *app.AppServiceImpl, rsi *resource.ResourceServiceImpl, tssi *state.TreeStateServiceImpl, kvssi *state.KVStateServiceImpl, sssi *state.SetStateServiceImpl, appRepository *repository.AppRepositoryImpl, appSnapshotRepositoryImpl *repository.AppSnapshotRepositoryImpl) {
+func InitHub(asi *app.AppServiceImpl,
+	rsi *resource.ResourceServiceImpl,
+	tssi *state.TreeStateServiceImpl,
+	kvssi *state.KVStateServiceImpl,
+	sssi *state.SetStateServiceImpl,
+	treeStateRepositoryImpl *repository.TreeStateRepositoryImpl,
+	kVStateRepositoryImpl *repository.KVStateRepositoryImpl,
+	setStateRepositoryImpl *repository.SetStateRepositoryImpl,
+	actionRepositoryImpl *repository.ActionRepositoryImpl,
+	appRepository *repository.AppRepositoryImpl,
+	appSnapshotRepositoryImpl *repository.AppSnapshotRepositoryImpl,
+) {
 	hub = ws.NewHub()
 	hub.SetAppServiceImpl(asi)
 	hub.SetResourceServiceImpl(rsi)
 	hub.SetTreeStateServiceImpl(tssi)
 	hub.SetKVStateServiceImpl(kvssi)
 	hub.SetSetStateServiceImpl(sssi)
+	hub.SetTreeStateRepositoryImpl(treeStateRepositoryImpl)
+	hub.SetKVStateRepositoryImpl(kVStateRepositoryImpl)
+	hub.SetSetStateRepositoryImpl(setStateRepositoryImpl)
+	hub.SetActionRepositoryImpl(actionRepositoryImpl)
 	hub.SetAppRepositoryImpl(appRepositoryImpl)
 	hub.SetAppSnapshotRepositoryImpl(appSnapshotRepositoryImpl)
 	go filter.Run(hub)
@@ -138,7 +157,7 @@ func main() {
 
 	// init
 	initEnv()
-	InitHub(asi, rsi, tssi, kvssi, sssi, appRepositoryImpl, appSnapshotRepositoryImpl)
+	InitHub(asi, rsi, tssi, kvssi, sssi, treeStateRepositoryImpl, kvstateRepositoryImpl, setStateRepositoryImpl, actionRepositoryImpl, appRepositoryImpl, appSnapshotRepositoryImpl)
 
 	// listen and serve
 	r := mux.NewRouter()

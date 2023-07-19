@@ -53,6 +53,10 @@ type Hub struct {
 	SetStateServiceImpl       *state.SetStateServiceImpl
 	AppServiceImpl            *app.AppServiceImpl
 	ResourceServiceImpl       *resource.ResourceServiceImpl
+	TreeStateRepositoryImpl   *repository.TreeStateRepositoryImpl
+	KVStateRepositoryImpl     *repository.KVStateRepositoryImpl
+	SetStateRepositoryImpl    *repository.SetStateRepositoryImpl
+	ActionRepositoryImpl      *repository.ActionRepositoryImpl
 	AppRepositoryImpl         *repository.AppRepositoryImpl
 	AppSnapshotRepositoryImpl *repository.AppSnapshotRepositoryImpl
 }
@@ -93,6 +97,22 @@ func (hub *Hub) SetResourceServiceImpl(rsi *resource.ResourceServiceImpl) {
 
 func (hub *Hub) SetAppRepositoryImpl(appRepositoryImpl *repository.AppRepositoryImpl) {
 	hub.AppRepositoryImpl = appRepositoryImpl
+}
+
+func (hub *Hub) SetTreeStateRepositoryImpl(treeStateRepositoryImpl *repository.TreeStateRepositoryImpl) {
+	hub.TreeStateRepositoryImpl = treeStateRepositoryImpl
+}
+
+func (hub *Hub) SetKVStateRepositoryImpl(kVStateRepositoryImpl *repository.KVStateRepositoryImpl) {
+	hub.KVStateRepositoryImpl = kVStateRepositoryImpl
+}
+
+func (hub *Hub) SetSetStateRepositoryImpl(setStateRepositoryImpl *repository.SetStateRepositoryImpl) {
+	hub.SetStateRepositoryImpl = setStateRepositoryImpl
+}
+
+func (hub *Hub) SetActionRepositoryImpl(actionRepositoryImpl *repository.ActionRepositoryImpl) {
+	hub.ActionRepositoryImpl = actionRepositoryImpl
 }
 
 func (hub *Hub) SetAppSnapshotRepositoryImpl(appSnapshotRepositoryImpl *repository.AppSnapshotRepositoryImpl) {

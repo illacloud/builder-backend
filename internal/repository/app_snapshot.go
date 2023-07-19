@@ -23,6 +23,8 @@ import (
 
 const APP_MODIFY_HISTORY_MAX_LEN = 10
 
+const APP_SNAPSHOT_PERIOD = time.Second * 300 // 5 min
+
 const (
 	SNAPSHOT_TRIGGER_MODE_AUTO   = 1
 	SNAPSHOT_TRIGGER_MODE_MANUAL = 2
@@ -83,6 +85,10 @@ func (appSnapshot *AppSnapshot) ExportTargetVersion() int {
 func (appSnapshot *AppSnapshot) ImportModifyHistory(appModifyHistorys []*AppModifyHistory) {
 	payload, _ := json.Marshal(appModifyHistorys)
 	appSnapshot.ModifyHistory = string(payload)
+}
+
+func (appSnapshot *AppSnapshot) DoesActiveSnapshotNeedArchive() bool {
+	return time.Now().UTC().After(appSnapshot.CreatedAt.Add(APP_SNAPSHOT_PERIOD))
 }
 
 func (appSnapshot *AppSnapshot) PushModifyHistory(currentAppModifyHistory *AppModifyHistory) {

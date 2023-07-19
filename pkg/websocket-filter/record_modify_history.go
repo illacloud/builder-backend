@@ -31,5 +31,13 @@ func RecordModifyHistory(hub *ws.Hub, message *ws.Message, displayNames []string
 		return errInUpdateSnapshot
 	}
 
+	// check if app snapshot need archive
+	if !appSnapshot.DoesActiveSnapshotNeedArchive() {
+		return nil
+	}
+
+	// ok, archive app snapshot
+	TakeSnapshot(hub, message)
+
 	return nil
 }

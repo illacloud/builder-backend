@@ -42,9 +42,10 @@ func (impl AppRestHandlerImpl) SnapshotAction(c *gin.Context, teamID int, appID 
 // recover edit version treestate to target version (coby target version data to edit version)
 func (impl AppRestHandlerImpl) DuplicateTreeStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
 	// get from version tree state from database
-	treestates, err := impl.TreeStateRepository.RetrieveAllTypeTreeStatesByApp(teamID, appID, fromVersion)
-	if err != nil {
-		return err
+	treestates, errInRetrieveTreeState := impl.TreeStateRepository.RetrieveAllTypeTreeStatesByApp(teamID, appID, fromVersion)
+	if errInRetrieveTreeState != nil {
+		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get tree state failed: "+errInRetrieveTreeState.Error())
+		return errInRetrieveTreeState
 	}
 	oldIDMap := map[int]int{}
 	releaseIDMap := map[int]int{}
@@ -58,9 +59,9 @@ func (impl AppRestHandlerImpl) DuplicateTreeStateByVersion(c *gin.Context, teamI
 	// put them to the database as duplicate, and record the old-new id map
 	for i, treestate := range treestates {
 		newID, errInCreateApp := impl.TreeStateRepository.Create(treestate)
-		if err != nil {
+		if errInCreateApp != nil {
 			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_APP, "create app failed: "+errInCreateApp.Error())
-			return err
+			return errInCreateApp
 		}
 		oldID := oldIDMap[i]
 		releaseIDMap[oldID] = newID
