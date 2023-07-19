@@ -218,6 +218,33 @@ func (hub *Hub) BroadcastToRoomAllClients(message *Message, currentClient *Clien
 	}
 }
 
+func (hub *Hub) SendFeedbackToTargetRoomAllClients(errorCode int, message *Message, teamID int, appID int) {
+	if !message.NeedBroadcast {
+		return
+	}
+	feedOtherClient := Feedback{
+		ErrorCode:    errorCode,
+		ErrorMessage: "",
+		Broadcast:    message.Broadcast,
+		Data:         nil,
+	}
+	feedbyte, _ := feedOtherClient.Serialization()
+
+	for _, client := range hub.Clients {
+		if client.IsDead() {
+			hub.RemoveClient(client)
+			continue
+		}
+		if client.TeamID != teamID {
+			continue
+		}
+		if client.APPID != appID {
+			continue
+		}
+		client.Send <- feedbyte
+	}
+}
+
 func (hub *Hub) BroadcastToTeamAllClients(message *Message, currentClient *Client, includeCurrentClient bool) {
 	feed := Feedback{
 		ErrorCode:    ERROR_CODE_BROADCAST,

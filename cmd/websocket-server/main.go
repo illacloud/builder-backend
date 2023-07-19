@@ -22,9 +22,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/internal/idconvertor"
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/internal/util"
+	"github.com/illacloud/builder-backend/internal/util/builderoperation"
+	"github.com/illacloud/builder-backend/internal/util/supervisior"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 
 	"github.com/illacloud/builder-backend/pkg/app"
@@ -151,6 +154,7 @@ func ServeWebsocket(hub *ws.Hub, w http.ResponseWriter, r *http.Request, teamID 
 func main() {
 	// set trial key for self-host users
 	os.Setenv("ILLA_SECRET_KEY", "8xEMrWkBARcDDYQ")
+
 	// init
 	addr := flag.String("addr", "0.0.0.0:8002", "websocket server serve address")
 	flag.Parse()
@@ -165,6 +169,54 @@ func main() {
 	r.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 	})
+
+	// handle /status
+	r.HandleFunc("/teams/{teamID}/apps/{appID}/recoverSnapshot", func(w http.ResponseWriter, r *http.Request) {
+		// get teamID & appID
+		teamID := mux.Vars(r)["teamID"]
+		appID := mux.Vars(r)["appID"]
+		teamIDInt := idconvertor.ConvertStringToInt(teamID)
+		appIDInt := idconvertor.ConvertStringToInt(appID)
+
+		// check user authorization
+		authorizationToken := r.Header.Get("Authorization")
+		supervisior, _ := supervisior.NewSupervisior()
+		validated, errInValidate := supervisior.ValidateUserAccount(authorizationToken)
+		if errInValidate != nil {
+			return
+		}
+		if !validated {
+			return
+		}
+
+		// check if user have access permission to target team and app
+		attributeGroup, _ := accesscontrol.NewRawAttributeGroup()
+		attributeGroup.Init()
+		attributeGroup.SetTeamID(teamIDInt)
+		attributeGroup.SetUserAuthToken(authorizationToken)
+		attributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
+		attributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
+		canManage, errInCheckAttr := attributeGroup.CanManage(accesscontrol.ACTION_MANAGE_EDIT_APP)
+		if errInCheckAttr != nil {
+			return
+		}
+		if !canManage {
+			return
+		}
+
+		// ok, broadcast refresh message to room all client
+		serverSideClientID := ws.GetMessageClientIDForWebsocketServer()
+		message, errInNewWebSocketMessage := ws.NewEmptyMessage(appIDInt, serverSideClientID, builderoperation.SIGNAL_FORCE_REFRESH, builderoperation.TARGET_WINDOW, true)
+		if errInNewWebSocketMessage != nil {
+			json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+			return
+		}
+		hub.SendFeedbackToTargetRoomAllClients(ws.ERROR_FORCE_REFRESH_WINDOW, message, teamIDInt, appIDInt)
+
+		// done
+		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+	})
+
 	// handle ws://{ip:port}/teams/{teamID}/room/websocketConnection/dashboard
 	r.HandleFunc("/teams/{teamID}/room/websocketConnection/dashboard", func(w http.ResponseWriter, r *http.Request) {
 		teamID := mux.Vars(r)["teamID"]
@@ -172,6 +224,7 @@ func main() {
 		log.Printf("[Connected] /teams/%d/dashboard", teamIDInt)
 		ServeWebsocket(hub, w, r, teamIDInt, ws.DASHBOARD_APP_ID, ws.CLIENT_TYPE_TEXT)
 	})
+
 	// handle ws://{ip:port}/teams/{teamID}/room/websocketConnection/apps/{appID}
 	r.HandleFunc("/teams/{teamID}/room/websocketConnection/apps/{appID}", func(w http.ResponseWriter, r *http.Request) {
 		teamID := mux.Vars(r)["teamID"]
@@ -181,6 +234,7 @@ func main() {
 		log.Printf("[Connected] /teams/%d/app/%d", teamIDInt, appIDInt)
 		ServeWebsocket(hub, w, r, teamIDInt, appIDInt, ws.CLIENT_TYPE_TEXT)
 	})
+
 	// handle ws://{ip:port}/teams/{teamID}/room/binaryWebsocketConnection/apps/{appID}
 	r.HandleFunc("/teams/{teamID}/room/binaryWebsocketConnection/apps/{appID}", func(w http.ResponseWriter, r *http.Request) {
 		teamID := mux.Vars(r)["teamID"]
@@ -190,6 +244,7 @@ func main() {
 		log.Printf("[Connected] binary /teams/%d/app/%d", teamIDInt, appIDInt)
 		ServeWebsocket(hub, w, r, teamIDInt, appIDInt, ws.CLIENT_TYPE_BINARY)
 	})
+
 	srv := &http.Server{
 		Handler:      r,
 		Addr:         *addr,

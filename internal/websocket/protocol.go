@@ -18,8 +18,6 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
-
-	"github.com/illacloud/builder-backend/internal/util/builderoperation"
 )
 
 // message protocol from client in json:
@@ -33,6 +31,7 @@ import (
 // for message
 
 const OPTION_BROADCAST_ROOM = 1 // 00000000000000000000000000000001; // use as signed int32 in typescript
+const HTTP_SERVER_CLIENT_ID = "a97bce38-703b-4f03-b59b-111a00000001"
 
 // for broadcast rewrite
 const BROADCAST_TYPE_SUFFIX = "/remote"
@@ -55,6 +54,11 @@ type Message struct {
 	NeedBroadcast bool
 }
 
+func GetMessageClientIDForWebsocketServer() uuid.UUID {
+	clientID, _ := uuid.FromBytes([]byte(HTTP_SERVER_CLIENT_ID))
+	return clientID
+}
+
 func NewMessage(clientID uuid.UUID, appID int, rawMessage []byte) (*Message, error) {
 	// init Action
 	var message Message
@@ -71,8 +75,23 @@ func NewMessage(clientID uuid.UUID, appID int, rawMessage []byte) (*Message, err
 	return &message, nil
 }
 
+func NewEmptyMessage(appID int, clientID uuid.UUID, signal int, target int, needBroadcast bool) (*Message, error) {
+	// init Action
+	message := &Message{
+		ClientID:      clientID,
+		Signal:        signal,
+		APPID:         appID,
+		Option:        OPTION_BROADCAST_ROOM,
+		Payload:       nil,
+		Target:        target,
+		Broadcast:     &Broadcast{},
+		NeedBroadcast: needBroadcast,
+	}
+	return message, nil
+}
+
 func (m *Message) SetSignal(s int) {
-	m.Signal = builderoperation.SIGNAL_COOPERATE_ATTACH
+	m.Signal = s
 }
 
 func (m *Message) SetBroadcastType(t string) {
