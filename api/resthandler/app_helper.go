@@ -185,10 +185,6 @@ func (impl AppRestHandlerImpl) SaveAppSnapshotByVersion(c *gin.Context, teamID i
 	// set mainline version
 	editVersionAppSnapshot.SetTargetVersion(toVersion)
 
-	// add modify history
-	modifyHistoryLog := repository.NewTakeAppSnapshotModifyHistory(userID)
-	editVersionAppSnapshot.PushModifyHistory(modifyHistoryLog)
-
 	// update old edit version snapshot
 	errInUpdateSnapshot := impl.AppSnapshotRepository.UpdateWholeSnapshot(editVersionAppSnapshot)
 	if errInUpdateSnapshot != nil {

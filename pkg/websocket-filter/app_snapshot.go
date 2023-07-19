@@ -39,7 +39,7 @@ func TakeSnapshot(hub *ws.Hub, message *ws.Message) error {
 	}
 
 	// save snapshot
-	_, errInTakeSnapshot := SaveAppSnapshot(hub, teamID, appID, userID, app.ExportMainlineVersion(), repository.SNAPSHOT_TRIGGER_MODE_MANUAL)
+	_, errInTakeSnapshot := SaveAppSnapshot(hub, teamID, appID, userID, app.ExportMainlineVersion(), repository.SNAPSHOT_TRIGGER_MODE_AUTO)
 	if errInTakeSnapshot != nil {
 		return errInTakeSnapshot
 	}
@@ -192,10 +192,6 @@ func SaveAppSnapshotByVersion(hub *ws.Hub, teamID int, appID int, userID int, fr
 
 	// set mainline version
 	editVersionAppSnapshot.SetTargetVersion(toVersion)
-
-	// add modify history
-	modifyHistoryLog := repository.NewTakeAppSnapshotModifyHistory(userID)
-	editVersionAppSnapshot.PushModifyHistory(modifyHistoryLog)
 
 	// update old edit version snapshot
 	errInUpdateSnapshot := hub.AppSnapshotRepositoryImpl.UpdateWholeSnapshot(editVersionAppSnapshot)
