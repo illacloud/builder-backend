@@ -32,6 +32,7 @@ type TreeStateRepository interface {
 	RetrieveEditVersionByAppAndName(teamID int, apprefid int, statetype int, name string) (*TreeState, error)
 	RetrieveAllTypeTreeStatesByApp(teamID int, apprefid int, version int) ([]*TreeState, error)
 	DeleteAllTypeTreeStatesByApp(teamID int, apprefid int) error
+	DeleteAllTypeTreeStatesByTeamIDAppIDAndVersion(teamID int, apprefid int, targetVersion int) error
 }
 
 type TreeStateRepositoryImpl struct {
@@ -129,6 +130,13 @@ func (impl *TreeStateRepositoryImpl) RetrieveAllTypeTreeStatesByApp(teamID int, 
 
 func (impl *TreeStateRepositoryImpl) DeleteAllTypeTreeStatesByApp(teamID int, apprefid int) error {
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, apprefid).Delete(&TreeState{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (impl *TreeStateRepositoryImpl) DeleteAllTypeTreeStatesByTeamIDAppIDAndVersion(teamID int, apprefid int, targetVersion int) error {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, apprefid, targetVersion).Delete(&TreeState{}).Error; err != nil {
 		return err
 	}
 	return nil

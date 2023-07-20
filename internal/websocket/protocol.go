@@ -29,33 +29,9 @@ import (
 // }
 
 // for message
-const SIGNAL_PING = 0
-const SIGNAL_ENTER = 1
-const SIGNAL_LEAVE = 2
-const SIGNAL_CREATE_STATE = 3
-const SIGNAL_DELETE_STATE = 4
-const SIGNAL_UPDATE_STATE = 5
-const SIGNAL_MOVE_STATE = 6
-const SIGNAL_CREATE_OR_UPDATE_STATE = 7
-const SIGNAL_BROADCAST_ONLY = 8
-const SIGNAL_PUT_STATE = 9
-const SIGNAL_GLOBAL_BROADCAST_ONLY = 10
-const SIGNAL_COOPERATE_ATTACH = 11
-const SIGNAL_COOPERATE_DISATTACH = 12
-const SIGNAL_MOVE_CURSOR = 13
 
 const OPTION_BROADCAST_ROOM = 1 // 00000000000000000000000000000001; // use as signed int32 in typescript
-
-const TARGET_NOTNING = 0            // placeholder for nothing
-const TARGET_COMPONENTS = 1         // ComponentsState
-const TARGET_DEPENDENCIES = 2       // DependenciesState
-const TARGET_DRAG_SHADOW = 3        // DragShadowState
-const TARGET_DOTTED_LINE_SQUARE = 4 // DottedLineSquareState
-const TARGET_DISPLAY_NAME = 5       // DisplayNameState
-const TARGET_APPS = 6               // only for broadcast
-const TARGET_RESOURCE = 7           // only for broadcast
-const TARGET_ACTION = 8             // only for broadcast
-const TARGET_CURSOR = 9             // only for broadcast
+const HTTP_SERVER_CLIENT_ID = "a97bce38-703b-4f03-b59b-111a00000001"
 
 // for broadcast rewrite
 const BROADCAST_TYPE_SUFFIX = "/remote"
@@ -78,6 +54,11 @@ type Message struct {
 	NeedBroadcast bool
 }
 
+func GetMessageClientIDForWebsocketServer() uuid.UUID {
+	clientID, _ := uuid.FromBytes([]byte(HTTP_SERVER_CLIENT_ID))
+	return clientID
+}
+
 func NewMessage(clientID uuid.UUID, appID int, rawMessage []byte) (*Message, error) {
 	// init Action
 	var message Message
@@ -94,8 +75,23 @@ func NewMessage(clientID uuid.UUID, appID int, rawMessage []byte) (*Message, err
 	return &message, nil
 }
 
+func NewEmptyMessage(appID int, clientID uuid.UUID, signal int, target int, needBroadcast bool) (*Message, error) {
+	// init Action
+	message := &Message{
+		ClientID:      clientID,
+		Signal:        signal,
+		APPID:         appID,
+		Option:        OPTION_BROADCAST_ROOM,
+		Payload:       nil,
+		Target:        target,
+		Broadcast:     &Broadcast{},
+		NeedBroadcast: needBroadcast,
+	}
+	return message, nil
+}
+
 func (m *Message) SetSignal(s int) {
-	m.Signal = SIGNAL_COOPERATE_ATTACH
+	m.Signal = s
 }
 
 func (m *Message) SetBroadcastType(t string) {

@@ -98,6 +98,14 @@ func (app *App) InitUpdatedAt() {
 	app.UpdatedAt = time.Now().UTC()
 }
 
+func (app *App) BumpMainlineVersion() {
+	app.MainlineVersion += 1
+}
+
+func (app *App) ReleaseMainlineVersion() {
+	app.ReleaseVersion = app.MainlineVersion
+}
+
 func (app *App) ExportUpdatedAt() time.Time {
 	return app.UpdatedAt
 }
@@ -155,6 +163,10 @@ func (app *App) ExportUpdatedBy() int {
 	return app.UpdatedBy
 }
 
+func (app *App) ExportMainlineVersion() int {
+	return app.MainlineVersion
+}
+
 func (app *App) ExportModifiedAllUserIDs() []int {
 	ret := make([]int, 0)
 	appEditedBys := make([]*AppEditedBy, 0)
@@ -185,11 +197,14 @@ func (app *App) PushEditedBy(currentEditedBy *AppEditedBy) {
 	fmt.Printf("[DUMP] PushEditedBy.editedByList: %+v\n ", editedByList)
 	fmt.Printf("[DUMP] PushEditedBy.currentEditedBy: %+v\n ", currentEditedBy)
 	// remove exists
-	for serial, editedBy := range editedByList {
-		if editedBy.UserID == currentEditedBy.UserID {
-			editedByList = append(editedByList[:serial], editedByList[serial+1:]...)
+	serial := 0
+	for _, editedBy := range editedByList {
+		if editedBy.UserID != currentEditedBy.UserID {
+			editedByList[serial] = editedBy
+			serial++
 		}
 	}
+	editedByList = editedByList[:serial]
 
 	// insert
 	editedByList = append([]*AppEditedBy{currentEditedBy}, editedByList...)

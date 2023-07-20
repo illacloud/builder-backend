@@ -74,6 +74,10 @@ func (s *TreeStateDto) SetTeamID(teamID int) {
 	s.TeamID = teamID
 }
 
+func (s *TreeStateDto) ExportName() string {
+	return s.Name
+}
+
 func (tsd *TreeStateDto) ConstructByMap(data interface{}) {
 
 	udata, ok := data.(map[string]interface{})

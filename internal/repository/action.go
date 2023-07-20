@@ -42,8 +42,30 @@ type Action struct {
 	UpdatedBy   int       `gorm:"column:updated_by;type:bigint;not null"`
 }
 
+func (action *Action) CleanID() {
+	action.ID = 0
+}
+
+func (action *Action) InitUID() {
+	action.UID = uuid.New()
+}
+
+func (action *Action) InitCreatedAt() {
+	action.CreatedAt = time.Now().UTC()
+}
+
 func (action *Action) InitUpdatedAt() {
 	action.UpdatedAt = time.Now().UTC()
+}
+
+func (action *Action) AppendNewVersion(newVersion int) {
+	action.CleanID()
+	action.InitUID()
+	action.Version = newVersion
+}
+
+func (action *Action) ExportID() int {
+	return action.ID
 }
 
 func (action *Action) UpdateAppConfig(actionConfig *ActionConfig, userID int) {

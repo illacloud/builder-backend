@@ -35,6 +35,7 @@ type ActionRepository interface {
 	RetrieveActionsByAppVersion(teamID int, appID int, version int) ([]*Action, error)
 	DeleteActionsByApp(teamID int, appID int) error
 	CountActionByTeamID(teamID int) (int, error)
+	DeleteAllActionsByTeamIDAppIDAndVersion(teamID int, appID int, targetVersion int) error
 }
 
 type ActionRepositoryImpl struct {
@@ -188,4 +189,11 @@ func (impl *ActionRepositoryImpl) CountActionByTeamID(teamID int) (int, error) {
 		return 0, err
 	}
 	return int(count), nil
+}
+
+func (impl *ActionRepositoryImpl) DeleteAllActionsByTeamIDAppIDAndVersion(teamID int, appID int, targetVersion int) error {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, appID, targetVersion).Delete(&Action{}).Error; err != nil {
+		return err
+	}
+	return nil
 }

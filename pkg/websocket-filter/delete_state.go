@@ -16,10 +16,12 @@ package filter
 
 import (
 	"errors"
+
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/state"
 
+	"github.com/illacloud/builder-backend/internal/util/builderoperation"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
 
@@ -28,7 +30,7 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 	// deserialize message
 	currentClient, hit := hub.Clients[message.ClientID]
 	if !hit {
-		return errors.New("[SignalDeleteState] target client("+message.ClientID.String()+") does dot exists.")
+		return errors.New("[SignalDeleteState] target client(" + message.ClientID.String() + ") does dot exists.")
 	}
 	stateType := repository.STATE_TYPE_INVALIED
 	teamID := currentClient.TeamID
@@ -40,9 +42,10 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 
 	// target switch
 	switch message.Target {
-	case ws.TARGET_NOTNING:
+	case builderoperation.TARGET_NOTNING:
 		return nil
-	case ws.TARGET_COMPONENTS:
+	case builderoperation.TARGET_COMPONENTS:
+		displayNames := make([]string, 0)
 		for _, v := range message.Payload {
 			currentNode := state.NewTreeStateDto()
 			currentNode.InitUID()
@@ -55,17 +58,20 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 				currentClient.Feedback(message, ws.ERROR_DELETE_STATE_FAILED, err)
 				return err
 			}
+			// collect display names
+			displayNames = append(displayNames, currentNode.ExportName())
 		}
-
-	case ws.TARGET_DEPENDENCIES:
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
+	case builderoperation.TARGET_DEPENDENCIES:
 		// dependency can not delete
 
-	case ws.TARGET_DRAG_SHADOW:
+	case builderoperation.TARGET_DRAG_SHADOW:
 		fallthrough
 
-	case ws.TARGET_DOTTED_LINE_SQUARE:
+	case builderoperation.TARGET_DOTTED_LINE_SQUARE:
 		// fill type
-		if message.Target == ws.TARGET_DRAG_SHADOW {
+		if message.Target == builderoperation.TARGET_DRAG_SHADOW {
 			stateType = repository.KV_STATE_TYPE_DRAG_SHADOW
 		} else {
 			stateType = repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE
@@ -86,11 +92,16 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 			}
 		}
 
-	case ws.TARGET_DISPLAY_NAME:
+	case builderoperation.TARGET_DISPLAY_NAME:
 		stateType = repository.SET_STATE_TYPE_DISPLAY_NAME
+		displayNames := make([]string, 0)
 		// delete set state
 		for _, v := range message.Payload {
-
+			// resolve payload
+			displayName, err := repository.ResolveDisplayNameByPayload(v)
+			if err != nil {
+				return err
+			}
 			// init
 			setStateDto := state.NewSetStateDto()
 			setStateDto.InitUID()
@@ -104,13 +115,41 @@ func SignalDeleteState(hub *ws.Hub, message *ws.Message) error {
 				currentClient.Feedback(message, ws.ERROR_CREATE_STATE_FAILED, err)
 				return err
 			}
+			displayNames = append(displayNames, displayName)
 		}
-	case ws.TARGET_APPS:
+	case builderoperation.TARGET_APPS:
 		// serve on HTTP API, this signal only for broadcast
-	case ws.TARGET_RESOURCE:
+		displayNames := make([]string, 0)
+		for _, v := range message.Payload {
+			appForExport, errInNewAppForExport := repository.NewAppForExportByMap(v)
+			if errInNewAppForExport == nil {
+				displayNames = append(displayNames, appForExport.ExportName())
+			}
+		}
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
+	case builderoperation.TARGET_RESOURCE:
 		// serve on HTTP API, this signal only for broadcast
-	case ws.TARGET_ACTION:
+		displayNames := make([]string, 0)
+		for _, v := range message.Payload {
+			resourceForExport, errInNewResourceForExport := repository.NewResourceForExportByMap(v)
+			if errInNewResourceForExport == nil {
+				displayNames = append(displayNames, resourceForExport.ExportName())
+			}
+		}
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
+	case builderoperation.TARGET_ACTION:
 		// serve on HTTP API, this signal only for broadcast
+		displayNames := make([]string, 0)
+		for _, v := range message.Payload {
+			actionForExport, errInNewActionForExport := repository.NewActionForExportByMap(v)
+			if errInNewActionForExport == nil {
+				displayNames = append(displayNames, actionForExport.ExportDisplayName())
+			}
+		}
+		// record app snapshot modify history
+		RecordModifyHistory(hub, message, displayNames)
 	}
 
 	// the currentClient does not need feedback when operation success

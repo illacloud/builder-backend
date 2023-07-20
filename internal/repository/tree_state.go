@@ -66,6 +66,10 @@ func NewTreeStateByApp(app *App) *TreeState {
 	return treeState
 }
 
+func (treeState *TreeState) CleanID() {
+	treeState.ID = 0
+}
+
 func (treeState *TreeState) InitUID() {
 	treeState.UID = uuid.New()
 }
@@ -76,6 +80,16 @@ func (treeState *TreeState) InitCreatedAt() {
 
 func (treeState *TreeState) InitUpdatedAt() {
 	treeState.UpdatedAt = time.Now().UTC()
+}
+
+func (treeState *TreeState) AppendNewVersion(newVersion int) {
+	treeState.CleanID()
+	treeState.InitUID()
+	treeState.Version = newVersion
+}
+
+func (treeState *TreeState) ExportID() int {
+	return treeState.ID
 }
 
 func (treeState *TreeState) ExportContentAsComponentState() (*ComponentNode, error) {
@@ -92,6 +106,10 @@ func (treeState *TreeState) ExportChildrenNodeRefIDs() ([]int, error) {
 		return nil, err
 	}
 	return ids, nil
+}
+
+func (treeState *TreeState) SetParentNodeRefID(id int) {
+	treeState.ParentNodeRefID = id
 }
 
 func (treeState *TreeState) AppendChildrenNodeRefIDs(id int) error {
@@ -120,6 +138,29 @@ func (treeState *TreeState) RemoveChildrenNodeRefIDs(id int) error {
 	}
 	treeState.ChildrenNodeRefIDs = string(idsjsonb)
 	return nil
+}
+
+func (treeState *TreeState) RemapChildrenNodeRefIDs(idMap map[int]int) {
+	// convert string to []int
+	var oldIDs []int
+	if err := json.Unmarshal([]byte(treeState.ChildrenNodeRefIDs), &oldIDs); err != nil {
+		return
+	}
+
+	// map old id to new id
+	newIDs := make([]int, 0, len(oldIDs))
+	for _, oldID := range oldIDs {
+		newIDs = append(newIDs, idMap[oldID])
+	}
+
+	// convert []int to string
+	idsjsonb, err := json.Marshal(newIDs)
+	if err != nil {
+		return
+	}
+
+	// set new
+	treeState.ChildrenNodeRefIDs = string(idsjsonb)
 }
 
 func BuildTreeStateLookupTable(treeStates []*TreeState) map[int]*TreeState {

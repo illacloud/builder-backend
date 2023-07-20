@@ -40,5 +40,10 @@ func (impl AppRouterImpl) InitAppRouter(appRouter *gin.RouterGroup) {
 	appRouter.GET(":appID/versions/:version", impl.appRestHandler.GetMegaData)
 	appRouter.POST(":appID/duplication", impl.appRestHandler.DuplicateApp)
 	appRouter.POST(":appID/deploy", impl.appRestHandler.ReleaseApp)
+	// snapshots APIs
+	appRouter.POST(":appID/takeSnapshot", impl.appRestHandler.TakeSnapshot)
+	appRouter.GET(":appID/snapshotList/limit/:pageLimit/page/:page", impl.appRestHandler.GetSnapshotList)
+	appRouter.GET(":appID/snapshot/:snapshotID", impl.appRestHandler.GetSnapshot)
+	appRouter.POST(":appID/recoverSnapshot/:snapshotID", impl.appRestHandler.RecoverSnapshot)
 
 }

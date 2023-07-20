@@ -54,6 +54,13 @@ type UserForEditedBy struct {
 	EditedAt time.Time `json:"editedAt"`
 }
 
+type UserForModifiedBy struct {
+	ID       string `json:"userID"`
+	Nickname string `json:"nickname"`
+	Email    string `json:"email"`
+	Avatar   string `json:"avatar"`
+}
+
 func NewUser(u *RawUser) *User {
 	return &User{
 		ID:             idconvertor.ConvertStringToInt(u.ID),
@@ -85,6 +92,15 @@ func NewUserForEditedBy(user *User, editedAt time.Time) *UserForEditedBy {
 		Email:    user.Email,
 		Avatar:   user.Avatar,
 		EditedAt: editedAt,
+	}
+}
+
+func NewUserForModifiedBy(user *User) *UserForModifiedBy {
+	return &UserForModifiedBy{
+		ID:       idconvertor.ConvertIntToString(user.ID),
+		Nickname: user.Nickname,
+		Email:    user.Email,
+		Avatar:   user.Avatar,
 	}
 }
 
