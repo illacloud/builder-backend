@@ -20,7 +20,13 @@ func RecordModifyHistory(hub *ws.Hub, message *ws.Message, displayNames []string
 
 	// new modify history
 	for _, displayName := range displayNames {
-		modifyHistoryRecord := repository.NewAppModifyHistory(message.Signal, message.Target, displayName, message.Broadcast.Type, message.Broadcast.Payload, userID)
+		broadcastType := ""
+		var broadcastPayload interface{}
+		if message.Broadcast != nil {
+			broadcastType = message.Broadcast.Type
+			broadcastPayload = message.Broadcast.Payload
+		}
+		modifyHistoryRecord := repository.NewAppModifyHistory(message.Signal, message.Target, displayName, broadcastType, broadcastPayload, userID)
 		appSnapshot.PushModifyHistory(modifyHistoryRecord)
 	}
 
