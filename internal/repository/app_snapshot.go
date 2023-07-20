@@ -82,6 +82,18 @@ func (appSnapshot *AppSnapshot) ExportTargetVersion() int {
 	return appSnapshot.TargetVersion
 }
 
+func (appSnapshot *AppSnapshot) SetTriggerMode(triggerMode int) {
+	appSnapshot.TriggerMode = triggerMode
+}
+
+func (appSnapshot *AppSnapshot) SetTriggerModeAuto() {
+	appSnapshot.TriggerMode = SNAPSHOT_TRIGGER_MODE_AUTO
+}
+
+func (appSnapshot *AppSnapshot) SetTriggerModeManual() {
+	appSnapshot.TriggerMode = SNAPSHOT_TRIGGER_MODE_MANUAL
+}
+
 func (appSnapshot *AppSnapshot) ImportModifyHistory(appModifyHistorys []*AppModifyHistory) {
 	payload, _ := json.Marshal(appModifyHistorys)
 	appSnapshot.ModifyHistory = string(payload)
