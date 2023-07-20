@@ -172,6 +172,19 @@ func main() {
 
 	// handle /status
 	r.HandleFunc("/teams/{teamID}/apps/{appID}/recoverSnapshot", func(w http.ResponseWriter, r *http.Request) {
+		// set cors
+		w.Header().Add("Access-Control-Allow-Origin", "*")
+		w.Header().Add("Access-Control-Allow-Credentials", "true")
+		w.Header().Add("Access-Control-Allow-Headers", "*")
+		w.Header().Add("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, "+
+			"Access-Control-Allow-Headers, Authorization, Cache-Control, Content-Language, Content-Type, illa-token")
+		w.Header().Add("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD")
+		w.Header().Add("Content-Type", "application/json")
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
 		// get teamID & appID
 		teamID := mux.Vars(r)["teamID"]
 		appID := mux.Vars(r)["appID"]
