@@ -171,7 +171,7 @@ func main() {
 	})
 
 	// handle /status
-	r.HandleFunc("/teams/{teamID}/apps/{appID}/recoverSnapshot", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/api/v1/teams/{teamID}/apps/{appID}/recoverSnapshot", func(w http.ResponseWriter, r *http.Request) {
 		// set cors
 		w.Header().Add("Access-Control-Allow-Origin", "*")
 		w.Header().Add("Access-Control-Allow-Credentials", "true")
