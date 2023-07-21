@@ -27,6 +27,7 @@ type TreeStateRepository interface {
 	Update(treestate *TreeState) error
 	RetrieveByID(teamID int, treestateID int) (*TreeState, error)
 	RetrieveTreeStatesByVersion(teamID int, versionID int) ([]*TreeState, error)
+	RetrieveTreeStatesLatestVersion(teamID int, appID int) (int, error)
 	RetrieveTreeStatesByName(teamID int, name string) ([]*TreeState, error)
 	RetrieveTreeStatesByApp(teamID int, apprefid int, statetype int, version int) ([]*TreeState, error)
 	RetrieveEditVersionByAppAndName(teamID int, apprefid int, statetype int, name string) (*TreeState, error)
@@ -94,6 +95,17 @@ func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByVersion(teamID int, ver
 		return nil, err
 	}
 	return treestates, nil
+}
+
+func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesLatestVersion(teamID int, appID int) (int, error) {
+	var treestates []*TreeState
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, appID).Order("version desc").Limit(1).Find(&treestates).Error; err != nil {
+		return 0, err
+	}
+	if len(treestates) == 0 {
+		return 0, nil
+	}
+	return treestates[0].Version, nil
 }
 
 func (impl *TreeStateRepositoryImpl) RetrieveTreeStatesByName(teamID int, name string) ([]*TreeState, error) {

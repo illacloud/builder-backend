@@ -112,6 +112,12 @@ func (app *App) BumpMainlineVersionOverReleaseVersoin() {
 	}
 }
 
+func (app *App) SyncMainlineVersoinWithTreeStateLatestVersion(treeStateLatestVersoin int) {
+	if app.MainlineVersion < treeStateLatestVersoin {
+		app.MainlineVersion = treeStateLatestVersoin
+	}
+}
+
 func (app *App) ReleaseMainlineVersion() {
 	app.ReleaseVersion = app.MainlineVersion
 }

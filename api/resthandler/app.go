@@ -650,8 +650,10 @@ func (impl AppRestHandlerImpl) TakeSnapshot(c *gin.Context) {
 	}
 
 	// config app version
+	treeStateLatestVersion, _ := impl.TreeStateRepository.RetrieveTreeStatesLatestVersion(teamID, appID)
+	app.SyncMainlineVersoinWithTreeStateLatestVersion(treeStateLatestVersion)
 	app.BumpMainlineVersionOverReleaseVersoin()
-	log.Printf("[DUMP] app.MainlineVersion: %d, app.ReleaseVersion: %d\n", app.MainlineVersion, app.ReleaseVersion)
+	log.Printf("[DUMP] app.MainlineVersion: %d, app.ReleaseVersion: %d, treeStateLatestVersion: %d\n", app.MainlineVersion, app.ReleaseVersion, treeStateLatestVersion)
 
 	// do snapshot for app following components and actions
 	if impl.SnapshotTreeState(c, teamID, appID, app.ExportMainlineVersion()) != nil {
