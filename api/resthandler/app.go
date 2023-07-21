@@ -858,7 +858,7 @@ func (impl AppRestHandlerImpl) RecoverSnapshot(c *gin.Context) {
 	}
 
 	// save app snapshot
-	newAppSnapshot, errInTakeSnapshot := impl.SaveAppSnapshot(c, teamID, appID, userID, app.ExportMainlineVersion(), repository.SNAPSHOT_TRIGGER_MODE_MANUAL)
+	newAppSnapshot, errInTakeSnapshot := impl.SaveAppSnapshot(c, teamID, appID, userID, app.ExportMainlineVersion(), repository.SNAPSHOT_TRIGGER_MODE_AUTO)
 	if errInTakeSnapshot != nil {
 		return
 	}

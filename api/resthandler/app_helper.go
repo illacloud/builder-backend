@@ -184,6 +184,7 @@ func (impl AppRestHandlerImpl) SaveAppSnapshotByVersion(c *gin.Context, teamID i
 
 	// set mainline version
 	editVersionAppSnapshot.SetTargetVersion(toVersion)
+	editVersionAppSnapshot.SetTriggerMode(snapshotTriggerMode)
 
 	// update old edit version snapshot
 	errInUpdateSnapshot := impl.AppSnapshotRepository.UpdateWholeSnapshot(editVersionAppSnapshot)
@@ -194,6 +195,7 @@ func (impl AppRestHandlerImpl) SaveAppSnapshotByVersion(c *gin.Context, teamID i
 
 	// create new edit version snapshot
 	newAppSnapShot := repository.NewAppSnapshot(teamID, appID, fromVersion, snapshotTriggerMode)
+	newAppSnapShot.SetTriggerModeAuto()
 
 	// storage new edit version snapshot
 	_, errInCreateSnapshot := impl.AppSnapshotRepository.Create(newAppSnapShot)
