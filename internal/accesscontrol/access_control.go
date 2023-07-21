@@ -171,6 +171,9 @@ const (
 	ACTION_SPECIAL_RELEASE_APP // release APP
 	// SQL Generate
 	ACTION_SPECIAL_GENERATE_SQL // generate sql
+	// APP Snapshot
+	ACTOIN_SPECIAL_TAKE_SNAPSHOT
+	ACTOIN_SPECIAL_RECOVER_SNAPSHOT
 )
 
 type AttributeGroup struct {

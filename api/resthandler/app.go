@@ -632,12 +632,12 @@ func (impl AppRestHandlerImpl) TakeSnapshot(c *gin.Context) {
 	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
 	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_APP)
 	impl.AttributeGroup.SetUnitID(appID)
-	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_APP)
+	canManageSpecial, errInCheckAttr := impl.AttributeGroup.CanManageSpecial(ac.ACTOIN_SPECIAL_TAKE_SNAPSHOT)
 	if errInCheckAttr != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
-	if !canManage {
+	if !canManageSpecial {
 		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
@@ -825,12 +825,12 @@ func (impl AppRestHandlerImpl) RecoverSnapshot(c *gin.Context) {
 	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
 	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_APP)
 	impl.AttributeGroup.SetUnitID(appID)
-	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_APP)
+	canManageSpecial, errInCheckAttr := impl.AttributeGroup.CanManageSpecial(ac.ACTOIN_SPECIAL_RECOVER_SNAPSHOT)
 	if errInCheckAttr != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
-	if !canManage {
+	if !canManageSpecial {
 		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
