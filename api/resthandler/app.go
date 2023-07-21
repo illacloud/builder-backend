@@ -648,8 +648,8 @@ func (impl AppRestHandlerImpl) TakeSnapshot(c *gin.Context) {
 		return
 	}
 
-	// config app
-	app.BumpMainlineVersion()
+	// config app version
+	app.BumpMainlineVersionOverReleaseVersoin()
 
 	// do snapshot for app following components and actions
 	if impl.SnapshotTreeState(c, teamID, appID, app.ExportMainlineVersion()) != nil {

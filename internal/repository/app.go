@@ -102,6 +102,16 @@ func (app *App) BumpMainlineVersion() {
 	app.MainlineVersion += 1
 }
 
+func (app *App) BumpMainlineVersionOverReleaseVersoin() {
+	app.MainlineVersion += 1
+	for {
+		if app.MainlineVersion > app.ReleaseVersion {
+			break
+		}
+		app.MainlineVersion += 1
+	}
+}
+
 func (app *App) ReleaseMainlineVersion() {
 	app.ReleaseVersion = app.MainlineVersion
 }
@@ -165,6 +175,10 @@ func (app *App) ExportUpdatedBy() int {
 
 func (app *App) ExportMainlineVersion() int {
 	return app.MainlineVersion
+}
+
+func (app *App) ExportReleaseVersoin() int {
+	return app.ReleaseVersion
 }
 
 func (app *App) ExportModifiedAllUserIDs() []int {
