@@ -72,6 +72,10 @@ func (appSnapshot *AppSnapshot) SetTargetVersion(targetVersion int) {
 	appSnapshot.TargetVersion = targetVersion
 }
 
+func (appSnapshot *AppSnapshot) ExportCreatedAt() time.Time {
+	return appSnapshot.CreatedAt
+}
+
 func (appSnapshot *AppSnapshot) ExportModifyHistory() []*AppModifyHistory {
 	appModifyHistorys := make([]*AppModifyHistory, 0)
 	json.Unmarshal([]byte(appSnapshot.ModifyHistory), &appModifyHistorys)

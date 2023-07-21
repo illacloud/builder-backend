@@ -29,6 +29,7 @@ type AppModifyHistory struct {
 	OperationTargetName       string      `json:"operationTargetName"       gorm:"column:operation_target_name;type:varchar"` // smae as app name or components display name
 	OperationBroadcastType    string      `json:"operationBroadcastType"    gorm:"column:operation_broadcast_type;type:varchar"`
 	OperationBroadcastPayload interface{} `json:"operationBroadcastPayload" gorm:"column:operation_broadcast_payload;type:varchar"`
+	OperationTargetModifiedAt time.Time   `json:"operationTargetModifiedAt" gorm:"column:operation_target_modified_at;type:timestamp"`
 	ModifiedBy                int         `json:"modifiedBy" 		        gorm:"column:modified_by;type:timestamp"`
 	ModifiedAt                time.Time   `json:"modifiedAt" 		        gorm:"column:modified_at;type:timestamp"`
 }
@@ -63,13 +64,14 @@ func NewTakeAppSnapshotModifyHistory(modifyBy int) *AppModifyHistory {
 	return appModifyHistory
 }
 
-func NewRecoverAppSnapshotModifyHistory(modifyBy int) *AppModifyHistory {
+func NewRecoverAppSnapshotModifyHistory(modifyBy int, targetAppSnapshot *AppSnapshot) *AppModifyHistory {
 	appModifyHistory := &AppModifyHistory{
 		Operation:                 builderoperation.SIGNAL_RECOVER_APP_SNAPSHOT,
 		OperationTarget:           builderoperation.TARGET_APPS,
 		OperationTargetName:       SNAPSHOT_TARGET_APP,
 		OperationBroadcastType:    "",
 		OperationBroadcastPayload: nil,
+		OperationTargetModifiedAt: targetAppSnapshot.ExportCreatedAt(),
 		ModifiedBy:                modifyBy,
 	}
 	appModifyHistory.InitModifiedAt()

@@ -10,6 +10,7 @@ type AppModifyHistoryForExport struct {
 	OperationTargetName       string             `json:"operationTargetName"       gorm:"column:operation_target_name;type:varchar"` // smae as app name or components display name
 	OperationBroadcastType    string             `json:"operationBroadcastType"    gorm:"column:operation_broadcast_type;type:varchar"`
 	OperationBroadcastPayload interface{}        `json:"operationBroadcastPayload" gorm:"column:operation_broadcast_payload;type:varchar"`
+	OperationTargetModifiedAt time.Time          `json:"operationTargetModifiedAt" gorm:"column:operation_target_modified_at;type:timestamp"`
 	ModifiedBy                *UserForModifiedBy `json:"modifiedBy" 		       gorm:"column:modified_by;type:timestamp"`
 	ModifiedAt                time.Time          `json:"modifiedAt" 		       gorm:"column:modified_at;type:timestamp"`
 }
@@ -25,6 +26,7 @@ func NewAppModifyHistoryForExport(appModifyHistory *AppModifyHistory, usersLT ma
 		OperationTargetName:       appModifyHistory.OperationTargetName,
 		OperationBroadcastType:    appModifyHistory.OperationBroadcastType,
 		OperationBroadcastPayload: appModifyHistory.OperationBroadcastPayload,
+		OperationTargetModifiedAt: appModifyHistory.OperationTargetModifiedAt,
 		ModifiedBy:                NewUserForModifiedBy(targetUser),
 		ModifiedAt:                appModifyHistory.ModifiedAt,
 	}

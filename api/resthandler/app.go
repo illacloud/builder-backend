@@ -897,7 +897,7 @@ func (impl AppRestHandlerImpl) RecoverSnapshot(c *gin.Context) {
 	impl.DuplicateActionByVersion(c, teamID, appID, targetVersion, repository.APP_EDIT_VERSION)
 
 	// create a snapshot.ModifyHistory for recover snapshot
-	modifyHistoryLog := repository.NewRecoverAppSnapshotModifyHistory(userID)
+	modifyHistoryLog := repository.NewRecoverAppSnapshotModifyHistory(userID, targetSnapshot)
 	newAppSnapshot.PushModifyHistory(modifyHistoryLog)
 
 	// update app snapshot
