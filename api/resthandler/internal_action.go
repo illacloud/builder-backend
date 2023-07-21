@@ -136,7 +136,7 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 	// form request payload
 	generateSQLPeriReq, errInNewReq := repository.NewGenerateSQLPeripheralRequest(resource.Type, resourceMetaInfo, req)
 	if errInNewReq != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_GENERATE_SQL_FAILED, "generate request failed: "+errInNewReq.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_GENERATE_SQL_FAILED, "generate request failed: "+errInNewReq.Error())
 		return
 	}
 	token := tokenValidator.GenerateValidateToken(generateSQLPeriReq.Description)
@@ -145,7 +145,7 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 	// call remote generate sql API
 	generateSQLResp, errInGGenerateSQL := repository.GenerateSQL(generateSQLPeriReq, req)
 	if errInGGenerateSQL != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_GENERATE_SQL_FAILED, "generate sql failed: "+errInGGenerateSQL.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_GENERATE_SQL_FAILED, "generate sql failed: "+errInGGenerateSQL.Error())
 		return
 	}
 

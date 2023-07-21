@@ -88,7 +88,7 @@ func (impl ResourceRestHandlerImpl) FindAllResources(c *gin.Context) {
 	// fetch data
 	res, err := impl.resourceService.FindAllResources(teamID)
 	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
 		return
 	}
 
@@ -147,7 +147,7 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 	rsc.UpdatedBy = userID
 	res, err := impl.resourceService.CreateResource(rsc)
 	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_RESOURCE, "create resources error: "+err.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_RESOURCE, "create resources error: "+err.Error())
 		return
 	}
 
@@ -196,7 +196,7 @@ func (impl ResourceRestHandlerImpl) GetResource(c *gin.Context) {
 	// fetch data
 	res, err := impl.resourceService.GetResource(teamID, resourceID)
 	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
 		return
 	}
 
@@ -255,7 +255,7 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 	rsc.UpdatedAt = time.Now().UTC()
 	res, err := impl.resourceService.UpdateResource(rsc)
 	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_RESOURCE, "update resources error: "+err.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_RESOURCE, "update resources error: "+err.Error())
 		return
 	}
 	originInfo, _ := impl.resourceService.GetResource(teamID, rsc.ID)
@@ -308,7 +308,7 @@ func (impl ResourceRestHandlerImpl) DeleteResource(c *gin.Context) {
 	// fetch data
 	res, err := impl.resourceService.GetResource(teamID, resourceID)
 	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
 		return
 	}
 
@@ -325,7 +325,7 @@ func (impl ResourceRestHandlerImpl) DeleteResource(c *gin.Context) {
 	})
 
 	if err := impl.resourceService.DeleteResource(teamID, resourceID); err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_DELETE_RESOURCE, "delete resources error: "+err.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_DELETE_RESOURCE, "delete resources error: "+err.Error())
 		return
 	}
 

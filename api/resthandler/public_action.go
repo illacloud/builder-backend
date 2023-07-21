@@ -68,7 +68,7 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 	// get team id by team teamIdentifier
 	team, errInGetTeamInfo := dc.GetTeamInfoByIdentifier(teamIdentifier)
 	if errInGetTeamInfo != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_TEAM, "get target team by identifier error: "+errInGetTeamInfo.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_TEAM, "get target team by identifier error: "+errInGetTeamInfo.Error())
 		return
 	}
 	teamID := team.GetID()

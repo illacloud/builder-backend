@@ -116,7 +116,7 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 	act.UpdatedBy = userID
 	res, err := impl.actionService.CreateAction(act)
 	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "create action error: "+err.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "create action error: "+err.Error())
 		return
 	}
 	FeedbackOK(c, res)
@@ -175,7 +175,7 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	act.UpdatedBy = userID
 	res, err := impl.actionService.UpdateAction(act)
 	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "update action error: "+err.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "update action error: "+err.Error())
 		return
 	}
 	originInfo, _ := impl.actionService.GetAction(teamID, act.ID)
@@ -212,7 +212,7 @@ func (impl ActionRestHandlerImpl) DeleteAction(c *gin.Context) {
 
 	// delete
 	if err := impl.actionService.DeleteAction(teamID, actionID); err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_DELETE_ACTION, "delete action error: "+err.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_DELETE_ACTION, "delete action error: "+err.Error())
 		return
 	}
 
@@ -249,7 +249,7 @@ func (impl ActionRestHandlerImpl) GetAction(c *gin.Context) {
 	// fetch data
 	res, err := impl.actionService.GetAction(teamID, actionID)
 	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action error: "+err.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action error: "+err.Error())
 		return
 	}
 
@@ -286,7 +286,7 @@ func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 	// fetch data
 	res, err := impl.actionService.FindActionsByAppVersion(teamID, appID, 0)
 	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action error: "+err.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action error: "+err.Error())
 		return
 	}
 

@@ -65,7 +65,7 @@ func (impl PublicAppRestHandlerImpl) GetMegaData(c *gin.Context) {
 	// get team id by team teamIdentifier
 	team, errInGetTeamInfo := dc.GetTeamInfoByIdentifier(teamIdentifier)
 	if errInGetTeamInfo != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_TEAM, "get target team by identifier error: "+errInGetTeamInfo.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_TEAM, "get target team by identifier error: "+errInGetTeamInfo.Error())
 		return
 	}
 	teamID := team.GetID()
@@ -96,10 +96,10 @@ func (impl PublicAppRestHandlerImpl) GetMegaData(c *gin.Context) {
 	res, err := impl.appService.GetMegaData(teamID, publicAppID, version)
 	if err != nil {
 		if err.Error() == "content not found" {
-			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get publicApp mega data error: "+err.Error())
+			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get publicApp mega data error: "+err.Error())
 			return
 		}
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get publicApp mega data error: "+err.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get publicApp mega data error: "+err.Error())
 		return
 	}
 

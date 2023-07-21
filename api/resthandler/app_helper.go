@@ -16,6 +16,7 @@ package resthandler
 
 import (
 	"encoding/json"
+	"log"
 
 	"github.com/illacloud/builder-backend/internal/datacontrol"
 	"github.com/illacloud/builder-backend/internal/repository"
@@ -44,7 +45,7 @@ func (impl AppRestHandlerImpl) DuplicateTreeStateByVersion(c *gin.Context, teamI
 	// get from version tree state from database
 	treestates, errInRetrieveTreeState := impl.TreeStateRepository.RetrieveAllTypeTreeStatesByApp(teamID, appID, fromVersion)
 	if errInRetrieveTreeState != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get tree state failed: "+errInRetrieveTreeState.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get tree state failed: "+errInRetrieveTreeState.Error())
 		return errInRetrieveTreeState
 	}
 	oldIDMap := map[int]int{}
@@ -58,9 +59,10 @@ func (impl AppRestHandlerImpl) DuplicateTreeStateByVersion(c *gin.Context, teamI
 
 	// put them to the database as duplicate, and record the old-new id map
 	for i, treestate := range treestates {
+		log.Printf("[DUMP] DuplicateTreeStateByVersion: treestate.Name: %s, treestate.TeamID: %d, treestate.AppRefID: %d, , treestate.Version: %d\n", treestate.Name, treestate.TeamID, treestate.AppRefID, treestate.Version)
 		newID, errInCreateApp := impl.TreeStateRepository.Create(treestate)
 		if errInCreateApp != nil {
-			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_APP, "create app failed: "+errInCreateApp.Error())
+			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_APP, "create app failed: "+errInCreateApp.Error())
 			return errInCreateApp
 		}
 		oldID := oldIDMap[i]
@@ -73,7 +75,7 @@ func (impl AppRestHandlerImpl) DuplicateTreeStateByVersion(c *gin.Context, teamI
 		treestate.SetParentNodeRefID(releaseIDMap[treestate.ParentNodeRefID])
 		errInUpdateTreeState := impl.TreeStateRepository.Update(treestate)
 		if errInUpdateTreeState != nil {
-			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_TREE_STATE, "update tree state failed: "+errInUpdateTreeState.Error())
+			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_TREE_STATE, "update tree state failed: "+errInUpdateTreeState.Error())
 			return errInUpdateTreeState
 		}
 	}
@@ -85,7 +87,7 @@ func (impl AppRestHandlerImpl) DuplicateKVStateByVersion(c *gin.Context, teamID 
 	// get edit version K-V state from database
 	kvstates, errInRetrieveKVState := impl.KVStateRepository.RetrieveAllTypeKVStatesByApp(teamID, appID, fromVersion)
 	if errInRetrieveKVState != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get kv state failed: "+errInRetrieveKVState.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get kv state failed: "+errInRetrieveKVState.Error())
 		return errInRetrieveKVState
 	}
 
@@ -96,9 +98,10 @@ func (impl AppRestHandlerImpl) DuplicateKVStateByVersion(c *gin.Context, teamID 
 
 	// and put them to the database as duplicate
 	for _, kvstate := range kvstates {
+		log.Printf("[DUMP] DuplicateKVStateByVersion: kvstate.StateType: %d, kvstate.TeamID: %d, kvstate.AppRefID: %d, , kvstate.Version: %d\n", kvstate.StateType, kvstate.TeamID, kvstate.AppRefID, kvstate.Version)
 		errInCreateKVState := impl.KVStateRepository.Create(kvstate)
 		if errInCreateKVState != nil {
-			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_STATE, "create kv state failed: "+errInCreateKVState.Error())
+			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_STATE, "create kv state failed: "+errInCreateKVState.Error())
 			return errInCreateKVState
 		}
 	}
@@ -108,7 +111,7 @@ func (impl AppRestHandlerImpl) DuplicateKVStateByVersion(c *gin.Context, teamID 
 func (impl AppRestHandlerImpl) DuplicateSetStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
 	setstates, errInRetrieveSetState := impl.SetStateRepository.RetrieveSetStatesByApp(teamID, appID, repository.SET_STATE_TYPE_DISPLAY_NAME, fromVersion)
 	if errInRetrieveSetState != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get set state failed: "+errInRetrieveSetState.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get set state failed: "+errInRetrieveSetState.Error())
 		return errInRetrieveSetState
 	}
 
@@ -119,9 +122,10 @@ func (impl AppRestHandlerImpl) DuplicateSetStateByVersion(c *gin.Context, teamID
 
 	// and put them to the database as duplicate
 	for _, setstate := range setstates {
+		log.Printf("[DUMP] DuplicateSetStateByVersion: setstate.StateType: %d, setstate.TeamID: %d, setstate.AppRefID: %d, , setstate.Version: %d\n", setstate.StateType, setstate.TeamID, setstate.AppRefID, setstate.Version)
 		errInCreateSetState := impl.SetStateRepository.Create(setstate)
 		if errInCreateSetState != nil {
-			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_STATE, "create set state failed: "+errInCreateSetState.Error())
+			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_STATE, "create set state failed: "+errInCreateSetState.Error())
 			return errInCreateSetState
 		}
 	}
@@ -132,7 +136,7 @@ func (impl AppRestHandlerImpl) DuplicateActionByVersion(c *gin.Context, teamID i
 	// get edit version K-V state from database
 	actions, errinRetrieveAction := impl.ActionRepository.RetrieveActionsByAppVersion(teamID, appID, fromVersion)
 	if errinRetrieveAction != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errinRetrieveAction.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errinRetrieveAction.Error())
 		return errinRetrieveAction
 	}
 
@@ -143,9 +147,10 @@ func (impl AppRestHandlerImpl) DuplicateActionByVersion(c *gin.Context, teamID i
 
 	// and put them to the database as duplicate
 	for _, action := range actions {
+		log.Printf("[DUMP] DuplicateActionByVersion: action.Name: %s, action.TeamID: %d, action.AppRefID: %d, , action.Version: %d\n", action.Name, action.TeamID, action.App, action.Version)
 		_, errInCreateAction := impl.ActionRepository.Create(action)
 		if errInCreateAction != nil {
-			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "create action failed: "+errInCreateAction.Error())
+			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "create action failed: "+errInCreateAction.Error())
 			return errInCreateAction
 		}
 	}
@@ -163,7 +168,7 @@ func (impl AppRestHandlerImpl) InitAppSnapshot(c *gin.Context, teamID int, appID
 	// storage new edit version snapshot
 	_, errInCreateSnapshot := impl.AppSnapshotRepository.Create(newAppSnapShot)
 	if errInCreateSnapshot != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_SNAPSHOT, "create snapshot failed: "+errInCreateSnapshot.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_SNAPSHOT, "create snapshot failed: "+errInCreateSnapshot.Error())
 		return nil, errInCreateSnapshot
 	}
 	return newAppSnapShot, nil
@@ -178,7 +183,7 @@ func (impl AppRestHandlerImpl) SaveAppSnapshotByVersion(c *gin.Context, teamID i
 	// retrieve app mainline version snapshot
 	editVersionAppSnapshot, errInRetrieveSnapshot := impl.AppSnapshotRepository.RetrieveByTeamIDAppIDAndTargetVersion(teamID, appID, fromVersion)
 	if errInRetrieveSnapshot != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
 		return nil, errInRetrieveSnapshot
 	}
 
@@ -189,7 +194,7 @@ func (impl AppRestHandlerImpl) SaveAppSnapshotByVersion(c *gin.Context, teamID i
 	// update old edit version snapshot
 	errInUpdateSnapshot := impl.AppSnapshotRepository.UpdateWholeSnapshot(editVersionAppSnapshot)
 	if errInUpdateSnapshot != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_SNAPSHOT, "update snapshot failed: "+errInUpdateSnapshot.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_SNAPSHOT, "update snapshot failed: "+errInUpdateSnapshot.Error())
 		return nil, errInUpdateSnapshot
 	}
 
@@ -200,7 +205,7 @@ func (impl AppRestHandlerImpl) SaveAppSnapshotByVersion(c *gin.Context, teamID i
 	// storage new edit version snapshot
 	_, errInCreateSnapshot := impl.AppSnapshotRepository.Create(newAppSnapShot)
 	if errInCreateSnapshot != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_CREATE_SNAPSHOT, "create snapshot failed: "+errInCreateSnapshot.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_SNAPSHOT, "create snapshot failed: "+errInCreateSnapshot.Error())
 		return nil, errInCreateSnapshot
 	}
 
@@ -211,7 +216,7 @@ func (impl AppRestHandlerImpl) GetTargetVersionApp(c *gin.Context, teamID int, a
 	// fetch app
 	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if errInRetrieveApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app mega data error: "+errInRetrieveApp.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app mega data error: "+errInRetrieveApp.Error())
 		return nil, errInRetrieveApp
 	}
 
@@ -240,7 +245,7 @@ func (impl AppRestHandlerImpl) GetTargetVersionApp(c *gin.Context, teamID int, a
 	// fet all user id mapped user info, and build user info lookup table
 	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
 	if errInGetMultiUserInfo != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
 		return nil, errInGetMultiUserInfo
 	}
 

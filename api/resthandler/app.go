@@ -17,6 +17,7 @@ package resthandler
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
@@ -166,7 +167,7 @@ func (impl AppRestHandlerImpl) CreateApp(c *gin.Context) {
 	// fet all user id mapped user info, and build user info lookup table
 	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
 	if errInGetMultiUserInfo != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
 		return
 	}
 
@@ -204,7 +205,7 @@ func (impl AppRestHandlerImpl) DeleteApp(c *gin.Context) {
 	// fetch app
 	app, err := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if err != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+err.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+err.Error())
 		return
 	}
 
@@ -226,7 +227,7 @@ func (impl AppRestHandlerImpl) DeleteApp(c *gin.Context) {
 	_ = impl.SetStateRepository.DeleteAllTypeSetStatesByApp(teamID, appID)
 	errInDeleteApp := impl.AppRepository.Delete(teamID, appID)
 	if errInDeleteApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_DELETE_APP, "delete app error: "+errInDeleteApp.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_DELETE_APP, "delete app error: "+errInDeleteApp.Error())
 		return
 	}
 
@@ -271,7 +272,7 @@ func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 	// fetch app
 	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if errInRetrieveApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+errInRetrieveApp.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+errInRetrieveApp.Error())
 		return
 	}
 
@@ -290,7 +291,7 @@ func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 	// execute update
 	errInUpdateApp := impl.AppRepository.Update(app)
 	if errInUpdateApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "config app error: "+errInUpdateApp.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "config app error: "+errInUpdateApp.Error())
 		return
 	}
 
@@ -302,7 +303,7 @@ func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 	}
 	errInUpdatePublic := impl.ActionService.UpdatePublic(teamID, appID, userID, actionConfig)
 	if errInUpdatePublic != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "config action error: "+errInUpdatePublic.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "config action error: "+errInUpdatePublic.Error())
 		return
 	}
 
@@ -325,7 +326,7 @@ func (impl AppRestHandlerImpl) ConfigApp(c *gin.Context) {
 	// fet all user id mapped user info, and build user info lookup table
 	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
 	if errInGetMultiUserInfo != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
 		return
 	}
 
@@ -361,7 +362,7 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 	// get all apps
 	allApps, errInRetrieveAllApps := impl.AppRepository.RetrieveAllByUpdatedTime(teamID)
 	if errInRetrieveAllApps != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get apps by team id failed: "+errInRetrieveAllApps.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get apps by team id failed: "+errInRetrieveAllApps.Error())
 		return
 	}
 
@@ -376,7 +377,7 @@ func (impl AppRestHandlerImpl) GetAllApps(c *gin.Context) {
 		var errInGetMultiUserInfo error
 		usersLT, errInGetMultiUserInfo = datacontrol.GetMultiUserInfo(allUserIDs)
 		if errInGetMultiUserInfo != nil {
-			FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
 			return
 		}
 	}
@@ -475,14 +476,14 @@ func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
 	// Call `app service` to duplicate app
 	duplicatedAppID, errInDuplicateApp := impl.AppService.DuplicateApp(teamID, appID, userID, req.ExportAppName())
 	if errInDuplicateApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_DUPLICATE_APP, "duplicate app error: "+errInDuplicateApp.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_DUPLICATE_APP, "duplicate app error: "+errInDuplicateApp.Error())
 		return
 	}
 
 	// get duplicated app
 	duplicatedApp, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(duplicatedAppID, teamID)
 	if errInRetrieveApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get user info failed: "+errInRetrieveApp.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get user info failed: "+errInRetrieveApp.Error())
 		return
 	}
 
@@ -510,7 +511,7 @@ func (impl AppRestHandlerImpl) DuplicateApp(c *gin.Context) {
 	// fet all user id mapped user info, and build user info lookup table
 	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
 	if errInGetMultiUserInfo != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
 		return
 	}
 
@@ -558,7 +559,7 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	// fetch app
 	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if errInRetrieveApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
 		return
 	}
 
@@ -584,7 +585,7 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 	// release app
 	errInUpdateApp := impl.AppRepository.UpdateWholeApp(app)
 	if errInUpdateApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
 		return
 	}
 
@@ -644,12 +645,13 @@ func (impl AppRestHandlerImpl) TakeSnapshot(c *gin.Context) {
 	// fetch app
 	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if errInRetrieveApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
 		return
 	}
 
 	// config app version
 	app.BumpMainlineVersionOverReleaseVersoin()
+	log.Printf("[DUMP] app.MainlineVersion: %d, app.ReleaseVersion: %d\n", app.MainlineVersion, app.ReleaseVersion)
 
 	// do snapshot for app following components and actions
 	if impl.SnapshotTreeState(c, teamID, appID, app.ExportMainlineVersion()) != nil {
@@ -674,7 +676,7 @@ func (impl AppRestHandlerImpl) TakeSnapshot(c *gin.Context) {
 	// update app for version bump
 	errInUpdateApp := impl.AppRepository.UpdateWholeApp(app)
 	if errInUpdateApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
 		return
 	}
 
@@ -715,13 +717,13 @@ func (impl AppRestHandlerImpl) GetSnapshotList(c *gin.Context) {
 	pagination := repository.NewPagiNation(pageLimit, page)
 	snapshotTotalRows, errInRetrieveSnapshotCount := impl.AppSnapshotRepository.RetrieveCountByTeamIDAndAppID(teamID, appID)
 	if errInRetrieveSnapshotCount != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshotCount.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshotCount.Error())
 		return
 	}
 	pagination.CalculateTotalPagesByTotalRows(snapshotTotalRows)
 	snapshots, errInRetrieveSnapshot := impl.AppSnapshotRepository.RetrieveByTeamIDAppIDAndPage(teamID, appID, pagination)
 	if errInRetrieveSnapshot != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
 		return
 	}
 
@@ -731,7 +733,7 @@ func (impl AppRestHandlerImpl) GetSnapshotList(c *gin.Context) {
 	// fet all user id mapped user info, and build user info lookup table
 	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
 	if errInGetMultiUserInfo != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
 		return
 	}
 
@@ -770,7 +772,7 @@ func (impl AppRestHandlerImpl) GetSnapshot(c *gin.Context) {
 	// get target snapshot
 	snapshot, errInRetrieveSnapshot := impl.AppSnapshotRepository.RetrieveByID(snapshotID)
 	if errInRetrieveSnapshot != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
 		return
 	}
 
@@ -836,7 +838,7 @@ func (impl AppRestHandlerImpl) RecoverSnapshot(c *gin.Context) {
 	// fetch app
 	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if errInRetrieveApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
 		return
 	}
 
@@ -866,7 +868,7 @@ func (impl AppRestHandlerImpl) RecoverSnapshot(c *gin.Context) {
 	// update app version
 	errInUpdateApp := impl.AppRepository.UpdateWholeApp(app)
 	if errInUpdateApp != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
 		return
 	}
 
@@ -881,7 +883,7 @@ func (impl AppRestHandlerImpl) RecoverSnapshot(c *gin.Context) {
 	// get target snapshot
 	targetSnapshot, errInRetrieveSnapshot := impl.AppSnapshotRepository.RetrieveByID(snapshotID)
 	if errInRetrieveSnapshot != nil {
-		FeedbackInternalServerError(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
+		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
 		return
 	}
 	targetVersion := targetSnapshot.ExportTargetVersion()
