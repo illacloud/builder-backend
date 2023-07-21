@@ -2,10 +2,17 @@ package filter
 
 import (
 	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/builder-backend/internal/util/config"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
 
 func RecordModifyHistory(hub *ws.Hub, message *ws.Message, displayNames []string) error {
+	// check deploy env
+	conf := config.GetInstance()
+	if !conf.IsCloudMode() {
+		return nil
+	}
+	// go
 	currentClient, _ := hub.Clients[message.ClientID]
 	teamID := currentClient.TeamID
 	appID := currentClient.APPID
