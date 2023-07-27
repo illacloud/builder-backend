@@ -26,3 +26,5 @@ We welcome contributions that help make `ILLA Builder`  bug free & improve the e
 ## Read more
 
 - [How to file an issue to ILLA and what will happen](ISSUES.md)
+
+- [ILLA Builder backend system design](docs/ILLA_Builder_Backend_System_Design.md)

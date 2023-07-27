@@ -18,7 +18,7 @@ This document explains how you can setup a development environment for `ILLA Bui
 
 2. Setup the `illa-supervisor-backend`
 
-    - Following the setup steps in [illa-supervisor-backend](https://github.com/illacloud/illa-supervisor-backend)
+    - Following the setup steps in [illa-supervisor-backend](https://github.com/illacloud/deploy-illa-manually/tree/main/build-by-yourself#build-illa-supervisor-backend)
 
 3. Change the default env config
 
