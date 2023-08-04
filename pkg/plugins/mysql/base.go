@@ -49,7 +49,7 @@ func (m *MySQLConnector) getConnectionWithOptions(resourceOptions map[string]int
 func (m *MySQLConnector) connectPure() (db *sql.DB, err error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.Resource.DatabaseUsername,
 		m.Resource.DatabasePassword, m.Resource.Host, m.Resource.Port, m.Resource.DatabaseName)
-	db, err = sql.Open("mysql", dsn+"?timeout=5s")
+	db, err = sql.Open("mysql", dsn+"?timeout=30s")
 	if err != nil {
 		return nil, err
 	}
