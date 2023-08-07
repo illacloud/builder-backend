@@ -29,6 +29,7 @@ var (
 	TYPE_UPSTASH       = "upstash"
 	TYPE_AIRTABLE      = "airtable"
 	TYPE_HYDRA         = "hydra"
+	TYPE_AI_AGENT      = "aiagent"
 )
 
 var (
@@ -60,9 +61,10 @@ var (
 	TYPE_UPSTASH_ID       = 25
 	TYPE_AIRTABLE_ID      = 26
 	TYPE_HYDRA_ID         = 27
+	TYPE_AI_AGENT_ID      = 28
 )
 
-var type_array = [28]string{
+var type_array = []string{
 	TYPE_TRANSFORMER,
 	TYPE_RESTAPI,
 	TYPE_GRAPHQL,
@@ -91,6 +93,7 @@ var type_array = [28]string{
 	TYPE_UPSTASH,
 	TYPE_AIRTABLE,
 	TYPE_HYDRA,
+	TYPE_AI_AGENT,
 }
 
 var type_map = map[string]int{
@@ -121,7 +124,8 @@ var type_map = map[string]int{
 	TYPE_NEON:          TYPE_NEON_ID,
 	TYPE_UPSTASH:       TYPE_UPSTASH_ID,
 	TYPE_AIRTABLE:      TYPE_AIRTABLE_ID,
-	TYPE_HYDRA:         TYPE_HYDRA_ID,
+	TYPE_HYDRA:         TYPE_AI_AGENT_ID,
+	TYPE_AI_AGENT:      TYPE_HYDRA_ID,
 }
 
 func GetResourceIDMappedType(id int) string {
