@@ -36,8 +36,13 @@ func init() {
 func ConvertStringToInt(bv string) int {
 	var r int
 	arr := []rune(bv)
+	arrLen := len(arr)
 
 	for i := 0; i < 6; i++ {
+		si := s[i]
+		if si >= arrLen {
+			return 0
+		}
 		r += tr[string(arr[s[i]])] * int(math.Pow(float64(58), float64(i)))
 	}
 	return (r - add) ^ xor
