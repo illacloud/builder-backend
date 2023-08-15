@@ -64,7 +64,7 @@ type Config struct {
 	// token for internal api
 	ControlToken string `env:"ILLA_CONTROL_TOKEN"     envDefault:""`
 	// resource manager API
-	IllaResourceManagerRestAPI string `env:"ILLA_RESOURCE_MANAGER_API"     envDefault:"http://illa-resource-manager-backend:8006/api/v1"`
+	IllaResourceManagerRestAPI string `env:"ILLA_RESOURCE_MANAGER_API"     envDefault:"http://illa-resource-manager-backend:8006"`
 }
 
 func getConfig() (*Config, error) {
