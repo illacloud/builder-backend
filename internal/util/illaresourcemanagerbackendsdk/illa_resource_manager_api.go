@@ -23,42 +23,42 @@ const (
 	PRODUCT_TYPE_HUBS     = "hubs"
 )
 
-type IllaMarketplaceRestAPI struct {
+type IllaResourceManagerRestAPI struct {
 	Config *config.Config
 	Debug  bool `json:"-"`
 }
 
-func NewIllaMarketplaceRestAPI() (*IllaMarketplaceRestAPI, error) {
-	return &IllaMarketplaceRestAPI{
+func NewIllaResourceManagerRestAPI() (*IllaResourceManagerRestAPI, error) {
+	return &IllaResourceManagerRestAPI{
 		Config: config.GetInstance(),
 	}, nil
 }
 
-func (r *IllaMarketplaceRestAPI) CloseDebug() {
+func (r *IllaResourceManagerRestAPI) CloseDebug() {
 	r.Debug = false
 }
 
-func (r *IllaMarketplaceRestAPI) OpenDebug() {
+func (r *IllaResourceManagerRestAPI) OpenDebug() {
 	r.Debug = true
 }
 
-func (r *IllaMarketplaceRestAPI) RunAiAgentByID(teamID string, aiAgentID string, authorizationToken string, req map[string]interface{}) (*RunAIAgentResult, error) {
+func (r *IllaResourceManagerRestAPI) RunAiAgentByID(req map[string]interface{}) (*RunAIAgentResult, error) {
 	reqInstance, errInNewReq := NewRunAIAgentRequest(req)
 	if errInNewReq != nil {
 		return nil, errInNewReq
 	}
 	client := resty.New()
 	resp, err := client.R().
-		SetHeader("Authorization", authorizationToken).
+		SetHeader("Authorization", reqInstance.ExportAuthorization()).
 		SetBody(reqInstance).
-		Post(r.Config.GetIllaResourceManagerRestAPI() + fmt.Sprintf(RUN_AI_AGENT_API, teamID, aiAgentID))
+		Post(r.Config.GetIllaResourceManagerRestAPI() + fmt.Sprintf(RUN_AI_AGENT_API, reqInstance.ExportTeamID(), reqInstance.ExportAIAgentID()))
 	if r.Debug {
-		log.Printf("[IllaMarketplaceRestAPI.ForkCounter()]  response: %+v, err: %+v", resp, err)
+		log.Printf("[IllaResourceManagerRestAPI.ForkCounter()]  response: %+v, err: %+v", resp, err)
+	}
+	if err != nil {
+		return nil, err
 	}
 	if resp.StatusCode() != http.StatusOK || resp.StatusCode() != http.StatusCreated {
-		if err != nil {
-			return nil, err
-		}
 		return nil, errors.New(resp.String())
 	}
 

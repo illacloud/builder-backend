@@ -128,10 +128,21 @@ var type_map = map[string]int{
 	TYPE_AI_AGENT:      TYPE_HYDRA_ID,
 }
 
+var virtualResourceList = map[string]bool{
+	TYPE_TRANSFORMER: true,
+	TYPE_AI_AGENT:    true,
+}
+
 func GetResourceIDMappedType(id int) string {
 	return type_array[id]
 }
 
 func GetResourceNameMappedID(name string) int {
 	return type_map[name]
+}
+
+// The virtual resource have no resource id
+func IsVirtualResource(resourceType string) bool {
+	itIs, hit := virtualResourceList[resourceType]
+	return itIs && hit
 }

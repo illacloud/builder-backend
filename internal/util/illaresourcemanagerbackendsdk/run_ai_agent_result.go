@@ -20,3 +20,9 @@ func NewRunAIAgentResult() *RunAIAgentResult {
 func (i *RunAIAgentResult) ExportPayload() string {
 	return i.Payload
 }
+
+func (i *RunAIAgentResult) ExportAsContent() map[string]interface{} {
+	return map[string]interface{}{
+		"content": i.Payload,
+	}
+}

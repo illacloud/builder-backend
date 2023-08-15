@@ -29,6 +29,10 @@ type RuntimeResult struct {
 	Extra   map[string]interface{}
 }
 
+func (i *RuntimeResult) SetSuccess() {
+	i.Success = true
+}
+
 type MetaInfoResult struct {
 	Success bool
 	Schema  map[string]interface{}

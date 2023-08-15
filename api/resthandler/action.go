@@ -17,6 +17,7 @@ package resthandler
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -26,6 +27,7 @@ import (
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/internal/auditlogger"
 	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/builder-backend/internal/util/resourcelist"
 	"github.com/illacloud/builder-backend/pkg/action"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/resource"
@@ -397,11 +399,19 @@ func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 	appDTO, _ := impl.appService.FetchAppByID(teamID, appID)
 
 	// fetch resource data
-	rsc, errInGetRSC := impl.resourceService.GetResource(teamID, act.Resource)
-	if errInGetRSC != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resource error: "+errInGetRSC.Error())
-		return
+	resourceInstance := resource.NewVirtualResourceDtoForExportByAction(actForExport)
+	fmt.Printf("[DUMP] actForExport: %+v\n", actForExport)
+
+	if !resourcelist.IsVirtualResource(actForExport.ExportType()) {
+		var errInGetResource error
+		resourceInstance, errInGetResource = impl.resourceService.GetResource(teamID, act.Resource)
+		if errInGetResource != nil {
+			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resource error: "+errInGetResource.Error())
+			return
+		}
 	}
+
+	fmt.Printf("[DUMP] resourceInstance: %+v\n", resourceInstance)
 
 	// audit log
 	auditLogger := auditlogger.GetInstance()
@@ -413,8 +423,8 @@ func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 		AppID:           appID,
 		AppName:         appDTO.Name,
 		ResourceID:      act.Resource,
-		ResourceName:    rsc.Name,
-		ResourceType:    rsc.Type,
+		ResourceName:    resourceInstance.Name,
+		ResourceType:    resourceInstance.Type,
 		ActionID:        actionID,
 		ActionName:      act.DisplayName,
 		ActionParameter: act.Template,

@@ -134,6 +134,34 @@ func (resp *ActionDtoForExport) ExportActionDto() ActionDto {
 	return actionDto
 }
 
+func (resp *ActionDtoForExport) ExportResourceID() string {
+	return resp.Resource
+}
+
+func (resp *ActionDtoForExport) ExportTeamID() string {
+	return resp.TeamID
+}
+
+func (resp *ActionDtoForExport) ExportType() string {
+	return resp.Type
+}
+
+func (resp *ActionDtoForExport) ExportCreatedAt() time.Time {
+	return resp.CreatedAt
+}
+
+func (resp *ActionDtoForExport) ExportUpdatedAt() time.Time {
+	return resp.UpdatedAt
+}
+
+func (resp *ActionDtoForExport) ExportCreatedBy() string {
+	return resp.CreatedBy
+}
+
+func (resp *ActionDtoForExport) ExportUpdatedBy() string {
+	return resp.UpdatedBy
+}
+
 func (resp *ActionDtoForExport) ExportForFeedback() interface{} {
 	return resp
 }
@@ -155,6 +183,10 @@ func (a *ActionDto) SetPublicStatus(isPublic bool) {
 	} else {
 		a.Config.SetPrivate()
 	}
+}
+
+func (a *ActionDto) ExportActionType() string {
+	return a.Type
 }
 
 type ActionServiceImpl struct {
@@ -188,8 +220,10 @@ func (impl *ActionServiceImpl) CreateAction(action ActionDto) (*ActionDtoForExpo
 		return nil, errors.New("app not found")
 	}
 	// validate resource
-	if rscDto, err := impl.resourceRepository.RetrieveByID(action.TeamID, action.Resource); (err != nil || rscDto.ID != action.Resource) && action.Type != resourcelist.TYPE_TRANSFORMER {
-		return nil, errors.New("resource not found")
+	if !resourcelist.IsVirtualResource(action.Type) {
+		if rscDto, err := impl.resourceRepository.RetrieveByID(action.TeamID, action.Resource); err != nil || rscDto.ID != action.Resource {
+			return nil, errors.New("resource not found")
+		}
 	}
 
 	id, err := impl.actionRepository.Create(&repository.Action{
@@ -248,8 +282,10 @@ func (impl *ActionServiceImpl) UpdateAction(action ActionDto) (*ActionDtoForExpo
 		return nil, errors.New("app not found")
 	}
 	// validate resource
-	if rscDto, err := impl.resourceRepository.RetrieveByID(action.TeamID, action.Resource); (err != nil || rscDto.ID != action.Resource) && action.Type != resourcelist.TYPE_TRANSFORMER {
-		return nil, errors.New("resource not found")
+	if !resourcelist.IsVirtualResource(action.Type) {
+		if rscDto, err := impl.resourceRepository.RetrieveByID(action.TeamID, action.Resource); err != nil || rscDto.ID != action.Resource {
+			return nil, errors.New("resource not found")
+		}
 	}
 
 	if err := impl.actionRepository.Update(&repository.Action{
@@ -341,20 +377,26 @@ func (impl *ActionServiceImpl) RunAction(teamID int, action ActionDto) (interfac
 	if action.Resource == 0 {
 		return nil, errors.New("no resource")
 	}
-	rsc, err := impl.resourceRepository.RetrieveByID(teamID, action.Resource)
-	if rsc.ID == 0 {
-		return nil, errors.New("resource not found")
-	}
-	if err != nil {
-		return nil, err
-	}
 	actionFactory := Factory{Type: action.Type}
 	actionAssemblyLine := actionFactory.Build()
 	if actionAssemblyLine == nil {
 		return nil, errors.New("invalid ActionType:: unsupported type")
 	}
-	if _, err := actionAssemblyLine.ValidateResourceOptions(rsc.Options); err != nil {
-		return nil, errors.New("invalid resource content")
+
+	// process non-virtual resource
+	rsc := &repository.Resource{}
+	if !resourcelist.IsVirtualResource(action.ExportActionType()) {
+		var errInRetrieveResource error
+		rsc, errInRetrieveResource = impl.resourceRepository.RetrieveByID(teamID, action.Resource)
+		if rsc.ID == 0 {
+			return nil, errors.New("resource not found")
+		}
+		if errInRetrieveResource != nil {
+			return nil, errInRetrieveResource
+		}
+		if _, err := actionAssemblyLine.ValidateResourceOptions(rsc.Options); err != nil {
+			return nil, errors.New("invalid resource content")
+		}
 	}
 	if _, err := actionAssemblyLine.ValidateActionOptions(action.Template); err != nil {
 		return nil, errors.New("invalid action content")

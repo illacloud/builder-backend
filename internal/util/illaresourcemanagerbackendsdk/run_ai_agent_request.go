@@ -3,11 +3,14 @@ package illaresourcemanagerbackendsdk
 import "errors"
 
 const (
-	RUN_AI_AGENT_REQUEST_FIELD_AGENT_TYPE   = "agentType"
-	RUN_AI_AGENT_REQUEST_FIELD_MODEL        = "model"
-	RUN_AI_AGENT_REQUEST_FIELD_VARIABLES    = "variables"
-	RUN_AI_AGENT_REQUEST_FIELD_MODEL_CONFIG = "modelConfig"
-	RUN_AI_AGENT_REQUEST_FIELD_INPUT        = "input"
+	RUN_AI_AGENT_REQUEST_FIELD_TEAM_ID       = "teamID"
+	RUN_AI_AGENT_REQUEST_FIELD_AIAGENT_ID    = "aiAgentID"
+	RUN_AI_AGENT_REQUEST_FIELD_AUTHORIZATION = "authorization"
+	RUN_AI_AGENT_REQUEST_FIELD_AGENT_TYPE    = "agentType"
+	RUN_AI_AGENT_REQUEST_FIELD_MODEL         = "model"
+	RUN_AI_AGENT_REQUEST_FIELD_VARIABLES     = "variables"
+	RUN_AI_AGENT_REQUEST_FIELD_MODEL_CONFIG  = "modelConfig"
+	RUN_AI_AGENT_REQUEST_FIELD_INPUT         = "input"
 )
 
 // the request json like
@@ -20,11 +23,14 @@ const (
 //	    "input": "can you tell me a story"
 //	}
 type RunAIAgentRequest struct {
-	AgentType   int                      `json:"agentType"`
-	Model       int                      `json:"model"`
-	Variables   []*AIAgentPromptVariable `json:"variables"`
-	ModelConfig *AIAgentModelConfig      `json:"modelConfig"`
-	Input       string                   `json:"input"`
+	TeamID        string                   `json:"-"`
+	AIAgentID     string                   `json:"-"`
+	Authorization string                   `json:"-"`
+	AgentType     int                      `json:"agentType"`
+	Model         int                      `json:"model"`
+	Variables     []*AIAgentPromptVariable `json:"variables"`
+	ModelConfig   *AIAgentModelConfig      `json:"modelConfig"`
+	Input         string                   `json:"input"`
 }
 
 func NewRunAIAgentRequest(rawRequest map[string]interface{}) (*RunAIAgentRequest, error) {
@@ -37,6 +43,12 @@ func NewRunAIAgentRequest(rawRequest map[string]interface{}) (*RunAIAgentRequest
 	var errInNewModelConfig error
 	for key, value := range rawRequest {
 		switch key {
+		case RUN_AI_AGENT_REQUEST_FIELD_TEAM_ID:
+			runAIAgentRequest.TeamID, assertPass = value.(string)
+		case RUN_AI_AGENT_REQUEST_FIELD_AIAGENT_ID:
+			runAIAgentRequest.AIAgentID, assertPass = value.(string)
+		case RUN_AI_AGENT_REQUEST_FIELD_AUTHORIZATION:
+			runAIAgentRequest.Authorization, assertPass = value.(string)
 		case RUN_AI_AGENT_REQUEST_FIELD_AGENT_TYPE:
 			agentTypeFloat64, assertPass = value.(float64)
 			if assertPass {
@@ -78,4 +90,17 @@ func NewRunAIAgentRequest(rawRequest map[string]interface{}) (*RunAIAgentRequest
 			return nil, errors.New("assert request field failed for RunAIAgentRequest")
 		}
 	}
+	return runAIAgentRequest, nil
+}
+
+func (req *RunAIAgentRequest) ExportTeamID() string {
+	return req.TeamID
+}
+
+func (req *RunAIAgentRequest) ExportAIAgentID() string {
+	return req.AIAgentID
+}
+
+func (req *RunAIAgentRequest) ExportAuthorization() string {
+	return req.Authorization
 }
