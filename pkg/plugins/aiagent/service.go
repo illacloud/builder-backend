@@ -65,6 +65,9 @@ func (r *AIAgentConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	}
 	api.OpenDebug()
 	runAIAgentResult, errInRunAIAgent := api.RunAiAgent(actionOptions)
+	fmt.Printf("[DUMP] errInRunAIAgent: %+v\n", runAIAgentResult)
+	fmt.Printf("[DUMP] runAIAgentResult: %+v\n", errInRunAIAgent)
+
 	if errInRunAIAgent != nil {
 		return res, errInRunAIAgent
 	}
@@ -72,6 +75,6 @@ func (r *AIAgentConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	// feedback
 	res.SetSuccess()
 	res.Rows = append(res.Rows, runAIAgentResult.ExportAsContent())
-
+	fmt.Printf("[DUMP] res: %+v\n", res)
 	return res, nil
 }
