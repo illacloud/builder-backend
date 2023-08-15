@@ -49,16 +49,17 @@ func (r *IllaResourceManagerRestAPI) RunAiAgent(req map[string]interface{}) (*Ru
 	}
 	client := resty.New()
 	uri := r.Config.GetIllaResourceManagerRestAPI() + fmt.Sprintf(RUN_AI_AGENT_API, reqInstance.ExportTeamID(), reqInstance.ExportAIAgentID())
-	resp, err := client.R().
+	resp, errInPost := client.R().
 		SetHeader("Authorization", reqInstance.ExportAuthorization()).
 		SetBody(reqInstance).
 		Post(uri)
 	if r.Debug {
-		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  uri: %+v", uri)
-		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  response: %+v, err: %+v", resp, err)
+		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  uri: %+v \n", uri)
+		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  response: %+v, err: %+v \n", resp, errInPost)
+		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  resp.StatusCode(): %+v \n", resp.StatusCode())
 	}
-	if err != nil {
-		return nil, err
+	if errInPost != nil {
+		return nil, errInPost
 	}
 	if resp.StatusCode() != http.StatusOK || resp.StatusCode() != http.StatusCreated {
 		return nil, errors.New(resp.String())
