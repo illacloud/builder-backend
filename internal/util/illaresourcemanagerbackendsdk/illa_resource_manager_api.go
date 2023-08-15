@@ -54,8 +54,8 @@ func (r *IllaResourceManagerRestAPI) RunAiAgent(req map[string]interface{}) (*Ru
 		SetBody(reqInstance).
 		Post(uri)
 	if r.Debug {
-		log.Printf("[IllaResourceManagerRestAPI.ForkCounter()]  uri: %+v", uri)
-		log.Printf("[IllaResourceManagerRestAPI.ForkCounter()]  response: %+v, err: %+v", resp, err)
+		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  uri: %+v", uri)
+		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  response: %+v, err: %+v", resp, err)
 	}
 	if err != nil {
 		return nil, err
