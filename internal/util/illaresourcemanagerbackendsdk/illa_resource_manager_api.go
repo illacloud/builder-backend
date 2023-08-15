@@ -42,17 +42,19 @@ func (r *IllaResourceManagerRestAPI) OpenDebug() {
 	r.Debug = true
 }
 
-func (r *IllaResourceManagerRestAPI) RunAiAgentByID(req map[string]interface{}) (*RunAIAgentResult, error) {
+func (r *IllaResourceManagerRestAPI) RunAiAgent(req map[string]interface{}) (*RunAIAgentResult, error) {
 	reqInstance, errInNewReq := NewRunAIAgentRequest(req)
 	if errInNewReq != nil {
 		return nil, errInNewReq
 	}
 	client := resty.New()
+	uri := r.Config.GetIllaResourceManagerRestAPI() + fmt.Sprintf(RUN_AI_AGENT_API, reqInstance.ExportTeamID(), reqInstance.ExportAIAgentID())
 	resp, err := client.R().
 		SetHeader("Authorization", reqInstance.ExportAuthorization()).
 		SetBody(reqInstance).
-		Post(r.Config.GetIllaResourceManagerRestAPI() + fmt.Sprintf(RUN_AI_AGENT_API, reqInstance.ExportTeamID(), reqInstance.ExportAIAgentID()))
+		Post(uri)
 	if r.Debug {
+		log.Printf("[IllaResourceManagerRestAPI.ForkCounter()]  uri: %+v", uri)
 		log.Printf("[IllaResourceManagerRestAPI.ForkCounter()]  response: %+v, err: %+v", resp, err)
 	}
 	if err != nil {

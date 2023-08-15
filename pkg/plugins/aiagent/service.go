@@ -63,12 +63,13 @@ func (r *AIAgentConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	if errInNewAPI != nil {
 		return res, errInNewAPI
 	}
-	runAIAgentResult, errInRunAIAgent := api.RunAiAgentByID(actionOptions)
+	api.OpenDebug()
+	runAIAgentResult, errInRunAIAgent := api.RunAiAgent(actionOptions)
 	if errInRunAIAgent != nil {
 		return res, errInRunAIAgent
 	}
 
-	// feedbakc
+	// feedback
 	res.SetSuccess()
 	res.Rows = append(res.Rows, runAIAgentResult.ExportAsContent())
 
