@@ -63,6 +63,8 @@ type Config struct {
 	DriveUploadTimeout    time.Duration
 	// token for internal api
 	ControlToken string `env:"ILLA_CONTROL_TOKEN"     envDefault:""`
+	// resource manager API
+	IllaResourceManagerRestAPI string `env:"ILLA_RESOURCE_MANAGER_API"     envDefault:"http://illa-resource-manager-backend:8006/api/v1"`
 }
 
 func getConfig() (*Config, error) {
@@ -223,4 +225,8 @@ func (c *Config) GetMINIOTimeout() time.Duration {
 
 func (c *Config) GetControlToken() string {
 	return c.ControlToken
+}
+
+func (c *Config) GetIllaResourceManagerRestAPI() string {
+	return c.IllaResourceManagerRestAPI
 }
