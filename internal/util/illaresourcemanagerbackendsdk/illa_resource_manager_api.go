@@ -61,7 +61,7 @@ func (r *IllaResourceManagerRestAPI) RunAiAgent(req map[string]interface{}) (*Ru
 	if errInPost != nil {
 		return nil, errInPost
 	}
-	if resp.StatusCode() != http.StatusOK || resp.StatusCode() != http.StatusCreated {
+	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
 		return nil, errors.New(resp.String())
 	}
 
