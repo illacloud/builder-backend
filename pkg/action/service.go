@@ -26,6 +26,10 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	FIELD_VIRTUAL_RESOURCE = "virtualResource"
+)
+
 type ActionService interface {
 	IsPublicAction(teamID int, actionID int) bool
 	CreateAction(action ActionDto) (*ActionDtoForExport, error)
@@ -58,42 +62,44 @@ type ActionDto struct {
 }
 
 type ActionDtoForExport struct {
-	ID          string                   `json:"actionId"`
-	UID         uuid.UUID                `json:"uid"`
-	TeamID      string                   `json:"teamID"`
-	App         string                   `json:"-"`
-	Version     int                      `json:"-"`
-	Resource    string                   `json:"resourceId,omitempty"`
-	DisplayName string                   `json:"displayName" validate:"required"`
-	Type        string                   `json:"actionType" validate:"required"`
-	Template    map[string]interface{}   `json:"content" validate:"required"`
-	Transformer map[string]interface{}   `json:"transformer" validate:"required"`
-	TriggerMode string                   `json:"triggerMode" validate:"oneof=manually automate"`
-	Config      *repository.ActionConfig `json:"config"`
-	CreatedAt   time.Time                `json:"createdAt,omitempty"`
-	CreatedBy   string                   `json:"createdBy,omitempty"`
-	UpdatedAt   time.Time                `json:"updatedAt,omitempty"`
-	UpdatedBy   string                   `json:"updatedBy,omitempty"`
+	ID                string                   `json:"actionId"`
+	UID               uuid.UUID                `json:"uid"`
+	TeamID            string                   `json:"teamID"`
+	App               string                   `json:"-"`
+	Version           int                      `json:"-"`
+	Resource          string                   `json:"resourceId,omitempty"`
+	DisplayName       string                   `json:"displayName" validate:"required"`
+	Type              string                   `json:"actionType" validate:"required"`
+	IsVirtualResource bool                     `json:"isVirtualResource"`
+	Template          map[string]interface{}   `json:"content" validate:"required"`
+	Transformer       map[string]interface{}   `json:"transformer" validate:"required"`
+	TriggerMode       string                   `json:"triggerMode" validate:"oneof=manually automate"`
+	Config            *repository.ActionConfig `json:"config"`
+	CreatedAt         time.Time                `json:"createdAt,omitempty"`
+	CreatedBy         string                   `json:"createdBy,omitempty"`
+	UpdatedAt         time.Time                `json:"updatedAt,omitempty"`
+	UpdatedBy         string                   `json:"updatedBy,omitempty"`
 }
 
 func NewActionDtoForExport(a *ActionDto) *ActionDtoForExport {
 	return &ActionDtoForExport{
-		ID:          idconvertor.ConvertIntToString(a.ID),
-		UID:         a.UID,
-		TeamID:      idconvertor.ConvertIntToString(a.TeamID),
-		App:         idconvertor.ConvertIntToString(a.App),
-		Version:     a.Version,
-		Resource:    idconvertor.ConvertIntToString(a.Resource),
-		DisplayName: a.DisplayName,
-		Type:        a.Type,
-		Template:    a.Template,
-		Transformer: a.Transformer,
-		TriggerMode: a.TriggerMode,
-		Config:      a.Config,
-		CreatedAt:   a.CreatedAt,
-		CreatedBy:   idconvertor.ConvertIntToString(a.CreatedBy),
-		UpdatedAt:   a.UpdatedAt,
-		UpdatedBy:   idconvertor.ConvertIntToString(a.UpdatedBy),
+		ID:                idconvertor.ConvertIntToString(a.ID),
+		UID:               a.UID,
+		TeamID:            idconvertor.ConvertIntToString(a.TeamID),
+		App:               idconvertor.ConvertIntToString(a.App),
+		Version:           a.Version,
+		Resource:          idconvertor.ConvertIntToString(a.Resource),
+		DisplayName:       a.DisplayName,
+		Type:              a.Type,
+		IsVirtualResource: resourcelist.IsVirtualResource(a.Type),
+		Template:          a.Template,
+		Transformer:       a.Transformer,
+		TriggerMode:       a.TriggerMode,
+		Config:            a.Config,
+		CreatedAt:         a.CreatedAt,
+		CreatedBy:         idconvertor.ConvertIntToString(a.CreatedBy),
+		UpdatedAt:         a.UpdatedAt,
+		UpdatedBy:         idconvertor.ConvertIntToString(a.UpdatedBy),
 	}
 }
 
@@ -164,6 +170,14 @@ func (resp *ActionDtoForExport) ExportUpdatedBy() string {
 
 func (resp *ActionDtoForExport) ExportForFeedback() interface{} {
 	return resp
+}
+
+func (resp *ActionDtoForExport) AppendAdditionalTemplate(field string, value interface{}) {
+	resp.Template[field] = value
+}
+
+func (resp *ActionDtoForExport) AppendVirtualResourceToTemplate(value interface{}) {
+	resp.Template[FIELD_VIRTUAL_RESOURCE] = value
 }
 
 func (a *ActionDto) InitUID() {
