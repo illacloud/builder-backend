@@ -68,6 +68,10 @@ func (action *Action) ExportID() int {
 	return action.ID
 }
 
+func (action *Action) ExportType() int {
+	return action.Type
+}
+
 func (action *Action) UpdateAppConfig(actionConfig *ActionConfig, userID int) {
 	action.Config = actionConfig.ExportToJSONString()
 	action.UpdatedBy = userID

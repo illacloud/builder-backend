@@ -68,12 +68,11 @@ func NewActionRestHandlerImpl(logger *zap.SugaredLogger, appService app.AppServi
 
 func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 	// fetch needed param
-	teamIDInString, errInGetTeamIDString := GetStringParamFromRequest(c, PARAM_TEAM_ID)
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetTeamIDString != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
 		return
 	}
 
@@ -131,7 +130,7 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
 			return
 		}
-		aiAgent, errInGetAIAgent := api.GetAIAgent(teamIDInString, actForExport.ExportResourceID(), userAuthToken)
+		aiAgent, errInGetAIAgent := api.GetAIAgent(res.ExportResourceIDInInt())
 		if errInGetAIAgent != nil {
 			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetAIAgent.Error())
 			return
@@ -145,13 +144,12 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 
 func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	// fetch needed param
-	teamIDInString, errInGetTeamIDString := GetStringParamFromRequest(c, PARAM_TEAM_ID)
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
 	actionID, errInGetActionID := GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetTeamIDString != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
 		return
 	}
 
@@ -211,7 +209,7 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
 			return
 		}
-		aiAgent, errInGetAIAgent := api.GetAIAgent(teamIDInString, actForExport.ExportResourceID(), userAuthToken)
+		aiAgent, errInGetAIAgent := api.GetAIAgent(res.ExportResourceIDInInt())
 		if errInGetAIAgent != nil {
 			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetAIAgent.Error())
 			return
@@ -261,11 +259,10 @@ func (impl ActionRestHandlerImpl) DeleteAction(c *gin.Context) {
 
 func (impl ActionRestHandlerImpl) GetAction(c *gin.Context) {
 	// fetch needed param
-	teamIDInString, errInGetTeamIDString := GetStringParamFromRequest(c, PARAM_TEAM_ID)
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	actionID, errInGetActionID := GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetTeamIDString != nil || errInGetActionID != nil || errInGetAuthToken != nil {
+	if errInGetTeamID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
 		return
 	}
 
@@ -299,7 +296,7 @@ func (impl ActionRestHandlerImpl) GetAction(c *gin.Context) {
 			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
 			return
 		}
-		aiAgent, errInGetAIAgent := api.GetAIAgent(teamIDInString, res.ExportResourceID(), userAuthToken)
+		aiAgent, errInGetAIAgent := api.GetAIAgent(res.ExportResourceIDInInt())
 		if errInGetAIAgent != nil {
 			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetAIAgent.Error())
 			return
@@ -315,10 +312,9 @@ func (impl ActionRestHandlerImpl) GetAction(c *gin.Context) {
 func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	teamIDInString, errInGetTeamIDString := GetStringParamFromRequest(c, PARAM_TEAM_ID)
 	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetTeamIDString != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
 		return
 	}
 
@@ -354,7 +350,7 @@ func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 				FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
 				return
 			}
-			aiAgent, errInGetAIAgent := api.GetAIAgent(teamIDInString, action.ExportResourceID(), userAuthToken)
+			aiAgent, errInGetAIAgent := api.GetAIAgent(action.ExportResourceIDInInt())
 			if errInGetAIAgent != nil {
 				FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetAIAgent.Error())
 				return

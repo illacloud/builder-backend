@@ -148,6 +148,10 @@ func (resp *ActionDtoForExport) ExportResourceID() string {
 	return resp.Resource
 }
 
+func (resp *ActionDtoForExport) ExportResourceIDInInt() int {
+	return idconvertor.ConvertStringToInt(resp.Resource)
+}
+
 func (resp *ActionDtoForExport) ExportTeamID() string {
 	return resp.TeamID
 }

@@ -1,6 +1,10 @@
 package illaresourcemanagerbackendsdk
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/illacloud/builder-backend/internal/idconvertor"
+)
 
 const (
 	RUN_AI_AGENT_REQUEST_FIELD_TEAM_ID          = "teamID"
@@ -104,8 +108,16 @@ func (req *RunAIAgentRequest) ExportTeamID() string {
 	return req.TeamID
 }
 
+func (req *RunAIAgentRequest) ExportTeamIDInInt() int {
+	return idconvertor.ConvertStringToInt(req.TeamID)
+}
+
 func (req *RunAIAgentRequest) ExportAIAgentID() string {
 	return req.AIAgentID
+}
+
+func (req *RunAIAgentRequest) ExportAIAgentIDInInt() int {
+	return idconvertor.ConvertStringToInt(req.AIAgentID)
 }
 
 func (req *RunAIAgentRequest) ExportAuthorization() string {

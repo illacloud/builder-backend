@@ -146,3 +146,9 @@ func IsVirtualResource(resourceType string) bool {
 	itIs, hit := virtualResourceList[resourceType]
 	return itIs && hit
 }
+
+func IsVirtualResourceByIntType(resourceType int) bool {
+	resourceTypeString := GetResourceIDMappedType(resourceType)
+	itIs, hit := virtualResourceList[resourceTypeString]
+	return itIs && hit
+}

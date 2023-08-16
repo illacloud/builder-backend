@@ -64,7 +64,8 @@ type Config struct {
 	// token for internal api
 	ControlToken string `env:"ILLA_CONTROL_TOKEN"     envDefault:""`
 	// resource manager API
-	IllaResourceManagerRestAPI string `env:"ILLA_RESOURCE_MANAGER_API"     envDefault:"http://illa-resource-manager-backend:8006"`
+	IllaResourceManagerRestAPI         string `env:"ILLA_RESOURCE_MANAGER_API"     envDefault:"http://illa-resource-manager-backend:8006"`
+	IllaResourceManagerInternalRestAPI string `env:"ILLA_RESOURCE_MANAGER_INTERNAL_API"     envDefault:"http://illa-resource-manager-backend-internal:9004"`
 }
 
 func getConfig() (*Config, error) {
@@ -229,4 +230,8 @@ func (c *Config) GetControlToken() string {
 
 func (c *Config) GetIllaResourceManagerRestAPI() string {
 	return c.IllaResourceManagerRestAPI
+}
+
+func (c *Config) GetIllaResourceManagerInternalRestAPI() string {
+	return c.IllaResourceManagerInternalRestAPI
 }

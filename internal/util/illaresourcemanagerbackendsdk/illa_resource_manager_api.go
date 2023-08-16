@@ -8,15 +8,15 @@ import (
 	"net/http"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/illacloud/builder-backend/internal/tokenvalidator"
 	"github.com/illacloud/builder-backend/internal/util/config"
 )
 
 const (
 	BASEURL = "http://127.0.0.1:8008/api/v1"
 	// api route part
-	GET_AI_AGENT_API           = "/api/v1/teams/%s/aiAgent/%s"
-	RUN_AI_AGENT_API           = "/api/v1/teams/%s/aiAgent/%s/run"
-	RUN_AI_AGENT_ANONYMOUS_API = "/api/v1/anonymous/aiAgent/%s/run"
+	GET_AI_AGENT_INTERNAL_API = "/api/v1/aiAgent/%d"
+	RUN_AI_AGENT_INTERNAL_API = "/api/v1/teams/%d/aiAgent/%d/run"
 )
 
 const (
@@ -44,11 +44,12 @@ func (r *IllaResourceManagerRestAPI) OpenDebug() {
 	r.Debug = true
 }
 
-func (r *IllaResourceManagerRestAPI) GetAIAgent(teamID string, aiAgentID string, authorization string) (map[string]interface{}, error) {
+func (r *IllaResourceManagerRestAPI) GetAIAgent(aiAgentID int) (map[string]interface{}, error) {
 	client := resty.New()
-	uri := r.Config.GetIllaResourceManagerRestAPI() + fmt.Sprintf(GET_AI_AGENT_API, teamID, aiAgentID)
+	tokenValidator := tokenvalidator.NewRequestTokenValidator()
+	uri := r.Config.GetIllaResourceManagerInternalRestAPI() + fmt.Sprintf(GET_AI_AGENT_INTERNAL_API, aiAgentID)
 	resp, errInPost := client.R().
-		SetHeader("Authorization", authorization).
+		SetHeader("Request-Token", tokenValidator.GenerateValidateToken(string(aiAgentID))).
 		Get(uri)
 	if r.Debug {
 		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  uri: %+v \n", uri)
@@ -75,13 +76,16 @@ func (r *IllaResourceManagerRestAPI) RunAIAgent(req map[string]interface{}) (*Ru
 	if errInNewReq != nil {
 		return nil, errInNewReq
 	}
-	var resp *resty.Response
-	var errInPost error
-	if !reqInstance.IsRunByAnonymous() {
-		resp, errInPost = r.RunAIAgentByLoggedInUser(reqInstance)
-	} else {
-		resp, errInPost = r.RunAIAgentByAnonymous(reqInstance)
+	client := resty.New()
+	uri := r.Config.GetIllaResourceManagerInternalRestAPI() + fmt.Sprintf(RUN_AI_AGENT_INTERNAL_API, reqInstance.ExportTeamIDInInt(), reqInstance.ExportAIAgentIDInInt())
+	if r.Debug {
+		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  uri: %+v \n", uri)
 	}
+	tokenValidator := tokenvalidator.NewRequestTokenValidator()
+	resp, errInPost := client.R().
+		SetHeader("Request-Token", tokenValidator.GenerateValidateToken(string(reqInstance.ExportTeamIDInInt()), string(reqInstance.ExportAIAgentIDInInt()))).
+		SetBody(req).
+		Post(uri)
 	if r.Debug {
 		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  response: %+v, err: %+v \n", resp, errInPost)
 		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  resp.StatusCode(): %+v \n", resp.StatusCode())
@@ -99,27 +103,4 @@ func (r *IllaResourceManagerRestAPI) RunAIAgent(req map[string]interface{}) (*Ru
 		return nil, errInUnMarshal
 	}
 	return runAIAgentResult, nil
-}
-
-func (r *IllaResourceManagerRestAPI) RunAIAgentByLoggedInUser(req *RunAIAgentRequest) (*resty.Response, error) {
-	client := resty.New()
-	uri := r.Config.GetIllaResourceManagerRestAPI() + fmt.Sprintf(RUN_AI_AGENT_API, req.ExportTeamID(), req.ExportAIAgentID())
-	if r.Debug {
-		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  uri: %+v \n", uri)
-	}
-	return client.R().
-		SetHeader("Authorization", req.ExportAuthorization()).
-		SetBody(req).
-		Post(uri)
-}
-
-func (r *IllaResourceManagerRestAPI) RunAIAgentByAnonymous(req *RunAIAgentRequest) (*resty.Response, error) {
-	client := resty.New()
-	uri := r.Config.GetIllaResourceManagerRestAPI() + fmt.Sprintf(RUN_AI_AGENT_ANONYMOUS_API, req.ExportAIAgentID())
-	if r.Debug {
-		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  uri: %+v \n", uri)
-	}
-	return client.R().
-		SetBody(req).
-		Post(uri)
 }

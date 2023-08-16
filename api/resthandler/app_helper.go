@@ -20,6 +20,8 @@ import (
 
 	"github.com/illacloud/builder-backend/internal/datacontrol"
 	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/builder-backend/internal/util/illaresourcemanagerbackendsdk"
+	"github.com/illacloud/builder-backend/internal/util/resourcelist"
 
 	"github.com/gin-gonic/gin"
 )
@@ -258,7 +260,22 @@ func (impl AppRestHandlerImpl) GetTargetVersionApp(c *gin.Context, teamID int, a
 	}
 	actionsForExport := make([]*repository.ActionForExport, 0)
 	for _, action := range actions {
-		actionsForExport = append(actionsForExport, repository.NewActionForExport(action))
+		actionForExport := repository.NewActionForExport(action)
+		// append remote virtual resource
+		if actionForExport.Type == resourcelist.TYPE_AI_AGENT {
+			api, errInNewAPI := illaresourcemanagerbackendsdk.NewIllaResourceManagerRestAPI()
+			if errInNewAPI != nil {
+				FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
+				return nil, errInNewAPI
+			}
+			aiAgent, errInGetAIAgent := api.GetAIAgent(actionForExport.ExportResourceIDInInt())
+			if errInGetAIAgent != nil {
+				FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetAIAgent.Error())
+				return nil, errInGetAIAgent
+			}
+			actionForExport.AppendVirtualResourceToTemplate(aiAgent)
+		}
+		actionsForExport = append(actionsForExport, actionForExport)
 	}
 
 	// form editor object field components
