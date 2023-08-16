@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/illacloud/builder-backend/internal/tokenvalidator"
@@ -16,7 +17,7 @@ const (
 	BASEURL = "http://127.0.0.1:8008/api/v1"
 	// api route part
 	GET_AI_AGENT_INTERNAL_API = "/api/v1/aiAgent/%d"
-	RUN_AI_AGENT_INTERNAL_API = "/api/v1/teams/%d/aiAgent/%d/run"
+	RUN_AI_AGENT_INTERNAL_API = "/api/v1/aiAgent/%d/run"
 )
 
 const (
@@ -49,7 +50,7 @@ func (r *IllaResourceManagerRestAPI) GetAIAgent(aiAgentID int) (map[string]inter
 	tokenValidator := tokenvalidator.NewRequestTokenValidator()
 	uri := r.Config.GetIllaResourceManagerInternalRestAPI() + fmt.Sprintf(GET_AI_AGENT_INTERNAL_API, aiAgentID)
 	resp, errInPost := client.R().
-		SetHeader("Request-Token", tokenValidator.GenerateValidateToken(string(aiAgentID))).
+		SetHeader("Request-Token", tokenValidator.GenerateValidateToken(strconv.Itoa(aiAgentID))).
 		Get(uri)
 	if r.Debug {
 		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  uri: %+v \n", uri)
@@ -77,13 +78,13 @@ func (r *IllaResourceManagerRestAPI) RunAIAgent(req map[string]interface{}) (*Ru
 		return nil, errInNewReq
 	}
 	client := resty.New()
-	uri := r.Config.GetIllaResourceManagerInternalRestAPI() + fmt.Sprintf(RUN_AI_AGENT_INTERNAL_API, reqInstance.ExportTeamIDInInt(), reqInstance.ExportAIAgentIDInInt())
+	uri := r.Config.GetIllaResourceManagerInternalRestAPI() + fmt.Sprintf(RUN_AI_AGENT_INTERNAL_API, reqInstance.ExportAIAgentIDInInt())
 	if r.Debug {
 		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  uri: %+v \n", uri)
 	}
 	tokenValidator := tokenvalidator.NewRequestTokenValidator()
 	resp, errInPost := client.R().
-		SetHeader("Request-Token", tokenValidator.GenerateValidateToken(string(reqInstance.ExportTeamIDInInt()), string(reqInstance.ExportAIAgentIDInInt()))).
+		SetHeader("Request-Token", tokenValidator.GenerateValidateToken(strconv.Itoa(reqInstance.ExportAIAgentIDInInt()))).
 		SetBody(req).
 		Post(uri)
 	if r.Debug {
