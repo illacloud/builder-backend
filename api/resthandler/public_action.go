@@ -25,6 +25,7 @@ import (
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/internal/auditlogger"
 	dc "github.com/illacloud/builder-backend/internal/datacontrol"
+	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/action"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/resource"
@@ -131,7 +132,9 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 		ActionParameter: act.Template,
 	})
 
-	res, err := impl.actionService.RunAction(teamID, act)
+	// run
+	actionRuntimeInfo := repository.NewActionRuntimeInfo(team.ExportIDInString(), actForExport.ExportResourceID(), actForExport.ExportID(), "")
+	res, err := impl.actionService.RunAction(teamID, act, actionRuntimeInfo)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Error 1064:") {
 			lineNumber, _ := strconv.Atoi(err.Error()[len(err.Error())-1:])

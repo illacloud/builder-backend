@@ -55,3 +55,7 @@ func NewTeamByDataControlRawData(rawTeamString string) (*Team, error) {
 func (u *Team) GetID() int {
 	return u.ID
 }
+
+func (u *Team) ExportIDInString() string {
+	return idconvertor.ConvertIntToString(u.ID)
+}

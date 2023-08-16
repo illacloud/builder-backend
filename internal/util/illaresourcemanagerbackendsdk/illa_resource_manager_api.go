@@ -14,8 +14,9 @@ import (
 const (
 	BASEURL = "http://127.0.0.1:8008/api/v1"
 	// api route part
-	GET_AI_AGENT_API = "/api/v1/teams/%s/aiAgent/%s/run"
-	RUN_AI_AGENT_API = "/api/v1/teams/%s/aiAgent/%s"
+	GET_AI_AGENT_API           = "/api/v1/teams/%s/aiAgent/%s"
+	RUN_AI_AGENT_API           = "/api/v1/teams/%s/aiAgent/%s/run"
+	RUN_AI_AGENT_ANONYMOUS_API = "/api/v1/anonymous/aiAgent/%s/run"
 )
 
 const (
@@ -45,7 +46,7 @@ func (r *IllaResourceManagerRestAPI) OpenDebug() {
 
 func (r *IllaResourceManagerRestAPI) GetAIAgent(teamID string, aiAgentID string, authorization string) (map[string]interface{}, error) {
 	client := resty.New()
-	uri := r.Config.GetIllaResourceManagerRestAPI() + fmt.Sprintf(RUN_AI_AGENT_API, teamID, aiAgentID)
+	uri := r.Config.GetIllaResourceManagerRestAPI() + fmt.Sprintf(GET_AI_AGENT_API, teamID, aiAgentID)
 	resp, errInPost := client.R().
 		SetHeader("Authorization", authorization).
 		Get(uri)
@@ -74,14 +75,14 @@ func (r *IllaResourceManagerRestAPI) RunAIAgent(req map[string]interface{}) (*Ru
 	if errInNewReq != nil {
 		return nil, errInNewReq
 	}
-	client := resty.New()
-	uri := r.Config.GetIllaResourceManagerRestAPI() + fmt.Sprintf(RUN_AI_AGENT_API, reqInstance.ExportTeamID(), reqInstance.ExportAIAgentID())
-	resp, errInPost := client.R().
-		SetHeader("Authorization", reqInstance.ExportAuthorization()).
-		SetBody(reqInstance).
-		Post(uri)
+	var resp *resty.Response
+	var errInPost error
+	if !reqInstance.IsRunByAnonymous() {
+		resp, errInPost = r.RunAIAgentByLoggedInUser(reqInstance)
+	} else {
+		resp, errInPost = r.RunAIAgentByAnonymous(reqInstance)
+	}
 	if r.Debug {
-		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  uri: %+v \n", uri)
 		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  response: %+v, err: %+v \n", resp, errInPost)
 		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  resp.StatusCode(): %+v \n", resp.StatusCode())
 	}
@@ -98,4 +99,27 @@ func (r *IllaResourceManagerRestAPI) RunAIAgent(req map[string]interface{}) (*Ru
 		return nil, errInUnMarshal
 	}
 	return runAIAgentResult, nil
+}
+
+func (r *IllaResourceManagerRestAPI) RunAIAgentByLoggedInUser(req *RunAIAgentRequest) (*resty.Response, error) {
+	client := resty.New()
+	uri := r.Config.GetIllaResourceManagerRestAPI() + fmt.Sprintf(RUN_AI_AGENT_API, req.ExportTeamID(), req.ExportAIAgentID())
+	if r.Debug {
+		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  uri: %+v \n", uri)
+	}
+	return client.R().
+		SetHeader("Authorization", req.ExportAuthorization()).
+		SetBody(req).
+		Post(uri)
+}
+
+func (r *IllaResourceManagerRestAPI) RunAIAgentByAnonymous(req *RunAIAgentRequest) (*resty.Response, error) {
+	client := resty.New()
+	uri := r.Config.GetIllaResourceManagerRestAPI() + fmt.Sprintf(RUN_AI_AGENT_ANONYMOUS_API, req.ExportAIAgentID())
+	if r.Debug {
+		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  uri: %+v \n", uri)
+	}
+	return client.R().
+		SetBody(req).
+		Post(uri)
 }

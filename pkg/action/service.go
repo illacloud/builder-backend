@@ -38,7 +38,7 @@ type ActionService interface {
 	UpdatePublic(teamID int, appID int, userID int, actionConfig *repository.ActionConfig) error
 	GetAction(teamID int, id int) (*ActionDtoForExport, error)
 	FindActionsByAppVersion(teamID int, app, version int) ([]*ActionDtoForExport, error)
-	RunAction(teamID int, action ActionDto) (interface{}, error)
+	RunAction(teamID int, action ActionDto, actionRuntimeInfo *repository.ActionRuntimeInfo) (interface{}, error)
 	ValidateActionOptions(actionType string, options map[string]interface{}) error
 }
 
@@ -138,6 +138,10 @@ func (resp *ActionDtoForExport) ExportActionDto() ActionDto {
 		resp.Config = repository.NewActionConfig()
 	}
 	return actionDto
+}
+
+func (resp *ActionDtoForExport) ExportID() string {
+	return resp.ID
 }
 
 func (resp *ActionDtoForExport) ExportResourceID() string {
@@ -387,7 +391,7 @@ func (impl *ActionServiceImpl) FindActionsByAppVersion(teamID int, appID int, ve
 	return actionDtoForExportSlice, nil
 }
 
-func (impl *ActionServiceImpl) RunAction(teamID int, action ActionDto) (interface{}, error) {
+func (impl *ActionServiceImpl) RunAction(teamID int, action ActionDto, actionRuntimeInfo *repository.ActionRuntimeInfo) (interface{}, error) {
 	if action.Resource == 0 {
 		return nil, errors.New("no resource")
 	}
@@ -397,9 +401,9 @@ func (impl *ActionServiceImpl) RunAction(teamID int, action ActionDto) (interfac
 		return nil, errors.New("invalid ActionType:: unsupported type")
 	}
 
-	// process non-virtual resource
 	rsc := &repository.Resource{}
 	if !resourcelist.IsVirtualResource(action.ExportActionType()) {
+		// process non-virtual resource
 		var errInRetrieveResource error
 		rsc, errInRetrieveResource = impl.resourceRepository.RetrieveByID(teamID, action.Resource)
 		if rsc.ID == 0 {
@@ -411,6 +415,9 @@ func (impl *ActionServiceImpl) RunAction(teamID int, action ActionDto) (interfac
 		if _, err := actionAssemblyLine.ValidateResourceOptions(rsc.Options); err != nil {
 			return nil, errors.New("invalid resource content")
 		}
+	} else {
+		// process virtual resource runtime info
+		action.Template = actionRuntimeInfo.AppendToActionTemplate(action.Template)
 	}
 	if _, err := actionAssemblyLine.ValidateActionOptions(action.Template); err != nil {
 		return nil, errors.New("invalid action content")

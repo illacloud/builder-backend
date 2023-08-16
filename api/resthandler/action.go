@@ -370,8 +370,9 @@ func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	teamIDString, errInGetTeamIDString := GetStringParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetAuthToken != nil {
+	if errInGetTeamID != nil || errInGetTeamIDString != nil || errInGetAuthToken != nil {
 		return
 	}
 
@@ -400,7 +401,10 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 		return
 	}
 	act := actForExport.ExportActionDto()
-	res, err := impl.actionService.RunAction(teamID, act)
+
+	// run
+	actionRuntimeInfo := repository.NewActionRuntimeInfo(teamIDString, actForExport.ExportResourceID(), actForExport.ExportID(), userAuthToken)
+	res, err := impl.actionService.RunAction(teamID, act, actionRuntimeInfo)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Error 1064:") {
 			lineNumber, _ := strconv.Atoi(err.Error()[len(err.Error())-1:])
@@ -433,11 +437,12 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	teamIDString, errInGetTeamIDString := GetStringParamFromRequest(c, PARAM_TEAM_ID)
 	actionID, errInGetActionID := GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
 	appID, errInGetAppID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
-	if errInGetTeamID != nil || errInGetActionID != nil || errInGetAuthToken != nil || errInGetUserID != nil || errInGetAppID != nil {
+	if errInGetTeamID != nil || errInGetTeamIDString != nil || errInGetActionID != nil || errInGetAuthToken != nil || errInGetUserID != nil || errInGetAppID != nil {
 		return
 	}
 
@@ -501,7 +506,9 @@ func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 		ActionParameter: act.Template,
 	})
 
-	res, err := impl.actionService.RunAction(teamID, act)
+	// run action
+	actionRuntimeInfo := repository.NewActionRuntimeInfo(teamIDString, actForExport.ExportResourceID(), actForExport.ExportID(), userAuthToken)
+	res, err := impl.actionService.RunAction(teamID, act, actionRuntimeInfo)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Error 1064:") {
 			lineNumber, _ := strconv.Atoi(err.Error()[len(err.Error())-1:])
