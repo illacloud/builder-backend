@@ -22,6 +22,7 @@ import (
 	"github.com/illacloud/builder-backend/internal/idconvertor"
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/internal/util/resourcelist"
+	"github.com/illacloud/builder-backend/pkg/action"
 
 	"go.uber.org/zap"
 )
@@ -75,6 +76,21 @@ func NewResourceDtoForExport(r *ResourceDto) *ResourceDtoForExport {
 		CreatedBy: idconvertor.ConvertIntToString(r.CreatedBy),
 		UpdatedAt: r.UpdatedAt,
 		UpdatedBy: idconvertor.ConvertIntToString(r.UpdatedBy),
+	}
+}
+
+func NewVirtualResourceDtoForExportByAction(action action.ActionDtoForExport) *ResourceDtoForExport {
+	return &ResourceDtoForExport{
+		ID:        action.ExportResourceID(),
+		UID:       uuid.New(),
+		TeamID:    action.ExportTeamID(),
+		Name:      action.ExportType(),
+		Type:      action.ExportType(),
+		Options:   nil,
+		CreatedAt: action.ExportCreatedAt(),
+		CreatedBy: action.ExportCreatedBy(),
+		UpdatedAt: action.ExportUpdatedAt(),
+		UpdatedBy: action.ExportUpdatedBy(),
 	}
 }
 

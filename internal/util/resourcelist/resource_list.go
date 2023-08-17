@@ -29,6 +29,7 @@ var (
 	TYPE_UPSTASH       = "upstash"
 	TYPE_AIRTABLE      = "airtable"
 	TYPE_HYDRA         = "hydra"
+	TYPE_AI_AGENT      = "aiagent"
 )
 
 var (
@@ -60,37 +61,39 @@ var (
 	TYPE_UPSTASH_ID       = 25
 	TYPE_AIRTABLE_ID      = 26
 	TYPE_HYDRA_ID         = 27
+	TYPE_AI_AGENT_ID      = 28
 )
 
-var type_array = [28]string{
-	TYPE_TRANSFORMER,
-	TYPE_RESTAPI,
-	TYPE_GRAPHQL,
-	TYPE_REDIS,
-	TYPE_MYSQL,
-	TYPE_MARIADB,
-	TYPE_POSTGRESQL,
-	TYPE_MONGODB,
-	TYPE_TIDB,
-	TYPE_ELASTICSEARCH,
-	TYPE_S3,
-	TYPE_SMTP,
-	TYPE_SUPABASEDB,
-	TYPE_FIREBASE,
-	TYPE_CLICKHOUSE,
-	TYPE_MSSQL,
-	TYPE_HUGGINGFACE,
-	TYPE_DYNAMODB,
-	TYPE_SNOWFLAKE,
-	TYPE_COUCHDB,
-	TYPE_HFENDPOINT,
-	TYPE_ORACLE,
-	TYPE_APPWRITE,
-	TYPE_GOOGLESHEETS,
-	TYPE_NEON,
-	TYPE_UPSTASH,
-	TYPE_AIRTABLE,
-	TYPE_HYDRA,
+var type_array = []string{
+	0:  TYPE_TRANSFORMER,
+	1:  TYPE_RESTAPI,
+	2:  TYPE_GRAPHQL,
+	3:  TYPE_REDIS,
+	4:  TYPE_MYSQL,
+	5:  TYPE_MARIADB,
+	6:  TYPE_POSTGRESQL,
+	7:  TYPE_MONGODB,
+	8:  TYPE_TIDB,
+	9:  TYPE_ELASTICSEARCH,
+	10: TYPE_S3,
+	11: TYPE_SMTP,
+	12: TYPE_SUPABASEDB,
+	13: TYPE_FIREBASE,
+	14: TYPE_CLICKHOUSE,
+	15: TYPE_MSSQL,
+	16: TYPE_HUGGINGFACE,
+	17: TYPE_DYNAMODB,
+	18: TYPE_SNOWFLAKE,
+	19: TYPE_COUCHDB,
+	20: TYPE_HFENDPOINT,
+	21: TYPE_ORACLE,
+	22: TYPE_APPWRITE,
+	23: TYPE_GOOGLESHEETS,
+	24: TYPE_NEON,
+	25: TYPE_UPSTASH,
+	26: TYPE_AIRTABLE,
+	27: TYPE_HYDRA,
+	28: TYPE_AI_AGENT,
 }
 
 var type_map = map[string]int{
@@ -122,6 +125,12 @@ var type_map = map[string]int{
 	TYPE_UPSTASH:       TYPE_UPSTASH_ID,
 	TYPE_AIRTABLE:      TYPE_AIRTABLE_ID,
 	TYPE_HYDRA:         TYPE_HYDRA_ID,
+	TYPE_AI_AGENT:      TYPE_AI_AGENT_ID,
+}
+
+var virtualResourceList = map[string]bool{
+	TYPE_TRANSFORMER: true,
+	TYPE_AI_AGENT:    true,
 }
 
 func GetResourceIDMappedType(id int) string {
@@ -130,4 +139,16 @@ func GetResourceIDMappedType(id int) string {
 
 func GetResourceNameMappedID(name string) int {
 	return type_map[name]
+}
+
+// The virtual resource have no resource id
+func IsVirtualResource(resourceType string) bool {
+	itIs, hit := virtualResourceList[resourceType]
+	return itIs && hit
+}
+
+func IsVirtualResourceByIntType(resourceType int) bool {
+	resourceTypeString := GetResourceIDMappedType(resourceType)
+	itIs, hit := virtualResourceList[resourceTypeString]
+	return itIs && hit
 }

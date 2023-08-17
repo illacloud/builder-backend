@@ -16,6 +16,7 @@ package action
 
 import (
 	"github.com/illacloud/builder-backend/internal/util/resourcelist"
+	"github.com/illacloud/builder-backend/pkg/plugins/aiagent"
 	"github.com/illacloud/builder-backend/pkg/plugins/airtable"
 	"github.com/illacloud/builder-backend/pkg/plugins/appwrite"
 	"github.com/illacloud/builder-backend/pkg/plugins/clickhouse"
@@ -53,6 +54,9 @@ func (f *Factory) Build() common.DataConnector {
 	case resourcelist.TYPE_RESTAPI:
 		restapiAction := &restapi.RESTAPIConnector{}
 		return restapiAction
+	case resourcelist.TYPE_AI_AGENT:
+		aiAgentAction := &aiagent.AIAgentConnector{}
+		return aiAgentAction
 	case resourcelist.TYPE_MYSQL, resourcelist.TYPE_MARIADB, resourcelist.TYPE_TIDB:
 		sqlAction := &mysql.MySQLConnector{}
 		return sqlAction

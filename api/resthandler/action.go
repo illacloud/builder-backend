@@ -17,6 +17,7 @@ package resthandler
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -26,6 +27,8 @@ import (
 	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/internal/auditlogger"
 	"github.com/illacloud/builder-backend/internal/repository"
+	"github.com/illacloud/builder-backend/internal/util/illaresourcemanagerbackendsdk"
+	"github.com/illacloud/builder-backend/internal/util/resourcelist"
 	"github.com/illacloud/builder-backend/pkg/action"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/resource"
@@ -64,6 +67,15 @@ func NewActionRestHandlerImpl(logger *zap.SugaredLogger, appService app.AppServi
 }
 
 func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	userID, errInGetUserID := GetUserIDFromAuth(c)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
+		return
+	}
+
 	// fetch payload
 	var actForExport action.ActionDtoForExport
 	if err := json.NewDecoder(c.Request.Body).Decode(&actForExport); err != nil {
@@ -73,15 +85,6 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 	act := actForExport.ExportActionDto()
 	if err := impl.actionService.ValidateActionOptions(act.Type, act.Template); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
-		return
-	}
-
-	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
-	userID, errInGetUserID := GetUserIDFromAuth(c)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
 		return
 	}
 
@@ -119,10 +122,37 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "create action error: "+err.Error())
 		return
 	}
+
+	// append remote virtual resource
+	if res.Type == resourcelist.TYPE_AI_AGENT {
+		api, errInNewAPI := illaresourcemanagerbackendsdk.NewIllaResourceManagerRestAPI()
+		if errInNewAPI != nil {
+			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
+			return
+		}
+		aiAgent, errInGetAIAgent := api.GetAIAgent(res.ExportResourceIDInInt())
+		if errInGetAIAgent != nil {
+			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetAIAgent.Error())
+			return
+		}
+		res.AppendVirtualResourceToTemplate(aiAgent)
+	}
+
+	// feedback
 	FeedbackOK(c, res)
 }
 
 func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	userID, errInGetUserID := GetUserIDFromAuth(c)
+	actionID, errInGetActionID := GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
+	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
+		return
+	}
+
 	// fetch payload
 	var actForExport action.ActionDtoForExport
 	if err := json.NewDecoder(c.Request.Body).Decode(&actForExport); err != nil {
@@ -132,16 +162,6 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	act := actForExport.ExportActionDto()
 	if err := impl.actionService.ValidateActionOptions(act.Type, act.Template); err != nil {
 		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
-		return
-	}
-
-	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
-	userID, errInGetUserID := GetUserIDFromAuth(c)
-	actionID, errInGetActionID := GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
 		return
 	}
 
@@ -182,6 +202,22 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 	res.CreatedBy = originInfo.CreatedBy
 	res.CreatedAt = originInfo.CreatedAt
 
+	// append remote virtual resource
+	if res.Type == resourcelist.TYPE_AI_AGENT {
+		api, errInNewAPI := illaresourcemanagerbackendsdk.NewIllaResourceManagerRestAPI()
+		if errInNewAPI != nil {
+			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
+			return
+		}
+		aiAgent, errInGetAIAgent := api.GetAIAgent(res.ExportResourceIDInInt())
+		if errInGetAIAgent != nil {
+			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetAIAgent.Error())
+			return
+		}
+		res.AppendVirtualResourceToTemplate(aiAgent)
+	}
+
+	// feedback
 	FeedbackOK(c, res)
 }
 
@@ -253,6 +289,21 @@ func (impl ActionRestHandlerImpl) GetAction(c *gin.Context) {
 		return
 	}
 
+	// append remote virtual resource
+	if res.Type == resourcelist.TYPE_AI_AGENT {
+		api, errInNewAPI := illaresourcemanagerbackendsdk.NewIllaResourceManagerRestAPI()
+		if errInNewAPI != nil {
+			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
+			return
+		}
+		aiAgent, errInGetAIAgent := api.GetAIAgent(res.ExportResourceIDInInt())
+		if errInGetAIAgent != nil {
+			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetAIAgent.Error())
+			return
+		}
+		res.AppendVirtualResourceToTemplate(aiAgent)
+	}
+
 	// feedback
 	FeedbackOK(c, res)
 	return
@@ -290,6 +341,24 @@ func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 		return
 	}
 
+	// append virtual source
+	for _, action := range res {
+		// append remote virtual resource
+		if action.Type == resourcelist.TYPE_AI_AGENT {
+			api, errInNewAPI := illaresourcemanagerbackendsdk.NewIllaResourceManagerRestAPI()
+			if errInNewAPI != nil {
+				FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
+				return
+			}
+			aiAgent, errInGetAIAgent := api.GetAIAgent(action.ExportResourceIDInInt())
+			if errInGetAIAgent != nil {
+				FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetAIAgent.Error())
+				return
+			}
+			action.AppendVirtualResourceToTemplate(aiAgent)
+		}
+	}
+
 	// feedback
 	c.JSON(http.StatusOK, res)
 }
@@ -297,8 +366,9 @@ func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	teamIDString, errInGetTeamIDString := GetStringParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetAuthToken != nil {
+	if errInGetTeamID != nil || errInGetTeamIDString != nil || errInGetAuthToken != nil {
 		return
 	}
 
@@ -327,7 +397,10 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 		return
 	}
 	act := actForExport.ExportActionDto()
-	res, err := impl.actionService.RunAction(teamID, act)
+
+	// run
+	actionRuntimeInfo := repository.NewActionRuntimeInfo(teamIDString, actForExport.ExportResourceID(), actForExport.ExportID(), userAuthToken)
+	res, err := impl.actionService.RunAction(teamID, act, actionRuntimeInfo)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Error 1064:") {
 			lineNumber, _ := strconv.Atoi(err.Error()[len(err.Error())-1:])
@@ -360,11 +433,12 @@ func (impl ActionRestHandlerImpl) PreviewAction(c *gin.Context) {
 func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	teamIDString, errInGetTeamIDString := GetStringParamFromRequest(c, PARAM_TEAM_ID)
 	actionID, errInGetActionID := GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
 	appID, errInGetAppID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
 	userID, errInGetUserID := GetUserIDFromAuth(c)
-	if errInGetTeamID != nil || errInGetActionID != nil || errInGetAuthToken != nil || errInGetUserID != nil || errInGetAppID != nil {
+	if errInGetTeamID != nil || errInGetTeamIDString != nil || errInGetActionID != nil || errInGetAuthToken != nil || errInGetUserID != nil || errInGetAppID != nil {
 		return
 	}
 
@@ -397,11 +471,19 @@ func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 	appDTO, _ := impl.appService.FetchAppByID(teamID, appID)
 
 	// fetch resource data
-	rsc, errInGetRSC := impl.resourceService.GetResource(teamID, act.Resource)
-	if errInGetRSC != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resource error: "+errInGetRSC.Error())
-		return
+	resourceInstance := resource.NewVirtualResourceDtoForExportByAction(actForExport)
+	fmt.Printf("[DUMP] actForExport: %+v\n", actForExport)
+
+	if !resourcelist.IsVirtualResource(actForExport.ExportType()) {
+		var errInGetResource error
+		resourceInstance, errInGetResource = impl.resourceService.GetResource(teamID, act.Resource)
+		if errInGetResource != nil {
+			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resource error: "+errInGetResource.Error())
+			return
+		}
 	}
+
+	fmt.Printf("[DUMP] resourceInstance: %+v\n", resourceInstance)
 
 	// audit log
 	auditLogger := auditlogger.GetInstance()
@@ -413,14 +495,16 @@ func (impl ActionRestHandlerImpl) RunAction(c *gin.Context) {
 		AppID:           appID,
 		AppName:         appDTO.Name,
 		ResourceID:      act.Resource,
-		ResourceName:    rsc.Name,
-		ResourceType:    rsc.Type,
+		ResourceName:    resourceInstance.Name,
+		ResourceType:    resourceInstance.Type,
 		ActionID:        actionID,
 		ActionName:      act.DisplayName,
 		ActionParameter: act.Template,
 	})
 
-	res, err := impl.actionService.RunAction(teamID, act)
+	// run action
+	actionRuntimeInfo := repository.NewActionRuntimeInfo(teamIDString, actForExport.ExportResourceID(), actForExport.ExportID(), userAuthToken)
+	res, err := impl.actionService.RunAction(teamID, act, actionRuntimeInfo)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Error 1064:") {
 			lineNumber, _ := strconv.Atoi(err.Error()[len(err.Error())-1:])
