@@ -16,8 +16,9 @@ import (
 const (
 	BASEURL = "http://127.0.0.1:8008/api/v1"
 	// api route part
-	GET_AI_AGENT_INTERNAL_API = "/api/v1/aiAgent/%d"
-	RUN_AI_AGENT_INTERNAL_API = "/api/v1/aiAgent/%d/run"
+	GET_AI_AGENT_INTERNAL_API             = "/api/v1/aiAgent/%d"
+	RUN_AI_AGENT_INTERNAL_API             = "/api/v1/aiAgent/%d/run"
+	DELETE_TEAM_ALL_AI_AGENT_INTERNAL_API = "/api/v1/teams/%d/aiAgent/all"
 )
 
 const (
@@ -104,4 +105,26 @@ func (r *IllaResourceManagerRestAPI) RunAIAgent(req map[string]interface{}) (*Ru
 		return nil, errInUnMarshal
 	}
 	return runAIAgentResult, nil
+}
+
+func (r *IllaResourceManagerRestAPI) DeleteTeamAllAIAgent(teamID int) error {
+	client := resty.New()
+	tokenValidator := tokenvalidator.NewRequestTokenValidator()
+	uri := r.Config.GetIllaResourceManagerInternalRestAPI() + fmt.Sprintf(DELETE_TEAM_ALL_AI_AGENT_INTERNAL_API, teamID)
+	resp, errInDelete := client.R().
+		SetHeader("Request-Token", tokenValidator.GenerateValidateToken(strconv.Itoa(teamID))).
+		Delete(uri)
+	if r.Debug {
+		log.Printf("[IllaResourceManagerRestAPI.DeleteTeamAllAiAgent()]  uri: %+v \n", uri)
+		log.Printf("[IllaResourceManagerRestAPI.DeleteTeamAllAiAgent()]  response: %+v, err: %+v \n", resp, errInDelete)
+		log.Printf("[IllaResourceManagerRestAPI.DeleteTeamAllAiAgent()]  resp.StatusCode(): %+v \n", resp.StatusCode())
+	}
+	if errInDelete != nil {
+		return errInDelete
+	}
+	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
+		return errors.New(resp.String())
+	}
+
+	return nil
 }
