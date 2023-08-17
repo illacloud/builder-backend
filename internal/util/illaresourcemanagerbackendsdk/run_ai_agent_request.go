@@ -42,7 +42,7 @@ type RunAIAgentRequest struct {
 
 func NewRunAIAgentRequest(rawRequest map[string]interface{}) (*RunAIAgentRequest, error) {
 	runAIAgentRequest := &RunAIAgentRequest{}
-	var assertPass bool
+	assertPass := true
 	var agentTypeFloat64 float64
 	var modelFloat64 float64
 	var variablesRaw []interface{}
