@@ -11,3 +11,4 @@ const TARGET_RESOURCE = 7           // only for broadcast
 const TARGET_ACTION = 8             // only for broadcast
 const TARGET_CURSOR = 9             // only for broadcast
 const TARGET_WINDOW = 10            // client browser window
+const TARGET_AI_AGENT = 11          // only for broadcast
