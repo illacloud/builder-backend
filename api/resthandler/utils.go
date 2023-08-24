@@ -190,6 +190,47 @@ func GetStringParamFromRequest(c *gin.Context, paramName string) (string, error)
 	return paramValue, nil
 }
 
+func TestStringParamFromRequest(c *gin.Context, paramName string) (string, error) {
+	// get request param
+	paramValue := c.Param(paramName)
+	if len(paramValue) == 0 {
+		return "", errors.New("input missing " + paramName + " field.")
+	}
+	return paramValue, nil
+}
+
+func TestFirstStringParamValueFromURI(c *gin.Context, paramName string) (string, error) {
+	valueMaps := c.Request.URL.Query()
+	paramValues, hit := valueMaps[paramName]
+	// get request param
+	if !hit {
+		return "", errors.New("input missing " + paramName + " field.")
+	}
+	return paramValues[0], nil
+}
+
+func GetFirstStringParamValueFromURI(c *gin.Context, paramName string) (string, error) {
+	valueMaps := c.Request.URL.Query()
+	paramValues, hit := valueMaps[paramName]
+	// get request param
+	if !hit {
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_PARAM_FAILED, "please input param for request.")
+		return "", errors.New("input missing " + paramName + " field.")
+	}
+	return paramValues[0], nil
+}
+
+func GetStringParamValuesFromURI(c *gin.Context, paramName string) ([]string, error) {
+	valueMaps := c.Request.URL.Query()
+	paramValues, hit := valueMaps[paramName]
+	// get request param
+	if !hit {
+		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_PARAM_FAILED, "please input param for request.")
+		return nil, errors.New("input missing " + paramName + " field.")
+	}
+	return paramValues, nil
+}
+
 func GetStringParamFromHeader(c *gin.Context, paramName string) (string, error) {
 	paramValue := c.Request.Header[paramName]
 	var ret string
