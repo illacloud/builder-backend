@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repository
+package request
 
 import (
 	"github.com/illacloud/builder-backend/internal/idconvertor"
-
 )
 
 const GENERATE_SQL_ACTION_SELECT = 1
@@ -45,7 +44,6 @@ func (req *GenerateSQLRequest) GetActionInString() string {
 	return ACTION_MAP[req.Action]
 }
 
-
-func (req *GenerateSQLRequest)  ExportResourceIDInInt() int {
+func (req *GenerateSQLRequest) ExportResourceIDInInt() int {
 	return idconvertor.ConvertStringToInt(req.ResourceID)
 }

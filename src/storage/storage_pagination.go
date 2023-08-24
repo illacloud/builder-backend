@@ -18,7 +18,7 @@ type Pagination struct {
 	Rows       interface{} `json:"rows"`
 }
 
-func NewPagiNation(limit int, page int) *Pagination {
+func NewPagination(limit int, page int) *Pagination {
 	return &Pagination{
 		Limit: limit,
 		Page:  page,

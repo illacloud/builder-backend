@@ -16,7 +16,6 @@ package controller
 
 import (
 	"encoding/json"
-	"log"
 
 	"github.com/illacloud/builder-backend/internal/datacontrol"
 	"github.com/illacloud/builder-backend/internal/util/illaresourcemanagerbackendsdk"
@@ -27,56 +26,39 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (controller *Controller) SnapshotTreeState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
-	return controller.DuplicateTreeStateByVersion(c, teamID, appID, model.APP_EDIT_VERSION, appMainLineVersion)
-}
-
-func (controller *Controller) SnapshotKVState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
-	return controller.DuplicateKVStateByVersion(c, teamID, appID, model.APP_EDIT_VERSION, appMainLineVersion)
-}
-
-func (controller *Controller) SnapshotSetState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
-	return controller.DuplicateSetStateByVersion(c, teamID, appID, model.APP_EDIT_VERSION, appMainLineVersion)
-}
-
-func (controller *Controller) SnapshotAction(c *gin.Context, teamID int, appID int, mainlineVersion int) error {
-	return controller.DuplicateActionByVersion(c, teamID, appID, model.APP_EDIT_VERSION, mainlineVersion)
-}
-
-// recover edit version treestate to target version (coby target version data to edit version)
-func (controller *Controller) DuplicateTreeStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
-	// get from version tree state from database
-	treestates, errInRetrieveTreeState := controller.Storage.TreeStateStorage.RetrieveAllTypeTreeStatesByApp(teamID, appID, fromVersion)
-	if errInRetrieveTreeState != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get tree state failed: "+errInRetrieveTreeState.Error())
-		return errInRetrieveTreeState
+// recover edit version treeState to target version (copy target version data to edit version)
+func (controller *Controller) DuplicateTreeStateByVersion(c *gin.Context, fromTeamID int, toTeamID int, fromAppID int, toAppID int, fromVersion int, toVersion int, modifierID int) error {
+	// get target version tree state from database
+	treeStates, errinRetrieveTreeStates := controller.Storage.TreeStateStorage.RetrieveTreeStatesByTeamIDAppIDAndVersion(fromTeamID, fromAppID, fromVersion)
+	if errinRetrieveTreeStates != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get tree state failed: "+errinRetrieveTreeStates.Error())
+		return errinRetrieveTreeStates
 	}
-	oldIDMap := map[int]int{}
-	releaseIDMap := map[int]int{}
+	indexIDMap := map[int]int{}
+	idConvertMap := map[int]int{}
 
-	// set version to target version
-	for serial, _ := range treestates {
-		oldIDMap[serial] = treestates[serial].ExportID()
-		treestates[serial].AppendNewVersion(toVersion)
+	// set fork info
+	for serial, _ := range treeStates {
+		indexIDMap[serial] = treeStates[serial].ExportID()
+		treeStates[serial].InitForFork(toTeamID, toAppID, toVersion, modifierID)
 	}
 
 	// put them to the database as duplicate, and record the old-new id map
-	for i, treestate := range treestates {
-		log.Printf("[DUMP] DuplicateTreeStateByVersion: treestate.Name: %s, treestate.TeamID: %d, treestate.AppRefID: %d, , treestate.Version: %d\n", treestate.Name, treestate.TeamID, treestate.AppRefID, treestate.Version)
-		newID, errInCreateApp := controller.Storage.TreeStateStorage.Create(treestate)
+	for i, treeState := range treeStates {
+		treeStateID, errInCreateApp := controller.Storage.TreeStateStorage.Create(treeState)
 		if errInCreateApp != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_APP, "create app failed: "+errInCreateApp.Error())
 			return errInCreateApp
 		}
-		oldID := oldIDMap[i]
-		releaseIDMap[oldID] = newID
+		oldID := indexIDMap[i]
+		idConvertMap[oldID] = treeStateID
 	}
 
-	// update children node ids
-	for _, treestate := range treestates {
-		treestate.RemapChildrenNodeRefIDs(releaseIDMap)
-		treestate.SetParentNodeRefID(releaseIDMap[treestate.ParentNodeRefID])
-		errInUpdateTreeState := controller.Storage.TreeStateStorage.Update(treestate)
+	// update tree states parent & children relation
+	for _, treeState := range treeStates {
+		treeState.ResetChildrenNodeRefIDsByMap(idConvertMap)
+		treeState.ResetParentNodeRefIDByMap(idConvertMap)
+		errInUpdateTreeState := controller.Storage.TreeStateStorage.Update(treeState)
 		if errInUpdateTreeState != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_TREE_STATE, "update tree state failed: "+errInUpdateTreeState.Error())
 			return errInUpdateTreeState
@@ -86,23 +68,22 @@ func (controller *Controller) DuplicateTreeStateByVersion(c *gin.Context, teamID
 	return nil
 }
 
-func (controller *Controller) DuplicateKVStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
-	// get edit version K-V state from database
-	kvstates, errInRetrieveKVState := controller.Storage.KVStateStorage.RetrieveAllTypeKVStatesByApp(teamID, appID, fromVersion)
-	if errInRetrieveKVState != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get kv state failed: "+errInRetrieveKVState.Error())
-		return errInRetrieveKVState
+func (controller *Controller) DuplicateKVStateByVersion(c *gin.Context, fromTeamID int, toTeamID int, fromAppID int, toAppID int, fromVersion int, toVersion int, modifierID int) error {
+	// get target version K-V state from database
+	kvStates, errInRetrieveKVStates := controller.Storage.KVStateStorage.RetrieveKVStatesByTeamIDAppIDAndVersion(fromTeamID, fromAppID, fromVersion)
+	if errInRetrieveKVStates != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get kv state failed: "+errInRetrieveKVStates.Error())
+		return errInRetrieveKVStates
 	}
 
-	// set version as mainline version
-	for serial, _ := range kvstates {
-		kvstates[serial].AppendNewVersion(toVersion)
+	// set fork info
+	for serial, _ := range kvStates {
+		kvStates[serial].InitForFork(toTeamID, toAppID, toVersion, modifierID)
 	}
 
 	// and put them to the database as duplicate
-	for _, kvstate := range kvstates {
-		log.Printf("[DUMP] DuplicateKVStateByVersion: kvstate.StateType: %d, kvstate.TeamID: %d, kvstate.AppRefID: %d, , kvstate.Version: %d\n", kvstate.StateType, kvstate.TeamID, kvstate.AppRefID, kvstate.Version)
-		errInCreateKVState := controller.Storage.KVStateStorage.Create(kvstate)
+	for _, kvState := range kvStates {
+		errInCreateKVState := controller.Storage.KVStateStorage.Create(kvState)
 		if errInCreateKVState != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_STATE, "create kv state failed: "+errInCreateKVState.Error())
 			return errInCreateKVState
@@ -111,52 +92,53 @@ func (controller *Controller) DuplicateKVStateByVersion(c *gin.Context, teamID i
 	return nil
 }
 
-func (controller *Controller) DuplicateSetStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
-	setstates, errInRetrieveSetState := controller.Storage.SetStateStorage.RetrieveSetStatesByApp(teamID, appID, model.SET_STATE_TYPE_DISPLAY_NAME, fromVersion)
-	if errInRetrieveSetState != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get set state failed: "+errInRetrieveSetState.Error())
-		return errInRetrieveSetState
+func (controller *Controller) DuplicateSetStateByVersion(c *gin.Context, fromTeamID int, toTeamID int, fromAppID int, toAppID int, fromVersion int, toVersion int, modifierID int) error {
+	// get target version set state from database
+	setStates, errInRetrieveSetStates := controller.Storage.SetStateStorage.RetrieveSetStatesByTeamIDAppIDAndVersion(fromTeamID, fromAppID, model.SET_STATE_TYPE_DISPLAY_NAME, fromVersion)
+	if errInRetrieveSetStates != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get set state failed: "+errInRetrieveSetStates.Error())
+		return errInRetrieveSetStates
 	}
 
-	// update some fields
-	for serial, _ := range setstates {
-		setstates[serial].AppendNewVersion(toVersion)
+	// set fork info
+	for serial, _ := range setStates {
+		setStates[serial].InitForFork(toTeamID, toAppID, toVersion, modifierID)
 	}
 
 	// and put them to the database as duplicate
-	for _, setstate := range setstates {
-		log.Printf("[DUMP] DuplicateSetStateByVersion: setstate.StateType: %d, setstate.TeamID: %d, setstate.AppRefID: %d, , setstate.Version: %d\n", setstate.StateType, setstate.TeamID, setstate.AppRefID, setstate.Version)
-		errInCreateSetState := controller.Storage.SetStateStorage.Create(setstate)
+	for _, setState := range setStates {
+		errInCreateSetState := controller.Storage.SetStateStorage.Create(setState)
 		if errInCreateSetState != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_STATE, "create set state failed: "+errInCreateSetState.Error())
 			return errInCreateSetState
 		}
 	}
+
 	return nil
 }
 
-func (controller *Controller) DuplicateActionByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
-	// get edit version K-V state from database
-	actions, errinRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByAppVersion(teamID, appID, fromVersion)
+func (controller *Controller) DuplicateActionByVersion(c *gin.Context, fromTeamID int, toTeamID int, fromAppID int, toAppID int, fromVersion int, toVersion int, modifierID int) error {
+	// get target version action from database
+	actions, errinRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDAppIDAndVersion(fromTeamID, fromAppID, fromVersion)
 	if errinRetrieveAction != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errinRetrieveAction.Error())
 		return errinRetrieveAction
 	}
 
-	// set version as mainline version
+	// set fork info
 	for serial, _ := range actions {
-		actions[serial].AppendNewVersion(toVersion)
+		actions[serial].InitForFork(toTeamID, toAppID, toVersion, modifierID)
 	}
 
 	// and put them to the database as duplicate
 	for _, action := range actions {
-		log.Printf("[DUMP] DuplicateActionByVersion: action.Name: %s, action.TeamID: %d, action.AppRefID: %d, , action.Version: %d\n", action.Name, action.TeamID, action.App, action.Version)
 		_, errInCreateAction := controller.Storage.ActionStorage.Create(action)
 		if errInCreateAction != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "create action failed: "+errInCreateAction.Error())
 			return errInCreateAction
 		}
 	}
+
 	return nil
 }
 
@@ -462,112 +444,5 @@ func (controller *Controller) CreateComponentTree(app *repository.App, parentNod
 			return err
 		}
 	}
-	return nil
-}
-
-func (controller *Controller) DuplicateTreeStates(teamID int, fromAppID int, toAppID int, userID int) error {
-	// get edit version tree state from database
-	treeStates, errinRetrieveTreeStates := controller.Storage.TreeStateStorage.RetrieveTreeStatesByTeamIDAppIDAndVersion(teamID, fromAppID, model.APP_EDIT_VERSION)
-	if errinRetrieveTreeStates != nil {
-		return errinRetrieveTreeStates
-	}
-
-	// init
-	indexIDMap := map[int]int{}
-	idConvertMap := map[int]int{}
-	for serial, _ := range treeStates {
-		indexIDMap[serial] = treeStates[serial].ID
-		treeStates[serial].InitForFork()
-	}
-
-	// and put them to the database as duplicate
-	for i, treeState := range treeStates {
-		treeStateID, errInCreateTreeState := controller.Storage.TreeStateStorage.Create(treeState)
-		if errInCreateTreeState != nil {
-			return errInCreateTreeState
-		}
-		oldID := indexIDMap[i]
-		idConvertMap[oldID] = treeStateID
-	}
-
-	// update tree states parent & children relation
-	for _, treeState := range treeStates {
-		treeState.ResetChildrenNodeRefIDsByMap(idConvertMap)
-		treeState.ResetParentNodeRefIDByMap(idConvertMap)
-		errInUpdateTreeState := controller.Storage.TreeStateStorage.Update(treeState)
-		if errInUpdateTreeState != nil {
-			return errInUpdateTreeState
-		}
-	}
-
-	return nil
-}
-
-func (controller *Controller) DuplicateKVStates(teamID int, fromAppID int, toAppID int, userID int) error {
-	// get edit version K-V state from database
-	kvStates, errInRetrieveKVStates := controller.Storage.KVStateStorage.RetrieveKVStatesByTeamIDAppIDAndVersion(teamID, fromAppID, model.APP_EDIT_VERSION)
-	if errInRetrieveKVStates != nil {
-		return errInRetrieveKVStates
-	}
-
-	// init
-	for serial, _ := range kvStates {
-		kvStates[serial].InitForFork()
-	}
-
-	// and put them to the database as duplicate
-	for _, kvState := range kvStates {
-		errInCreateKVState := controller.Storage.KVStateStorage.Create(kvState)
-		if errInCreateKVState != nil {
-			return errInCreateKVState
-		}
-	}
-
-	return nil
-}
-
-func (controller *Controller) DuplicateSetStates(teamID int, fromAppID int, toAppID int, userID int) error {
-	// get edit version Set state from database
-	setStates, errInRetrieveSetState := controller.Storage.SetStateStorage.RetrieveSetStatesByApp(teamID, fromAppID, model.SET_STATE_TYPE_DISPLAY_NAME, repository.APP_EDIT_VERSION)
-	if errInRetrieveSetState != nil {
-		return errInRetrieveSetState
-	}
-
-	// update some fields
-	for serial, _ := range setStates {
-		setStates[serial].InitForFork()
-	}
-
-	// and put them to the database as duplicate
-	for _, setState := range setstates {
-		errInCreateSetState := controller.Storage.SetStateStorage.Create(setState)
-		if errInCreateSetState != nil {
-			return errInCreateSetState
-		}
-	}
-
-	return nil
-}
-
-func (controller *Controller) DuplicateActions(teamID int, fromAppID int, toAppID int, userID int) error {
-	// get edit version K-V state from database
-	actions, errinRetrieveActions := controller.Storage.ActionStorage.RetrieveActionsByAppVersion(teamID, fromAppID, model.APP_EDIT_VERSION)
-	if errinRetrieveActions != nil {
-		return errinRetrieveActions
-	}
-
-	// update some fields
-	for serial, _ := range actions {
-		actions[serial].InitForFork()
-	}
-
-	// and put them to the database as duplicate
-	for _, action := range actions {
-		_, errInCreateAction := controller.Storage.ActionStorage.Create(action)
-		errInCreateAction != nil {
-			return errInCreateAction
-		}
-	}
-
 	return nil
 }

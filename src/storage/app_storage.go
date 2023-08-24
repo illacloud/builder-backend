@@ -63,7 +63,7 @@ func (impl *AppStorage) RetrieveAll(teamID int) ([]*App, error) {
 	return apps, nil
 }
 
-func (impl *AppStorage) RetrieveAppByIDAndTeamID(appID int, teamID int) (*App, error) {
+func (impl *AppStorage) RetrieveAppByTeamIDAndAppID(teamID int, appID int) (*App, error) {
 	var app *App
 	if err := impl.db.Where("id = ? AND team_id = ?", appID, teamID).Find(&app).Error; err != nil {
 		return nil, err

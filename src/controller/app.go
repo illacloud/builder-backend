@@ -419,14 +419,11 @@ func (controller *Controller) DuplicateApp(c *gin.Context) {
 	}
 
 	// duplicate app following units
-	// - TreeState
-	// - KVState
-	// - SetState
-	// - Action
-	controller.DuplicateTreeStates(teamID, appID, duplicatedAppID, userID)
-	controller.DuplicateKVStates(teamID, appID, duplicatedAppID, userID)
-	controller.DuplicateSetStates(teamID, appID, duplicatedAppID, userID)
-	controller.DuplicateActions(teamID, appID, duplicatedAppID, userID)
+	// duplicate will copy following units from target app mainline version to duplicated app edit version
+	controller.DuplicateTreeStateByVersion(teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
+	controller.DuplicateKVStateByVersion(teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
+	controller.DuplicateSetStateByVersion(teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
+	controller.DuplicateActionByVersion(teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
 
 	// audit log
 	auditLogger := auditlogger.GetInstance()
@@ -459,4 +456,393 @@ func (controller *Controller) DuplicateApp(c *gin.Context) {
 	// feedback
 	controller.FeedbackOK(c, model.NewAppForExport(duplicatedApp, usersLT))
 	return
+}
+
+func (controller *Controller) ReleaseApp(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
+		return
+	}
+
+	// get request body
+	req := request.NewReleaseAppRequest()
+	if errInDecode := json.NewDecoder(c.Request.Body).Decode(&req); errInDecode != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_RELEASE_APP_FAILED, "release app error: "+errInDecode.Error())
+		return
+	}
+
+	// validate
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
+	controller.AttributeGroup.SetUnitID(appID)
+	canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(accesscontrol.ACTION_SPECIAL_RELEASE_APP)
+	if errInCheckAttr != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canManageSpecial {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// check team can release public app
+	if req.ExportPublic() {
+		canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(accesscontrol.ACTION_SPECIAL_RELEASE_PUBLIC_APP)
+		if errInCheckAttr != nil {
+			controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+			return
+		}
+		if !canManageSpecial {
+			controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+			return
+		}
+	}
+
+	// fetch app
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
+	if errInRetrieveApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
+		return
+	}
+
+	// release app version
+	app.Release()
+
+	// release app following components & actions
+	// release will copy following units from edit version to app mainline version
+	controller.DuplicateTreeStateByVersion(teamID, teamID, appID, appID, model.APP_EDIT_VERSION, targetApp.ExportMainlineVersion(), userID)
+	controller.DuplicateKVStateByVersion(teamID, teamID, appID, appID, model.APP_EDIT_VERSION, targetApp.ExportMainlineVersion(), userID)
+	controller.DuplicateSetStateByVersion(teamID, teamID, appID, appID, model.APP_EDIT_VERSION, targetApp.ExportMainlineVersion(), userID)
+	controller.DuplicateActionByVersion(teamID, teamID, appID, appID, model.APP_EDIT_VERSION, targetApp.ExportMainlineVersion(), userID)
+
+	// config app & action public status
+	if req.ExportPublic() {
+		app.SetPublic(userID)
+		controller.Storage.ActionStorage.MakeActionPublicByTeamIDAndAppID(teamID, appID, userID)
+	} else {
+		app.SetPrivate(userID)
+		controller.Storage.ActionStorage.MakeActionPrivateByTeamIDAndAppID(teamID, appID, userID)
+	}
+
+	// release app
+	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
+	if errInUpdateApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
+		return
+	}
+
+	// audit log
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType: auditlogger.AUDIT_LOG_DEPLOY_APP,
+		TeamID:    teamID,
+		UserID:    userID,
+		IP:        c.ClientIP(),
+		AppID:     appID,
+		AppName:   app.ExportAppName(),
+	})
+
+	// feedback
+	controller.FeedbackOK(c, model.NewReleaseAppResponse(app.ReleaseVersion))
+	return
+}
+
+// For take snapshot for app, we should:
+// - get target app
+// - bump target app mainline version
+// - snapshot all following components & actions by app mainline version
+//   - snapshot tree state
+//   - snapshot k-v state
+//   - snapshot set state
+//   - snapshot actions
+// - save app snapshot
+// - update app for version bump
+
+func (controller *Controller) TakeSnapshot(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
+		return
+	}
+
+	// validate
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
+	controller.AttributeGroup.SetUnitID(appID)
+	canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(accesscontrol.ACTOIN_SPECIAL_TAKE_SNAPSHOT)
+	if errInCheckAttr != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canManageSpecial {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// fetch app
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByIDAndTeamID(appID, teamID)
+	if errInRetrieveApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
+		return
+	}
+
+	// config app version
+	treeStateLatestVersion, _ := controller.Storage.TreeStateStorage.RetrieveTreeStatesLatestVersion(teamID, appID)
+	app.SyncMainlineVersoinWithTreeStateLatestVersion(treeStateLatestVersion)
+	app.BumpMainlineVersionOverReleaseVersoin()
+
+	// do snapshot for app following components and actions
+	// do snapshot will copy following units from edit version to app mainline version
+	controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, appMainLineVersion, userID)
+	controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, appMainLineVersion, userID)
+	controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, appMainLineVersion, userID)
+	controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, mainlineVersion, userID)
+
+	// save snapshot
+	_, errInTakeSnapshot := controller.SaveAppSnapshot(c, teamID, appID, userID, app.ExportMainlineVersion(), model.SNAPSHOT_TRIGGER_MODE_MANUAL)
+	if errInTakeSnapshot != nil {
+		return
+	}
+
+	// update app for version bump
+	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
+	if errInUpdateApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
+		return
+	}
+
+	// feedback
+	controller.FeedbackOK(c, nil)
+	return
+
+}
+
+func (controller *Controller) GetSnapshotList(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	pageLimit, errInGetPageLimit := controller.GetIntParamFromRequest(c, PARAM_PAGE_LIMIT)
+	page, errInGetPage := controller.GetIntParamFromRequest(c, PARAM_PAGE)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil || errInGetPageLimit != nil || errInGetPage != nil {
+		return
+	}
+
+	// validate
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
+	controller.AttributeGroup.SetUnitID(appID)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	if errInCheckAttr != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canAccess {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// retrieve by page
+	pagination := storage.NewPagination(pageLimit, page)
+	snapshotTotalRows, errInRetrieveSnapshotCount := controller.Storage.AppSnapshotStorage.RetrieveCountByTeamIDAndAppID(teamID, appID)
+	if errInRetrieveSnapshotCount != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshotCount.Error())
+		return
+	}
+	pagination.CalculateTotalPagesByTotalRows(snapshotTotalRows)
+	snapshots, errInRetrieveSnapshot := controller.Storage.AppSnapshotStorage.RetrieveByTeamIDAppIDAndPage(teamID, appID, pagination)
+	if errInRetrieveSnapshot != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
+		return
+	}
+
+	// get all modifier user ids from all apps
+	allUserIDs := model.ExtractAllModifierIDFromAppSnapshot(snapshots)
+
+	// fet all user id mapped user info, and build user info lookup table
+	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
+	if errInGetMultiUserInfo != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+		return
+	}
+
+	// feedback
+	controller.FeedbackOK(c, model.NewGetSnapshotListResponse(snapshots, pagination.GetTotalPages(), usersLT))
+	return
+
+}
+
+func (controller *Controller) GetSnapshot(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	snapshotID, errInGetSnapshotID := controller.GetMagicIntParamFromRequest(c, PARAM_SNAPSHOT_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetSnapshotID != nil || errInGetAuthToken != nil {
+		return
+	}
+
+	// validate
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
+	controller.AttributeGroup.SetUnitID(appID)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	if errInCheckAttr != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canAccess {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// get target snapshot
+	snapshot, errInRetrieveSnapshot := controller.Storage.AppSnapshotStorage.RetrieveByID(snapshotID)
+	if errInRetrieveSnapshot != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
+		return
+	}
+
+	// get app
+	fullAppForExport, errInGenerateFullApp := controller.GetTargetVersionFullApp(c, teamID, appID, snapshot.ExportTargetVersion())
+	controller.FeedbackOK(c, fullAppForExport)
+	return
+}
+
+// For recover snapshot for app, we should:
+// - phrase 1: take snapshot for current edit version
+//   - get target app
+//   - bump app mainline versoin
+//   - snapshot all following components & actions by app mainline version
+//     - snapshot tree state
+//     - snapshot k-v state
+//     - snapshot set state
+//     - snapshot actions
+//   - save app snapshot
+//   - update app for version bump
+// - phrase 2: clean edit version app following components & actions
+//   - clean edit version tree state
+//   - clean edit version k-v state
+//   - clean edit version set state
+//   - clean edit version actions
+// - phrase 3: duplicate target version app data to edit version
+//   - get target snapshot for export target app version
+//   - copy target version app following components & actions to edit version
+//     - copy target version tree state to edit version
+//     - copy target version k-v state to edit version
+//     - copy target version set state to edit version
+//     - copy target version actions to edit version
+//   - create a snapshot.ModifyHistory for recover snapshot
+
+func (controller *Controller) RecoverSnapshot(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	snapshotID, errInGetSnapshotID := controller.GetMagicIntParamFromRequest(c, PARAM_SNAPSHOT_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetSnapshotID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
+		return
+	}
+
+	// validate
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
+	controller.AttributeGroup.SetUnitID(appID)
+	canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(accesscontrol.ACTOIN_SPECIAL_RECOVER_SNAPSHOT)
+	if errInCheckAttr != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canManageSpecial {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// phrase 1: take snapshot for current edit version
+
+	// fetch app
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByIDAndTeamID(appID, teamID)
+	if errInRetrieveApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
+		return
+	}
+
+	// bump app mainline versoin
+	app.BumpMainlineVersion()
+
+	// do snapshot for app following components and actions
+	// do snapshot will copy following units from edit version to app mainline version
+	controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+
+	// save app snapshot
+	newAppSnapshot, errInTakeSnapshot := controller.SaveAppSnapshot(c, teamID, appID, userID, app.ExportMainlineVersion(), model.SNAPSHOT_TRIGGER_MODE_AUTO)
+	if errInTakeSnapshot != nil {
+		return
+	}
+
+	// update app version
+	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
+	if errInUpdateApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
+		return
+	}
+
+	// phrase 2: clean edit version app following components & actions
+	controller.Storage.TreeStateStorage.DeleteAllTypeTreeStatesByTeamIDAppIDAndVersion(teamID, appID, model.APP_EDIT_VERSION)
+	controller.Storage.KVStateStorage.DeleteAllTypeKVStatesByTeamIDAppIDAndVersion(teamID, appID, model.APP_EDIT_VERSION)
+	controller.Storage.SetStateStorage.DeleteAllTypeSetStatesByTeamIDAppIDAndVersion(teamID, appID, model.APP_EDIT_VERSION)
+	controller.Storage.ActionStorage.DeleteAllActionsByTeamIDAppIDAndVersion(teamID, appID, model.APP_EDIT_VERSION)
+
+	// phrase 3: duplicate target version app data to edit version
+
+	// get target snapshot
+	targetSnapshot, errInRetrieveSnapshot := controller.Storage.AppSnapshotStorage.RetrieveByID(snapshotID)
+	if errInRetrieveSnapshot != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
+		return
+	}
+	targetVersion := targetSnapshot.ExportTargetVersion()
+
+	// copy target version app following components & actions to edit version
+	controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, targetVersion, model.APP_EDIT_VERSION, userID)
+	controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, targetVersion, model.APP_EDIT_VERSION, userID)
+	controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, targetVersion, model.APP_EDIT_VERSION, userID)
+	controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, targetVersion, model.APP_EDIT_VERSION, userID)
+
+	// create a snapshot.ModifyHistory for recover snapshot
+	modifyHistoryLog := model.NewRecoverAppSnapshotModifyHistory(userID, targetSnapshot)
+	newAppSnapshot.PushModifyHistory(modifyHistoryLog)
+
+	// update app snapshot
+	errInUpdateSnapshot := controller.Storage.AppSnapshotStorage.UpdateWholeSnapshot(newAppSnapshot)
+	if errInUpdateSnapshot != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_SNAPSHOT, "update app snapshot failed: "+errInUpdateSnapshot.Error())
+		return
+	}
+
+	// feedback
+	controller.FeedbackOK(c, nil)
+	return
+
 }

@@ -70,10 +70,10 @@ func (treeState *TreeState) CleanID() {
 	treeState.ID = 0
 }
 
-func (treeState *TreeState) InitForFork(teamID int, appID int, userID int) {
+func (treeState *TreeState) InitForFork(teamID int, appID int, version int, userID int) {
 	treeState.TeamID = teamID
 	treeState.AppRefID = appID
-	treeState.Version = model.APP_EDIT_VERSION
+	treeState.Version = version
 	treeState.CreatedBy = userID
 	treeState.UpdatedBy = userID
 	treeState.CleanID()

@@ -1,4 +1,4 @@
-package repository
+package request
 
 type CreateAppRequest struct {
 	Name       string      `json:"appName" validate:"required"`

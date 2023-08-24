@@ -1,4 +1,4 @@
-package repository
+package request
 
 type DuplicateAppRequest struct {
 	Name string `json:"appName" validate:"required"`

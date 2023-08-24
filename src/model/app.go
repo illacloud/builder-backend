@@ -141,6 +141,11 @@ func (app *App) ReleaseMainlineVersion() {
 	app.ReleaseVersion = app.MainlineVersion
 }
 
+func (app *App) Release() {
+	app.BumpMainlineVersion()
+	app.ReleaseMainlineVersion()
+}
+
 func (app *App) ExportUpdatedAt() time.Time {
 	return app.UpdatedAt
 }
