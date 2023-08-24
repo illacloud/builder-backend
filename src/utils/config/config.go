@@ -41,7 +41,7 @@ type Config struct {
 	WebsocketServerPort string `env:"ILLA_SERVER_WEBSOCKET_PORT"    envDefault:"8002"`
 	ServerMode          string `env:"ILLA_SERVER_MODE"              envDefault:"debug"`
 	DeployMode          string `env:"ILLA_DEPLOY_MODE"              envDefault:"cloud-test"`
-	SecretKey           string `env:"ILLA_SECRET_KEY" 			    envDefault:""`
+	SecretKey           string `env:"ILLA_SECRET_KEY" 			    envDefault:"8xEMrWkBARcDDYQ"`
 	// key for idconvertor
 	RandomKey string `env:"ILLA_RANDOM_KEY"  envDefault:"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"`
 	// storage config
@@ -171,6 +171,73 @@ func (c *Config) GetRedisPassword() string {
 
 func (c *Config) GetRedisDatabase() int {
 	return c.RedisDatabase
+}
+
+func (c *Config) GetDriveType() string {
+	return c.DriveType
+}
+
+func (c *Config) IsAWSTypeDrive() bool {
+	if c.DriveType == DRIVE_TYPE_AWS || c.DriveType == DRIVE_TYPE_DO {
+		return true
+	}
+	return false
+}
+
+func (c *Config) IsMINIODrive() bool {
+	return c.DriveType == DRIVE_TYPE_MINIO
+}
+
+func (c *Config) GetAWSS3Endpoint() string {
+	return c.DriveEndpoint
+}
+
+func (c *Config) GetAWSS3AccessKeyID() string {
+	return c.DriveAccessKeyID
+}
+
+func (c *Config) GetAWSS3AccessKeySecret() string {
+	return c.DriveAccessKeySecret
+}
+
+func (c *Config) GetAWSS3Region() string {
+	return c.DriveRegion
+}
+
+func (c *Config) GetAWSS3SystemBucketName() string {
+	return c.DriveSystemBucketName
+}
+
+func (c *Config) GetAWSS3TeamBucketName() string {
+	return c.DriveTeamBucketName
+}
+
+func (c *Config) GetAWSS3Timeout() time.Duration {
+	return c.DriveUploadTimeout
+}
+
+func (c *Config) GetMINIOAccessKeyID() string {
+	return c.DriveAccessKeyID
+}
+
+func (c *Config) GetMINIOAccessKeySecret() string {
+	return c.DriveAccessKeySecret
+}
+
+func (c *Config) GetMINIOEndpoint() string {
+	return c.DriveEndpoint
+}
+
+func (c *Config) GetMINIOSystemBucketName() string {
+	return c.DriveSystemBucketName
+}
+
+func (c *Config) GetMINIOTeamBucketName() string {
+	return c.DriveTeamBucketName
+}
+
+func (c *Config) GetMINIOTimeout() time.Duration {
+	return c.DriveUploadTimeout
 }
 
 func (c *Config) GetControlToken() string {

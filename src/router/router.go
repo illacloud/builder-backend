@@ -1,89 +1,103 @@
-// Copyright 2022 The ILLA Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package router
 
 import (
-	"github.com/illacloud/builder-backend/pkg/user"
-
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
+	"github.com/illacloud/builder-backend/src/controller"
+	"github.com/illacloud/builder-backend/src/utils/remotejwtauth"
 )
 
-type RESTRouter struct {
-	logger               *zap.SugaredLogger
-	Router               *gin.RouterGroup
-	BuilderRouter        BuilderRouter
-	AppRouter            AppRouter
-	PublicAppRouter      PublicAppRouter
-	RoomRouter           RoomRouter
-	ActionRouter         ActionRouter
-	PublicActionRouter   PublicActionRouter
-	InternalActionRouter InternalActionRouter
-	ResourceRouter       ResourceRouter
-	StatusRouter         StatusRouter
-	OAuth2Router         OAuth2Router
+type Router struct {
+	Controller *controller.Controller
 }
 
-func NewRESTRouter(logger *zap.SugaredLogger, builderRouter BuilderRouter, appRouter AppRouter, publicAppRouter PublicAppRouter, roomRouter RoomRouter,
-	actionRouter ActionRouter, publicActionRouter PublicActionRouter, internalActionRouter InternalActionRouter, resourceRouter ResourceRouter, statusRouter StatusRouter,
-	oauth2Router OAuth2Router) *RESTRouter {
-	return &RESTRouter{
-		logger:               logger,
-		BuilderRouter:        builderRouter,
-		AppRouter:            appRouter,
-		PublicAppRouter:      publicAppRouter,
-		RoomRouter:           roomRouter,
-		ActionRouter:         actionRouter,
-		PublicActionRouter:   publicActionRouter,
-		InternalActionRouter: internalActionRouter,
-		ResourceRouter:       resourceRouter,
-		StatusRouter:         statusRouter,
-		OAuth2Router:         oauth2Router,
+func NewRouter(controller *controller.Controller) *Router {
+	return &Router{
+		Controller: controller,
 	}
 }
 
-func (r RESTRouter) InitRouter(router *gin.RouterGroup) {
-	v1 := router.Group("/v1")
+func (r *Router) RegisterRouters(engine *gin.Engine) {
+	// config
+	engine.UseRawPath = true
 
-	builderRouter := v1.Group("/teams/:teamID/builder")
-	appRouter := v1.Group("/teams/:teamID/apps")
-	publicAppRouter := v1.Group("/teams/byIdentifier/:teamIdentifier/publicApps")
-	resourceRouter := v1.Group("/teams/:teamID/resources")
-	actionRouter := v1.Group("/teams/:teamID/apps/:appID/actions")
-	publicActionRouter := v1.Group("/teams/byIdentifier/:teamIdentifier/apps/:appID/publicActions")
-	internalActionRouter := v1.Group("/teams/:teamID/apps/:appID/internalActions")
-	roomRouter := v1.Group("/teams/:teamID/room")
-	statusRouter := v1.Group("/status")
-	oauth2Router := v1.Group("/oauth2")
+	// init route
+	routerGroup := engine.Group("/api/routerGroup")
 
-	builderRouter.Use(user.RemoteJWTAuth())
-	appRouter.Use(user.RemoteJWTAuth())
-	roomRouter.Use(user.RemoteJWTAuth())
-	actionRouter.Use(user.RemoteJWTAuth())
-	internalActionRouter.Use(user.RemoteJWTAuth())
-	resourceRouter.Use(user.RemoteJWTAuth())
+	builderRouter := routerGroup.Group("/teams/:teamID/builder")
+	appRouter := routerGroup.Group("/teams/:teamID/apps")
+	publicAppRouter := routerGroup.Group("/teams/byIdentifier/:teamIdentifier/publicApps")
+	resourceRouter := routerGroup.Group("/teams/:teamID/resources")
+	actionRouter := routerGroup.Group("/teams/:teamID/apps/:appID/actions")
+	publicActionRouter := routerGroup.Group("/teams/byIdentifier/:teamIdentifier/apps/:appID/publicActions")
+	internalActionRouter := routerGroup.Group("/teams/:teamID/apps/:appID/internalActions")
+	roomRouter := routerGroup.Group("/teams/:teamID/room")
+	statusRouter := routerGroup.Group("/status")
+	oauth2Router := routerGroup.Group("/oauth2")
 
-	r.BuilderRouter.InitBuilderRouter(builderRouter)
-	r.AppRouter.InitAppRouter(appRouter)
-	r.PublicAppRouter.InitPublicAppRouter(publicAppRouter)
-	r.RoomRouter.InitRoomRouter(roomRouter)
-	r.ActionRouter.InitActionRouter(actionRouter)
-	r.PublicActionRouter.InitPublicActionRouter(publicActionRouter)
-	r.InternalActionRouter.InitInternalActionRouter(internalActionRouter)
-	r.ResourceRouter.InitResourceRouter(resourceRouter)
-	r.StatusRouter.InitStatusRouter(statusRouter)
-	r.OAuth2Router.InitOAuth2Router(oauth2Router)
+	// register auth
+	builderRouter.Use(remotejwtauth.RemoteJWTAuth())
+	appRouter.Use(remotejwtauth.RemoteJWTAuth())
+	roomRouter.Use(remotejwtauth.RemoteJWTAuth())
+	actionRouter.Use(remotejwtauth.RemoteJWTAuth())
+	internalActionRouter.Use(remotejwtauth.RemoteJWTAuth())
+	resourceRouter.Use(remotejwtauth.RemoteJWTAuth())
+
+	// builder routers
+	builderRouter.GET("desc", r.Controller.GetTeamBuilderDesc)
+
+	// app routers
+	appRouter.POST("", r.Controller.CreateApp)
+	appRouter.DELETE(":appID", r.Controller.DeleteApp)
+	appRouter.PATCH(":appID/config", r.Controller.ConfigApp)
+	appRouter.GET("", r.Controller.GetAllApps)
+	appRouter.GET(":appID/versions/:version", r.Controller.GetMegaData)
+	appRouter.POST(":appID/duplication", r.Controller.DuplicateApp)
+	appRouter.POST(":appID/deploy", r.Controller.ReleaseApp)
+	appRouter.POST(":appID/takeSnapshot", r.Controller.TakeSnapshot)
+	appRouter.GET(":appID/snapshotList/limit/:pageLimit/page/:page", r.Controller.GetSnapshotList)
+	appRouter.GET(":appID/snapshot/:snapshotID", r.Controller.GetSnapshot)
+	appRouter.POST(":appID/recoverSnapshot/:snapshotID", r.Controller.RecoverSnapshot)
+
+	// room routers
+	roomRouter.GET("/websocketConnection/dashboard", r.Controller.GetDashboardRoomConn)
+	roomRouter.GET("/websocketConnection/app/:appID", r.Controller.GetAppRoomConn)
+	roomRouter.GET("/binaryWebsocketConnection/app/:appID", r.Controller.GetAppRoomBinaryConn)
+
+	// action routers
+	actionRouter.GET("", r.Controller.FindActions)
+	actionRouter.POST("", r.Controller.CreateAction)
+	actionRouter.GET("/:actionID", r.Controller.GetAction)
+	actionRouter.PUT("/:actionID", r.Controller.UpdateAction)
+	actionRouter.DELETE("/:actionID", r.Controller.DeleteAction)
+	actionRouter.POST("/preview", r.Controller.PreviewAction)
+	actionRouter.POST("/:actionID/run", r.Controller.RunAction)
+
+	// internal action routers
+	internalActionRouter.POST("/generateSQL", r.Controller.GenerateSQL)
+
+	// resource routers
+	resourceRouter.GET("", r.Controller.FindAllResources)
+	resourceRouter.POST("", r.Controller.CreateResource)
+	resourceRouter.GET("/:resourceID", r.Controller.GetResource)
+	resourceRouter.PUT("/:resourceID", r.Controller.UpdateResource)
+	resourceRouter.DELETE("/:resourceID", r.Controller.DeleteResource)
+	resourceRouter.POST("/testConnection", r.Controller.TestConnection)
+	resourceRouter.GET("/:resourceID/meta", r.Controller.GetMetaInfo)
+	resourceRouter.POST("/:resourceID/token", r.Controller.CreateOAuthToken)
+	resourceRouter.GET("/:resourceID/oauth2", r.Controller.GoogleSheetsOAuth2)
+	resourceRouter.POST("/:resourceID/refresh", r.Controller.RefreshGSOAuth)
+
+	// public app routers
+	publicAppRouter.GET(":appID/versions/:version", r.Controller.GetMegaData)
+	publicAppRouter.GET(":appID/isPublic", r.Controller.IsPublicApp)
+
+	// public action router
+	publicActionRouter.POST("/:actionID/run", r.Controller.RunAction)
+
+	// oauth2 router
+	oauth2Router.GET("/authorize", r.Controller.GoogleOAuth2)
+
+	// status router
+	statusRouter.GET("", r.Controller.Status)
 
 }
