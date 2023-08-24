@@ -411,41 +411,22 @@ func (controller *Controller) DuplicateApp(c *gin.Context) {
 	}
 
 	// create new app for duplicate
-	newApp := model.NewAppForDuplicate(targetApp, req.ExportAppName(), userID)
-	newAppID, errInCreateApp := controller.Storage.AppStorage.Create(newApp)
+	duplicatedApp := model.NewAppForDuplicate(targetApp, req.ExportAppName(), userID)
+	duplicatedAppID, errInCreateApp := controller.Storage.AppStorage.Create(duplicatedApp)
 	if errInCreateApp != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_APP, "error in create app: "+errInCreateApp.Error())
 		return
 	}
 
 	// duplicate app following units
-	//   ->  TreeState
-	//       KVState
-	//       SetState
-	//       Action
-	treeStates, errinRetrieveTreeStates := controller.Storage.TreeStateStorage.RetrieveAllTypeTreeStatesByApp(teamID, appID, model.APP_EDIT_VERSION)
-	if errinRetrieveTreeStates != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "error in get tree states: "+errinRetrieveTreeStates.Error())
-		return
-	}
-
-	_ = impl.copyAllTreeState(teamID, appID, appB.ID, userID)
-	_ = impl.copyAllKVState(teamID, appID, appB.ID, userID)
-	_ = impl.copyAllSetState(teamID, appID, appB.ID, userID)
-	_ = impl.copyActions(teamID, appID, appB.ID, userID)
-
-	duplicatedAppID, errInDuplicateApp := controller.AppService.DuplicateApp(teamID, appID, userID, req.ExportAppName())
-	if errInDuplicateApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_DUPLICATE_APP, "duplicate app error: "+errInDuplicateApp.Error())
-		return
-	}
-
-	// get duplicated app
-	duplicatedApp, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByIDAndTeamID(duplicatedAppID, teamID)
-	if errInRetrieveApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get user info failed: "+errInRetrieveApp.Error())
-		return
-	}
+	// - TreeState
+	// - KVState
+	// - SetState
+	// - Action
+	controller.DuplicateTreeStates(teamID, appID, duplicatedAppID, userID)
+	controller.DuplicateKVStates(teamID, appID, duplicatedAppID, userID)
+	controller.DuplicateSetStates(teamID, appID, duplicatedAppID, userID)
+	controller.DuplicateActions(teamID, appID, duplicatedAppID, userID)
 
 	// audit log
 	auditLogger := auditlogger.GetInstance()

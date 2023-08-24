@@ -35,28 +35,40 @@ type KVState struct {
 	UpdatedBy int       `json:"updated_by" gorm:"column:updated_by;type:bigint"`
 }
 
-func (kvstate *KVState) CleanID() {
-	kvstate.ID = 0
+func (kvState *KVState) CleanID() {
+	kvState.ID = 0
 }
 
-func (kvstate *KVState) InitUID() {
-	kvstate.UID = uuid.New()
+func (kvState *KVState) InitUID() {
+	kvState.UID = uuid.New()
 }
 
-func (kvstate *KVState) InitCreatedAt() {
-	kvstate.CreatedAt = time.Now().UTC()
+func (kvState *KVState) InitCreatedAt() {
+	kvState.CreatedAt = time.Now().UTC()
 }
 
-func (kvstate *KVState) InitUpdatedAt() {
-	kvstate.UpdatedAt = time.Now().UTC()
+func (kvState *KVState) InitUpdatedAt() {
+	kvState.UpdatedAt = time.Now().UTC()
 }
 
-func (kvstate *KVState) AppendNewVersion(newVersion int) {
-	kvstate.CleanID()
-	kvstate.InitUID()
-	kvstate.Version = newVersion
+func (kvState *KVState) InitForFork(teamID int, appID int, userID int) {
+	kvState.TeamID = teamID
+	kvState.AppRefID = appID
+	kvState.Version = model.APP_EDIT_VERSION
+	kvState.CreatedBy = userID
+	kvState.UpdatedBy = userID
+	kvState.CleanID()
+	kvState.InitUID()
+	kvState.InitCreatedAt()
+	kvState.InitUpdatedAt()
 }
 
-func (kvstate *KVState) ExportID() int {
-	return kvstate.ID
+func (kvState *KVState) AppendNewVersion(newVersion int) {
+	kvState.CleanID()
+	kvState.InitUID()
+	kvState.Version = newVersion
+}
+
+func (kvState *KVState) ExportID() int {
+	return kvState.ID
 }

@@ -102,7 +102,7 @@ func (impl *KVStateStorage) RetrieveEditVersionByAppAndKey(teamID int, apprefid 
 	return kvstate, nil
 }
 
-func (impl *KVStateStorage) RetrieveAllTypeKVStatesByApp(teamID int, apprefid int, version int) ([]*model.KVState, error) {
+func (impl *KVStateStorage) RetrieveKVStatesByTeamIDAppIDAndVersion(teamID int, apprefid int, version int) ([]*model.KVState, error) {
 	var kvstates []*KVState
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, apprefid, version).Find(&kvstates).Error; err != nil {
 		return nil, err

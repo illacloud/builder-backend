@@ -176,7 +176,7 @@ func NewAppServiceImpl(logger *zap.SugaredLogger, appRepository repository.AppRe
 	}
 }
 
-func (impl *AppServiceImpl) CreateApp(app AppDto) (AppDto, error) {
+func (controller *Controller) CreateApp(app AppDto) (AppDto, error) {
 	// init
 	app.ReleaseVersion = 0 // the draft version will always be 0, so the release version and mainline version are 0 by default when app init.
 	app.MainlineVersion = 0
@@ -209,7 +209,7 @@ func (impl *AppServiceImpl) CreateApp(app AppDto) (AppDto, error) {
 	return app, nil
 }
 
-func (impl *AppServiceImpl) IsPublicApp(teamID int, appID int) bool {
+func (controller *Controller) IsPublicApp(teamID int, appID int) bool {
 	app, err := impl.appRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if err != nil {
 		return false
@@ -217,7 +217,7 @@ func (impl *AppServiceImpl) IsPublicApp(teamID int, appID int) bool {
 	return app.IsPublic()
 }
 
-func (impl *AppServiceImpl) UpdateApp(app AppDto) (*AppDtoForExport, error) {
+func (controller *Controller) UpdateApp(app AppDto) (*AppDtoForExport, error) {
 	app.UpdatedAt = time.Now().UTC()
 	if err := impl.appRepository.Update(&repository.App{
 		ID:              app.ID,
@@ -248,7 +248,7 @@ func (impl *AppServiceImpl) UpdateApp(app AppDto) (*AppDtoForExport, error) {
 }
 
 // call this method when action (over HTTP) and state (over websocket) changed
-func (impl *AppServiceImpl) UpdateAppModifyTime(app *AppDto) error {
+func (controller *Controller) UpdateAppModifyTime(app *AppDto) error {
 	app.UpdatedAt = time.Now().UTC()
 	if err := impl.appRepository.UpdateUpdatedAt(&repository.App{
 		ID:        app.ID,
@@ -260,7 +260,7 @@ func (impl *AppServiceImpl) UpdateAppModifyTime(app *AppDto) error {
 	return nil
 }
 
-func (impl *AppServiceImpl) FetchAppByID(teamID int, appID int) (AppDto, error) {
+func (controller *Controller) FetchAppByID(teamID int, appID int) (AppDto, error) {
 	app, err := impl.appRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if err != nil {
 		return AppDto{}, err
@@ -279,7 +279,7 @@ func (impl *AppServiceImpl) FetchAppByID(teamID int, appID int) (AppDto, error) 
 	return appDto, nil
 }
 
-func (impl *AppServiceImpl) DeleteApp(teamID int, appID int) error { // TODO: maybe need transaction
+func (controller *Controller) DeleteApp(teamID int, appID int) error { // TODO: maybe need transaction
 	_ = impl.treestateRepository.DeleteAllTypeTreeStatesByApp(teamID, appID)
 	_ = impl.kvstateRepository.DeleteAllTypeKVStatesByApp(teamID, appID)
 	_ = impl.actionRepository.DeleteActionsByApp(teamID, appID)
@@ -287,7 +287,7 @@ func (impl *AppServiceImpl) DeleteApp(teamID int, appID int) error { // TODO: ma
 	return impl.appRepository.Delete(teamID, appID)
 }
 
-func (impl *AppServiceImpl) GetAllApps(teamID int) ([]*AppDtoForExport, error) {
+func (controller *Controller) GetAllApps(teamID int) ([]*AppDtoForExport, error) {
 	res, err := impl.appRepository.RetrieveAllByUpdatedTime(teamID)
 	if err != nil {
 		return nil, err
@@ -321,129 +321,7 @@ func (impl *AppServiceImpl) GetAllApps(teamID int) ([]*AppDtoForExport, error) {
 	return AppDtoForExportSlice, nil
 }
 
-func (impl *AppServiceImpl) copyAllTreeState(teamID, appA, appB, user int) error {
-	// get edit version K-V state from database
-	treestates, err := impl.treestateRepository.RetrieveAllTypeTreeStatesByApp(teamID, appA, repository.APP_EDIT_VERSION)
-	if err != nil {
-		return err
-	}
-	// update some fields
-	indexIDMap := map[int]int{}
-	releaseIDMap := map[int]int{}
-	for serial, _ := range treestates {
-		indexIDMap[serial] = treestates[serial].ID
-		treestates[serial].ID = 0
-		treestates[serial].UID = uuid.New()
-		treestates[serial].TeamID = teamID
-		treestates[serial].AppRefID = appB
-		treestates[serial].Version = repository.APP_EDIT_VERSION
-		treestates[serial].CreatedBy = user
-		treestates[serial].CreatedAt = time.Now().UTC()
-		treestates[serial].UpdatedBy = user
-		treestates[serial].UpdatedAt = time.Now().UTC()
-	}
-	// and put them to the database as duplicate
-	for i, treestate := range treestates {
-		id, err := impl.treestateRepository.Create(treestate)
-		if err != nil {
-			return err
-		}
-		oldID := indexIDMap[i]
-		releaseIDMap[oldID] = id
-	}
-
-	for _, treestate := range treestates {
-		treestate.ChildrenNodeRefIDs = convertLink(treestate.ChildrenNodeRefIDs, releaseIDMap)
-		treestate.ParentNodeRefID = releaseIDMap[treestate.ParentNodeRefID]
-		if err := impl.treestateRepository.Update(treestate); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (impl *AppServiceImpl) copyAllKVState(teamID, appA, appB, user int) error {
-	// get edit version K-V state from database
-	kvstates, err := impl.kvstateRepository.RetrieveAllTypeKVStatesByApp(teamID, appA, repository.APP_EDIT_VERSION)
-	if err != nil {
-		return err
-	}
-	// update some fields
-	for serial, _ := range kvstates {
-		kvstates[serial].ID = 0
-		kvstates[serial].UID = uuid.New()
-		kvstates[serial].TeamID = teamID
-		kvstates[serial].AppRefID = appB
-		kvstates[serial].Version = repository.APP_EDIT_VERSION
-		kvstates[serial].CreatedBy = user
-		kvstates[serial].CreatedAt = time.Now().UTC()
-		kvstates[serial].UpdatedBy = user
-		kvstates[serial].UpdatedAt = time.Now().UTC()
-	}
-	// and put them to the database as duplicate
-	for _, kvstate := range kvstates {
-		if err := impl.kvstateRepository.Create(kvstate); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (impl *AppServiceImpl) copyAllSetState(teamID, appA, appB, user int) error {
-	setstates, err := impl.setstateRepository.RetrieveSetStatesByApp(teamID, appA, repository.SET_STATE_TYPE_DISPLAY_NAME, repository.APP_EDIT_VERSION)
-	if err != nil {
-		return err
-	}
-	// update some fields
-	for serial, _ := range setstates {
-		setstates[serial].ID = 0
-		setstates[serial].UID = uuid.New()
-		setstates[serial].TeamID = teamID
-		setstates[serial].AppRefID = appB
-		setstates[serial].Version = repository.APP_EDIT_VERSION
-		setstates[serial].CreatedBy = user
-		setstates[serial].CreatedAt = time.Now().UTC()
-		setstates[serial].UpdatedBy = user
-		setstates[serial].UpdatedAt = time.Now().UTC()
-	}
-	// and put them to the database as duplicate
-	for _, setstate := range setstates {
-		if err := impl.setstateRepository.Create(setstate); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (impl *AppServiceImpl) copyActions(teamID, appA, appB, user int) error {
-	// get edit version K-V state from database
-	actions, err := impl.actionRepository.RetrieveActionsByAppVersion(teamID, appA, repository.APP_EDIT_VERSION)
-	if err != nil {
-		return err
-	}
-	// update some fields
-	for serial, _ := range actions {
-		actions[serial].ID = 0
-		actions[serial].UID = uuid.New()
-		actions[serial].TeamID = teamID
-		actions[serial].App = appB
-		actions[serial].Version = repository.APP_EDIT_VERSION
-		actions[serial].CreatedBy = user
-		actions[serial].CreatedAt = time.Now().UTC()
-		actions[serial].UpdatedBy = user
-		actions[serial].UpdatedAt = time.Now().UTC()
-	}
-	// and put them to the database as duplicate
-	for _, action := range actions {
-		if _, err := impl.actionRepository.Create(action); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (impl *AppServiceImpl) ReleaseApp(teamID int, appID int, userID int, public bool) (int, error) {
+func (controller *Controller) ReleaseApp(teamID int, appID int, userID int, public bool) (int, error) {
 	app, err := impl.appRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if err != nil {
 		return -1, nil
@@ -470,7 +348,7 @@ func (impl *AppServiceImpl) ReleaseApp(teamID int, appID int, userID int, public
 	return app.ReleaseVersion, nil
 }
 
-func (impl *AppServiceImpl) ReleaseTreeStateByApp(teamID int, appID int, mainlineVersion int) error {
+func (controller *Controller) ReleaseTreeStateByApp(teamID int, appID int, mainlineVersion int) error {
 	// get edit version K-V state from database
 	treestates, err := impl.treestateRepository.RetrieveAllTypeTreeStatesByApp(teamID, appID, repository.APP_EDIT_VERSION)
 	if err != nil {
@@ -505,7 +383,7 @@ func (impl *AppServiceImpl) ReleaseTreeStateByApp(teamID int, appID int, mainlin
 	return nil
 }
 
-func (impl *AppServiceImpl) ReleaseKVStateByApp(teamID int, appID int, mainlineVersion int) error {
+func (controller *Controller) ReleaseKVStateByApp(teamID int, appID int, mainlineVersion int) error {
 	// get edit version K-V state from database
 	kvstates, err := impl.kvstateRepository.RetrieveAllTypeKVStatesByApp(teamID, appID, repository.APP_EDIT_VERSION)
 	if err != nil {
@@ -526,7 +404,7 @@ func (impl *AppServiceImpl) ReleaseKVStateByApp(teamID int, appID int, mainlineV
 	return nil
 }
 
-func (impl *AppServiceImpl) ReleaseSetStateByApp(teamID int, appID int, mainlineVersion int) error {
+func (controller *Controller) ReleaseSetStateByApp(teamID int, appID int, mainlineVersion int) error {
 	setstates, err := impl.setstateRepository.RetrieveSetStatesByApp(teamID, appID, repository.SET_STATE_TYPE_DISPLAY_NAME, repository.APP_EDIT_VERSION)
 	if err != nil {
 		return err
@@ -546,7 +424,7 @@ func (impl *AppServiceImpl) ReleaseSetStateByApp(teamID int, appID int, mainline
 	return nil
 }
 
-func (impl *AppServiceImpl) ReleaseActionsByApp(teamID int, appID int, mainlineVersion int) error {
+func (controller *Controller) ReleaseActionsByApp(teamID int, appID int, mainlineVersion int) error {
 	// get edit version K-V state from database
 	actions, err := impl.actionRepository.RetrieveActionsByAppVersion(teamID, appID, repository.APP_EDIT_VERSION)
 	if err != nil {
@@ -567,7 +445,7 @@ func (impl *AppServiceImpl) ReleaseActionsByApp(teamID int, appID int, mainlineV
 	return nil
 }
 
-func (impl *AppServiceImpl) GetMegaData(teamID, appID, version int) (*EditorForExport, error) {
+func (controller *Controller) GetMegaData(teamID, appID, version int) (*EditorForExport, error) {
 	editor, err := impl.fetchEditor(teamID, appID, version)
 	if err != nil {
 		return nil, err
@@ -576,7 +454,7 @@ func (impl *AppServiceImpl) GetMegaData(teamID, appID, version int) (*EditorForE
 	return NewEditorForExport(&editor), nil
 }
 
-func (impl *AppServiceImpl) fetchEditor(teamID int, appID int, version int) (Editor, error) {
+func (controller *Controller) fetchEditor(teamID int, appID int, version int) (Editor, error) {
 	app, err := impl.appRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if err != nil {
 		return Editor{}, err
@@ -621,7 +499,7 @@ func (impl *AppServiceImpl) fetchEditor(teamID int, appID int, version int) (Edi
 	return res, nil
 }
 
-func (impl *AppServiceImpl) formatActions(teamID, appID, version int) ([]Action, error) {
+func (controller *Controller) formatActions(teamID, appID, version int) ([]Action, error) {
 	res, err := impl.actionRepository.RetrieveActionsByAppVersion(teamID, appID, version)
 	fmt.Printf("res dump: %v\n", res)
 	if err != nil {
@@ -650,7 +528,7 @@ func (impl *AppServiceImpl) formatActions(teamID, appID, version int) ([]Action,
 	return resSlice, nil
 }
 
-func (impl *AppServiceImpl) formatComponents(teamID, appID, version int) (*ComponentNode, error) {
+func (controller *Controller) formatComponents(teamID, appID, version int) (*ComponentNode, error) {
 	res, err := impl.treestateRepository.RetrieveTreeStatesByApp(teamID, appID, repository.TREE_STATE_TYPE_COMPONENTS, version)
 	if err != nil {
 		return nil, err
@@ -673,7 +551,7 @@ func (impl *AppServiceImpl) formatComponents(teamID, appID, version int) (*Compo
 	return resNode, nil
 }
 
-func (impl *AppServiceImpl) formatDependenciesState(teamID, appID, version int) (map[string][]string, error) {
+func (controller *Controller) formatDependenciesState(teamID, appID, version int) (map[string][]string, error) {
 	res, err := impl.kvstateRepository.RetrieveKVStatesByApp(teamID, appID, repository.KV_STATE_TYPE_DEPENDENCIES, version)
 	if err != nil {
 		return nil, err
@@ -694,7 +572,7 @@ func (impl *AppServiceImpl) formatDependenciesState(teamID, appID, version int) 
 	return resMap, nil
 }
 
-func (impl *AppServiceImpl) formatDragShadowState(teamID, appID, version int) (map[string]interface{}, error) {
+func (controller *Controller) formatDragShadowState(teamID, appID, version int) (map[string]interface{}, error) {
 	res, err := impl.kvstateRepository.RetrieveKVStatesByApp(teamID, appID, repository.KV_STATE_TYPE_DRAG_SHADOW, version)
 	if err != nil {
 		return nil, err
@@ -715,7 +593,7 @@ func (impl *AppServiceImpl) formatDragShadowState(teamID, appID, version int) (m
 	return resMap, nil
 }
 
-func (impl *AppServiceImpl) formatDottedLineSquareState(teamID, appID, version int) (map[string]interface{}, error) {
+func (controller *Controller) formatDottedLineSquareState(teamID, appID, version int) (map[string]interface{}, error) {
 	res, err := impl.kvstateRepository.RetrieveKVStatesByApp(teamID, appID, repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE, version)
 	if err != nil {
 		return nil, err
@@ -736,7 +614,7 @@ func (impl *AppServiceImpl) formatDottedLineSquareState(teamID, appID, version i
 	return resMap, nil
 }
 
-func (impl *AppServiceImpl) formatDisplayNameState(teamID, appID, version int) ([]string, error) {
+func (controller *Controller) formatDisplayNameState(teamID, appID, version int) ([]string, error) {
 	res, err := impl.setstateRepository.RetrieveSetStatesByApp(teamID, appID, repository.SET_STATE_TYPE_DISPLAY_NAME, version)
 	if err != nil {
 		return nil, err
@@ -752,24 +630,4 @@ func (impl *AppServiceImpl) formatDisplayNameState(teamID, appID, version int) (
 	}
 
 	return resSlice, nil
-}
-
-func convertLink(ref string, idMap map[int]int) string {
-	// convert string to []int
-	var oldIDs []int
-	if err := json.Unmarshal([]byte(ref), &oldIDs); err != nil {
-		return ""
-	}
-	// map old id to new id
-	newIDs := make([]int, 0, len(oldIDs))
-	for _, oldID := range oldIDs {
-		newIDs = append(newIDs, idMap[oldID])
-	}
-	// convert []int to string
-	idsjsonb, err := json.Marshal(newIDs)
-	if err != nil {
-		return ""
-	}
-	// return result
-	return string(idsjsonb)
 }

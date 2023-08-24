@@ -70,6 +70,18 @@ func (treeState *TreeState) CleanID() {
 	treeState.ID = 0
 }
 
+func (treeState *TreeState) InitForFork(teamID int, appID int, userID int) {
+	treeState.TeamID = teamID
+	treeState.AppRefID = appID
+	treeState.Version = model.APP_EDIT_VERSION
+	treeState.CreatedBy = userID
+	treeState.UpdatedBy = userID
+	treeState.CleanID()
+	treeState.InitUID()
+	treeState.InitCreatedAt()
+	treeState.InitUpdatedAt()
+}
+
 func (treeState *TreeState) InitUID() {
 	treeState.UID = uuid.New()
 }
@@ -140,7 +152,13 @@ func (treeState *TreeState) RemoveChildrenNodeRefIDs(id int) error {
 	return nil
 }
 
-func (treeState *TreeState) RemapChildrenNodeRefIDs(idMap map[int]int) {
+// reset parent id by idmap[oldID]newID
+func (treeState *TreeState) ResetParentNodeRefIDByMap(idMap map[int]int) {
+	treeState.ParentNodeRefID = idMap[treeState.ParentNodeRefID]
+}
+
+// reset children ids by idmap[oldID]newID
+func (treeState *TreeState) ResetChildrenNodeRefIDsByMap(idMap map[int]int) {
 	// convert string to []int
 	var oldIDs []int
 	if err := json.Unmarshal([]byte(treeState.ChildrenNodeRefIDs), &oldIDs); err != nil {

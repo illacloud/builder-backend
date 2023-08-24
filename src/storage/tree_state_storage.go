@@ -104,7 +104,7 @@ func (impl *TreeStateStorage) RetrieveEditVersionByAppAndName(teamID int, appref
 	return treestate, nil
 }
 
-func (impl *TreeStateStorage) RetrieveAllTypeTreeStatesByApp(teamID int, apprefid int, version int) ([]*model.TreeState, error) {
+func (impl *TreeStateStorage) RetrieveTreeStatesByTeamIDAppIDAndVersion(teamID int, apprefid int, version int) ([]*model.TreeState, error) {
 	var treestates []*model.TreeState
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, apprefid, version).Find(&treestates).Error; err != nil {
 		return nil, err

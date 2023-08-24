@@ -464,3 +464,110 @@ func (controller *Controller) CreateComponentTree(app *repository.App, parentNod
 	}
 	return nil
 }
+
+func (controller *Controller) DuplicateTreeStates(teamID int, fromAppID int, toAppID int, userID int) error {
+	// get edit version tree state from database
+	treeStates, errinRetrieveTreeStates := controller.Storage.TreeStateStorage.RetrieveTreeStatesByTeamIDAppIDAndVersion(teamID, fromAppID, model.APP_EDIT_VERSION)
+	if errinRetrieveTreeStates != nil {
+		return errinRetrieveTreeStates
+	}
+
+	// init
+	indexIDMap := map[int]int{}
+	idConvertMap := map[int]int{}
+	for serial, _ := range treeStates {
+		indexIDMap[serial] = treeStates[serial].ID
+		treeStates[serial].InitForFork()
+	}
+
+	// and put them to the database as duplicate
+	for i, treeState := range treeStates {
+		treeStateID, errInCreateTreeState := controller.Storage.TreeStateStorage.Create(treeState)
+		if errInCreateTreeState != nil {
+			return errInCreateTreeState
+		}
+		oldID := indexIDMap[i]
+		idConvertMap[oldID] = treeStateID
+	}
+
+	// update tree states parent & children relation
+	for _, treeState := range treeStates {
+		treeState.ResetChildrenNodeRefIDsByMap(idConvertMap)
+		treeState.ResetParentNodeRefIDByMap(idConvertMap)
+		errInUpdateTreeState := controller.Storage.TreeStateStorage.Update(treeState)
+		if errInUpdateTreeState != nil {
+			return errInUpdateTreeState
+		}
+	}
+
+	return nil
+}
+
+func (controller *Controller) DuplicateKVStates(teamID int, fromAppID int, toAppID int, userID int) error {
+	// get edit version K-V state from database
+	kvStates, errInRetrieveKVStates := controller.Storage.KVStateStorage.RetrieveKVStatesByTeamIDAppIDAndVersion(teamID, fromAppID, model.APP_EDIT_VERSION)
+	if errInRetrieveKVStates != nil {
+		return errInRetrieveKVStates
+	}
+
+	// init
+	for serial, _ := range kvStates {
+		kvStates[serial].InitForFork()
+	}
+
+	// and put them to the database as duplicate
+	for _, kvState := range kvStates {
+		errInCreateKVState := controller.Storage.KVStateStorage.Create(kvState)
+		if errInCreateKVState != nil {
+			return errInCreateKVState
+		}
+	}
+
+	return nil
+}
+
+func (controller *Controller) DuplicateSetStates(teamID int, fromAppID int, toAppID int, userID int) error {
+	// get edit version Set state from database
+	setStates, errInRetrieveSetState := controller.Storage.SetStateStorage.RetrieveSetStatesByApp(teamID, fromAppID, model.SET_STATE_TYPE_DISPLAY_NAME, repository.APP_EDIT_VERSION)
+	if errInRetrieveSetState != nil {
+		return errInRetrieveSetState
+	}
+
+	// update some fields
+	for serial, _ := range setStates {
+		setStates[serial].InitForFork()
+	}
+
+	// and put them to the database as duplicate
+	for _, setState := range setstates {
+		errInCreateSetState := controller.Storage.SetStateStorage.Create(setState)
+		if errInCreateSetState != nil {
+			return errInCreateSetState
+		}
+	}
+
+	return nil
+}
+
+func (controller *Controller) DuplicateActions(teamID int, fromAppID int, toAppID int, userID int) error {
+	// get edit version K-V state from database
+	actions, errinRetrieveActions := controller.Storage.ActionStorage.RetrieveActionsByAppVersion(teamID, fromAppID, model.APP_EDIT_VERSION)
+	if errinRetrieveActions != nil {
+		return errinRetrieveActions
+	}
+
+	// update some fields
+	for serial, _ := range actions {
+		actions[serial].InitForFork()
+	}
+
+	// and put them to the database as duplicate
+	for _, action := range actions {
+		_, errInCreateAction := controller.Storage.ActionStorage.Create(action)
+		errInCreateAction != nil {
+			return errInCreateAction
+		}
+	}
+
+	return nil
+}

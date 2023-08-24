@@ -27,7 +27,7 @@ type Action struct {
 	ID          int       `gorm:"column:id;type:bigserial;primary_key"`
 	UID         uuid.UUID `gorm:"column:uid;type:uuid;not null"`
 	TeamID      int       `gorm:"column:team_id;type:bigserial"`
-	App         int       `gorm:"column:app_ref_id;type:bigint;not null"`
+	AppRefID    int       `gorm:"column:app_ref_id;type:bigint;not null"`
 	Version     int       `gorm:"column:version;type:bigint;not null"`
 	Resource    int       `gorm:"column:resource_ref_id;type:bigint;not null"`
 	Name        string    `gorm:"column:name;type:varchar;size:255;not null"`
@@ -56,6 +56,18 @@ func (action *Action) InitCreatedAt() {
 
 func (action *Action) InitUpdatedAt() {
 	action.UpdatedAt = time.Now().UTC()
+}
+
+func (action *Action) InitForFork(teamID int, appID int, userID int) {
+	kvState.TeamID = teamID
+	kvState.AppRefID = appID
+	kvState.Version = model.APP_EDIT_VERSION
+	kvState.CreatedBy = userID
+	kvState.UpdatedBy = userID
+	kvState.CleanID()
+	kvState.InitUID()
+	kvState.InitCreatedAt()
+	kvState.InitUpdatedAt()
 }
 
 func (action *Action) AppendNewVersion(newVersion int) {
