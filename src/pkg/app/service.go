@@ -321,65 +321,6 @@ func (impl *AppServiceImpl) GetAllApps(teamID int) ([]*AppDtoForExport, error) {
 	return AppDtoForExportSlice, nil
 }
 
-func (impl *AppServiceImpl) DuplicateApp(teamID int, appID int, userID int, name string) (int, error) {
-	appA, err := impl.appRepository.RetrieveAppByIDAndTeamID(appID, teamID)
-	if err != nil {
-		return 0, err
-	}
-	appA.ReleaseVersion = 0 // the draft version will always be 0, so the release version and mainline version are 0 by default when app init.
-	appA.MainlineVersion = 0
-	appA.CreatedAt = time.Now().UTC()
-	appA.UpdatedAt = time.Now().UTC()
-	appA.CreatedBy = userID
-	appA.UpdatedBy = userID
-	newAppB := &repository.App{
-		UID:             uuid.New(),
-		TeamID:          teamID,
-		Name:            name,
-		ReleaseVersion:  appA.ReleaseVersion,
-		MainlineVersion: appA.MainlineVersion,
-		Config:          appA.Config,
-		CreatedBy:       appA.CreatedBy,
-		CreatedAt:       appA.CreatedAt,
-		UpdatedBy:       appA.UpdatedBy,
-		UpdatedAt:       appA.UpdatedAt,
-	}
-	newAppB.PushEditedBy(repository.NewAppEditedByUserID(userID))
-	newAppB.SetPrivate(userID)
-	id, err := impl.appRepository.Create(newAppB)
-	if err != nil {
-		return 0, err
-	}
-	// fetch user remote data
-	user, errInGetUserInfo := datacontrol.GetUserInfo(appA.UpdatedBy)
-	if errInGetUserInfo != nil {
-		return 0, errInGetUserInfo
-	}
-	// fill data
-	appB := AppDto{
-		ID:              id,
-		Name:            name,
-		ReleaseVersion:  appA.ReleaseVersion,
-		MainlineVersion: appA.MainlineVersion,
-		Config:          appA.ExportConfig(),
-		CreatedBy:       appA.CreatedBy,
-		CreatedAt:       appA.CreatedAt,
-		UpdatedBy:       appA.UpdatedBy,
-		UpdatedAt:       appA.UpdatedAt,
-		AppActivity: AppActivity{
-			Modifier:   user.Nickname,
-			ModifiedAt: appA.UpdatedAt,
-		},
-	}
-	_ = impl.copyAllTreeState(teamID, appID, appB.ID, userID)
-	_ = impl.copyAllKVState(teamID, appID, appB.ID, userID)
-	_ = impl.copyAllSetState(teamID, appID, appB.ID, userID)
-	_ = impl.copyActions(teamID, appID, appB.ID, userID)
-
-	// feedback
-	return appB.ID, nil
-}
-
 func (impl *AppServiceImpl) copyAllTreeState(teamID, appA, appB, user int) error {
 	// get edit version K-V state from database
 	treestates, err := impl.treestateRepository.RetrieveAllTypeTreeStatesByApp(teamID, appA, repository.APP_EDIT_VERSION)

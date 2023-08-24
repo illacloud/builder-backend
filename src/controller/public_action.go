@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resthandler
+package controller
 
 import (
 	"encoding/json"
@@ -22,13 +22,13 @@ import (
 	"strconv"
 	"strings"
 
-	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/internal/auditlogger"
 	dc "github.com/illacloud/builder-backend/internal/datacontrol"
-	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/action"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/resource"
+	"github.com/illacloud/builder-backend/src/model"
+	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -43,11 +43,11 @@ type PublicActionRestHandlerImpl struct {
 	appService      app.AppService
 	resourceService resource.ResourceService
 	actionService   action.ActionService
-	AttributeGroup  *ac.AttributeGroup
+	AttributeGroup  *accesscontrol.AttributeGroup
 }
 
 func NewPublicActionRestHandlerImpl(logger *zap.SugaredLogger, appService app.AppService, resourceService resource.ResourceService,
-	actionService action.ActionService, attrg *ac.AttributeGroup) *PublicActionRestHandlerImpl {
+	actionService action.ActionService, attrg *accesscontrol.AttributeGroup) *PublicActionRestHandlerImpl {
 	return &PublicActionRestHandlerImpl{
 		logger:          logger,
 		appService:      appService,
@@ -60,8 +60,8 @@ func NewPublicActionRestHandlerImpl(logger *zap.SugaredLogger, appService app.Ap
 func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 	// fetch needed param
 	teamIdentifier, errInGetTeamIdentifier := GetStringParamFromRequest(c, PARAM_TEAM_IDENTIFIER)
-	publicActionID, errInGetPublicActionID := GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
-	appID, errInGetAppID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	publicActionID, errInGetPublicActionID := controller.GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
+	appID, errInGetAppID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	if errInGetTeamIdentifier != nil || errInGetPublicActionID != nil || errInGetAppID != nil {
 		return
 	}
@@ -69,30 +69,30 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 	// get team id by team teamIdentifier
 	team, errInGetTeamInfo := dc.GetTeamInfoByIdentifier(teamIdentifier)
 	if errInGetTeamInfo != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_TEAM, "get target team by identifier error: "+errInGetTeamInfo.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_TEAM, "get target team by identifier error: "+errInGetTeamInfo.Error())
 		return
 	}
 	teamID := team.GetID()
 
 	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(ac.ANONYMOUS_AUTH_TOKEN)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_ACTION)
-	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
-	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_RUN_ACTION)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(accesscontrol.ANONYMOUS_AUTH_TOKEN)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_ACTION)
+	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_RUN_ACTION)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// check if action is public action
-	if !impl.actionService.IsPublicAction(teamID, publicActionID) {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this action.")
+	if !controller.actionService.IsPublicAction(teamID, publicActionID) {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this action.")
 		return
 	}
 
@@ -100,18 +100,18 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 	c.Header("Timing-Allow-Origin", "*")
 	var actForExport action.ActionDtoForExport
 	if err := json.NewDecoder(c.Request.Body).Decode(&actForExport); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error"+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error"+err.Error())
 		return
 	}
 	act := actForExport.ExportActionDto()
 
 	// fetch app
-	appDTO, _ := impl.appService.FetchAppByID(teamID, appID)
+	appDTO, _ := controller.appService.FetchAppByID(teamID, appID)
 
 	// fetch resource data
-	rsc, errInGetRSC := impl.resourceService.GetResource(teamID, act.Resource)
+	rsc, errInGetRSC := controller.resourceService.GetResource(teamID, act.Resource)
 	if errInGetRSC != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resource error: "+errInGetRSC.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resource error: "+errInGetRSC.Error())
 		return
 	}
 
@@ -133,8 +133,8 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 	})
 
 	// run
-	actionRuntimeInfo := repository.NewActionRuntimeInfo(team.ExportIDInString(), actForExport.ExportResourceID(), actForExport.ExportID(), "")
-	res, err := impl.actionService.RunAction(teamID, act, actionRuntimeInfo)
+	actionRuntimeInfo := model.NewActionRuntimeInfo(team.ExportIDInString(), actForExport.ExportResourceID(), actForExport.ExportID(), "")
+	res, err := controller.actionService.RunAction(teamID, act, actionRuntimeInfo)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Error 1064:") {
 			lineNumber, _ := strconv.Atoi(err.Error()[len(err.Error())-1:])
@@ -155,7 +155,7 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 			})
 			return
 		}
-		FeedbackBadRequest(c, ERROR_FLAG_EXECUTE_ACTION_FAILED, "run action error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_EXECUTE_ACTION_FAILED, "run action error: "+err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, res)

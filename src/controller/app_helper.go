@@ -12,42 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resthandler
+package controller
 
 import (
 	"encoding/json"
 	"log"
 
 	"github.com/illacloud/builder-backend/internal/datacontrol"
-	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/internal/util/illaresourcemanagerbackendsdk"
 	"github.com/illacloud/builder-backend/internal/util/resourcelist"
+	"github.com/illacloud/builder-backend/src/model"
+	repository "github.com/illacloud/builder-backend/src/model"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (impl AppRestHandlerImpl) SnapshotTreeState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
-	return impl.DuplicateTreeStateByVersion(c, teamID, appID, repository.APP_EDIT_VERSION, appMainLineVersion)
+func (controller *Controller) SnapshotTreeState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
+	return controller.DuplicateTreeStateByVersion(c, teamID, appID, model.APP_EDIT_VERSION, appMainLineVersion)
 }
 
-func (impl AppRestHandlerImpl) SnapshotKVState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
-	return impl.DuplicateKVStateByVersion(c, teamID, appID, repository.APP_EDIT_VERSION, appMainLineVersion)
+func (controller *Controller) SnapshotKVState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
+	return controller.DuplicateKVStateByVersion(c, teamID, appID, model.APP_EDIT_VERSION, appMainLineVersion)
 }
 
-func (impl AppRestHandlerImpl) SnapshotSetState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
-	return impl.DuplicateSetStateByVersion(c, teamID, appID, repository.APP_EDIT_VERSION, appMainLineVersion)
+func (controller *Controller) SnapshotSetState(c *gin.Context, teamID int, appID int, appMainLineVersion int) error {
+	return controller.DuplicateSetStateByVersion(c, teamID, appID, model.APP_EDIT_VERSION, appMainLineVersion)
 }
 
-func (impl AppRestHandlerImpl) SnapshotAction(c *gin.Context, teamID int, appID int, mainlineVersion int) error {
-	return impl.DuplicateActionByVersion(c, teamID, appID, repository.APP_EDIT_VERSION, mainlineVersion)
+func (controller *Controller) SnapshotAction(c *gin.Context, teamID int, appID int, mainlineVersion int) error {
+	return controller.DuplicateActionByVersion(c, teamID, appID, model.APP_EDIT_VERSION, mainlineVersion)
 }
 
 // recover edit version treestate to target version (coby target version data to edit version)
-func (impl AppRestHandlerImpl) DuplicateTreeStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
+func (controller *Controller) DuplicateTreeStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
 	// get from version tree state from database
-	treestates, errInRetrieveTreeState := impl.TreeStateRepository.RetrieveAllTypeTreeStatesByApp(teamID, appID, fromVersion)
+	treestates, errInRetrieveTreeState := controller.Storage.TreeStateStorage.RetrieveAllTypeTreeStatesByApp(teamID, appID, fromVersion)
 	if errInRetrieveTreeState != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get tree state failed: "+errInRetrieveTreeState.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get tree state failed: "+errInRetrieveTreeState.Error())
 		return errInRetrieveTreeState
 	}
 	oldIDMap := map[int]int{}
@@ -62,9 +63,9 @@ func (impl AppRestHandlerImpl) DuplicateTreeStateByVersion(c *gin.Context, teamI
 	// put them to the database as duplicate, and record the old-new id map
 	for i, treestate := range treestates {
 		log.Printf("[DUMP] DuplicateTreeStateByVersion: treestate.Name: %s, treestate.TeamID: %d, treestate.AppRefID: %d, , treestate.Version: %d\n", treestate.Name, treestate.TeamID, treestate.AppRefID, treestate.Version)
-		newID, errInCreateApp := impl.TreeStateRepository.Create(treestate)
+		newID, errInCreateApp := controller.Storage.TreeStateStorage.Create(treestate)
 		if errInCreateApp != nil {
-			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_APP, "create app failed: "+errInCreateApp.Error())
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_APP, "create app failed: "+errInCreateApp.Error())
 			return errInCreateApp
 		}
 		oldID := oldIDMap[i]
@@ -75,9 +76,9 @@ func (impl AppRestHandlerImpl) DuplicateTreeStateByVersion(c *gin.Context, teamI
 	for _, treestate := range treestates {
 		treestate.RemapChildrenNodeRefIDs(releaseIDMap)
 		treestate.SetParentNodeRefID(releaseIDMap[treestate.ParentNodeRefID])
-		errInUpdateTreeState := impl.TreeStateRepository.Update(treestate)
+		errInUpdateTreeState := controller.Storage.TreeStateStorage.Update(treestate)
 		if errInUpdateTreeState != nil {
-			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_TREE_STATE, "update tree state failed: "+errInUpdateTreeState.Error())
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_TREE_STATE, "update tree state failed: "+errInUpdateTreeState.Error())
 			return errInUpdateTreeState
 		}
 	}
@@ -85,11 +86,11 @@ func (impl AppRestHandlerImpl) DuplicateTreeStateByVersion(c *gin.Context, teamI
 	return nil
 }
 
-func (impl AppRestHandlerImpl) DuplicateKVStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
+func (controller *Controller) DuplicateKVStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
 	// get edit version K-V state from database
-	kvstates, errInRetrieveKVState := impl.KVStateRepository.RetrieveAllTypeKVStatesByApp(teamID, appID, fromVersion)
+	kvstates, errInRetrieveKVState := controller.Storage.KVStateStorage.RetrieveAllTypeKVStatesByApp(teamID, appID, fromVersion)
 	if errInRetrieveKVState != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get kv state failed: "+errInRetrieveKVState.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get kv state failed: "+errInRetrieveKVState.Error())
 		return errInRetrieveKVState
 	}
 
@@ -101,19 +102,19 @@ func (impl AppRestHandlerImpl) DuplicateKVStateByVersion(c *gin.Context, teamID 
 	// and put them to the database as duplicate
 	for _, kvstate := range kvstates {
 		log.Printf("[DUMP] DuplicateKVStateByVersion: kvstate.StateType: %d, kvstate.TeamID: %d, kvstate.AppRefID: %d, , kvstate.Version: %d\n", kvstate.StateType, kvstate.TeamID, kvstate.AppRefID, kvstate.Version)
-		errInCreateKVState := impl.KVStateRepository.Create(kvstate)
+		errInCreateKVState := controller.Storage.KVStateStorage.Create(kvstate)
 		if errInCreateKVState != nil {
-			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_STATE, "create kv state failed: "+errInCreateKVState.Error())
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_STATE, "create kv state failed: "+errInCreateKVState.Error())
 			return errInCreateKVState
 		}
 	}
 	return nil
 }
 
-func (impl AppRestHandlerImpl) DuplicateSetStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
-	setstates, errInRetrieveSetState := impl.SetStateRepository.RetrieveSetStatesByApp(teamID, appID, repository.SET_STATE_TYPE_DISPLAY_NAME, fromVersion)
+func (controller *Controller) DuplicateSetStateByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
+	setstates, errInRetrieveSetState := controller.Storage.SetStateStorage.RetrieveSetStatesByApp(teamID, appID, model.SET_STATE_TYPE_DISPLAY_NAME, fromVersion)
 	if errInRetrieveSetState != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get set state failed: "+errInRetrieveSetState.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_STATE, "get set state failed: "+errInRetrieveSetState.Error())
 		return errInRetrieveSetState
 	}
 
@@ -125,20 +126,20 @@ func (impl AppRestHandlerImpl) DuplicateSetStateByVersion(c *gin.Context, teamID
 	// and put them to the database as duplicate
 	for _, setstate := range setstates {
 		log.Printf("[DUMP] DuplicateSetStateByVersion: setstate.StateType: %d, setstate.TeamID: %d, setstate.AppRefID: %d, , setstate.Version: %d\n", setstate.StateType, setstate.TeamID, setstate.AppRefID, setstate.Version)
-		errInCreateSetState := impl.SetStateRepository.Create(setstate)
+		errInCreateSetState := controller.Storage.SetStateStorage.Create(setstate)
 		if errInCreateSetState != nil {
-			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_STATE, "create set state failed: "+errInCreateSetState.Error())
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_STATE, "create set state failed: "+errInCreateSetState.Error())
 			return errInCreateSetState
 		}
 	}
 	return nil
 }
 
-func (impl AppRestHandlerImpl) DuplicateActionByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
+func (controller *Controller) DuplicateActionByVersion(c *gin.Context, teamID int, appID int, fromVersion int, toVersion int) error {
 	// get edit version K-V state from database
-	actions, errinRetrieveAction := impl.ActionRepository.RetrieveActionsByAppVersion(teamID, appID, fromVersion)
+	actions, errinRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByAppVersion(teamID, appID, fromVersion)
 	if errinRetrieveAction != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errinRetrieveAction.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errinRetrieveAction.Error())
 		return errinRetrieveAction
 	}
 
@@ -150,27 +151,27 @@ func (impl AppRestHandlerImpl) DuplicateActionByVersion(c *gin.Context, teamID i
 	// and put them to the database as duplicate
 	for _, action := range actions {
 		log.Printf("[DUMP] DuplicateActionByVersion: action.Name: %s, action.TeamID: %d, action.AppRefID: %d, , action.Version: %d\n", action.Name, action.TeamID, action.App, action.Version)
-		_, errInCreateAction := impl.ActionRepository.Create(action)
+		_, errInCreateAction := controller.Storage.ActionStorage.Create(action)
 		if errInCreateAction != nil {
-			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "create action failed: "+errInCreateAction.Error())
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "create action failed: "+errInCreateAction.Error())
 			return errInCreateAction
 		}
 	}
 	return nil
 }
 
-func (impl AppRestHandlerImpl) SaveAppSnapshot(c *gin.Context, teamID int, appID int, userID int, mainlineVersion int, snapshotTriggerMode int) (*repository.AppSnapshot, error) {
-	return impl.SaveAppSnapshotByVersion(c, teamID, appID, userID, repository.APP_EDIT_VERSION, mainlineVersion, snapshotTriggerMode)
+func (controller *Controller) SaveAppSnapshot(c *gin.Context, teamID int, appID int, userID int, mainlineVersion int, snapshotTriggerMode int) (*model.AppSnapshot, error) {
+	return controller.SaveAppSnapshotByVersion(c, teamID, appID, userID, model.APP_EDIT_VERSION, mainlineVersion, snapshotTriggerMode)
 }
 
-func (impl AppRestHandlerImpl) InitAppSnapshot(c *gin.Context, teamID int, appID int) (*repository.AppSnapshot, error) {
+func (controller *Controller) InitAppSnapshot(c *gin.Context, teamID int, appID int) (*model.AppSnapshot, error) {
 	// / create new edit version snapshot
-	newAppSnapShot := repository.NewAppSnapshot(teamID, appID, repository.APP_EDIT_VERSION, repository.SNAPSHOT_TRIGGER_MODE_AUTO)
+	newAppSnapShot := model.NewAppSnapshot(teamID, appID, model.APP_EDIT_VERSION, model.SNAPSHOT_TRIGGER_MODE_AUTO)
 
 	// storage new edit version snapshot
-	_, errInCreateSnapshot := impl.AppSnapshotRepository.Create(newAppSnapShot)
+	_, errInCreateSnapshot := controller.AppSnapshotmodel.Create(newAppSnapShot)
 	if errInCreateSnapshot != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_SNAPSHOT, "create snapshot failed: "+errInCreateSnapshot.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_SNAPSHOT, "create snapshot failed: "+errInCreateSnapshot.Error())
 		return nil, errInCreateSnapshot
 	}
 	return newAppSnapShot, nil
@@ -181,11 +182,11 @@ func (impl AppRestHandlerImpl) InitAppSnapshot(c *gin.Context, teamID int, appID
 // - set it to target version
 // - save it
 // - create new empty snapshot for current version
-func (impl AppRestHandlerImpl) SaveAppSnapshotByVersion(c *gin.Context, teamID int, appID int, userID int, fromVersion int, toVersion int, snapshotTriggerMode int) (*repository.AppSnapshot, error) {
+func (controller *Controller) SaveAppSnapshotByVersion(c *gin.Context, teamID int, appID int, userID int, fromVersion int, toVersion int, snapshotTriggerMode int) (*model.AppSnapshot, error) {
 	// retrieve app mainline version snapshot
-	editVersionAppSnapshot, errInRetrieveSnapshot := impl.AppSnapshotRepository.RetrieveByTeamIDAppIDAndTargetVersion(teamID, appID, fromVersion)
+	editVersionAppSnapshot, errInRetrieveSnapshot := controller.AppSnapshotmodel.RetrieveByTeamIDAppIDAndTargetVersion(teamID, appID, fromVersion)
 	if errInRetrieveSnapshot != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
 		return nil, errInRetrieveSnapshot
 	}
 
@@ -194,46 +195,44 @@ func (impl AppRestHandlerImpl) SaveAppSnapshotByVersion(c *gin.Context, teamID i
 	editVersionAppSnapshot.SetTriggerMode(snapshotTriggerMode)
 
 	// update old edit version snapshot
-	errInUpdateSnapshot := impl.AppSnapshotRepository.UpdateWholeSnapshot(editVersionAppSnapshot)
+	errInUpdateSnapshot := controller.AppSnapshotmodel.UpdateWholeSnapshot(editVersionAppSnapshot)
 	if errInUpdateSnapshot != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_SNAPSHOT, "update snapshot failed: "+errInUpdateSnapshot.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_SNAPSHOT, "update snapshot failed: "+errInUpdateSnapshot.Error())
 		return nil, errInUpdateSnapshot
 	}
 
 	// create new edit version snapshot
-	newAppSnapShot := repository.NewAppSnapshot(teamID, appID, fromVersion, snapshotTriggerMode)
+	newAppSnapShot := model.NewAppSnapshot(teamID, appID, fromVersion, snapshotTriggerMode)
 	newAppSnapShot.SetTriggerModeAuto()
 
 	// storage new edit version snapshot
-	_, errInCreateSnapshot := impl.AppSnapshotRepository.Create(newAppSnapShot)
+	_, errInCreateSnapshot := controller.AppSnapshotmodel.Create(newAppSnapShot)
 	if errInCreateSnapshot != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_SNAPSHOT, "create snapshot failed: "+errInCreateSnapshot.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_SNAPSHOT, "create snapshot failed: "+errInCreateSnapshot.Error())
 		return nil, errInCreateSnapshot
 	}
 
 	return newAppSnapShot, nil
 }
 
-func (impl AppRestHandlerImpl) GetTargetVersionApp(c *gin.Context, teamID int, appID int, version int) (*repository.App, error) {
+func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int, appID int, version int) (*model.NewFullAppForExport, error) {
 	// fetch app
-	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByIDAndTeamID(appID, teamID)
 	if errInRetrieveApp != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app mega data error: "+errInRetrieveApp.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app full data error: "+errInRetrieveApp.Error())
 		return nil, errInRetrieveApp
 	}
 
 	// set for auto-version
-	if version == repository.APP_AUTO_MAINLINE_VERSION {
+	if version == model.APP_AUTO_MAINLINE_VERSION {
 		version = app.MainlineVersion
 	}
-	if version == repository.APP_AUTO_RELEASE_VERSION {
+	if version == model.APP_AUTO_RELEASE_VERSION {
 		version = app.ReleaseVersion
 	}
 
-	// form editor object field appForExport
-	//
-	// We need:
-	//     AppInfo               which is: *AppForExport
+	// form editor object field appForExport, We need:
+	//  -> AppInfo               which is: *AppForExport
 	//     Actions               which is: []*ActionForExport
 	//     Components            which is: *ComponentNode
 	//     DependenciesState     which is: map[string][]string
@@ -242,35 +241,48 @@ func (impl AppRestHandlerImpl) GetTargetVersionApp(c *gin.Context, teamID int, a
 	//     DisplayNameState      which is: []string
 
 	// get all modifier user ids from all apps
-	allUserIDs := repository.ExtractAllEditorIDFromApps([]*repository.App{app})
+	allUserIDs := model.ExtractAllEditorIDFromApps([]*model.App{app})
 
 	// fet all user id mapped user info, and build user info lookup table
 	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
 	if errInGetMultiUserInfo != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
 		return nil, errInGetMultiUserInfo
 	}
 
-	appForExport := repository.NewAppForExport(app, usersLT)
+	appForExport := model.NewAppForExport(app, usersLT)
+
+	// form editor object field appForExport, We need:
+	//     AppInfo               which is: *AppForExport
+	//  -> Actions               which is: []*ActionForExport
+	//     Components            which is: *ComponentNode
+	//     DependenciesState     which is: map[string][]string
+	//     DragShadowState       which is: map[string]interface{}
+	//     DottedLineSquareState which is: map[string]interface{}
+	//     DisplayNameState      which is: []string
 
 	// form editor object field actions
-	actions, errInRetrieveActions := impl.ActionRepository.RetrieveActionsByAppVersion(teamID, appID, version)
+	actions, errInRetrieveActions := controller.Storage.ActionStorage.RetrieveActionsByAppVersion(teamID, appID, version)
+
+	// ok, we have no actions for this app
 	if errInRetrieveActions != nil {
-		actions = []*repository.Action{}
+		actions = []*model.Action{}
 	}
-	actionsForExport := make([]*repository.ActionForExport, 0)
+
+	// build actions for expost
+	actionsForExport := make([]*model.ActionForExport, 0)
 	for _, action := range actions {
-		actionForExport := repository.NewActionForExport(action)
+		actionForExport := model.NewActionForExport(action)
 		// append remote virtual resource
 		if actionForExport.Type == resourcelist.TYPE_AI_AGENT {
 			api, errInNewAPI := illaresourcemanagerbackendsdk.NewIllaResourceManagerRestAPI()
 			if errInNewAPI != nil {
-				FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
+				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
 				return nil, errInNewAPI
 			}
 			aiAgent, errInGetAIAgent := api.GetAIAgent(actionForExport.ExportResourceIDInInt())
 			if errInGetAIAgent != nil {
-				FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetAIAgent.Error())
+				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetAIAgent.Error())
 				return nil, errInGetAIAgent
 			}
 			actionForExport.AppendVirtualResourceToTemplate(aiAgent)
@@ -278,20 +290,38 @@ func (impl AppRestHandlerImpl) GetTargetVersionApp(c *gin.Context, teamID int, a
 		actionsForExport = append(actionsForExport, actionForExport)
 	}
 
+	// form editor object field appForExport, We need:
+	//     AppInfo               which is: *AppForExport
+	//     Actions               which is: []*ActionForExport
+	//  -> Components            which is: *ComponentNode
+	//     DependenciesState     which is: map[string][]string
+	//     DragShadowState       which is: map[string]interface{}
+	//     DottedLineSquareState which is: map[string]interface{}
+	//     DisplayNameState      which is: []string
+
 	// form editor object field components
-	treeStateComponents, errInRetrieveTreeStateComponents := impl.TreeStateRepository.RetrieveTreeStatesByApp(teamID, appID, repository.TREE_STATE_TYPE_COMPONENTS, version)
+	treeStateComponents, errInRetrieveTreeStateComponents := controller.Storage.TreeStateStorage.RetrieveTreeStatesByApp(teamID, appID, model.TREE_STATE_TYPE_COMPONENTS, version)
 	if errInRetrieveTreeStateComponents != nil {
-		treeStateComponents = []*repository.TreeState{}
+		treeStateComponents = []*model.TreeState{}
 	}
-	treeStateLT := repository.BuildTreeStateLookupTable(treeStateComponents)
-	rootOfTreeState := repository.PickUpTreeStatesRootNode(treeStateComponents)
-	componentTree, _ := repository.BuildComponentTree(rootOfTreeState, treeStateLT, nil)
+	treeStateLT := model.BuildTreeStateLookupTable(treeStateComponents)
+	rootOfTreeState := model.PickUpTreeStatesRootNode(treeStateComponents)
+	componentTree, _ := model.BuildComponentTree(rootOfTreeState, treeStateLT, nil)
+
+	// form editor object field appForExport, We need:
+	//     AppInfo               which is: *AppForExport
+	//     Actions               which is: []*ActionForExport
+	//     Components            which is: *ComponentNode
+	//  -> DependenciesState     which is: map[string][]string
+	//     DragShadowState       which is: map[string]interface{}
+	//     DottedLineSquareState which is: map[string]interface{}
+	//     DisplayNameState      which is: []string
 
 	// form editor object field dependenciesState
 	dependenciesState := map[string][]string{}
-	dependenciesKVStates, errInRetrieveDependenciesKVStates := impl.KVStateRepository.RetrieveKVStatesByApp(teamID, appID, repository.KV_STATE_TYPE_DEPENDENCIES, version)
+	dependenciesKVStates, errInRetrieveDependenciesKVStates := controller.Storage.KVStateStorage.RetrieveKVStatesByApp(teamID, appID, model.KV_STATE_TYPE_DEPENDENCIES, version)
 	if errInRetrieveDependenciesKVStates != nil {
-		dependenciesKVStates = []*repository.KVState{}
+		dependenciesKVStates = []*model.KVState{}
 	}
 	for _, dependency := range dependenciesKVStates {
 		var revMsg []string
@@ -299,11 +329,20 @@ func (impl AppRestHandlerImpl) GetTargetVersionApp(c *gin.Context, teamID int, a
 		dependenciesState[dependency.Key] = revMsg // value convert to []string
 	}
 
+	// form editor object field appForExport, We need:
+	//     AppInfo               which is: *AppForExport
+	//     Actions               which is: []*ActionForExport
+	//     Components            which is: *ComponentNode
+	//     DependenciesState     which is: map[string][]string
+	//  -> DragShadowState       which is: map[string]interface{}
+	//     DottedLineSquareState which is: map[string]interface{}
+	//     DisplayNameState      which is: []string
+
 	// form editor object field dragShadowState
 	dragShadowState := map[string]interface{}{}
-	dragShadowKVStates, errInRetrieveDragShadowKVStates := impl.KVStateRepository.RetrieveKVStatesByApp(teamID, appID, repository.KV_STATE_TYPE_DRAG_SHADOW, version)
+	dragShadowKVStates, errInRetrieveDragShadowKVStates := controller.Storage.KVStateStorage.RetrieveKVStatesByApp(teamID, appID, model.KV_STATE_TYPE_DRAG_SHADOW, version)
 	if errInRetrieveDragShadowKVStates != nil {
-		dragShadowKVStates = []*repository.KVState{}
+		dragShadowKVStates = []*model.KVState{}
 	}
 	for _, dragShadow := range dragShadowKVStates {
 		var revMsg []string
@@ -311,11 +350,20 @@ func (impl AppRestHandlerImpl) GetTargetVersionApp(c *gin.Context, teamID int, a
 		dragShadowState[dragShadow.Key] = revMsg // value convert to []string
 	}
 
+	// form editor object field appForExport, We need:
+	//     AppInfo               which is: *AppForExport
+	//     Actions               which is: []*ActionForExport
+	//     Components            which is: *ComponentNode
+	//     DependenciesState     which is: map[string][]string
+	//     DragShadowState       which is: map[string]interface{}
+	//  -> DottedLineSquareState which is: map[string]interface{}
+	//     DisplayNameState      which is: []string
+
 	// form editor object field dottedLineSquareState
 	dottedLineSquareState := map[string]interface{}{}
-	dottedLineSquareKVStates, errInRetrieveDottedLineSquareKVStates := impl.KVStateRepository.RetrieveKVStatesByApp(teamID, appID, repository.KV_STATE_TYPE_DOTTED_LINE_SQUARE, version)
+	dottedLineSquareKVStates, errInRetrieveDottedLineSquareKVStates := controller.Storage.KVStateStorage.RetrieveKVStatesByApp(teamID, appID, model.KV_STATE_TYPE_DOTTED_LINE_SQUARE, version)
 	if errInRetrieveDottedLineSquareKVStates != nil {
-		dottedLineSquareKVStates = []*repository.KVState{}
+		dottedLineSquareKVStates = []*model.KVState{}
 	}
 	for _, dottedLineSquare := range dottedLineSquareKVStates {
 		var revMsg []string
@@ -323,10 +371,19 @@ func (impl AppRestHandlerImpl) GetTargetVersionApp(c *gin.Context, teamID int, a
 		dottedLineSquareState[dottedLineSquare.Key] = revMsg // value convert to []string
 	}
 
+	// form editor object field appForExport, We need:
+	//     AppInfo               which is: *AppForExport
+	//     Actions               which is: []*ActionForExport
+	//     Components            which is: *ComponentNode
+	//     DependenciesState     which is: map[string][]string
+	//     DragShadowState       which is: map[string]interface{}
+	//     DottedLineSquareState which is: map[string]interface{}
+	//  -> DisplayNameState      which is: []string
+
 	// form editor object field displayNameState
-	displayNameSetStates, errInRetrieveDisplayNameSetState := impl.SetStateRepository.RetrieveSetStatesByApp(teamID, appID, repository.SET_STATE_TYPE_DISPLAY_NAME, version)
+	displayNameSetStates, errInRetrieveDisplayNameSetState := controller.Storage.SetStateStorage.RetrieveSetStatesByApp(teamID, appID, model.SET_STATE_TYPE_DISPLAY_NAME, version)
 	if errInRetrieveDisplayNameSetState != nil {
-		displayNameSetStates = []*repository.SetState{}
+		displayNameSetStates = []*model.SetState{}
 	}
 	displayNameState := make([]string, 0, len(displayNameSetStates))
 	for _, displayName := range displayNameSetStates {
@@ -334,9 +391,76 @@ func (impl AppRestHandlerImpl) GetTargetVersionApp(c *gin.Context, teamID int, a
 	}
 
 	// finally, make a brand new editor object
-	editorForExport := repository.NewEditorForExport(appForExport, actionsForExport, componentTree, dependenciesState, dragShadowState, dottedLineSquareState, displayNameState)
+	fullAppForExport := model.NewFullAppForExport(appForExport, actionsForExport, componentTree, dependenciesState, dragShadowState, dottedLineSquareState, displayNameState)
 
 	// feedback
-	FeedbackOK(c, editorForExport)
-	return app, nil
+	return fullAppForExport, nil
+}
+
+func (controller *Controller) CreateComponentTree(app *repository.App, parentNodeID int, componentNodeTree *repository.ComponentNode) error {
+	// summit node
+	if parentNodeID == 0 {
+		parentNodeID = repository.TREE_STATE_SUMMIT_ID
+	}
+
+	// convert ComponentNode to TreeState
+	currentNode := NewTreeStateDto()
+	currentNode.SetTeamID(app.ExportTeamID())
+	currentNode.InitUID()
+	currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS)
+	var err error
+	if currentNode, err = impl.NewTreeStateByComponentState(app, componentNodeTree); err != nil {
+		return err
+	}
+
+	// get parentNode
+	parentTreeState := repository.NewTreeState()
+	isSummitNode := true
+	if parentNodeID != 0 || currentNode.ParentNode == repository.TREE_STATE_SUMMIT_NAME { // parentNode is in database
+		isSummitNode = false
+		if parentTreeState, err = impl.treestateRepository.RetrieveByID(app.ExportTeamID(), parentNodeID); err != nil {
+			return err
+		}
+	} else if componentNodeTree.ParentNode != "" && componentNodeTree.ParentNode != repository.TREE_STATE_SUMMIT_NAME { // or parentNode is exist
+		isSummitNode = false
+		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(app.ExportTeamID(), currentNode.AppRefID, currentNode.StateType, componentNodeTree.ParentNode); err != nil {
+			return err
+		}
+	}
+
+	// no parentNode, currentNode is tree summit
+	if isSummitNode && currentNode.Name != repository.TREE_STATE_SUMMIT_NAME {
+
+		// get root node
+		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(app.ExportTeamID(), currentNode.AppRefID, currentNode.StateType, repository.TREE_STATE_SUMMIT_NAME); err != nil {
+			return err
+		}
+	}
+	currentNode.ParentNodeRefID = parentTreeState.ID
+
+	// insert currentNode and get id
+	treeStateDtoInDB := &TreeStateDto{}
+	if treeStateDtoInDB, err = impl.CreateTreeState(currentNode); err != nil {
+		return err
+	}
+	currentNode.ID = treeStateDtoInDB.ID
+
+	// fill currentNode id into parentNode.ChildrenNodeRefIDs
+	if currentNode.Name != repository.TREE_STATE_SUMMIT_NAME {
+
+		parentTreeState.AppendChildrenNodeRefIDs(currentNode.ID)
+
+		// save parentNode
+		if err = impl.treestateRepository.Update(parentTreeState); err != nil {
+			return err
+		}
+	}
+
+	// create currentNode.ChildrenNode
+	for _, childrenComponentNode := range componentNodeTree.ChildrenNode {
+		if err := impl.CreateComponentTree(app, currentNode.ID, childrenComponentNode); err != nil {
+			return err
+		}
+	}
+	return nil
 }

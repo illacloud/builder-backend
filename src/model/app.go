@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repository
+package model
 
 import (
 	"encoding/json"
@@ -45,7 +45,7 @@ type App struct {
 	EditedBy        string    `json:"editedBy"          gorm:"column:edited_by;type:jsonb"`
 }
 
-func NewApp(appName string, teamID int, modifyUserID int) *App {
+func NewAppByCreateAppRequest(appName string, teamID int, modifyUserID int) *App {
 	app := &App{
 		TeamID:          teamID,
 		Name:            appName,
@@ -80,7 +80,26 @@ func NewAppWithID(appID int, teamID int, modifyUserID int) *App {
 	return app
 }
 
+func NewAppForDuplicate(targetApp *App, newAppName string, modifyUserID int) *App {
+	newApp := &App{
+		TeamID:          targetApp.ExportTeamID(),
+		Name:            newAppName,
+		ReleaseVersion:  APP_EDIT_VERSION,
+		MainlineVersion: APP_EDIT_VERSION,
+		Config:          NewAppConfig().ExportToJSONString(),
+		CreatedBy:       modifyUserID,
+		UpdatedBy:       modifyUserID,
+	}
+	newApp.SetPrivate(modifyUserID)
+	newApp.PushEditedBy(NewAppEditedByUserID(modifyUserID))
+	newApp.InitUID()
+	newApp.InitCreatedAt()
+	newApp.InitUpdatedAt()
+	return newApp
+}
+
 func (app *App) UpdateAppConfig(appConfig *AppConfig, userID int) {
+
 	app.Config = appConfig.ExportToJSONString()
 	app.UpdatedBy = userID
 	app.InitUpdatedAt()

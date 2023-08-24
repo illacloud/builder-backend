@@ -1,4 +1,4 @@
-package repository
+package model
 
 const (
 	ACTION_RUNTIME_INFO_FIELD_TEAM_ID          = "teamID"

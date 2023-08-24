@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resthandler
+package controller
 
 import (
 	"net/http"
 
-	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/pkg/builder"
+	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -31,10 +31,10 @@ type BuilderRestHandler interface {
 type BuilderRestHandlerImpl struct {
 	logger         *zap.SugaredLogger
 	builderService builder.BuilderService
-	AttributeGroup *ac.AttributeGroup
+	AttributeGroup *accesscontrol.AttributeGroup
 }
 
-func NewBuilderRestHandlerImpl(logger *zap.SugaredLogger, builderService builder.BuilderService, attrg *ac.AttributeGroup) *BuilderRestHandlerImpl {
+func NewBuilderRestHandlerImpl(logger *zap.SugaredLogger, builderService builder.BuilderService, attrg *accesscontrol.AttributeGroup) *BuilderRestHandlerImpl {
 	return &BuilderRestHandlerImpl{
 		logger:         logger,
 		builderService: builderService,
@@ -44,32 +44,32 @@ func NewBuilderRestHandlerImpl(logger *zap.SugaredLogger, builderService builder
 
 func (impl BuilderRestHandlerImpl) GetTeamBuilderDesc(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
 	}
 
 	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_BUILDER_DASHBOARD)
-	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
-	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_BUILDER_DASHBOARD)
+	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// fetch data
-	ret, err := impl.builderService.GetTeamBuilderDesc(teamID)
+	ret, err := controller.builderService.GetTeamBuilderDesc(teamID)
 	if err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_BUILDER_DESCRIPTION, "get builder description error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_BUILDER_DESCRIPTION, "get builder description error: "+err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, ret)

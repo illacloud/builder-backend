@@ -1,4 +1,4 @@
-package repository
+package response
 
 type IsPublicAppResponse struct {
 	IsPublic bool `json:"isPublic"`

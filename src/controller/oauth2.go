@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resthandler
+package controller
 
 import (
 	"encoding/json"
@@ -62,7 +62,7 @@ func (impl OAuth2RestHandlerImpl) GoogleOAuth2(c *gin.Context) {
 		return
 	}
 	// get resource
-	res, err := impl.resourceService.GetResource(teamID, resourceID)
+	res, err := controller.resourceService.GetResource(teamID, resourceID)
 	if err != nil {
 		c.Redirect(302, fmt.Sprintf("%s?status=%d&resourceID=%s", url, 2, idconvertor.ConvertIntToString(resourceID)))
 		return
@@ -115,7 +115,7 @@ func (impl OAuth2RestHandlerImpl) GoogleOAuth2(c *gin.Context) {
 	}
 
 	// update resource and return response
-	if _, err := impl.resourceService.UpdateResource(resource.ResourceDto{
+	if _, err := controller.resourceService.UpdateResource(resource.ResourceDto{
 		ID:   idconvertor.ConvertStringToInt(res.ID),
 		Name: res.Name,
 		Type: res.Type,

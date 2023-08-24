@@ -1,4 +1,4 @@
-package repository
+package response
 
 func GenerateGetAllAppsResponse(allApps []*App, usersLT map[int]*User) []*AppForExport {
 	appDtoForExportSlice := make([]*AppForExport, 0, len(allApps))

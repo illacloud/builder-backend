@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resthandler
+package controller
 
 import (
 	"net/http"
 
-	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/pkg/room"
+	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -37,10 +37,10 @@ type RoomRestHandler interface {
 type RoomRestHandlerImpl struct {
 	logger         *zap.SugaredLogger
 	RoomService    room.RoomService
-	AttributeGroup *ac.AttributeGroup
+	AttributeGroup *accesscontrol.AttributeGroup
 }
 
-func NewRoomRestHandlerImpl(logger *zap.SugaredLogger, RoomService room.RoomService, attrg *ac.AttributeGroup) *RoomRestHandlerImpl {
+func NewRoomRestHandlerImpl(logger *zap.SugaredLogger, RoomService room.RoomService, attrg *accesscontrol.AttributeGroup) *RoomRestHandlerImpl {
 	return &RoomRestHandlerImpl{
 		logger:         logger,
 		RoomService:    RoomService,
@@ -50,89 +50,89 @@ func NewRoomRestHandlerImpl(logger *zap.SugaredLogger, RoomService room.RoomServ
 
 func (impl RoomRestHandlerImpl) GetDashboardRoomConn(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
 	}
 
 	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_BUILDER_DASHBOARD)
-	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
-	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_BUILDER_DASHBOARD)
+	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// fetch data
-	roomData, _ := impl.RoomService.GetDashboardConn(teamID)
+	roomData, _ := controller.RoomService.GetDashboardConn(teamID)
 	c.JSON(http.StatusOK, roomData)
 }
 
 func (impl RoomRestHandlerImpl) GetAppRoomConn(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
 		return
 	}
 
 	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_APP)
-	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
-	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
+	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
-	roomData, _ := impl.RoomService.GetAppRoomConn(teamID, appID)
+	roomData, _ := controller.RoomService.GetAppRoomConn(teamID, appID)
 
 	c.JSON(http.StatusOK, roomData)
 }
 
 func (impl RoomRestHandlerImpl) GetAppRoomBinaryConn(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := GetMagicIntParamFromRequest(c, PARAM_APP_ID)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil {
 		return
 	}
 
 	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_APP)
-	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
-	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
+	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
-	roomData, _ := impl.RoomService.GetAppRoomBinaryConn(teamID, appID)
+	roomData, _ := controller.RoomService.GetAppRoomBinaryConn(teamID, appID)
 
 	c.JSON(http.StatusOK, roomData)
 }

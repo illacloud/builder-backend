@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resthandler
+package controller
 
 import (
 	"encoding/json"
@@ -23,11 +23,10 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
-	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/internal/auditlogger"
 	"github.com/illacloud/builder-backend/internal/idconvertor"
-	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/pkg/resource"
+	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/gin-gonic/gin"
@@ -50,10 +49,10 @@ type ResourceRestHandler interface {
 type ResourceRestHandlerImpl struct {
 	logger          *zap.SugaredLogger
 	resourceService resource.ResourceService
-	AttributeGroup  *ac.AttributeGroup
+	AttributeGroup  *accesscontrol.AttributeGroup
 }
 
-func NewResourceRestHandlerImpl(logger *zap.SugaredLogger, resourceService resource.ResourceService, attrg *ac.AttributeGroup) *ResourceRestHandlerImpl {
+func NewResourceRestHandlerImpl(logger *zap.SugaredLogger, resourceService resource.ResourceService, attrg *accesscontrol.AttributeGroup) *ResourceRestHandlerImpl {
 	return &ResourceRestHandlerImpl{
 		logger:          logger,
 		resourceService: resourceService,
@@ -63,32 +62,32 @@ func NewResourceRestHandlerImpl(logger *zap.SugaredLogger, resourceService resou
 
 func (impl ResourceRestHandlerImpl) FindAllResources(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
 	}
 
 	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
-	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
-	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_RESOURCE)
+	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// fetch data
-	res, err := impl.resourceService.FindAllResources(teamID)
+	res, err := controller.resourceService.FindAllResources(teamID)
 	if err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
 		return
 	}
 
@@ -99,44 +98,44 @@ func (impl ResourceRestHandlerImpl) FindAllResources(c *gin.Context) {
 
 func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	userID, errInGetUserID := GetUserIDFromAuth(c)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
 		return
 	}
 
 	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
-	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
-	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_CREATE_RESOURCE)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_RESOURCE)
+	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_CREATE_RESOURCE)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	var rsc resource.ResourceDto
 	rsc.InitUID()
 	if err := json.NewDecoder(c.Request.Body).Decode(&rsc); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// validate `resource` valid required fields
 	validate := validator.New()
 	if err := validate.Struct(rsc); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
-	if err := impl.resourceService.ValidateResourceOptions(rsc.Type, rsc.Options); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
+	if err := controller.resourceService.ValidateResourceOptions(rsc.Type, rsc.Options); err != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
@@ -145,9 +144,9 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 	rsc.CreatedBy = userID
 	rsc.UpdatedAt = time.Now().UTC()
 	rsc.UpdatedBy = userID
-	res, err := impl.resourceService.CreateResource(rsc)
+	res, err := controller.resourceService.CreateResource(rsc)
 	if err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_RESOURCE, "create resources error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_RESOURCE, "create resources error: "+err.Error())
 		return
 	}
 
@@ -164,88 +163,88 @@ func (impl ResourceRestHandlerImpl) CreateResource(c *gin.Context) {
 	})
 
 	// feedback
-	FeedbackOK(c, res)
+	controller.FeedbackOK(c, res)
 	return
 }
 
 func (impl ResourceRestHandlerImpl) GetResource(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := controller.GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetAuthToken != nil {
 		return
 	}
 
 	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
-	impl.AttributeGroup.SetUnitID(resourceID)
-	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_RESOURCE)
+	controller.AttributeGroup.SetUnitID(resourceID)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// fetch data
-	res, err := impl.resourceService.GetResource(teamID, resourceID)
+	res, err := controller.resourceService.GetResource(teamID, resourceID)
 	if err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
 		return
 	}
 
 	// feedback
-	FeedbackOK(c, res)
+	controller.FeedbackOK(c, res)
 	return
 }
 
 func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
-	userID, errInGetUserID := GetUserIDFromAuth(c)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := controller.GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
 		return
 	}
 
 	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
-	impl.AttributeGroup.SetUnitID(resourceID)
-	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_RESOURCE)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_RESOURCE)
+	controller.AttributeGroup.SetUnitID(resourceID)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_EDIT_RESOURCE)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// parse request body
 	var rscForExport resource.ResourceDtoForExport
 	if err := json.NewDecoder(c.Request.Body).Decode(&rscForExport); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 	rsc := rscForExport.ExportResourceDto()
 	// validate `resource` valid required fields
 	validate := validator.New()
 	if err := validate.Struct(rsc); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
-	if err := impl.resourceService.ValidateResourceOptions(rsc.Type, rsc.Options); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
+	if err := controller.resourceService.ValidateResourceOptions(rsc.Type, rsc.Options); err != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 
@@ -253,12 +252,12 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 	rsc.ID = resourceID
 	rsc.UpdatedBy = userID
 	rsc.UpdatedAt = time.Now().UTC()
-	res, err := impl.resourceService.UpdateResource(rsc)
+	res, err := controller.resourceService.UpdateResource(rsc)
 	if err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_RESOURCE, "update resources error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_RESOURCE, "update resources error: "+err.Error())
 		return
 	}
-	originInfo, _ := impl.resourceService.GetResource(teamID, rsc.ID)
+	originInfo, _ := controller.resourceService.GetResource(teamID, rsc.ID)
 	res.CreatedAt = originInfo.CreatedAt
 	res.CreatedBy = originInfo.CreatedBy
 
@@ -275,40 +274,40 @@ func (impl ResourceRestHandlerImpl) UpdateResource(c *gin.Context) {
 	})
 
 	// feedback
-	FeedbackOK(c, res)
+	controller.FeedbackOK(c, res)
 	return
 }
 
 func (impl ResourceRestHandlerImpl) DeleteResource(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	userID, errInGetUserID := GetUserIDFromAuth(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := controller.GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
 	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
 	}
 
 	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
-	impl.AttributeGroup.SetUnitID(resourceID)
-	canDelete, errInCheckAttr := impl.AttributeGroup.CanDelete(ac.ACTION_DELETE)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_RESOURCE)
+	controller.AttributeGroup.SetUnitID(resourceID)
+	canDelete, errInCheckAttr := controller.AttributeGroup.CanDelete(accesscontrol.ACTION_DELETE)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canDelete {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// fetch data
-	res, err := impl.resourceService.GetResource(teamID, resourceID)
+	res, err := controller.resourceService.GetResource(teamID, resourceID)
 	if err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
 		return
 	}
 
@@ -324,45 +323,45 @@ func (impl ResourceRestHandlerImpl) DeleteResource(c *gin.Context) {
 		ResourceType: res.Type,
 	})
 
-	if err := impl.resourceService.DeleteResource(teamID, resourceID); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_DELETE_RESOURCE, "delete resources error: "+err.Error())
+	if err := controller.resourceService.DeleteResource(teamID, resourceID); err != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_DELETE_RESOURCE, "delete resources error: "+err.Error())
 		return
 	}
 
 	// feedback
-	FeedbackOK(c, repository.NewDeleteResourceResponse(resourceID))
+	controller.FeedbackOK(c, model.NewDeleteResourceResponse(resourceID))
 	return
 
 }
 
 func (impl ResourceRestHandlerImpl) TestConnection(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
 	}
 
 	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
-	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
-	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_RESOURCE)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_RESOURCE)
+	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_EDIT_RESOURCE)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// format data to DTO struct
 	var rscForExport resource.ResourceDtoForExport
 	if err := json.NewDecoder(c.Request.Body).Decode(&rscForExport); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 	rsc := rscForExport.ExportResourceDto()
@@ -370,48 +369,48 @@ func (impl ResourceRestHandlerImpl) TestConnection(c *gin.Context) {
 	// validate `resource` valid required fields
 	validate := validator.New()
 	if err := validate.Struct(rsc); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 
-	connRes, err := impl.resourceService.TestConnection(rsc)
+	connRes, err := controller.resourceService.TestConnection(rsc)
 	if err != nil || !connRes {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_TEST_RESOURCE_CONNECTION, "test connection failed: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_TEST_RESOURCE_CONNECTION, "test connection failed: "+err.Error())
 		return
 	}
 
 	// feedback
-	FeedbackOK(c, nil)
+	controller.FeedbackOK(c, nil)
 	return
 }
 
 func (impl ResourceRestHandlerImpl) GetMetaInfo(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := controller.GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetAuthToken != nil {
 		return
 	}
 
 	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
-	impl.AttributeGroup.SetUnitID(resourceID)
-	canAccess, errInCheckAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_RESOURCE)
+	controller.AttributeGroup.SetUnitID(resourceID)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canAccess {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// fetch data
-	res, err := impl.resourceService.GetMetaInfo(teamID, resourceID)
+	res, err := controller.resourceService.GetMetaInfo(teamID, resourceID)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{})
 		return
@@ -439,60 +438,60 @@ type OAuth2Opts struct {
 
 func (impl ResourceRestHandlerImpl) CreateOAuthToken(c *gin.Context) {
 	// fetch needed params
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
-	userID, errInGetUserID := GetUserIDFromAuth(c)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := controller.GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
 		return
 	}
 
 	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
-	impl.AttributeGroup.SetUnitID(resourceID)
-	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_RESOURCE)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_RESOURCE)
+	controller.AttributeGroup.SetUnitID(resourceID)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_EDIT_RESOURCE)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// parse request body
 	var createOAuthTokenRequest CreateOAuthTokenRequest
 	if err := json.NewDecoder(c.Request.Body).Decode(&createOAuthTokenRequest); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 	// validate request body fields
 	validate := validator.New()
 	if err := validate.Struct(createOAuthTokenRequest); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 
 	// validate the resource id
-	res, err := impl.resourceService.GetResource(teamID, resourceID)
+	res, err := controller.resourceService.GetResource(teamID, resourceID)
 	if err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
 		return
 	}
 	if res.Type != "googlesheets" {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported resource type")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported resource type")
 		return
 	}
 	var googleSheetsResource GoogleSheetsResource
 	if err := mapstructure.Decode(res.Options, &googleSheetsResource); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "get resource error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "get resource error: "+err.Error())
 		return
 	}
 	if googleSheetsResource.Authentication != "oauth2" {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported authentication type")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported authentication type")
 		return
 	}
 
@@ -505,7 +504,7 @@ func (impl ResourceRestHandlerImpl) CreateOAuthToken(c *gin.Context) {
 	}
 	token, err := generateGSOAuth2Token(teamID, userID, resourceID, access, createOAuthTokenRequest.RedirectURL)
 	if err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "generate token error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "generate token error: "+err.Error())
 		return
 	}
 
@@ -521,27 +520,27 @@ type GoogleSheetsOAuth2Request struct {
 
 func (impl ResourceRestHandlerImpl) GoogleSheetsOAuth2(c *gin.Context) {
 	// fetch needed params
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
-	_, errInGetUserID := GetUserIDFromAuth(c)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := controller.GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
+	_, errInGetUserID := controller.GetUserIDFromAuth(c)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
 		return
 	}
 
 	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
-	impl.AttributeGroup.SetUnitID(resourceID)
-	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_RESOURCE)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_RESOURCE)
+	controller.AttributeGroup.SetUnitID(resourceID)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_EDIT_RESOURCE)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
@@ -551,34 +550,34 @@ func (impl ResourceRestHandlerImpl) GoogleSheetsOAuth2(c *gin.Context) {
 	// validate request body fields
 	validate := validator.New()
 	if err := validate.Struct(gsOAuth2Request); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 
 	// validate the resource id
-	res, err := impl.resourceService.GetResource(teamID, resourceID)
+	res, err := controller.resourceService.GetResource(teamID, resourceID)
 	if err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
 		return
 	}
 	if res.Type != "googlesheets" {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_AUTHORIZE_GS, "unsupported resource type")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_AUTHORIZE_GS, "unsupported resource type")
 		return
 	}
 	var googleSheetsResource GoogleSheetsResource
 	if err := mapstructure.Decode(res.Options, &googleSheetsResource); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_AUTHORIZE_GS, "get resource error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_AUTHORIZE_GS, "get resource error: "+err.Error())
 		return
 	}
 	if googleSheetsResource.Authentication != "oauth2" {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_AUTHORIZE_GS, "unsupported authentication type")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_AUTHORIZE_GS, "unsupported authentication type")
 		return
 	}
 
 	// validate access token
 	access, err := validateGSOAuth2Token(gsOAuth2Request.AccessToken)
 	if err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_AUTHORIZE_GS, "validate token error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_AUTHORIZE_GS, "validate token error: "+err.Error())
 		return
 	}
 
@@ -609,47 +608,47 @@ func (impl ResourceRestHandlerImpl) GoogleSheetsOAuth2(c *gin.Context) {
 
 func (impl ResourceRestHandlerImpl) RefreshGSOAuth(c *gin.Context) {
 	// fetch needed params
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	resourceID, errInGetResourceID := GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
-	userID, errInGetUserID := GetUserIDFromAuth(c)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	resourceID, errInGetResourceID := controller.GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
 		return
 	}
 
 	// validate
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
-	impl.AttributeGroup.SetUnitID(resourceID)
-	canManage, errInCheckAttr := impl.AttributeGroup.CanManage(ac.ACTION_MANAGE_EDIT_RESOURCE)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_RESOURCE)
+	controller.AttributeGroup.SetUnitID(resourceID)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_EDIT_RESOURCE)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManage {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// validate the resource id
-	res, err := impl.resourceService.GetResource(teamID, resourceID)
+	res, err := controller.resourceService.GetResource(teamID, resourceID)
 	if err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GS, "get resources error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GS, "get resources error: "+err.Error())
 		return
 	}
 	if res.Type != "googlesheets" {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GS, "unsupported resource type")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GS, "unsupported resource type")
 		return
 	}
 	var googleSheetsResource GoogleSheetsResource
 	if err := mapstructure.Decode(res.Options, &googleSheetsResource); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GS, "get resource error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GS, "get resource error: "+err.Error())
 		return
 	}
 	if googleSheetsResource.Authentication != "oauth2" {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GS, "unsupported authentication type")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GS, "unsupported authentication type")
 		return
 	}
 
@@ -672,7 +671,7 @@ func (impl ResourceRestHandlerImpl) RefreshGSOAuth(c *gin.Context) {
 		}
 		var refreshTokenSuccessResponse RefreshTokenSuccessResponse
 		if err := json.Unmarshal(resp.Body(), &refreshTokenSuccessResponse); err != nil {
-			FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GS, "fresh google sheets error: "+err.Error())
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GS, "fresh google sheets error: "+err.Error())
 			return
 		}
 		googleSheetsResource.Opts.AccessToken = refreshTokenSuccessResponse.AccessToken
@@ -684,7 +683,7 @@ func (impl ResourceRestHandlerImpl) RefreshGSOAuth(c *gin.Context) {
 	}
 
 	// update resource and return response
-	updateRes, err := impl.resourceService.UpdateResource(resource.ResourceDto{
+	updateRes, err := controller.resourceService.UpdateResource(resource.ResourceDto{
 		ID:   idconvertor.ConvertStringToInt(res.ID),
 		Name: res.Name,
 		Type: res.Type,
@@ -702,6 +701,6 @@ func (impl ResourceRestHandlerImpl) RefreshGSOAuth(c *gin.Context) {
 		UpdatedBy: userID,
 	})
 	res.Options = updateRes.Options
-	FeedbackOK(c, res)
+	controller.FeedbackOK(c, res)
 	return
 }

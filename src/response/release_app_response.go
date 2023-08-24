@@ -1,4 +1,4 @@
-package repository
+package response
 
 type ReleaseAppResponse struct {
 	Version int `json:"version"`

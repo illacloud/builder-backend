@@ -50,7 +50,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	appRouter.DELETE(":appID", r.Controller.DeleteApp)
 	appRouter.PATCH(":appID/config", r.Controller.ConfigApp)
 	appRouter.GET("", r.Controller.GetAllApps)
-	appRouter.GET(":appID/versions/:version", r.Controller.GetMegaData)
+	appRouter.GET(":appID/versions/:version", r.Controller.GetFullApp)
 	appRouter.POST(":appID/duplication", r.Controller.DuplicateApp)
 	appRouter.POST(":appID/deploy", r.Controller.ReleaseApp)
 	appRouter.POST(":appID/takeSnapshot", r.Controller.TakeSnapshot)
@@ -88,7 +88,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	resourceRouter.POST("/:resourceID/refresh", r.Controller.RefreshGSOAuth)
 
 	// public app routers
-	publicAppRouter.GET(":appID/versions/:version", r.Controller.GetMegaData)
+	publicAppRouter.GET(":appID/versions/:version", r.Controller.GetFullApp)
 	publicAppRouter.GET(":appID/isPublic", r.Controller.IsPublicApp)
 
 	// public action router

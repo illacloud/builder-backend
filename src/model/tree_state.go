@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repository
+package model
 
 import (
 	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/illacloud/builder-backend/internal/util"
+	util "github.com/illacloud/builder-backend/src/utils/extendslice"
 )
 
 const TREE_STATE_SUMMIT_ID = 0

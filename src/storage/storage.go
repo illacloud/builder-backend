@@ -6,7 +6,13 @@ import (
 )
 
 type Storage struct {
-	AIAgentStorage *AIAgentStorage
+	AppStorage         *AppStorage
+	ActionStorage      *ActionStorage
+	AppSnapshotStorage *AppSnapshotStorage
+	KVStateStorage     *KVStateStorage
+	ResourceStorage    *ResourceStorage
+	SetStateStorage    *SetStateStorage
+	TreeStateStorage   *TreeStateStorage
 }
 
 func NewStorage(postgresDriver *gorm.DB, logger *zap.SugaredLogger) *Storage {

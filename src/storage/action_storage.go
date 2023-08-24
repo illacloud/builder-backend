@@ -12,59 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repository
+package storage
 
 import (
 	"encoding/json"
 
+	"github.com/illacloud/builder-backend/src/model"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
-type ActionRepository interface {
-	Create(action *Action) (int, error)
-	Delete(teamID int, actionID int) error
-	Update(action *Action) error
-	UpdateWholeAction(action *Action) error
-	UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, actionConfig *ActionConfig) error
-	MakeActionPublicByTeamIDAndAppID(teamID int, appID int, userID int) error
-	MakeActionPrivateByTeamIDAndAppID(teamID int, appID int, userID int) error
-	RetrieveActionByIDAndTeamID(actionID int, teamID int) (*Action, error)
-	RetrieveAll(teamID int, appID int) ([]*Action, error)
-	RetrieveByID(teamID int, actionID int) (*Action, error)
-	RetrieveActionsByAppVersion(teamID int, appID int, version int) ([]*Action, error)
-	DeleteActionsByApp(teamID int, appID int) error
-	CountActionByTeamID(teamID int) (int, error)
-	DeleteAllActionsByTeamIDAppIDAndVersion(teamID int, appID int, targetVersion int) error
-}
-
-type ActionRepositoryImpl struct {
+type ActionStorage struct {
 	logger *zap.SugaredLogger
 	db     *gorm.DB
 }
 
-func NewActionRepositoryImpl(logger *zap.SugaredLogger, db *gorm.DB) *ActionRepositoryImpl {
-	return &ActionRepositoryImpl{
+func NewActionStorage(logger *zap.SugaredLogger, db *gorm.DB) *ActionStorage {
+	return &ActionStorage{
 		logger: logger,
 		db:     db,
 	}
 }
 
-func (impl *ActionRepositoryImpl) Create(action *Action) (int, error) {
+func (impl *ActionStorage) Create(action *model.Action) (int, error) {
 	if err := impl.db.Create(action).Error; err != nil {
 		return 0, err
 	}
 	return action.ID, nil
 }
 
-func (impl *ActionRepositoryImpl) Delete(teamID int, actionID int) error {
+func (impl *ActionStorage) Delete(teamID int, actionID int) error {
 	if err := impl.db.Where("id = ? AND team_id = ?", actionID, teamID).Delete(&Action{}).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (impl *ActionRepositoryImpl) Update(action *Action) error {
+func (impl *ActionStorage) Update(action *model.Action) error {
 	if err := impl.db.Model(action).UpdateColumns(Action{
 		Resource:    action.Resource,
 		Type:        action.Type,
@@ -81,14 +65,14 @@ func (impl *ActionRepositoryImpl) Update(action *Action) error {
 	return nil
 }
 
-func (impl *ActionRepositoryImpl) UpdateWholeAction(action *Action) error {
+func (impl *ActionStorage) UpdateWholeAction(action *model.Action) error {
 	if err := impl.db.Model(action).Where("id = ?", action.ID).UpdateColumns(action).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (impl *ActionRepositoryImpl) UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, actionConfig *ActionConfig) error {
+func (impl *ActionStorage) UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, actionConfig *ActionConfig) error {
 	actions, errInGetAll := impl.RetrieveAll(teamID, appID)
 	if errInGetAll != nil {
 		return errInGetAll
@@ -109,7 +93,7 @@ func (impl *ActionRepositoryImpl) UpdatePublicByTeamIDAndAppIDAndUserID(teamID i
 	return nil
 }
 
-func (impl *ActionRepositoryImpl) MakeActionPublicByTeamIDAndAppID(teamID int, appID int, userID int) error {
+func (impl *ActionStorage) MakeActionPublicByTeamIDAndAppID(teamID int, appID int, userID int) error {
 	actions, errInGetAll := impl.RetrieveAll(teamID, appID)
 	if errInGetAll != nil {
 		return errInGetAll
@@ -127,7 +111,7 @@ func (impl *ActionRepositoryImpl) MakeActionPublicByTeamIDAndAppID(teamID int, a
 	return nil
 }
 
-func (impl *ActionRepositoryImpl) MakeActionPrivateByTeamIDAndAppID(teamID int, appID int, userID int) error {
+func (impl *ActionStorage) MakeActionPrivateByTeamIDAndAppID(teamID int, appID int, userID int) error {
 	actions, errInGetAll := impl.RetrieveAll(teamID, appID)
 	if errInGetAll != nil {
 		return errInGetAll
@@ -144,15 +128,15 @@ func (impl *ActionRepositoryImpl) MakeActionPrivateByTeamIDAndAppID(teamID int, 
 	return nil
 }
 
-func (impl *ActionRepositoryImpl) RetrieveActionByIDAndTeamID(actionID int, teamID int) (*Action, error) {
-	var action *Action
+func (impl *ActionStorage) RetrieveActionByIDAndTeamID(actionID int, teamID int) (*Action, error) {
+	var action *model.Action
 	if err := impl.db.Where("id = ? AND team_id = ?", actionID, teamID).Find(&action).Error; err != nil {
 		return nil, err
 	}
 	return action, nil
 }
 
-func (impl *ActionRepositoryImpl) RetrieveAll(teamID int, appID int) ([]*Action, error) {
+func (impl *ActionStorage) RetrieveAll(teamID int, appID int) ([]*Action, error) {
 	var actions []*Action
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, appID).Find(&actions).Error; err != nil {
 		return nil, err
@@ -160,15 +144,15 @@ func (impl *ActionRepositoryImpl) RetrieveAll(teamID int, appID int) ([]*Action,
 	return actions, nil
 }
 
-func (impl *ActionRepositoryImpl) RetrieveByID(teamID int, actionID int) (*Action, error) {
-	var action *Action
+func (impl *ActionStorage) RetrieveByID(teamID int, actionID int) (*Action, error) {
+	var action *model.Action
 	if err := impl.db.Where("id = ? AND team_id = ?", actionID, teamID).First(&action).Error; err != nil {
 		return &Action{}, err
 	}
 	return action, nil
 }
 
-func (impl *ActionRepositoryImpl) RetrieveActionsByAppVersion(teamID int, appID int, version int) ([]*Action, error) {
+func (impl *ActionStorage) RetrieveActionsByAppVersion(teamID int, appID int, version int) ([]*Action, error) {
 	var actions []*Action
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, appID, version).Find(&actions).Error; err != nil {
 		return nil, err
@@ -176,14 +160,14 @@ func (impl *ActionRepositoryImpl) RetrieveActionsByAppVersion(teamID int, appID 
 	return actions, nil
 }
 
-func (impl *ActionRepositoryImpl) DeleteActionsByApp(teamID int, appID int) error {
+func (impl *ActionStorage) DeleteActionsByApp(teamID int, appID int) error {
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, appID).Delete(&Action{}).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (impl *ActionRepositoryImpl) CountActionByTeamID(teamID int) (int, error) {
+func (impl *ActionStorage) CountActionByTeamID(teamID int) (int, error) {
 	var count int64
 	if err := impl.db.Model(&Action{}).Where("team_id = ?", teamID).Count(&count).Error; err != nil {
 		return 0, err
@@ -191,7 +175,7 @@ func (impl *ActionRepositoryImpl) CountActionByTeamID(teamID int) (int, error) {
 	return int(count), nil
 }
 
-func (impl *ActionRepositoryImpl) DeleteAllActionsByTeamIDAppIDAndVersion(teamID int, appID int, targetVersion int) error {
+func (impl *ActionStorage) DeleteAllActionsByTeamIDAppIDAndVersion(teamID int, appID int, targetVersion int) error {
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, appID, targetVersion).Delete(&Action{}).Error; err != nil {
 		return err
 	}

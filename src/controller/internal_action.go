@@ -12,18 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resthandler
+package controller
 
 import (
 	"encoding/json"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
-	ac "github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/internal/auditlogger"
-	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/internal/tokenvalidator"
 	"github.com/illacloud/builder-backend/pkg/resource"
+	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -36,10 +35,10 @@ type InternalActionRestHandler interface {
 type InternalActionRestHandlerImpl struct {
 	logger          *zap.SugaredLogger
 	ResourceService resource.ResourceService
-	AttributeGroup  *ac.AttributeGroup
+	AttributeGroup  *accesscontrol.AttributeGroup
 }
 
-func NewInternalActionRestHandlerImpl(logger *zap.SugaredLogger, resourceService resource.ResourceService, attrg *ac.AttributeGroup) *InternalActionRestHandlerImpl {
+func NewInternalActionRestHandlerImpl(logger *zap.SugaredLogger, resourceService resource.ResourceService, attrg *accesscontrol.AttributeGroup) *InternalActionRestHandlerImpl {
 	return &InternalActionRestHandlerImpl{
 		logger:          logger,
 		ResourceService: resourceService,
@@ -49,51 +48,51 @@ func NewInternalActionRestHandlerImpl(logger *zap.SugaredLogger, resourceService
 
 func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	userAuthToken, errInGetAuthToken := GetUserAuthTokenFromHeader(c)
-	userID, errInGetUserID := GetUserIDFromAuth(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
 	}
 
 	// fetch payload
-	req := repository.NewGenerateSQLRequest()
+	req := model.NewGenerateSQLRequest()
 	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// validate payload required fields
 	validate := validator.New()
 	if err := validate.Struct(req); err != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
 	resourceID := req.ExportResourceIDInInt()
 
 	// validate sql generate special management
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_PERIPHERAL_SERVICE)
-	impl.AttributeGroup.SetUnitID(ac.DEFAULT_UNIT_ID)
-	canManageSpecial, errInCheckAttr := impl.AttributeGroup.CanManageSpecial(ac.ACTION_SPECIAL_GENERATE_SQL)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_PERIPHERAL_SERVICE)
+	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
+	canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(accesscontrol.ACTION_SPECIAL_GENERATE_SQL)
 	if errInCheckAttr != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
 	}
 	if !canManageSpecial {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
 	// validate resource access
-	impl.AttributeGroup.Init()
-	impl.AttributeGroup.SetTeamID(teamID)
-	impl.AttributeGroup.SetUserAuthToken(userAuthToken)
-	impl.AttributeGroup.SetUnitType(ac.UNIT_TYPE_RESOURCE)
-	impl.AttributeGroup.SetUnitID(resourceID)
-	canAccessResource, errInCheckResourceAttr := impl.AttributeGroup.CanAccess(ac.ACTION_ACCESS_VIEW)
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_RESOURCE)
+	controller.AttributeGroup.SetUnitID(resourceID)
+	canAccessResource, errInCheckResourceAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
 	if errInCheckResourceAttr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    500,
@@ -102,7 +101,7 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 		return
 	}
 	if !canAccessResource {
-		FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
 
@@ -118,34 +117,34 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 	})
 
 	// fetch resource
-	resource, errInGetResource := impl.ResourceService.GetResource(teamID, resourceID)
+	resource, errInGetResource := controller.ResourceService.GetResource(teamID, resourceID)
 	if errInGetResource != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "error in fetch resource: "+errInGetResource.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "error in fetch resource: "+errInGetResource.Error())
 		return
 	}
 
 	// fetch resource meta info
-	resourceMetaInfo, errInGetMetaInfo := impl.ResourceService.GetMetaInfo(teamID, resourceID)
+	resourceMetaInfo, errInGetMetaInfo := controller.ResourceService.GetMetaInfo(teamID, resourceID)
 	if errInGetMetaInfo != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE_META_INFO, "error in fetch resource meta info: "+errInGetMetaInfo.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE_META_INFO, "error in fetch resource meta info: "+errInGetMetaInfo.Error())
 		return
 	}
 
 	tokenValidator := tokenvalidator.NewRequestTokenValidator()
 
 	// form request payload
-	generateSQLPeriReq, errInNewReq := repository.NewGenerateSQLPeripheralRequest(resource.Type, resourceMetaInfo, req)
+	generateSQLPeriReq, errInNewReq := model.NewGenerateSQLPeripheralRequest(resource.Type, resourceMetaInfo, req)
 	if errInNewReq != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_GENERATE_SQL_FAILED, "generate request failed: "+errInNewReq.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_GENERATE_SQL_FAILED, "generate request failed: "+errInNewReq.Error())
 		return
 	}
 	token := tokenValidator.GenerateValidateToken(generateSQLPeriReq.Description)
 	generateSQLPeriReq.SetValidateToken(token)
 
 	// call remote generate sql API
-	generateSQLResp, errInGGenerateSQL := repository.GenerateSQL(generateSQLPeriReq, req)
+	generateSQLResp, errInGGenerateSQL := model.GenerateSQL(generateSQLPeriReq, req)
 	if errInGGenerateSQL != nil {
-		FeedbackBadRequest(c, ERROR_FLAG_GENERATE_SQL_FAILED, "generate sql failed: "+errInGGenerateSQL.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_GENERATE_SQL_FAILED, "generate sql failed: "+errInGGenerateSQL.Error())
 		return
 	}
 

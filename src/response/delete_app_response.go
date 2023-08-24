@@ -1,4 +1,4 @@
-package repository
+package response
 
 import (
 	"github.com/illacloud/builder-backend/internal/idconvertor"
