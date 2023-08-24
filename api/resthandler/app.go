@@ -556,6 +556,19 @@ func (impl AppRestHandlerImpl) ReleaseApp(c *gin.Context) {
 		return
 	}
 
+	// check team can release public app
+	if publicApp {
+		canManageSpecial, errInCheckAttr := impl.AttributeGroup.CanManageSpecial(ac.ACTION_SPECIAL_RELEASE_PUBLIC_APP)
+		if errInCheckAttr != nil {
+			FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+			return
+		}
+		if !canManageSpecial {
+			FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+			return
+		}
+	}
+
 	// fetch app
 	app, errInRetrieveApp := impl.AppRepository.RetrieveAppByIDAndTeamID(appID, teamID)
 	if errInRetrieveApp != nil {
