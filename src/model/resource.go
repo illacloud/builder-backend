@@ -93,3 +93,7 @@ func (resource *Resource) ExportOptionsInMap() map[string]interface{} {
 	json.Unmarshal([]byte(resource.Options), options)
 	return options
 }
+
+func (resource *Resource) CanCreateOAuthToken() bool {
+	return resourcelist.CanCreateOAuthToken(resource.Type)
+}

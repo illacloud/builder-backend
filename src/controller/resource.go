@@ -379,25 +379,24 @@ func (controller *Controller) GetMetaInfo(c *gin.Context) {
 		return
 	}
 
-	// fetch data
-	res, err := controller.resourceService.GetMetaInfo(teamID, resourceID)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{})
+	// get resource
+	resource, errInRetrieveResource := controller.Storage.ResourceStorage.RetrieveByTeamIDAndResourceID(teamID, resourceID)
+	if errInRetrieveResource != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+errInRetrieveResource.Error())
 		return
 	}
-	c.JSON(http.StatusOK, res)
+
+	// fetch meta info
+	resourceMetaInfo, errInGetMetaInfo := controller.GetResourceMetaInfo(c, resource)
+	if errInGetMetaInfo != nil {
+		return
+	}
+
+	// feedback
+	c.JSON(http.StatusOK, resourceMetaInfo)
 	return
 }
 
-type CreateOAuthTokenRequest struct {
-	RedirectURL string `json:"redirectURL" validate:"required"`
-	AccessType  string `json:"accessType" validate:"oneof=rw r"`
-}
-
-type GoogleSheetsResource struct {
-	Authentication string
-	Opts           OAuth2Opts
-}
 type OAuth2Opts struct {
 	AccessType   string
 	AccessToken  string
@@ -433,11 +432,12 @@ func (controller *Controller) CreateOAuthToken(c *gin.Context) {
 	}
 
 	// parse request body
-	var createOAuthTokenRequest CreateOAuthTokenRequest
+	createOAuthTokenRequest := request.NewCreateOAuthTokenRequest()
 	if err := json.NewDecoder(c.Request.Body).Decode(&createOAuthTokenRequest); err != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
+
 	// validate request body fields
 	validate := validator.New()
 	if err := validate.Struct(createOAuthTokenRequest); err != nil {
@@ -446,21 +446,28 @@ func (controller *Controller) CreateOAuthToken(c *gin.Context) {
 	}
 
 	// validate the resource id
-	res, err := controller.resourceService.GetResource(teamID, resourceID)
-	if err != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+err.Error())
+	// get resource
+	resource, errInRetrieveResource := controller.Storage.ResourceStorage.RetrieveByTeamIDAndResourceID(teamID, resourceID)
+	if errInRetrieveResource != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+errInRetrieveResource.Error())
 		return
 	}
-	if res.Type != "googlesheets" {
+
+	// check resource type for create OAuth token
+	if !resource.CanCreateOAuthToken() {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported resource type")
 		return
 	}
-	var googleSheetsResource GoogleSheetsResource
-	if err := mapstructure.Decode(res.Options, &googleSheetsResource); err != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "get resource error: "+err.Error())
+
+	// new resource option
+	resourceOptionGoogleSheets, errInNewGoogleSheetResourceOption := model.NewResourceOptionGoogleSheetsByResource(resource)
+	if errInNewGoogleSheetResourceOption != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported resource type: "+errInNewGoogleSheetResourceOption.Error())
 		return
 	}
-	if googleSheetsResource.Authentication != "oauth2" {
+
+	// validate resource option
+	if !resourceOptionGoogleSheets.IsAvaliableAuthenticationMethod() {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported authentication type")
 		return
 	}

@@ -137,6 +137,10 @@ var emptyOptionResourceList = map[string]bool{
 	TYPE_TRANSFORMER: true,
 }
 
+var canCreateOAuthTokenResourceList = map[string]bool{
+	TYPE_GOOGLESHEETS: true,
+}
+
 func GetResourceIDMappedType(id int) string {
 	return type_array[id]
 }
@@ -161,4 +165,10 @@ func IsVirtualResourceHaveNoOption(resourceType int) bool {
 	resourceTypeString := GetResourceIDMappedType(resourceType)
 	itIs, hit := emptyOptionResourceList[resourceTypeString]
 	return itIs && hit
+}
+
+func CanCreateOAuthToken(resourceType int) bool {
+	resourceTypeString := GetResourceIDMappedType(resourceType)
+	canDo, hit := canCreateOAuthTokenResourceList[resourceTypeString]
+	return canDo && hit
 }

@@ -24,7 +24,7 @@ func (controller *Controller) ValidateResourceConternt(c *gin.Context, resource 
 	// check template
 	_, errInValidate := resourceAssemblyLine.ValidateResourceOptions(resource.ExportOptionsInMap())
 	if errInValidate != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action template error: "+errInValidate.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate resource option error: "+errInValidate.Error())
 		return errInValidate
 	}
 	return nil
@@ -46,7 +46,7 @@ func (controller *Controller) TestResourceConnection(c *gin.Context, resource *m
 	// check template
 	_, errInValidate := resourceAssemblyLine.ValidateResourceOptions(resource.ExportOptionsInMap())
 	if errInValidate != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action template error: "+errInValidate.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate resource option error: "+errInValidate.Error())
 		return errInValidate
 	}
 
@@ -62,4 +62,27 @@ func (controller *Controller) TestResourceConnection(c *gin.Context, resource *m
 		return errInConnection
 	}
 	return nil
+}
+
+func (controller *Controller) GetResourceMetaInfo(c *gin.Context, resource *model.Resource) (map[string]interface{}, error) {
+	if resourcelist.IsVirtualResourceHaveNoOption(resource.ExportType()) {
+		return nil, nil
+	}
+
+	// check build
+	resourceFactory := model.NewActionFactoryByResource(resource)
+	resourceAssemblyLine, errInBuild := resourceFactory.Build()
+	if errInBuild == nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action type error: "+errInBuild.Error())
+		return nil, errInBuild
+	}
+
+	// check template
+	resourceMetaInfo, errInGetMetaInfo := resourceAssemblyLine.GetMetaInfo(resource.ExportOptionsInMap())
+	if errInGetMetaInfo != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "ger resource meta info error: "+errInGetMetaInfo.Error())
+		return nil, errInValidate
+	}
+
+	return resourceMetaInfo, nil
 }
