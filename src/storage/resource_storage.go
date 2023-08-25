@@ -27,20 +27,8 @@ func (impl *ResourceStorage) Create(resource *model.Resource) (int, error) {
 	return resource.ID, nil
 }
 
-func (impl *ResourceStorage) Delete(teamID int, resourceID int) error {
-	if err := impl.db.Where("id = ? AND team_id = ?", resourceID, teamID).Delete(&model.Resource{}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (impl *ResourceStorage) Update(resource *model.Resource) error {
-	if err := impl.db.Model(resource).UpdateColumns(model.Resource{
-		Name:      resource.Name,
-		Options:   resource.Options,
-		UpdatedBy: resource.UpdatedBy,
-		UpdatedAt: resource.UpdatedAt,
-	}).Error; err != nil {
+func (impl *ResourceStorage) UpdateWholeResource(resource *model.Resource) error {
+	if err := impl.db.Model(resource).Where("id = ?", resource.ID).UpdateColumns(resource).Error; err != nil {
 		return err
 	}
 	return nil
@@ -54,7 +42,7 @@ func (impl *ResourceStorage) RetrieveByTeamIDAndResourceID(teamID int, resourceI
 	return resource, nil
 }
 
-func (impl *ResourceStorage) RetrieveAll(teamID int) ([]*model.Resource, error) {
+func (impl *ResourceStorage) RetrieveByTeamID(teamID int) ([]*model.Resource, error) {
 	var resources []*model.Resource
 	if err := impl.db.Where("team_id = ?", teamID).Find(&resources).Error; err != nil {
 		return nil, err
@@ -84,4 +72,11 @@ func (impl *ResourceStorage) RetrieveResourceLastModifiedTime(teamID int) (time.
 		return time.Time{}, err
 	}
 	return resource.ExportUpdatedAt(), nil
+}
+
+func (impl *ResourceStorage) Delete(teamID int, resourceID int) error {
+	if err := impl.db.Where("id = ? AND team_id = ?", resourceID, teamID).Delete(&model.Resource{}).Error; err != nil {
+		return err
+	}
+	return nil
 }

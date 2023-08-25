@@ -1,23 +1,12 @@
-// Copyright 2022 The ILLA Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package model
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/illacloud/builder-backend/src/request"
+	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 )
 
 type Resource struct {
@@ -33,10 +22,74 @@ type Resource struct {
 	UpdatedBy int       `gorm:"column:updated_by;type:bigint;not null"`
 }
 
+func NewResource() *Resource {
+	return &Resource{}
+}
+
+func NewResourceByCreateResourceRequest(teamID int, userID int, req *request.CreateResourceRequest) *Resource {
+	resource := &Resource{
+		TeamID:    teamID,
+		Name:      req.ResourceName,
+		Type:      resourcelist.GetResourceNameMappedID(req.ResourceType),
+		Options:   req.ExportOptionsInString(),
+		CreatedBy: userID,
+		UpdatedBy: userID,
+	}
+	resource.InitUID()
+	resource.InitCreatedAt()
+	resource.InitUpdatedAt()
+	return resource
+}
+
+func NewResourceByTestResourceConnectionRequest(teamID int, userID int, req *request.TestResourceConnectionRequest) *Resource {
+	resource := &Resource{
+		TeamID:    teamID,
+		Name:      req.ResourceName,
+		Type:      resourcelist.GetResourceNameMappedID(req.ResourceType),
+		Options:   req.ExportOptionsInString(),
+		CreatedBy: userID,
+		UpdatedBy: userID,
+	}
+	resource.InitUID()
+	resource.InitCreatedAt()
+	resource.InitUpdatedAt()
+	return resource
+}
+
+func (resource *Resource) UpdateByUpdateResourceRequest(userID int, req *request.UpdateResourceRequest) {
+	resource.Name = req.Name
+	resource.Type = resourcelist.GetResourceNameMappedID(req.ResourceType)
+	resource.Options = req.ExportOptionsInString()
+	resource.UpdatedBy = userID
+	resource.InitUpdatedAt()
+}
+
+func (resource *Resource) CleanID() {
+	resource.ID = 0
+}
+
+func (resource *Resource) InitUID() {
+	resource.UID = uuid.New()
+}
+
+func (resource *Resource) InitCreatedAt() {
+	resource.CreatedAt = time.Now().UTC()
+}
+
+func (resource *Resource) InitUpdatedAt() {
+	resource.UpdatedAt = time.Now().UTC()
+}
+
 func (resource *Resource) ExportUpdatedAt() time.Time {
 	return resource.UpdatedAt
 }
 
-func NewResource() *Resource {
-	return &Resource{}
+func (resource *Resource) ExportType() int {
+	return resource.Type
+}
+
+func (resource *Resource) ExportOptionsInMap() map[string]interface{} {
+	var options map[string]interface{}
+	json.Unmarshal([]byte(resource.Options), options)
+	return options
 }

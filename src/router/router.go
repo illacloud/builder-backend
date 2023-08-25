@@ -74,7 +74,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	internalActionRouter.POST("/generateSQL", r.Controller.GenerateSQL)
 
 	// resource routers
-	resourceRouter.GET("", r.Controller.FindAllResources)
+	resourceRouter.GET("", r.Controller.GetAllResources)
 	resourceRouter.POST("", r.Controller.CreateResource)
 	resourceRouter.GET("/:resourceID", r.Controller.GetResource)
 	resourceRouter.PUT("/:resourceID", r.Controller.UpdateResource)
