@@ -59,9 +59,9 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	appRouter.POST(":appID/recoverSnapshot/:snapshotID", r.Controller.RecoverSnapshot)
 
 	// room routers
-	roomRouter.GET("/websocketConnection/dashboard", r.Controller.GetDashboardRoomConn)
-	roomRouter.GET("/websocketConnection/app/:appID", r.Controller.GetAppRoomConn)
-	roomRouter.GET("/binaryWebsocketConnection/app/:appID", r.Controller.GetAppRoomBinaryConn)
+	roomRouter.GET("/websocketConnection/dashboard", r.Controller.GetDashboardRoomConnectionAddress)
+	roomRouter.GET("/websocketConnection/app/:appID", r.Controller.GetAppRoomConnectionAddress)
+	roomRouter.GET("/binaryWebsocketConnection/app/:appID", r.Controller.GetAppRoomBinaryConnectionAddress)
 
 	// action routers
 	actionRouter.GET("", r.Controller.FindActions)

@@ -15,40 +15,19 @@
 package controller
 
 import (
-	"net/http"
-
-	"github.com/illacloud/builder-backend/pkg/room"
+	"github.com/illacloud/builder-backend/src/model"
+	"github.com/illacloud/builder-backend/src/response"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
+	"github.com/illacloud/builder-backend/src/utils/config"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 type RoomRequest struct {
 	Name string `json:"RoomName" validate:"required"`
 }
 
-type RoomRestHandler interface {
-	GetDashboardRoomConn(c *gin.Context)
-	GetAppRoomConn(c *gin.Context)
-	GetAppRoomBinaryConn(c *gin.Context)
-}
-
-type RoomRestHandlerImpl struct {
-	logger         *zap.SugaredLogger
-	RoomService    room.RoomService
-	AttributeGroup *accesscontrol.AttributeGroup
-}
-
-func NewRoomRestHandlerImpl(logger *zap.SugaredLogger, RoomService room.RoomService, attrg *accesscontrol.AttributeGroup) *RoomRestHandlerImpl {
-	return &RoomRestHandlerImpl{
-		logger:         logger,
-		RoomService:    RoomService,
-		AttributeGroup: attrg,
-	}
-}
-
-func (impl RoomRestHandlerImpl) GetDashboardRoomConn(c *gin.Context) {
+func (controller *Controller) GetDashboardRoomConnectionAddress(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
@@ -73,11 +52,11 @@ func (impl RoomRestHandlerImpl) GetDashboardRoomConn(c *gin.Context) {
 	}
 
 	// fetch data
-	roomData, _ := controller.RoomService.GetDashboardConn(teamID)
-	c.JSON(http.StatusOK, roomData)
+	websocketConnectionInfo := model.NewWebsocketConnectionInfo(config.GetInstance())
+	controller.FeedbackOK(c, response.NewWSURLResponse(websocketConnectionInfo.GetDashboardConnectionAddress(teamID)))
 }
 
-func (impl RoomRestHandlerImpl) GetAppRoomConn(c *gin.Context) {
+func (controller *Controller) GetAppRoomConnectionAddress(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
@@ -102,12 +81,12 @@ func (impl RoomRestHandlerImpl) GetAppRoomConn(c *gin.Context) {
 		return
 	}
 
-	roomData, _ := controller.RoomService.GetAppRoomConn(teamID, appID)
-
-	c.JSON(http.StatusOK, roomData)
+	// fetch data
+	websocketConnectionInfo := model.NewWebsocketConnectionInfo(config.GetInstance())
+	controller.FeedbackOK(c, response.NewWSURLResponse(websocketConnectionInfo.GetAppRoomConnectionAddress(teamID, appID)))
 }
 
-func (impl RoomRestHandlerImpl) GetAppRoomBinaryConn(c *gin.Context) {
+func (controller *Controller) GetAppRoomBinaryConnectionAddress(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
@@ -132,7 +111,7 @@ func (impl RoomRestHandlerImpl) GetAppRoomBinaryConn(c *gin.Context) {
 		return
 	}
 
-	roomData, _ := controller.RoomService.GetAppRoomBinaryConn(teamID, appID)
-
-	c.JSON(http.StatusOK, roomData)
+	// fetch data
+	websocketConnectionInfo := model.NewWebsocketConnectionInfo(config.GetInstance())
+	controller.FeedbackOK(c, response.NewWSURLResponse(websocketConnectionInfo.GetAppRoomBinaryConnectionAddress(teamID, appID)))
 }

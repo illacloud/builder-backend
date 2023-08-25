@@ -16,6 +16,8 @@ const DEPLOY_MODE_CLOUD_PRODUCTION = "cloud-production"
 const DRIVE_TYPE_AWS = "aws"
 const DRIVE_TYPE_DO = "do"
 const DRIVE_TYPE_MINIO = "minio"
+const PROTOCOL_WEBSOCKET = "ws"
+const PROTOCOL_WEBSOCKET_OVER_TLS = "wss"
 
 var instance *Config
 var once sync.Once
@@ -42,6 +44,7 @@ type Config struct {
 	ServerMode          string `env:"ILLA_SERVER_MODE"              envDefault:"debug"`
 	DeployMode          string `env:"ILLA_DEPLOY_MODE"              envDefault:"cloud-test"`
 	SecretKey           string `env:"ILLA_SECRET_KEY" 			    envDefault:"8xEMrWkBARcDDYQ"`
+	WSSEnabled          string `env:"ILLA_WSS_ENABLED" 			    envDefault:"false"`
 	// key for idconvertor
 	RandomKey string `env:"ILLA_RANDOM_KEY"  envDefault:"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"`
 	// storage config
@@ -117,6 +120,13 @@ func (c *Config) IsCloudProductionMode() bool {
 
 func (c *Config) GetWebScoketServerListenAddress() string {
 	return c.ServerHost + ":" + c.WebsocketServerPort
+}
+
+func (c *Config) GetWebsocketProtocol() string {
+	if c.WSSEnabled == "true" {
+		return PROTOCOL_WEBSOCKET_OVER_TLS
+	}
+	return PROTOCOL_WEBSOCKET
 }
 
 func (c *Config) GetRuntimeEnv() string {
