@@ -30,6 +30,7 @@ type TreeState struct {
 	UID                uuid.UUID `json:"uid" 							 gorm:"column:uid;type:uuid;not null"`
 	TeamID             int       `json:"teamID" 						 gorm:"column:team_id;type:bigserial"`
 	StateType          int       `json:"state_type" 					 gorm:"column:state_type;type:bigint"`
+	ParentNode         string    `json:"parentNode" 					 gorm"-"`
 	ParentNodeRefID    int       `json:"parent_node_ref_id" 			 gorm:"column:parent_node_ref_id;type:bigint"`
 	ChildrenNodeRefIDs string    `json:"children_node_ref_ids" 		     gorm:"column:children_node_ref_ids;type:jsonb"`
 	AppRefID           int       `json:"app_ref_id" 					 gorm:"column:app_ref_id;type:bigint"`
@@ -46,6 +47,17 @@ func NewTreeState() *TreeState {
 	return &TreeState{}
 }
 
+func NewTreeStateByTeamIDAndStateType(teamID int, stateType int) *TreeState {
+	treeState := &TreeState{
+		TeamID:    teamID,
+		StateType: stateType,
+	}
+	treeState.InitUID()
+	treeState.InitCreatedAt()
+	treeState.InitUpdatedAt()
+	return treeState
+}
+
 func NewTreeStateByApp(app *App) *TreeState {
 	treeState := &TreeState{
 		StateType:          TREE_STATE_TYPE_COMPONENTS,
@@ -59,11 +71,21 @@ func NewTreeStateByApp(app *App) *TreeState {
 		CreatedBy:          app.ExportCreatedBy(),
 		UpdatedBy:          app.ExportUpdatedBy(),
 	}
-
 	treeState.InitUID()
 	treeState.InitCreatedAt()
 	treeState.InitUpdatedAt()
 	return treeState
+}
+
+func NewTreeStateByAppAndComponentState(app *App, componentNode *ComponentNode) (*TreeState, error) {
+	componentNodeSerilized, errInSerialization := componentNode.SerializationForDatabase()
+	if errInSerialization != nil {
+		return nil, errInSerialization
+	}
+	treeState := NewTreeStateByApp(app)
+	treeState.Name = componentNode.DisplayName
+	treeState.Content = componentNodeSerilized
+	return treeState, nil
 }
 
 func (treeState *TreeState) CleanID() {
@@ -92,6 +114,10 @@ func (treeState *TreeState) InitCreatedAt() {
 
 func (treeState *TreeState) InitUpdatedAt() {
 	treeState.UpdatedAt = time.Now().UTC()
+}
+
+func (treeState *TreeState) SetTeamID(teamID int) {
+	treeState.TeamID = teamID
 }
 
 func (treeState *TreeState) AppendNewVersion(newVersion int) {

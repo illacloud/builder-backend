@@ -25,3 +25,7 @@ func NewFullAppForExport(appInfo *AppForExport, actions []*ActionForExport, comp
 		DisplayNameState:      displayNameState,
 	}
 }
+
+func (resp *FullAppForExport) ExportAppName() string {
+	return resp.AppInfo.ExportName()
+}

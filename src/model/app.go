@@ -24,8 +24,8 @@ import (
 )
 
 const APP_EDIT_VERSION = 0           // the editable version app ID always be 0
-const APP_AUTO_MAINLINE_VERSION = -1 // -1 for get mainline version automatically
-const APP_AUTO_RELEASE_VERSION = -2  // -1 for get release version automatically
+const APP_AUTO_MAINLINE_VERSION = -1 // -1 for get latest mainline version automatically
+const APP_AUTO_RELEASE_VERSION = -2  // -1 for get latest release version automatically
 
 const APP_FIELD_NAME = "appName"
 const APP_EDITED_BY_MAX_LENGTH = 4

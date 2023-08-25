@@ -139,21 +139,21 @@ func (cnode *ComponentNode) Serialization() ([]byte, error) {
 	return json.Marshal(cnode)
 }
 
-func (cnode *ComponentNode) SerializationForDatabase() ([]byte, error) {
+func (cnode *ComponentNode) SerializationForDatabase() (string, error) {
 	// the parentNode and childrenNode relation info are storaged in special column in database.
 	// build these relations for client output serialization only.
 	tmpParentNode := cnode.ParentNode
 	tmpChildrenNode := cnode.ChildrenNode
 	cnode.ParentNode = ""
 	cnode.ChildrenNode = nil
-	jsonbyte, err := json.Marshal(cnode)
+	jsonByte, err := json.Marshal(cnode)
 	// recover
 	cnode.ParentNode = tmpParentNode
 	cnode.ChildrenNode = tmpChildrenNode
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return jsonbyte, nil
+	return string(jsonByte), nil
 }
 
 func ExportComponentTreeAllDisplayNames(cnode *ComponentNode, displayNames []string) {

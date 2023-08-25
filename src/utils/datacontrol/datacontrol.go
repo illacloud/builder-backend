@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/illacloud/illa-resource-manager-backend/src/model"
-	"github.com/illacloud/illa-resource-manager-backend/src/utils/supervisor"
+	"github.com/illacloud/builder-backend/src/model"
+	"github.com/illacloud/builder-backend/src/utils/supervisor"
 )
 
 func GetUserInfo(targetUserID int) (*model.User, error) {

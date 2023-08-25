@@ -17,11 +17,10 @@ package controller
 import (
 	"encoding/json"
 
-	"github.com/illacloud/builder-backend/internal/datacontrol"
-	"github.com/illacloud/builder-backend/internal/util/illaresourcemanagerbackendsdk"
-	"github.com/illacloud/builder-backend/internal/util/resourcelist"
 	"github.com/illacloud/builder-backend/src/model"
-	repository "github.com/illacloud/builder-backend/src/model"
+	"github.com/illacloud/builder-backend/src/utils/datacontrol"
+	"github.com/illacloud/builder-backend/src/utils/illaresourcemanagerbackendsdk"
+	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 
 	"github.com/gin-gonic/gin"
 )
@@ -151,7 +150,7 @@ func (controller *Controller) InitAppSnapshot(c *gin.Context, teamID int, appID 
 	newAppSnapShot := model.NewAppSnapshot(teamID, appID, model.APP_EDIT_VERSION, model.SNAPSHOT_TRIGGER_MODE_AUTO)
 
 	// storage new edit version snapshot
-	_, errInCreateSnapshot := controller.AppSnapshotmodel.Create(newAppSnapShot)
+	_, errInCreateSnapshot := controller.Storage.AppSnapshotStorage.Create(newAppSnapShot)
 	if errInCreateSnapshot != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_SNAPSHOT, "create snapshot failed: "+errInCreateSnapshot.Error())
 		return nil, errInCreateSnapshot
@@ -166,7 +165,7 @@ func (controller *Controller) InitAppSnapshot(c *gin.Context, teamID int, appID 
 // - create new empty snapshot for current version
 func (controller *Controller) SaveAppSnapshotByVersion(c *gin.Context, teamID int, appID int, userID int, fromVersion int, toVersion int, snapshotTriggerMode int) (*model.AppSnapshot, error) {
 	// retrieve app mainline version snapshot
-	editVersionAppSnapshot, errInRetrieveSnapshot := controller.AppSnapshotmodel.RetrieveByTeamIDAppIDAndTargetVersion(teamID, appID, fromVersion)
+	editVersionAppSnapshot, errInRetrieveSnapshot := controller.Storage.AppSnapshotStorage.RetrieveByTeamIDAppIDAndTargetVersion(teamID, appID, fromVersion)
 	if errInRetrieveSnapshot != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_SNAPSHOT, "get snapshot failed: "+errInRetrieveSnapshot.Error())
 		return nil, errInRetrieveSnapshot
@@ -177,7 +176,7 @@ func (controller *Controller) SaveAppSnapshotByVersion(c *gin.Context, teamID in
 	editVersionAppSnapshot.SetTriggerMode(snapshotTriggerMode)
 
 	// update old edit version snapshot
-	errInUpdateSnapshot := controller.AppSnapshotmodel.UpdateWholeSnapshot(editVersionAppSnapshot)
+	errInUpdateSnapshot := controller.Storage.AppSnapshotStorage.UpdateWholeSnapshot(editVersionAppSnapshot)
 	if errInUpdateSnapshot != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_SNAPSHOT, "update snapshot failed: "+errInUpdateSnapshot.Error())
 		return nil, errInUpdateSnapshot
@@ -188,7 +187,7 @@ func (controller *Controller) SaveAppSnapshotByVersion(c *gin.Context, teamID in
 	newAppSnapShot.SetTriggerModeAuto()
 
 	// storage new edit version snapshot
-	_, errInCreateSnapshot := controller.AppSnapshotmodel.Create(newAppSnapShot)
+	_, errInCreateSnapshot := controller.Storage.AppSnapshotStorage.Create(newAppSnapShot)
 	if errInCreateSnapshot != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_SNAPSHOT, "create snapshot failed: "+errInCreateSnapshot.Error())
 		return nil, errInCreateSnapshot
@@ -197,9 +196,9 @@ func (controller *Controller) SaveAppSnapshotByVersion(c *gin.Context, teamID in
 	return newAppSnapShot, nil
 }
 
-func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int, appID int, version int) (*model.NewFullAppForExport, error) {
+func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int, appID int, version int) (*model.FullAppForExport, error) {
 	// fetch app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByIDAndTeamID(appID, teamID)
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(appID, teamID)
 	if errInRetrieveApp != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app full data error: "+errInRetrieveApp.Error())
 		return nil, errInRetrieveApp
@@ -244,7 +243,7 @@ func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int
 	//     DisplayNameState      which is: []string
 
 	// form editor object field actions
-	actions, errInRetrieveActions := controller.Storage.ActionStorage.RetrieveActionsByAppVersion(teamID, appID, version)
+	actions, errInRetrieveActions := controller.Storage.ActionStorage.RetrieveActionsByTeamIDAppIDAndVersion(teamID, appID, version)
 
 	// ok, we have no actions for this app
 	if errInRetrieveActions != nil {
@@ -363,7 +362,7 @@ func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int
 	//  -> DisplayNameState      which is: []string
 
 	// form editor object field displayNameState
-	displayNameSetStates, errInRetrieveDisplayNameSetState := controller.Storage.SetStateStorage.RetrieveSetStatesByApp(teamID, appID, model.SET_STATE_TYPE_DISPLAY_NAME, version)
+	displayNameSetStates, errInRetrieveDisplayNameSetState := controller.Storage.SetStateStorage.RetrieveSetStatesByTeamIDAppIDAndVersion(teamID, appID, model.SET_STATE_TYPE_DISPLAY_NAME, version)
 	if errInRetrieveDisplayNameSetState != nil {
 		displayNameSetStates = []*model.SetState{}
 	}
@@ -379,69 +378,65 @@ func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int
 	return fullAppForExport, nil
 }
 
-func (controller *Controller) CreateComponentTree(app *repository.App, parentNodeID int, componentNodeTree *repository.ComponentNode) error {
-	// summit node
-	if parentNodeID == 0 {
-		parentNodeID = repository.TREE_STATE_SUMMIT_ID
+func (controller *Controller) BuildComponentTree(app *model.App, parentNodeID int, componentNodeTree *model.ComponentNode) error {
+	// convert ComponentNode to TreeState
+	currentNode, errInNewCurrentNode := model.NewTreeStateByAppAndComponentState(app, componentNodeTree)
+	if errInNewCurrentNode != nil {
+		return errInNewCurrentNode
 	}
 
-	// convert ComponentNode to TreeState
-	currentNode := NewTreeStateDto()
-	currentNode.SetTeamID(app.ExportTeamID())
-	currentNode.InitUID()
-	currentNode.ConstructWithType(repository.TREE_STATE_TYPE_COMPONENTS)
-	var err error
-	if currentNode, err = impl.NewTreeStateByComponentState(app, componentNodeTree); err != nil {
-		return err
-	}
+	parentTreeState := model.NewTreeState()
+	isSummitNode := true
 
 	// get parentNode
-	parentTreeState := repository.NewTreeState()
-	isSummitNode := true
-	if parentNodeID != 0 || currentNode.ParentNode == repository.TREE_STATE_SUMMIT_NAME { // parentNode is in database
+	if parentNodeID != model.TREE_STATE_SUMMIT_ID || currentNode.ParentNode == model.TREE_STATE_SUMMIT_NAME { // parentNode is in database
 		isSummitNode = false
-		if parentTreeState, err = impl.treestateRepository.RetrieveByID(app.ExportTeamID(), parentNodeID); err != nil {
-			return err
+		var errInRetrieveTreeStateByID error
+		parentTreeState, errInRetrieveTreeStateByID = controller.Storage.TreeStateStorage.RetrieveByID(app.ExportTeamID(), parentNodeID)
+		if errInRetrieveTreeStateByID != nil {
+			return errInRetrieveTreeStateByID
 		}
-	} else if componentNodeTree.ParentNode != "" && componentNodeTree.ParentNode != repository.TREE_STATE_SUMMIT_NAME { // or parentNode is exist
+	} else if componentNodeTree.ParentNode != "" && componentNodeTree.ParentNode != model.TREE_STATE_SUMMIT_NAME { // or parentNode is exist
 		isSummitNode = false
-		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(app.ExportTeamID(), currentNode.AppRefID, currentNode.StateType, componentNodeTree.ParentNode); err != nil {
-			return err
+		var errInRetrieveTreeStateByApp error
+		parentTreeState, errInRetrieveTreeStateByApp = controller.Storage.TreeStateStorage.RetrieveEditVersionByAppAndName(app.ExportTeamID(), currentNode.AppRefID, currentNode.StateType, componentNodeTree.ParentNode)
+		if errInRetrieveTreeStateByApp != nil {
+			return errInRetrieveTreeStateByApp
 		}
 	}
 
 	// no parentNode, currentNode is tree summit
-	if isSummitNode && currentNode.Name != repository.TREE_STATE_SUMMIT_NAME {
-
+	if isSummitNode && currentNode.Name != model.TREE_STATE_SUMMIT_NAME {
 		// get root node
-		if parentTreeState, err = impl.treestateRepository.RetrieveEditVersionByAppAndName(app.ExportTeamID(), currentNode.AppRefID, currentNode.StateType, repository.TREE_STATE_SUMMIT_NAME); err != nil {
-			return err
+		var errInRetrieveTreeStateByApp error
+		parentTreeState, errInRetrieveTreeStateByApp = controller.Storage.TreeStateStorage.RetrieveEditVersionByAppAndName(app.ExportTeamID(), currentNode.AppRefID, currentNode.StateType, model.TREE_STATE_SUMMIT_NAME)
+		if errInRetrieveTreeStateByApp != nil {
+			return errInRetrieveTreeStateByApp
 		}
 	}
 	currentNode.ParentNodeRefID = parentTreeState.ID
 
-	// insert currentNode and get id
-	treeStateDtoInDB := &TreeStateDto{}
-	if treeStateDtoInDB, err = impl.CreateTreeState(currentNode); err != nil {
-		return err
+	// storage currentNode to database and get id
+	_, errInCreateTreeState := controller.Storage.TreeStateStorage.Create(currentNode)
+	if errInCreateTreeState != nil {
+		return errInCreateTreeState
 	}
-	currentNode.ID = treeStateDtoInDB.ID
 
-	// fill currentNode id into parentNode.ChildrenNodeRefIDs
-	if currentNode.Name != repository.TREE_STATE_SUMMIT_NAME {
-
+	// fill parentNode.ChildrenNodeRefIDs with currentNode.ID (when current node is not root)
+	if currentNode.Name != model.TREE_STATE_SUMMIT_NAME {
 		parentTreeState.AppendChildrenNodeRefIDs(currentNode.ID)
-
-		// save parentNode
-		if err = impl.treestateRepository.Update(parentTreeState); err != nil {
-			return err
+		// update parentNode
+		errInUpdateParentNode := controller.Storage.TreeStateStorage.Update(parentTreeState)
+		if errInUpdateParentNode != nil {
+			return errInUpdateParentNode
 		}
 	}
 
-	// create currentNode.ChildrenNode
+	// ok, continue to process currentNode.ChildrenNode
 	for _, childrenComponentNode := range componentNodeTree.ChildrenNode {
-		if err := impl.CreateComponentTree(app, currentNode.ID, childrenComponentNode); err != nil {
-			return err
+		errInBuildComponentTree := controller.BuildComponentTree(app, currentNode.ID, childrenComponentNode)
+		if errInBuildComponentTree != nil {
+			return errInBuildComponentTree
 		}
 	}
 	return nil

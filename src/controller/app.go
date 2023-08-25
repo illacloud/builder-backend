@@ -6,7 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/illacloud/builder-backend/src/model"
+	"github.com/illacloud/builder-backend/src/request"
 	"github.com/illacloud/builder-backend/src/response"
+	"github.com/illacloud/builder-backend/src/storage"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
 	"github.com/illacloud/builder-backend/src/utils/auditlogger"
 	"github.com/illacloud/builder-backend/src/utils/datacontrol"
@@ -14,9 +16,9 @@ import (
 
 func (controller *Controller) CreateApp(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := controller.controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	userID, errInGetUserID := controller.controller.GetUserIDFromAuth(c)
-	userAuthToken, errInGetAuthToken := controller.controller.GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
 		return
 	}
@@ -64,9 +66,9 @@ func (controller *Controller) CreateApp(c *gin.Context) {
 	// fill component node by given init schema
 	// @NOTE: the root node will created by InitScheme in request
 	componentTree := model.ConstructComponentNodeByMap(req.ExportInitScheme())
-	errInCreateComponentTree := controller.controller.CreateComponentTree(newApp, 0, componentTree)
+	errInCreateComponentTree := controller.BuildComponentTree(newApp, 0, componentTree)
 	if errInCreateComponentTree != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CREATE_COMPONENT_TREE_FAILED, "error in create component tree: "+errInCreateComponentTree.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_COMPONENT_TREE, "error in create component tree: "+errInCreateComponentTree.Error())
 		return
 	}
 
@@ -105,10 +107,10 @@ func (controller *Controller) CreateApp(c *gin.Context) {
 
 func (controller *Controller) DeleteApp(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := controller.controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := controller.controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
-	userAuthToken, errInGetAuthToken := controller.controller.GetUserAuthTokenFromHeader(c)
-	userID, errInGetUserID := controller.controller.GetUserIDFromAuth(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
 	}
@@ -130,7 +132,7 @@ func (controller *Controller) DeleteApp(c *gin.Context) {
 	}
 
 	// fetch app
-	app, err := controller.Storage.AppStorage.RetrieveAppByIDAndTeamID(appID, teamID)
+	app, err := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
 	if err != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+err.Error())
 		return
@@ -166,10 +168,10 @@ func (controller *Controller) DeleteApp(c *gin.Context) {
 
 func (controller *Controller) ConfigApp(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := controller.controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := controller.controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
-	userID, errInGetUserID := controller.controller.GetUserIDFromAuth(c)
-	userAuthToken, errInGetAuthToken := controller.controller.GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
 		return
 	}
@@ -198,7 +200,7 @@ func (controller *Controller) ConfigApp(c *gin.Context) {
 	}
 
 	// fetch app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByIDAndTeamID(appID, teamID)
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
 	if errInRetrieveApp != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app error: "+errInRetrieveApp.Error())
 		return
@@ -261,8 +263,8 @@ func (controller *Controller) ConfigApp(c *gin.Context) {
 
 func (controller *Controller) GetAllApps(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := controller.controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	userAuthToken, errInGetAuthToken := controller.controller.GetUserAuthTokenFromHeader(c)
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAuthToken != nil {
 		return
 	}
@@ -283,8 +285,21 @@ func (controller *Controller) GetAllApps(c *gin.Context) {
 		return
 	}
 
+	// check if user is viewer (the viewer role can not access undeployed app aka "edit app" and have no ACTION_MANAGE_EDIT_APP attribute)
+	canManage, errInCheckAttrManage := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_EDIT_APP)
+	if errInCheckAttrManage != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+
 	// get all apps
-	allApps, errInRetrieveAllApps := controller.Storage.AppStorage.RetrieveAllByUpdatedTime(teamID)
+	var allApps []*model.App
+	var errInRetrieveAllApps error
+	if canManage {
+		allApps, errInRetrieveAllApps = controller.Storage.AppStorage.RetrieveByTeamID(teamID)
+	} else {
+		allApps, errInRetrieveAllApps = controller.Storage.AppStorage.RetrieveDeployedAppByTeamID(teamID)
+	}
 	if errInRetrieveAllApps != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get apps by team id failed: "+errInRetrieveAllApps.Error())
 		return
@@ -404,7 +419,7 @@ func (controller *Controller) DuplicateApp(c *gin.Context) {
 	}
 
 	// get target app
-	targetApp, errInRetrieveTargetApp := controller.Storage.AppStorage.RetrieveAppByIDAndTeamID(appID, teamID)
+	targetApp, errInRetrieveTargetApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
 	if errInRetrieveTargetApp != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveTargetApp.Error())
 		return
@@ -420,10 +435,10 @@ func (controller *Controller) DuplicateApp(c *gin.Context) {
 
 	// duplicate app following units
 	// duplicate will copy following units from target app mainline version to duplicated app edit version
-	controller.DuplicateTreeStateByVersion(teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
-	controller.DuplicateKVStateByVersion(teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
-	controller.DuplicateSetStateByVersion(teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
-	controller.DuplicateActionByVersion(teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
+	controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
+	controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
+	controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
+	controller.DuplicateActionByVersion(c, teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
 
 	// audit log
 	auditLogger := auditlogger.GetInstance()
@@ -471,7 +486,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	// get request body
 	req := request.NewReleaseAppRequest()
 	if errInDecode := json.NewDecoder(c.Request.Body).Decode(&req); errInDecode != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_RELEASE_APP_FAILED, "release app error: "+errInDecode.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_RELEASE_APP, "release app error: "+errInDecode.Error())
 		return
 	}
 
@@ -516,10 +531,10 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 
 	// release app following components & actions
 	// release will copy following units from edit version to app mainline version
-	controller.DuplicateTreeStateByVersion(teamID, teamID, appID, appID, model.APP_EDIT_VERSION, targetApp.ExportMainlineVersion(), userID)
-	controller.DuplicateKVStateByVersion(teamID, teamID, appID, appID, model.APP_EDIT_VERSION, targetApp.ExportMainlineVersion(), userID)
-	controller.DuplicateSetStateByVersion(teamID, teamID, appID, appID, model.APP_EDIT_VERSION, targetApp.ExportMainlineVersion(), userID)
-	controller.DuplicateActionByVersion(teamID, teamID, appID, appID, model.APP_EDIT_VERSION, targetApp.ExportMainlineVersion(), userID)
+	controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 
 	// config app & action public status
 	if req.ExportPublic() {
@@ -549,7 +564,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	})
 
 	// feedback
-	controller.FeedbackOK(c, model.NewReleaseAppResponse(app.ReleaseVersion))
+	controller.FeedbackOK(c, response.NewReleaseAppResponse(app.ReleaseVersion))
 	return
 }
 
@@ -591,7 +606,7 @@ func (controller *Controller) TakeSnapshot(c *gin.Context) {
 	}
 
 	// fetch app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByIDAndTeamID(appID, teamID)
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(appID, teamID)
 	if errInRetrieveApp != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
 		return
@@ -604,10 +619,10 @@ func (controller *Controller) TakeSnapshot(c *gin.Context) {
 
 	// do snapshot for app following components and actions
 	// do snapshot will copy following units from edit version to app mainline version
-	controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, appMainLineVersion, userID)
-	controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, appMainLineVersion, userID)
-	controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, appMainLineVersion, userID)
-	controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, mainlineVersion, userID)
+	controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 
 	// save snapshot
 	_, errInTakeSnapshot := controller.SaveAppSnapshot(c, teamID, appID, userID, app.ExportMainlineVersion(), model.SNAPSHOT_TRIGGER_MODE_MANUAL)
@@ -680,7 +695,7 @@ func (controller *Controller) GetSnapshotList(c *gin.Context) {
 	}
 
 	// feedback
-	controller.FeedbackOK(c, model.NewGetSnapshotListResponse(snapshots, pagination.GetTotalPages(), usersLT))
+	controller.FeedbackOK(c, response.NewGetSnapshotListResponse(snapshots, pagination.GetTotalPages(), usersLT))
 	return
 
 }
@@ -720,6 +735,12 @@ func (controller *Controller) GetSnapshot(c *gin.Context) {
 
 	// get app
 	fullAppForExport, errInGenerateFullApp := controller.GetTargetVersionFullApp(c, teamID, appID, snapshot.ExportTargetVersion())
+	if errInGenerateFullApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get target version app failed: "+errInGenerateFullApp.Error())
+		return
+	}
+
+	// feedback
 	controller.FeedbackOK(c, fullAppForExport)
 	return
 }
@@ -779,7 +800,7 @@ func (controller *Controller) RecoverSnapshot(c *gin.Context) {
 	// phrase 1: take snapshot for current edit version
 
 	// fetch app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByIDAndTeamID(appID, teamID)
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(appID, teamID)
 	if errInRetrieveApp != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
 		return

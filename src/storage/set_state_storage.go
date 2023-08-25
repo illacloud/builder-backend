@@ -40,7 +40,7 @@ func (impl *SetStateStorage) DeleteByValue(setState *model.SetState) error {
 }
 
 func (impl *SetStateStorage) Update(setState *model.SetState) error {
-	if err := impl.db.Model(setState).UpdateColumns(SetState{
+	if err := impl.db.Model(setState).UpdateColumns(model.SetState{
 		ID:        setState.ID,
 		StateType: setState.StateType,
 		AppRefID:  setState.AppRefID,
@@ -54,7 +54,7 @@ func (impl *SetStateStorage) Update(setState *model.SetState) error {
 	return nil
 }
 
-func (impl *SetStateStorage) UpdateByValue(beforeSetState *SetState, afterSetState *SetState) error {
+func (impl *SetStateStorage) UpdateByValue(beforeSetState *model.SetState, afterSetState *model.SetState) error {
 	if err := impl.db.Model(afterSetState).Where(
 		"app_ref_id = ? AND state_type = ? AND version = ? AND value = ?",
 		beforeSetState.AppRefID,
@@ -70,7 +70,7 @@ func (impl *SetStateStorage) UpdateByValue(beforeSetState *SetState, afterSetSta
 func (impl *SetStateStorage) RetrieveByID(teamID int, setStateID int) (*model.SetState, error) {
 	var setState *model.SetState
 	if err := impl.db.Where("team_id = ? AND value = ?", teamID, setState.Value).First(&setState).Error; err != nil {
-		return &SetState{}, err
+		return &model.SetState{}, err
 	}
 	return setState, nil
 }
@@ -98,7 +98,7 @@ func (impl *SetStateStorage) RetrieveByValue(setState *model.SetState) (*model.S
 	return ret, nil
 }
 
-func (impl *SetStateStorage) RetrieveSetStatesByApp(teamID int, apprefid int, statetype int, version int) ([]*model.SetState, error) {
+func (impl *SetStateStorage) RetrieveSetStatesByTeamIDAppIDAndVersion(teamID int, apprefid int, statetype int, version int) ([]*model.SetState, error) {
 	var setStates []*model.SetState
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ?", teamID, apprefid, statetype, version).Find(&setStates).Error; err != nil {
 		return nil, err

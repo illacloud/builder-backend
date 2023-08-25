@@ -58,16 +58,16 @@ func (action *Action) InitUpdatedAt() {
 	action.UpdatedAt = time.Now().UTC()
 }
 
-func (action *Action) InitForFork(teamID int, appID int, userID int) {
-	kvState.TeamID = teamID
-	kvState.AppRefID = appID
-	kvState.Version = model.APP_EDIT_VERSION
-	kvState.CreatedBy = userID
-	kvState.UpdatedBy = userID
-	kvState.CleanID()
-	kvState.InitUID()
-	kvState.InitCreatedAt()
-	kvState.InitUpdatedAt()
+func (action *Action) InitForFork(teamID int, appID int, version int, userID int) {
+	action.TeamID = teamID
+	action.AppRefID = appID
+	action.Version = version
+	action.CreatedBy = userID
+	action.UpdatedBy = userID
+	action.CleanID()
+	action.InitUID()
+	action.InitCreatedAt()
+	action.InitUpdatedAt()
 }
 
 func (action *Action) AppendNewVersion(newVersion int) {

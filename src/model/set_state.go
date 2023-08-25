@@ -50,16 +50,16 @@ func (setState *SetState) InitUpdatedAt() {
 	setState.UpdatedAt = time.Now().UTC()
 }
 
-func (setState *SetState) InitForFork(teamID int, appID int, userID int) {
-	kvState.TeamID = teamID
-	kvState.AppRefID = appID
-	kvState.Version = model.APP_EDIT_VERSION
-	kvState.CreatedBy = userID
-	kvState.UpdatedBy = userID
-	kvState.CleanID()
-	kvState.InitUID()
-	kvState.InitCreatedAt()
-	kvState.InitUpdatedAt()
+func (setState *SetState) InitForFork(teamID int, appID int, version int, userID int) {
+	setState.TeamID = teamID
+	setState.AppRefID = appID
+	setState.Version = version
+	setState.CreatedBy = userID
+	setState.UpdatedBy = userID
+	setState.CleanID()
+	setState.InitUID()
+	setState.InitCreatedAt()
+	setState.InitUpdatedAt()
 }
 
 func (setState *SetState) AppendNewVersion(newVersion int) {

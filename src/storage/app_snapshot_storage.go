@@ -88,7 +88,7 @@ func (impl *AppSnapshotStorage) UpdateWholeSnapshot(appSnapshot *model.AppSnapsh
 	return nil
 }
 
-func (impl *ActionStorage) DeleteAllAppSnapshotByTeamIDAndAppID(teamID int, appID int) error {
+func (impl *AppSnapshotStorage) DeleteAllAppSnapshotByTeamIDAndAppID(teamID int, appID int) error {
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, appID).Delete(&model.AppSnapshot{}).Error; err != nil {
 		return err
 	}

@@ -51,10 +51,10 @@ func (kvState *KVState) InitUpdatedAt() {
 	kvState.UpdatedAt = time.Now().UTC()
 }
 
-func (kvState *KVState) InitForFork(teamID int, appID int, userID int) {
+func (kvState *KVState) InitForFork(teamID int, appID int, version int, userID int) {
 	kvState.TeamID = teamID
 	kvState.AppRefID = appID
-	kvState.Version = model.APP_EDIT_VERSION
+	kvState.Version = version
 	kvState.CreatedBy = userID
 	kvState.UpdatedBy = userID
 	kvState.CleanID()

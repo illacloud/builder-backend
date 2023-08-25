@@ -174,21 +174,15 @@ const (
 
 // action manage special (only owner and admin can access by default)
 const (
-	// Team Attribute
 	ACTION_SPECIAL_EDITOR_AND_VIEWER_CAN_INVITE_BY_LINK_SW = iota + 1 // the "editor and viewer can invite" switch
-	// Team Member Attribute
-	ACTION_SPECIAL_TRANSFER_OWNER // transfer team owner to others
-	// Invite Attribute
-	ACTION_SPECIAL_INVITE_LINK_RENEW // renew the invite link
-	// APP Attribute
-	ACTION_SPECIAL_RELEASE_APP // release APP
-	// SQL Generate
-	ACTION_SPECIAL_GENERATE_SQL // generate sql
-	// APP Snapshot
-	ACTOIN_SPECIAL_TAKE_SNAPSHOT
-	ACTOIN_SPECIAL_RECOVER_SNAPSHOT
-	// AI-Agent Run special AI-Agent model like GPT-4
-	ACTOIN_SPECIAL_RUN_SPECIAL_AI_AGENT_MODEL
+	ACTION_SPECIAL_TRANSFER_OWNER                                     // transfer team owner to others
+	ACTION_SPECIAL_INVITE_LINK_RENEW                                  // renew the invite link
+	ACTION_SPECIAL_RELEASE_APP                                        // release APP
+	ACTION_SPECIAL_GENERATE_SQL                                       //  paid functions, generate sql
+	ACTOIN_SPECIAL_TAKE_SNAPSHOT                                      //  paid functions
+	ACTOIN_SPECIAL_RECOVER_SNAPSHOT                                   //  paid functions
+	ACTOIN_SPECIAL_RUN_SPECIAL_AI_AGENT_MODEL                         //  paid functions, AI-Agent Run special AI-Agent model like GPT-4
+	ACTION_SPECIAL_RELEASE_PUBLIC_APP                                 //  paid functions, release public APP
 )
 
 type AttributeGroup struct {
