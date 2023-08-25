@@ -1,18 +1,4 @@
-// Copyright 2022 The ILLA Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-package request
+package illacloudperipheralapisdk
 
 import (
 	"errors"
@@ -30,6 +16,7 @@ const TABLE_DESC_CHARACTER_LIMIT = 1000
 type GenerateSQLPeripheralRequest struct {
 	Description   string `json:"description" validate:"required"`
 	ValidateToken string `json:"validateToken" validate:"required"`
+	SQLAction     string `json:"-"` // which is one of "SELECT", "INSERT", "UPDATE", "DELETE"
 }
 
 func (m *GenerateSQLPeripheralRequest) Export() map[string]string {
@@ -40,7 +27,7 @@ func (m *GenerateSQLPeripheralRequest) Export() map[string]string {
 	return payload
 }
 
-func NewGenerateSQLPeripheralRequest(resourceType string, metaInfo map[string]interface{}, req *GenerateSQLRequest) (*GenerateSQLPeripheralRequest, error) {
+func NewGenerateSQLPeripheralRequest(resourceType string, metaInfo map[string]interface{}, description string, sqlAction string) (*GenerateSQLPeripheralRequest, error) {
 	// generate meta info, the meta info like:
 	// {
 	//     "resourceName": "mssqlExample",
@@ -112,9 +99,10 @@ func NewGenerateSQLPeripheralRequest(resourceType string, metaInfo map[string]in
 			}
 		}
 	}
-	description := fmt.Sprintf(GENERATE_SQL_DESCRIPTION_TEMPALTE, resourceType, allTableDesc, req.Description, req.GetActionInString())
+	prompt := fmt.Sprintf(GENERATE_SQL_DESCRIPTION_TEMPALTE, resourceType, allTableDesc, description, sqlAction)
 	return &GenerateSQLPeripheralRequest{
-		Description: description,
+		Description: prompt,
+		SQLAction:   sqlAction,
 	}, nil
 }
 

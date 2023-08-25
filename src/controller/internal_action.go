@@ -1,52 +1,19 @@
-// Copyright 2022 The ILLA Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package controller
 
 import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/go-playground/validator/v10"
-	"github.com/illacloud/builder-backend/internal/auditlogger"
-	"github.com/illacloud/builder-backend/pkg/resource"
-	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
-	"github.com/illacloud/builder-backend/src/utils/tokenvalidator"
-
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
+	"github.com/go-playground/validator/v10"
+	"github.com/illacloud/builder-backend/src/model"
+	"github.com/illacloud/builder-backend/src/request"
+	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
+	"github.com/illacloud/builder-backend/src/utils/auditlogger"
+	"github.com/illacloud/builder-backend/src/utils/illacloudperipheralapisdk"
 )
 
-type InternalActionRestHandler interface {
-	GenerateSQL(c *gin.Context)
-}
-
-type InternalActionRestHandlerImpl struct {
-	logger          *zap.SugaredLogger
-	ResourceService resource.ResourceService
-	AttributeGroup  *accesscontrol.AttributeGroup
-}
-
-func NewInternalActionRestHandlerImpl(logger *zap.SugaredLogger, resourceService resource.ResourceService, attrg *accesscontrol.AttributeGroup) *InternalActionRestHandlerImpl {
-	return &InternalActionRestHandlerImpl{
-		logger:          logger,
-		ResourceService: resourceService,
-		AttributeGroup:  attrg,
-	}
-}
-
-func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
+func (controller *Controller) GenerateSQL(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
@@ -56,19 +23,19 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 	}
 
 	// fetch payload
-	req := model.NewGenerateSQLRequest()
-	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
+	generateSQLRequest := request.NewGenerateSQLRequest()
+	if err := json.NewDecoder(c.Request.Body).Decode(&generateSQLRequest); err != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// validate payload required fields
 	validate := validator.New()
-	if err := validate.Struct(req); err != nil {
+	if err := validate.Struct(generateSQLRequest); err != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate request body error: "+err.Error())
 		return
 	}
-	resourceID := req.ExportResourceIDInInt()
+	resourceID := generateSQLRequest.ExportResourceIDInInt()
 
 	// validate sql generate special management
 	controller.AttributeGroup.Init()
@@ -113,41 +80,44 @@ func (impl InternalActionRestHandlerImpl) GenerateSQL(c *gin.Context) {
 		UserID:    userID,
 		IP:        c.ClientIP(),
 		TaskName:  auditlogger.TASK_GENERATE_SQL,
-		TaskInput: map[string]interface{}{"content": req.Description},
+		TaskInput: map[string]interface{}{"content": generateSQLRequest.Description},
 	})
 
 	// fetch resource
-	resource, errInGetResource := controller.ResourceService.GetResource(teamID, resourceID)
+	resource, errInGetResource := controller.Storage.ResourceStorage.RetrieveByTeamIDAndResourceID(teamID, resourceID)
 	if errInGetResource != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "error in fetch resource: "+errInGetResource.Error())
 		return
 	}
 
 	// fetch resource meta info
-	resourceMetaInfo, errInGetMetaInfo := controller.ResourceService.GetMetaInfo(teamID, resourceID)
+	actionFactory := model.NewActionFactoryByResource(resource)
+	actionAssemblyLine, errInBuild := actionFactory.Build()
+	if errInBuild == nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action type error: "+errInBuild.Error())
+		return
+	}
+	resourceMetaInfo, errInGetMetaInfo := actionAssemblyLine.GetMetaInfo(resource.Options)
 	if errInGetMetaInfo != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE_META_INFO, "error in fetch resource meta info: "+errInGetMetaInfo.Error())
 		return
 	}
 
-	tokenValidator := tokenvalidator.NewRequestTokenValidator()
-
 	// form request payload
-	generateSQLPeriReq, errInNewReq := model.NewGenerateSQLPeripheralRequest(resource.Type, resourceMetaInfo, req)
+	generateSQLPeripheralRequest, errInNewReq := illacloudperipheralapisdk.NewGenerateSQLPeripheralRequest(resource.Type, resourceMetaInfo, generateSQLRequest.Description, generateSQLRequest.GetActionInString())
 	if errInNewReq != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_GENERATE_SQL_FAILED, "generate request failed: "+errInNewReq.Error())
 		return
 	}
-	token := tokenValidator.GenerateValidateToken(generateSQLPeriReq.Description)
-	generateSQLPeriReq.SetValidateToken(token)
 
 	// call remote generate sql API
-	generateSQLResp, errInGGenerateSQL := model.GenerateSQL(generateSQLPeriReq, req)
+	peripheralAPI := illacloudperipheralapisdk.NewIllaCloudPeriphearalAPI()
+	generateSQLResponse, errInGGenerateSQL := peripheralAPI.GenerateSQL(generateSQLPeripheralRequest)
 	if errInGGenerateSQL != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_GENERATE_SQL_FAILED, "generate sql failed: "+errInGGenerateSQL.Error())
 		return
 	}
 
 	// feedback
-	c.JSON(http.StatusOK, generateSQLResp)
+	controller.FeedbackOK(c, generateSQLResponse)
 }

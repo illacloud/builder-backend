@@ -34,3 +34,11 @@ func NewEmptyBuilderDescResponse(appNum int, resourceNum int, actionNum int) *Em
 		ActionNum:   actionNum,
 	}
 }
+
+func (resp *GetBuilderDescResponse) ExportForFeedback() interface{} {
+	return resp
+}
+
+func (resp *EmptyBuilderDescResponse) ExportForFeedback() interface{} {
+	return resp
+}

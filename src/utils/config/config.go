@@ -68,6 +68,8 @@ type Config struct {
 	DriveTeamBucketName   string `env:"ILLA_DRIVE_TEAM_BUCKET_NAME"   envDefault:"illa-cloud-team"`
 	DriveUploadTimeoutRaw string `env:"ILLA_DRIVE_UPLOAD_TIMEOUT"     envDefault:"30s"`
 	DriveUploadTimeout    time.Duration
+	// peripheral API
+	IllaPeripheralAPI string `env:"ILLA_PERIPHERAL_API" envDefault:"https://peripheral-api.illasoft.com/v1/"`
 	// resource manager API
 	IllaResourceManagerRestAPI         string `env:"ILLA_RESOURCE_MANAGER_API"     envDefault:"http://illa-resource-manager-backend:8006"`
 	IllaResourceManagerInternalRestAPI string `env:"ILLA_RESOURCE_MANAGER_INTERNAL_API"     envDefault:"http://illa-resource-manager-backend-internal:9004"`
@@ -252,6 +254,10 @@ func (c *Config) GetMINIOTimeout() time.Duration {
 
 func (c *Config) GetControlToken() string {
 	return c.ControlToken
+}
+
+func (c *Config) GetIllaPeripheralAPI() string {
+	return c.IllaPeripheralAPI
 }
 
 func (c *Config) GetIllaResourceManagerRestAPI() string {

@@ -15,7 +15,6 @@
 package controller
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/illacloud/builder-backend/src/response"
@@ -58,7 +57,7 @@ func (controller *Controller) GetTeamBuilderDesc(c *gin.Context) {
 	// team have no app and no resource
 	if errInFetchAppModifyTime != nil && errInFetchResourceModifyTime != nil {
 		feed := response.NewEmptyBuilderDescResponse(resourceNum, resourceNum, actionNum)
-		c.JSON(http.StatusOK, feed)
+		controller.FeedbackOK(c, feed)
 		return
 	}
 
@@ -78,6 +77,6 @@ func (controller *Controller) GetTeamBuilderDesc(c *gin.Context) {
 
 	// feedback
 	feed := response.NewGetBuilderDescResponse(appNum, resourceNum, actionNum, lastModifiedAt)
-	c.JSON(http.StatusOK, feed)
+	controller.FeedbackOK(c, feed)
 	return
 }
