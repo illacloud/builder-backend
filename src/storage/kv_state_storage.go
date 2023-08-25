@@ -63,15 +63,15 @@ func (impl *KVStateStorage) Update(kvstate *model.KVState) error {
 }
 
 func (impl *KVStateStorage) RetrieveByID(teamID int, kvstateID int) (*model.KVState, error) {
-	var kvstate *KVState
+	var kvstate *model.KVState
 	if err := impl.db.Where("id = ? AND team_id = ?", kvstateID, teamID).First(&kvstate).Error; err != nil {
-		return &KVState{}, err
+		return &model.KVState{}, err
 	}
 	return kvstate, nil
 }
 
 func (impl *KVStateStorage) RetrieveKVStatesByVersion(teamID int, version int) ([]*model.KVState, error) {
-	var kvstates []*KVState
+	var kvstates []*model.KVState
 	if err := impl.db.Where("team_id = ? AND version = ?", teamID, version).Find(&kvstates).Error; err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (impl *KVStateStorage) RetrieveKVStatesByVersion(teamID int, version int) (
 }
 
 func (impl *KVStateStorage) RetrieveKVStatesByKey(teamID int, key string) ([]*model.KVState, error) {
-	var kvstates []*KVState
+	var kvstates []*model.KVState
 	if err := impl.db.Where("team_id = ? AND key = ?", teamID, key).Find(&kvstates).Error; err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (impl *KVStateStorage) RetrieveKVStatesByKey(teamID int, key string) ([]*mo
 }
 
 func (impl *KVStateStorage) RetrieveKVStatesByApp(teamID int, apprefid int, statetype int, version int) ([]*model.KVState, error) {
-	var kvstates []*KVState
+	var kvstates []*model.KVState
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ?", teamID, apprefid, statetype, version).Find(&kvstates).Error; err != nil {
 		return nil, err
 	}
@@ -95,15 +95,15 @@ func (impl *KVStateStorage) RetrieveKVStatesByApp(teamID int, apprefid int, stat
 }
 
 func (impl *KVStateStorage) RetrieveEditVersionByAppAndKey(teamID int, apprefid int, statetype int, key string) (*model.KVState, error) {
-	var kvstate *KVState
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ? AND key = ?", teamID, apprefid, statetype, APP_EDIT_VERSION, key).First(&kvstate).Error; err != nil {
+	var kvstate *model.KVState
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ? AND key = ?", teamID, apprefid, statetype, model.APP_EDIT_VERSION, key).First(&kvstate).Error; err != nil {
 		return nil, err
 	}
 	return kvstate, nil
 }
 
 func (impl *KVStateStorage) RetrieveKVStatesByTeamIDAppIDAndVersion(teamID int, apprefid int, version int) ([]*model.KVState, error) {
-	var kvstates []*KVState
+	var kvstates []*model.KVState
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, apprefid, version).Find(&kvstates).Error; err != nil {
 		return nil, err
 	}

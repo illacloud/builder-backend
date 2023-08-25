@@ -33,16 +33,16 @@ func (impl *AppSnapshotStorage) RetrieveByID(id int) (*model.AppSnapshot, error)
 	return appSnapshot, nil
 }
 
-func (impl *AppSnapshotStorage) RetrieveAll(teamID int) ([]*AppSnapshot, error) {
-	var appSnapshots []*AppSnapshot
+func (impl *AppSnapshotStorage) RetrieveAll(teamID int) ([]*model.AppSnapshot, error) {
+	var appSnapshots []*model.AppSnapshot
 	if err := impl.db.Where("team_id = ?", teamID).Find(&appSnapshots).Error; err != nil {
 		return nil, err
 	}
 	return appSnapshots, nil
 }
 
-func (impl *AppSnapshotStorage) RetrieveByTeamIDAndAppID(teamID int, appID int) ([]*AppSnapshot, error) {
-	var appSnapshots []*AppSnapshot
+func (impl *AppSnapshotStorage) RetrieveByTeamIDAndAppID(teamID int, appID int) ([]*model.AppSnapshot, error) {
+	var appSnapshots []*model.AppSnapshot
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, appID).Find(&appSnapshots).Error; err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (impl *AppSnapshotStorage) RetrieveByTeamIDAndAppID(teamID int, appID int) 
 
 func (impl *AppSnapshotStorage) RetrieveCountByTeamIDAndAppID(teamID int, appID int) (int64, error) {
 	var count int64
-	if err := impl.db.Model(&AppSnapshot{}).Where("team_id = ? AND app_ref_id = ?", teamID, appID).Count(&count).Error; err != nil {
+	if err := impl.db.Model(&model.AppSnapshot{}).Where("team_id = ? AND app_ref_id = ?", teamID, appID).Count(&count).Error; err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -59,7 +59,7 @@ func (impl *AppSnapshotStorage) RetrieveCountByTeamIDAndAppID(teamID int, appID 
 
 func (impl *AppSnapshotStorage) RetrieveEditVersion(teamID int, appID int) (*model.AppSnapshot, error) {
 	var appSnapshot *model.AppSnapshot
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND target_version = ?", teamID, appID, APP_EDIT_VERSION).First(&appSnapshot).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND target_version = ?", teamID, appID, model.APP_EDIT_VERSION).First(&appSnapshot).Error; err != nil {
 		return nil, err
 	}
 	return appSnapshot, nil
@@ -73,8 +73,8 @@ func (impl *AppSnapshotStorage) RetrieveByTeamIDAppIDAndTargetVersion(teamID int
 	return appSnapshot, nil
 }
 
-func (impl *AppSnapshotStorage) RetrieveByTeamIDAppIDAndPage(teamID int, appID int, pagination *Pagination) ([]*AppSnapshot, error) {
-	var appSnapshots []*AppSnapshot
+func (impl *AppSnapshotStorage) RetrieveByTeamIDAppIDAndPage(teamID int, appID int, pagination *Pagination) ([]*model.AppSnapshot, error) {
+	var appSnapshots []*model.AppSnapshot
 	if err := impl.db.Scopes(paginate(impl.db, pagination)).Where("team_id = ? AND app_ref_id = ?", teamID, appID).Find(&appSnapshots).Error; err != nil {
 		return nil, err
 	}

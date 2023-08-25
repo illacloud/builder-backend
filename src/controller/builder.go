@@ -16,33 +16,15 @@ package controller
 
 import (
 	"net/http"
+	"time"
 
-	"github.com/illacloud/builder-backend/pkg/builder"
+	"github.com/illacloud/builder-backend/src/response"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
-type BuilderRestHandler interface {
-	GetTeamBuilderDesc(c *gin.Context)
-}
-
-type BuilderRestHandlerImpl struct {
-	logger         *zap.SugaredLogger
-	builderService builder.BuilderService
-	AttributeGroup *accesscontrol.AttributeGroup
-}
-
-func NewBuilderRestHandlerImpl(logger *zap.SugaredLogger, builderService builder.BuilderService, attrg *accesscontrol.AttributeGroup) *BuilderRestHandlerImpl {
-	return &BuilderRestHandlerImpl{
-		logger:         logger,
-		builderService: builderService,
-		AttributeGroup: attrg,
-	}
-}
-
-func (impl BuilderRestHandlerImpl) GetTeamBuilderDesc(c *gin.Context) {
+func (controller *Controller) GetTeamBuilderDesc(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
@@ -67,10 +49,35 @@ func (impl BuilderRestHandlerImpl) GetTeamBuilderDesc(c *gin.Context) {
 	}
 
 	// fetch data
-	ret, err := controller.builderService.GetTeamBuilderDesc(teamID)
-	if err != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_BUILDER_DESCRIPTION, "get builder description error: "+err.Error())
+	appNum, _ := controller.Storage.AppStorage.CountAPPByTeamID(teamID)
+	resourceNum, _ := controller.Storage.ResourceStorage.CountResourceByTeamID(teamID)
+	actionNum, _ := controller.Storage.ActionStorage.CountActionByTeamID(teamID)
+	appLastModifyedAt, errInFetchAppModifyTime := controller.Storage.AppStorage.RetrieveAppLastModifiedTime(teamID)
+	resourceLastModifyedAt, errInFetchResourceModifyTime := controller.Storage.ResourceStorage.RetrieveResourceLastModifiedTime(teamID)
+
+	// team have no app and no resource
+	if errInFetchAppModifyTime != nil && errInFetchResourceModifyTime != nil {
+		feed := response.NewEmptyBuilderDescResponse(resourceNum, resourceNum, actionNum)
+		c.JSON(http.StatusOK, feed)
 		return
 	}
-	c.JSON(http.StatusOK, ret)
+
+	// compare time
+	var lastModifiedAt time.Time
+	if errInFetchAppModifyTime == nil && errInFetchResourceModifyTime == nil {
+		if appLastModifyedAt.Before(resourceLastModifyedAt) {
+			lastModifiedAt = resourceLastModifyedAt
+		} else {
+			lastModifiedAt = appLastModifyedAt
+		}
+	} else if errInFetchResourceModifyTime != nil {
+		lastModifiedAt = appLastModifyedAt
+	} else if errInFetchAppModifyTime != nil {
+		lastModifiedAt = resourceLastModifyedAt
+	}
+
+	// feedback
+	feed := response.NewGetBuilderDescResponse(appNum, resourceNum, actionNum, lastModifiedAt)
+	c.JSON(http.StatusOK, feed)
+	return
 }

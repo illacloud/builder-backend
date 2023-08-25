@@ -36,7 +36,7 @@ func (impl *TreeStateStorage) Delete(teamID int, treestateID int) error {
 }
 
 func (impl *TreeStateStorage) Update(treestate *model.TreeState) error {
-	if err := impl.db.Model(treestate).UpdateColumns(TreeState{
+	if err := impl.db.Model(treestate).UpdateColumns(model.TreeState{
 		ID:                 treestate.ID,
 		StateType:          treestate.StateType,
 		ParentNodeRefID:    treestate.ParentNodeRefID,
@@ -98,7 +98,7 @@ func (impl *TreeStateStorage) RetrieveTreeStatesByApp(teamID int, apprefid int, 
 
 func (impl *TreeStateStorage) RetrieveEditVersionByAppAndName(teamID int, apprefid int, statetype int, name string) (*model.TreeState, error) {
 	var treestate *model.TreeState
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ? AND name = ?", teamID, apprefid, statetype, APP_EDIT_VERSION, name).First(&treestate).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ? AND name = ?", teamID, apprefid, statetype, model.APP_EDIT_VERSION, name).First(&treestate).Error; err != nil {
 		return nil, err
 	}
 	return treestate, nil

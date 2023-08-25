@@ -16,8 +16,13 @@ type Storage struct {
 }
 
 func NewStorage(postgresDriver *gorm.DB, logger *zap.SugaredLogger) *Storage {
-	aiAgentStorage := NewAIAgentStorage(postgresDriver, logger)
 	return &Storage{
-		AIAgentStorage: aiAgentStorage,
+		AppStorage:         NewAppStorage(logger, postgresDriver),
+		ActionStorage:      NewActionStorage(logger, postgresDriver),
+		AppSnapshotStorage: NewAppSnapshotStorage(logger, postgresDriver),
+		KVStateStorage:     NewKVStateStorage(logger, postgresDriver),
+		ResourceStorage:    NewResourceStorage(logger, postgresDriver),
+		SetStateStorage:    NewSetStateStorage(logger, postgresDriver),
+		TreeStateStorage:   NewTreeStateStorage(logger, postgresDriver),
 	}
 }

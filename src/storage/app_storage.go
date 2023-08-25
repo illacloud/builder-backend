@@ -28,14 +28,14 @@ func (impl *AppStorage) Create(app *model.App) (int, error) {
 }
 
 func (impl *AppStorage) Delete(teamID int, appID int) error {
-	if err := impl.db.Where("team_id = ? AND id = ?", teamID, appID).Delete(&App{}).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND id = ?", teamID, appID).Delete(&model.App{}).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (impl *AppStorage) Update(app *model.App) error {
-	if err := impl.db.Model(app).UpdateColumns(App{
+	if err := impl.db.Model(app).UpdateColumns(model.App{
 		Name:            app.Name,
 		ReleaseVersion:  app.ReleaseVersion,
 		MainlineVersion: app.MainlineVersion,
@@ -65,7 +65,7 @@ func (impl *AppStorage) RetrieveByTeamID(teamID int) ([]*model.App, error) {
 
 func (impl *AppStorage) RetrieveDeployedAppByTeamID(teamID int) ([]*model.App, error) {
 	var apps []*model.App
-	if err := impl.db.Where("team_id = ? and release_version <> 0", teamID).Find(&apps).Error; err != nil {
+	if err := impl.db.Where("team_id = ? and release_version <> ?", teamID, model.APP_EDIT_VERSION).Find(&apps).Error; err != nil {
 		return nil, err
 	}
 	return apps, nil
