@@ -20,9 +20,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/illacloud/builder-backend/internal/auditlogger"
-	"github.com/illacloud/builder-backend/internal/tokenvalidator"
 	"github.com/illacloud/builder-backend/pkg/resource"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
+	"github.com/illacloud/builder-backend/src/utils/tokenvalidator"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"

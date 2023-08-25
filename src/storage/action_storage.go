@@ -15,8 +15,6 @@
 package storage
 
 import (
-	"encoding/json"
-
 	"github.com/illacloud/builder-backend/src/model"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -48,23 +46,6 @@ func (impl *ActionStorage) Delete(teamID int, actionID int) error {
 	return nil
 }
 
-func (impl *ActionStorage) Update(action *model.Action) error {
-	if err := impl.db.Model(action).UpdateColumns(model.Action{
-		Resource:    action.Resource,
-		Type:        action.Type,
-		Name:        action.Name,
-		TriggerMode: action.TriggerMode,
-		Transformer: action.Transformer,
-		Template:    action.Template,
-		Config:      action.Config,
-		UpdatedBy:   action.UpdatedBy,
-		UpdatedAt:   action.UpdatedAt,
-	}).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
 func (impl *ActionStorage) UpdateWholeAction(action *model.Action) error {
 	if err := impl.db.Model(action).Where("id = ?", action.ID).UpdateColumns(action).Error; err != nil {
 		return err
@@ -72,23 +53,22 @@ func (impl *ActionStorage) UpdateWholeAction(action *model.Action) error {
 	return nil
 }
 
-func (impl *ActionStorage) UpdatePublicByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, actionConfig *model.ActionConfig) error {
+func (impl *ActionStorage) UpdatePrivacyByTeamIDAndAppIDAndUserID(teamID int, appID int, userID int, isPublic bool) error {
 	actions, errInGetAll := impl.RetrieveAll(teamID, appID)
 	if errInGetAll != nil {
 		return errInGetAll
 	}
 	// set status
 	for _, action := range actions {
-		tmpActionConfig := model.NewActionConfig()
-		json.Unmarshal([]byte(action.Config), &tmpActionConfig)
-		tmpActionConfig.Public = actionConfig.Public
-		action.Config = tmpActionConfig.ExportToJSONString()
-		// update
-		errorInUpdate := impl.Update(action)
-		if errorInUpdate != nil {
-			return errorInUpdate
+		if isPublic {
+			action.SetPublic(userID)
+		} else {
+			action.SetPrivate(userID)
 		}
-
+		errInUpdateAction := impl.UpdateWholeAction(action)
+		if errInUpdateAction != nil {
+			return errInUpdateAction
+		}
 	}
 	return nil
 }
@@ -128,9 +108,9 @@ func (impl *ActionStorage) MakeActionPrivateByTeamIDAndAppID(teamID int, appID i
 	return nil
 }
 
-func (impl *ActionStorage) RetrieveActionByIDAndTeamID(actionID int, teamID int) (*model.Action, error) {
+func (impl *ActionStorage) RetrieveActionByTeamIDAndID(teamID int, actionID int) (*model.Action, error) {
 	var action *model.Action
-	if err := impl.db.Where("id = ? AND team_id = ?", actionID, teamID).Find(&action).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND id = ?", teamID, actionID).Find(&action).Error; err != nil {
 		return nil, err
 	}
 	return action, nil
@@ -160,8 +140,23 @@ func (impl *ActionStorage) RetrieveActionsByTeamIDAppIDAndVersion(teamID int, ap
 	return actions, nil
 }
 
+func (impl *ActionStorage) RetrieveActionsByTeamIDActionIDAndVersion(teamID int, actionID int, version int) (*model.Action, error) {
+	var action *model.Action
+	if err := impl.db.Where("team_id = ? AND id = ? AND version = ?", teamID, actionID, version).First(&action).Error; err != nil {
+		return nil, err
+	}
+	return action, nil
+}
+
 func (impl *ActionStorage) DeleteActionsByApp(teamID int, appID int) error {
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ?", teamID, appID).Delete(&model.Action{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (impl *ActionStorage) DeleteActionByTeamIDAndActionID(teamID int, actionID int) error {
+	if err := impl.db.Where("team_id = ? AND id = ?", teamID, actionID).Delete(&model.Action{}).Error; err != nil {
 		return err
 	}
 	return nil

@@ -224,12 +224,7 @@ func (controller *Controller) ConfigApp(c *gin.Context) {
 	}
 
 	// update action public settings
-	actionConfig, errInNewActionConfig := model.NewActionConfigByConfigAppRawRequest(rawRequest)
-	if errInNewActionConfig != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_BUILD_APP_CONFIG_FAILED, "new action config failed: "+errInNewActionConfig.Error())
-		return
-	}
-	errInUpdatePublic := controller.Storage.ActionStorage.UpdatePublicByTeamIDAndAppIDAndUserID(teamID, appID, userID, actionConfig)
+	errInUpdatePublic := controller.Storage.ActionStorage.UpdatePrivacyByTeamIDAndAppIDAndUserID(teamID, appID, userID, app.IsPublic())
 	if errInUpdatePublic != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "config action error: "+errInUpdatePublic.Error())
 		return

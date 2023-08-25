@@ -15,7 +15,7 @@
 package request
 
 import (
-	"github.com/illacloud/builder-backend/internal/idconvertor"
+	"github.com/illacloud/builder-backend/src/utils/idconvertor"
 )
 
 const GENERATE_SQL_ACTION_SELECT = 1

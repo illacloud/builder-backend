@@ -3,7 +3,7 @@ package response
 import (
 	"time"
 
-	"github.com/illacloud/builder-backend/internal/idconvertor"
+	"github.com/illacloud/builder-backend/src/utils/idconvertor"
 )
 
 type GetSnapshotListResponse struct {

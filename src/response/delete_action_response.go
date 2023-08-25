@@ -1,7 +1,7 @@
 package response
 
 import (
-	"github.com/illacloud/builder-backend/internal/idconvertor"
+	"github.com/illacloud/builder-backend/src/utils/idconvertor"
 )
 
 type DeleteActionResponse struct {

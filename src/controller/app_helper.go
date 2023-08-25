@@ -19,7 +19,7 @@ import (
 
 	"github.com/illacloud/builder-backend/src/model"
 	"github.com/illacloud/builder-backend/src/utils/datacontrol"
-	"github.com/illacloud/builder-backend/src/utils/illaresourcemanagerbackendsdk"
+	"github.com/illacloud/builder-backend/src/utils/illaresourcemanagersdk"
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 
 	"github.com/gin-gonic/gin"
@@ -256,7 +256,7 @@ func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int
 		actionForExport := model.NewActionForExport(action)
 		// append remote virtual resource
 		if actionForExport.Type == resourcelist.TYPE_AI_AGENT {
-			api, errInNewAPI := illaresourcemanagerbackendsdk.NewIllaResourceManagerRestAPI()
+			api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
 			if errInNewAPI != nil {
 				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
 				return nil, errInNewAPI
@@ -440,4 +440,13 @@ func (controller *Controller) BuildComponentTree(app *model.App, parentNodeID in
 		}
 	}
 	return nil
+}
+
+func (controller *Controller) IsPublicApp(c *gin.Context, teamID int, appID int) (bool, error) {
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
+	if errInRetrieveApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
+		return false, errInRetrieveApp
+	}
+	return app.IsPublic(), nil
 }

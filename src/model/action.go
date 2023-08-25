@@ -1,17 +1,3 @@
-// Copyright 2022 The ILLA Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package model
 
 import (
@@ -19,27 +5,87 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/illacloud/builder-backend/internal/util/resourcelist"
-	"github.com/illacloud/builder-backend/pkg/db"
+	"github.com/illacloud/builder-backend/src/request"
+	"github.com/illacloud/builder-backend/src/uitls/resourcelist"
+)
+
+const (
+	ACTION_RUNTIME_INFO_FIELD_TEAM_ID          = "teamID"
+	ACTION_RUNTIME_INFO_FIELD_RESOURCE_ID      = "resourceID"
+	ACTION_RUNTIME_INFO_FIELD_ACTION_ID        = "actionID"
+	ACTION_RUNTIME_INFO_FIELD_AUTHORIZATION    = "authorization"
+	ACTION_RUNTIME_INFO_FIELD_RUN_BY_ANONYMOUS = "runByAnonymous"
 )
 
 type Action struct {
-	ID          int       `gorm:"column:id;type:bigserial;primary_key"`
-	UID         uuid.UUID `gorm:"column:uid;type:uuid;not null"`
-	TeamID      int       `gorm:"column:team_id;type:bigserial"`
-	AppRefID    int       `gorm:"column:app_ref_id;type:bigint;not null"`
-	Version     int       `gorm:"column:version;type:bigint;not null"`
-	Resource    int       `gorm:"column:resource_ref_id;type:bigint;not null"`
-	Name        string    `gorm:"column:name;type:varchar;size:255;not null"`
-	Type        int       `gorm:"column:type;type:smallint;not null"`
-	TriggerMode string    `gorm:"column:trigger_mode;type:varchar;size:16;not null"`
-	Transformer db.JSONB  `gorm:"column:transformer;type:jsonb"`
-	Template    db.JSONB  `gorm:"column:template;type:jsonb"`
-	Config      string    `gorm:"column:config;type:jsonb"`
-	CreatedAt   time.Time `gorm:"column:created_at;type:timestamp;not null"`
-	CreatedBy   int       `gorm:"column:created_by;type:bigint;not null"`
-	UpdatedAt   time.Time `gorm:"column:updated_at;type:timestamp;not null"`
-	UpdatedBy   int       `gorm:"column:updated_by;type:bigint;not null"`
+	ID            int       `gorm:"column:id;type:bigserial;primary_key"`
+	UID           uuid.UUID `gorm:"column:uid;type:uuid;not null"`
+	TeamID        int       `gorm:"column:team_id;type:bigserial"`
+	AppRefID      int       `gorm:"column:app_ref_id;type:bigint;not null"`
+	Version       int       `gorm:"column:version;type:bigint;not null"`
+	ResourceRefID int       `gorm:"column:resource_ref_id;type:bigint;not null"`
+	Name          string    `gorm:"column:name;type:varchar;size:255;not null"`
+	Type          int       `gorm:"column:type;type:smallint;not null"`
+	TriggerMode   string    `gorm:"column:trigger_mode;type:varchar;size:16;not null"`
+	Transformer   string    `gorm:"column:transformer;type:jsonb"`
+	Template      string    `gorm:"column:template;type:jsonb"`
+	Config        string    `gorm:"column:config;type:jsonb"`
+	CreatedAt     time.Time `gorm:"column:created_at;type:timestamp;not null"`
+	CreatedBy     int       `gorm:"column:created_by;type:bigint;not null"`
+	UpdatedAt     time.Time `gorm:"column:updated_at;type:timestamp;not null"`
+	UpdatedBy     int       `gorm:"column:updated_by;type:bigint;not null"`
+}
+
+func NewAcitonByCreateActionRequest(app *App, userID int, req *request.CreateActionRequest) (*Action, error) {
+	action := &Action{
+		TeamID:        app.ExportTeamID(),
+		AppRefID:      app.ExportID(),
+		Version:       APP_EDIT_VERSION, // new action always created in builder edit mode, and it is edit version.
+		ResourceRefID: req.ResourceID,
+		Name:          req.Name,
+		Type:          resourcelist.GetResourceNameMappedID(req.Type),
+		TriggerMode:   req.TriggerMode,
+		Transformer:   req.ExportTransformerInString(),
+		Template:      req.ExportTemplateInString(),
+		Config:        req.ExportConfigInString(),
+		CreatedBy:     userID,
+		UpdatedBy:     userID,
+	}
+	if app.IsPublic(){
+		action.SetPublic()
+	} else {
+		action.SetPrivate()
+	}
+	action.InitUID()
+	action.InitCreatedAt()
+	action.InitUpdatedAt()
+	return action
+}
+
+func NewAcitonByUpdateActionRequest(app *App, userID int, req *request.UpdateActionRequest) (*Action, error) {
+	action := &Action{
+		TeamID:        app.ExportTeamID(),
+		AppRefID:      app.ExportID(),
+		Version:       APP_EDIT_VERSION, // new action always created in builder edit mode, and it is edit version.
+		ResourceRefID: req.ResourceID,
+		Name:          req.Name,
+		Type:          resourcelist.GetResourceNameMappedID(req.Type),
+		TriggerMode:   req.TriggerMode,
+		Transformer:   req.ExportTransformerInString(),
+		Template:      req.ExportTemplateInString(),
+		Config:        req.ExportConfigInString(),
+		CreatedBy:     userID,
+		UpdatedBy:     userID,
+	}
+	if app.IsPublic(){
+		action.SetPublic()
+	} else {
+		action.SetPrivate()
+	}
+	action.InitUID()
+	action.InitCreatedAt()
+	action.InitUpdatedAt()
+	return action
 }
 
 func (action *Action) CleanID() {
@@ -84,10 +130,8 @@ func (action *Action) ExportType() int {
 	return action.Type
 }
 
-func (action *Action) UpdateAppConfig(actionConfig *ActionConfig, userID int) {
-	action.Config = actionConfig.ExportToJSONString()
-	action.UpdatedBy = userID
-	action.InitUpdatedAt()
+func (action *Action) ExportResourceID() int {
+	return action.ResourceRefID
 }
 
 func (action *Action) ExportConfig() *ActionConfig {
@@ -123,4 +167,51 @@ func (action *Action) SetPrivate(userID int) {
 	action.Config = ac.ExportToJSONString()
 	action.UpdatedBy = userID
 	action.InitUpdatedAt()
+}
+
+func (action *Action) UpdateAppConfig(actionConfig *ActionConfig, userID int) {
+	action.Config = actionConfig.ExportToJSONString()
+	action.UpdatedBy = userID
+	action.InitUpdatedAt()
+}
+
+func (action *Action) UpdateWithRunActionRequest(req *request.RunActionRequest, userID int) {
+	action.Template = req.ExportTemplateInString()
+	action.UpdatedBy = userID
+	action.InitUpdatedAt()
+}
+
+func (action *Action) IsVirtualAction() bool {
+	return resourcelist.IsVirtualResourceByIntType(action.Type)
+}
+
+
+func (action *Action)ExportTransformerInMap() map[string]interface{} {
+	var payload map[string]interface
+	json.Unmarshal(action.Transformer, payload)
+	return payload
+}
+
+func (action *Action)ExportTemplateInMap() map[string]interface{} {
+	var payload map[string]interface
+	json.Unmarshal(action.Template, payload)
+	return payload
+}
+
+func (action *Action)ExportConfigInMap() map[string]interface{} {
+	var payload map[string]interface
+	json.Unmarshal(action.Config, payload)
+	return payload
+}
+
+// the action runtime does not pass the env info for virtual resource, so add them.
+func (action *Action) AppendRuntimeInfoForVirtualResource(authorization string) {
+	template := action.ExportTemplateInMap()
+	template[ACTION_RUNTIME_INFO_FIELD_TEAM_ID] = action.TeamID
+	template[ACTION_RUNTIME_INFO_FIELD_RESOURCE_ID] = action.ResourceRefID
+	template[ACTION_RUNTIME_INFO_FIELD_ACTION_ID] = action.ID
+	template[ACTION_RUNTIME_INFO_FIELD_AUTHORIZATION] = authorization
+	template[ACTION_RUNTIME_INFO_FIELD_RUN_BY_ANONYMOUS] = (authorization == "")
+	templateInByte, _ := json.Marshal(template)
+	action.Template = string(templateInByte) 
 }

@@ -183,6 +183,12 @@ func (app *App) SetPrivate(userID int) {
 	app.Config = appConfig.ExportToJSONString()
 }
 
+func (app *App) Modify(userID int) {
+	app.UpdatedBy = userID
+	app.InitUpdatedAt()
+	app.PushEditedBy(NewAppEditedByUserID(userID))
+}
+
 func (app *App) ExportID() int {
 	return app.ID
 }

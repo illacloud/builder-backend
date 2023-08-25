@@ -25,11 +25,12 @@ import (
 	"time"
 
 	"github.com/illacloud/builder-backend/internal/auditlogger"
-	"github.com/illacloud/builder-backend/internal/util/illaresourcemanagerbackendsdk"
+	"github.com/illacloud/builder-backend/internal/util/illaresourcemanagersdk"
 	"github.com/illacloud/builder-backend/internal/util/resourcelist"
 	"github.com/illacloud/builder-backend/pkg/action"
 	"github.com/illacloud/builder-backend/pkg/app"
 	"github.com/illacloud/builder-backend/pkg/resource"
+	"github.com/illacloud/builder-backend/src/model"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
 
 	"github.com/gin-gonic/gin"
@@ -124,7 +125,7 @@ func (impl ActionRestHandlerImpl) CreateAction(c *gin.Context) {
 
 	// append remote virtual resource
 	if res.Type == resourcelist.TYPE_AI_AGENT {
-		api, errInNewAPI := illaresourcemanagerbackendsdk.NewIllaResourceManagerRestAPI()
+		api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
 		if errInNewAPI != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
 			return
@@ -203,7 +204,7 @@ func (impl ActionRestHandlerImpl) UpdateAction(c *gin.Context) {
 
 	// append remote virtual resource
 	if res.Type == resourcelist.TYPE_AI_AGENT {
-		api, errInNewAPI := illaresourcemanagerbackendsdk.NewIllaResourceManagerRestAPI()
+		api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
 		if errInNewAPI != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
 			return
@@ -290,7 +291,7 @@ func (impl ActionRestHandlerImpl) GetAction(c *gin.Context) {
 
 	// append remote virtual resource
 	if res.Type == resourcelist.TYPE_AI_AGENT {
-		api, errInNewAPI := illaresourcemanagerbackendsdk.NewIllaResourceManagerRestAPI()
+		api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
 		if errInNewAPI != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
 			return
@@ -344,7 +345,7 @@ func (impl ActionRestHandlerImpl) FindActions(c *gin.Context) {
 	for _, action := range res {
 		// append remote virtual resource
 		if action.Type == resourcelist.TYPE_AI_AGENT {
-			api, errInNewAPI := illaresourcemanagerbackendsdk.NewIllaResourceManagerRestAPI()
+			api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
 			if errInNewAPI != nil {
 				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
 				return

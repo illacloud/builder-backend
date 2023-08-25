@@ -46,7 +46,7 @@ func (impl *ResourceStorage) Update(resource *model.Resource) error {
 	return nil
 }
 
-func (impl *ResourceStorage) RetrieveByID(teamID int, resourceID int) (*model.Resource, error) {
+func (impl *ResourceStorage) RetrieveByTeamIDAndResourceID(teamID int, resourceID int) (*model.Resource, error) {
 	var resource *model.Resource
 	if err := impl.db.Where("id = ? AND team_id = ?", resourceID, teamID).First(&resource).Error; err != nil {
 		return &model.Resource{}, err

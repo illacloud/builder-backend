@@ -23,7 +23,7 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/illacloud/builder-backend/internal/idconvertor"
+	"github.com/illacloud/builder-backend/src/utils/idconvertor"
 )
 
 const (

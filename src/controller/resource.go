@@ -24,9 +24,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/go-resty/resty/v2"
 	"github.com/illacloud/builder-backend/internal/auditlogger"
-	"github.com/illacloud/builder-backend/internal/idconvertor"
 	"github.com/illacloud/builder-backend/pkg/resource"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
+	"github.com/illacloud/builder-backend/src/utils/idconvertor"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/gin-gonic/gin"

@@ -133,6 +133,10 @@ var virtualResourceList = map[string]bool{
 	TYPE_AI_AGENT:    true,
 }
 
+var emptyOptionResourceList = map[string]bool{
+	TYPE_TRANSFORMER: true,
+}
+
 func GetResourceIDMappedType(id int) string {
 	return type_array[id]
 }
@@ -150,5 +154,11 @@ func IsVirtualResource(resourceType string) bool {
 func IsVirtualResourceByIntType(resourceType int) bool {
 	resourceTypeString := GetResourceIDMappedType(resourceType)
 	itIs, hit := virtualResourceList[resourceTypeString]
+	return itIs && hit
+}
+
+func IsVirtualResourceHaveNoOption(resourceType int) bool {
+	resourceTypeString := GetResourceIDMappedType(resourceType)
+	itIs, hit := emptyOptionResourceList[resourceTypeString]
 	return itIs && hit
 }

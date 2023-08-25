@@ -64,12 +64,10 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	roomRouter.GET("/binaryWebsocketConnection/app/:appID", r.Controller.GetAppRoomBinaryConnectionAddress)
 
 	// action routers
-	actionRouter.GET("", r.Controller.FindActions)
 	actionRouter.POST("", r.Controller.CreateAction)
 	actionRouter.GET("/:actionID", r.Controller.GetAction)
 	actionRouter.PUT("/:actionID", r.Controller.UpdateAction)
 	actionRouter.DELETE("/:actionID", r.Controller.DeleteAction)
-	actionRouter.POST("/preview", r.Controller.PreviewAction)
 	actionRouter.POST("/:actionID/run", r.Controller.RunAction)
 
 	// internal action routers

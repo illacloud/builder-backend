@@ -2,8 +2,8 @@ package filter
 
 import (
 	"github.com/illacloud/builder-backend/internal/repository"
-	"github.com/illacloud/builder-backend/internal/util/config"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
+	"github.com/illacloud/builder-backend/src/utils/config"
 )
 
 func RecordModifyHistory(hub *ws.Hub, message *ws.Message, displayNames []string) error {

@@ -22,8 +22,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
-	"github.com/illacloud/builder-backend/internal/idconvertor"
 	"github.com/illacloud/builder-backend/pkg/resource"
+	"github.com/illacloud/builder-backend/src/utils/idconvertor"
 	"github.com/mitchellh/mapstructure"
 	"go.uber.org/zap"
 )

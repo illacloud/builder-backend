@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/illacloud/builder-backend/pkg/db"
 )
 
 type Resource struct {
@@ -27,7 +26,7 @@ type Resource struct {
 	TeamID    int       `gorm:"column:team_id;type:bigserial"`
 	Name      string    `gorm:"column:name;type:varchar;size:200;not null"`
 	Type      int       `gorm:"column:type;type:smallint;not null"`
-	Options   db.JSONB  `gorm:"column:options;type:jsonb"`
+	Options   string    `gorm:"column:options;type:jsonb"`
 	CreatedAt time.Time `gorm:"column:created_at;type:timestamp;not null"`
 	CreatedBy int       `gorm:"column:created_by;type:bigint;not null"`
 	UpdatedAt time.Time `gorm:"column:updated_at;type:timestamp;not null"`
@@ -36,4 +35,8 @@ type Resource struct {
 
 func (resource *Resource) ExportUpdatedAt() time.Time {
 	return resource.UpdatedAt
+}
+
+func NewResource() *Resource {
+	return &Resource{}
 }

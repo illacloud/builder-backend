@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/illacloud/builder-backend/internal/idconvertor"
+	"github.com/illacloud/builder-backend/src/utils/idconvertor"
 	"github.com/illacloud/illa-marketplace-backend/src/response"
 )
 
@@ -44,6 +44,7 @@ const (
 	ERROR_FLAG_VALIDATE_REQUEST_TOKEN_FAILED            = "ERROR_FLAG_VALIDATE_REQUEST_TOKEN_FAILED"
 	ERROR_FLAG_VALIDATE_REQUEST_PARAM_FAILED            = "ERROR_FLAG_VALIDATE_REQUEST_PARAM_FAILED"
 	ERROR_FLAG_VALIDATE_VERIFICATION_CODE_FAILED        = "ERROR_FLAG_VALIDATE_VERIFICATION_CODE_FAILED"
+	ERROR_FLAG_VALIDATE_RESOURCE_FAILED                 = "ERROR_FLAG_VALIDATE_RESOURCE_FAILED"
 	ERROR_FLAG_PARSE_REQUEST_BODY_FAILED                = "ERROR_FLAG_PARSE_REQUEST_BODY_FAILED"
 	ERROR_FLAG_PARSE_REQUEST_URI_FAILED                 = "ERROR_FLAG_PARSE_REQUEST_URI_FAILED"
 	ERROR_FLAG_PARSE_INVITE_LINK_HASH_FAILED            = "ERROR_FLAG_PARSE_INVITE_LINK_HASH_FAILED"

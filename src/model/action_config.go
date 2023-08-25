@@ -19,11 +19,15 @@ import (
 	"errors"
 )
 
-const ACTION_CONFIG_FIELD_PUBLIC = "public"
+const (
+	ACTION_CONFIG_FIELD_PUBLIC           = "public"
+	ACTION_CONFIG_FIELD_VIRTUAL_RESOURCE = "virtualResource"
+)
 
 type ActionConfig struct {
-	Public         bool            `json:"public"`         // switch for public action (which can view by anonymous user)
-	AdvancedConfig *AdvancedConfig `json:"advancedConfig"` // 2023_4_20: add advanced config for action
+	Public            bool            `json:"public"` // switch for public action (which can view by anonymous user)
+	IsVirtualResource bool            `json:"isVirtualResource"`
+	AdvancedConfig    *AdvancedConfig `json:"advancedConfig"` // 2023_4_20: add advanced config for action
 }
 
 type AdvancedConfig struct {
@@ -60,6 +64,14 @@ func (ac *ActionConfig) SetPublic() {
 
 func (ac *ActionConfig) SetPrivate() {
 	ac.Public = false
+}
+
+func (ac *ActionConfig) SetIsVirtualResource() {
+	ac.IsVirtualResource = true
+}
+
+func (ac *ActionConfig) SetIsNotVirtualResource() {
+	ac.IsVirtualResource = false
 }
 
 func NewActionConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*ActionConfig, error) {
