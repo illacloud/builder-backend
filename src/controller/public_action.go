@@ -1,17 +1,3 @@
-// Copyright 2022 The ILLA Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package controller
 
 import (
@@ -22,42 +8,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/illacloud/builder-backend/internal/auditlogger"
-	dc "github.com/illacloud/builder-backend/internal/datacontrol"
-	"github.com/illacloud/builder-backend/pkg/action"
-	"github.com/illacloud/builder-backend/pkg/app"
-	"github.com/illacloud/builder-backend/pkg/resource"
+	"github.com/illacloud/builder-backend/internal/datacontrol"
 	"github.com/illacloud/builder-backend/src/model"
+	"github.com/illacloud/builder-backend/src/request"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
-type PublicActionRestHandler interface {
-	RunAction(c *gin.Context)
-}
-
-type PublicActionRestHandlerImpl struct {
-	logger          *zap.SugaredLogger
-	appService      app.AppService
-	resourceService resource.ResourceService
-	actionService   action.ActionService
-	AttributeGroup  *accesscontrol.AttributeGroup
-}
-
-func NewPublicActionRestHandlerImpl(logger *zap.SugaredLogger, appService app.AppService, resourceService resource.ResourceService,
-	actionService action.ActionService, attrg *accesscontrol.AttributeGroup) *PublicActionRestHandlerImpl {
-	return &PublicActionRestHandlerImpl{
-		logger:          logger,
-		appService:      appService,
-		resourceService: resourceService,
-		actionService:   actionService,
-		AttributeGroup:  attrg,
-	}
-}
-
-func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
+func (impl PublicActionRestHandlerImpl) RunPublicAction(c *gin.Context) {
 	// fetch needed param
 	teamIdentifier, errInGetTeamIdentifier := GetStringParamFromRequest(c, PARAM_TEAM_IDENTIFIER)
 	publicActionID, errInGetPublicActionID := controller.GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
@@ -67,7 +26,7 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 	}
 
 	// get team id by team teamIdentifier
-	team, errInGetTeamInfo := dc.GetTeamInfoByIdentifier(teamIdentifier)
+	team, errInGetTeamInfo := datacontrol.GetTeamInfoByIdentifier(teamIdentifier)
 	if errInGetTeamInfo != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_TEAM, "get target team by identifier error: "+errInGetTeamInfo.Error())
 		return
@@ -91,58 +50,87 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 	}
 
 	// check if action is public action
-	if !controller.actionService.IsPublicAction(teamID, publicActionID) {
+	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDActionIDAndVersion(teamID, appID, app.ExportMainlineVersion())
+	if errInRetrieveAction != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errInRetrieveAction.Error())
+		return
+	}
+	if !action.IsPublic() {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this action.")
 		return
 	}
 
-	// execute
+	// set resource timing header
+	// @see:
+	// [Timing-Allow-Origin](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Timing-Allow-Origin)
+	// [Resource_timing](https://developer.mozilla.org/en-US/docs/Web/API/Performance_API/Resource_timing)
 	c.Header("Timing-Allow-Origin", "*")
-	var actForExport action.ActionDtoForExport
-	if err := json.NewDecoder(c.Request.Body).Decode(&actForExport); err != nil {
+
+	// execute
+	runActionRequest := request.NewRunActionRequest()
+	if err := json.NewDecoder(c.Request.Body).Decode(&runActionRequest); err != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error"+err.Error())
 		return
 	}
-	act := actForExport.ExportActionDto()
 
-	// fetch app
-	appDTO, _ := controller.appService.FetchAppByID(teamID, appID)
-
-	// fetch resource data
-	rsc, errInGetRSC := controller.resourceService.GetResource(teamID, act.Resource)
-	if errInGetRSC != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resource error: "+errInGetRSC.Error())
+	// get action mapped app
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
+	if errInRetrieveApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
 		return
 	}
 
-	// audit log
-	auditLogger := auditlogger.GetInstance()
-	auditLogger.Log(&auditlogger.LogInfo{
-		EventType:       auditlogger.AUDIT_LOG_RUN_ACTION,
-		TeamID:          teamID,
-		UserID:          -1,
-		IP:              c.ClientIP(),
-		AppID:           appID,
-		AppName:         appDTO.Name,
-		ResourceID:      act.Resource,
-		ResourceName:    rsc.Name,
-		ResourceType:    rsc.Type,
-		ActionID:        act.ID,
-		ActionName:      act.DisplayName,
-		ActionParameter: act.Template,
-	})
+	// get action
+	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDActionIDAndVersion(teamID, appID, app.ExportMainlineVersion())
+	if errInRetrieveAction != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errInRetrieveAction.Error())
+		return
+	}
+
+	// update action data with run action reqeust
+	action.UpdateWithRunActionRequest(runActionRequest, userID)
+
+	// assembly action
+	actionFactory := model.NewActionFactoryByAction(action)
+	actionAssemblyLine, errInBuild := actionFactory.Build()
+	if errInBuild == nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action type error: "+errInBuild.Error())
+		return
+	}
+
+	// get resource
+	resource := model.NewResource()
+	if !action.IsVirtualAction() {
+		// process normal resource action
+		var errInRetrieveResource error
+		resource, errInRetrieveResource = controller.Storage.ResourceStorage.RetrieveByTeamIDAndResourceID(teamID, action.ExportResourceID())
+		if errInRetrieveResource != nil {
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resource failed: "+errInRetrieveResource.Error())
+			return
+		}
+		// resource option validate only happend in create or update phrase
+	} else {
+		// process virtual resource action
+		action.AppendRuntimeInfoForVirtualResource(userAuthToken)
+	}
+
+	// check action template
+	_, errInValidate := actionAssemblyLine.ValidateActionTemplate(action.ExportTemplateInMap())
+	if errInValidate != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action template error: "+errInValidate.Error())
+		return errInValidate
+	}
 
 	// run
-	actionRuntimeInfo := model.NewActionRuntimeInfo(team.ExportIDInString(), actForExport.ExportResourceID(), actForExport.ExportID(), "")
-	res, err := controller.actionService.RunAction(teamID, act, actionRuntimeInfo)
-	if err != nil {
-		if strings.HasPrefix(err.Error(), "Error 1064:") {
-			lineNumber, _ := strconv.Atoi(err.Error()[len(err.Error())-1:])
+	actionRunResult, errInRunAction := actionAssemblyLine.Run(resource.Options, action.Template)
+	if errInRunAction != nil {
+		if strings.HasPrefix(errInRunAction.Error(), "Error 1064:") {
+			lineNumber, _ := strconv.Atoi(errInRunAction.Error()[len(errInRunAction.Error())-1:])
 			message := ""
 			regexp, _ := regexp.Compile(`to use`)
-			match := regexp.FindStringIndex(err.Error())
+			match := regexp.FindStringIndex(errInRunAction.Error())
 			if len(match) == 2 {
-				message = err.Error()[match[1]:]
+				message = errInRunAction.Error()[match[1]:]
 			}
 			c.JSON(http.StatusBadRequest, gin.H{
 				"errorCode":    400,
@@ -155,8 +143,10 @@ func (impl PublicActionRestHandlerImpl) RunAction(c *gin.Context) {
 			})
 			return
 		}
-		controller.FeedbackBadRequest(c, ERROR_FLAG_EXECUTE_ACTION_FAILED, "run action error: "+err.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_EXECUTE_ACTION_FAILED, "run action error: "+errInRunAction.Error())
 		return
 	}
-	c.JSON(http.StatusOK, res)
+
+	// feedback
+	c.JSON(http.StatusOK, actionRunResult)
 }

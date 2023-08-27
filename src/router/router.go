@@ -86,11 +86,11 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	resourceRouter.POST("/:resourceID/refresh", r.Controller.RefreshGSOAuth)
 
 	// public app routers
-	publicAppRouter.GET(":appID/versions/:version", r.Controller.GetFullApp)
+	publicAppRouter.GET(":appID/versions/:version", r.Controller.GetFullPublicApp)
 	publicAppRouter.GET(":appID/isPublic", r.Controller.IsPublicApp)
 
 	// public action router
-	publicActionRouter.POST("/:actionID/run", r.Controller.RunAction)
+	publicActionRouter.POST("/:actionID/run", r.Controller.RunPublicAction)
 
 	// oauth2 router
 	oauth2Router.GET("/authorize", r.Controller.GoogleOAuth2)

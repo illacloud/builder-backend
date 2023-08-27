@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (controller *Controller) GetMegaData(c *gin.Context) {
+func (controller *Controller) GetFullPublicApp(c *gin.Context) {
 	// fetch needed param
 	teamIdentifier, errInGetTeamIdentifier := controller.GetStringParamFromRequest(c, PARAM_TEAM_IDENTIFIER)
 	publicAppID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
