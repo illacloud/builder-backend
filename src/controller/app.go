@@ -729,7 +729,7 @@ func (controller *Controller) GetSnapshot(c *gin.Context) {
 	}
 
 	// get app
-	fullAppForExport, errInGenerateFullApp := controller.GetTargetVersionFullApp(c, teamID, appID, snapshot.ExportTargetVersion())
+	fullAppForExport, errInGenerateFullApp := controller.GetTargetVersionFullApp(c, teamID, appID, snapshot.ExportTargetVersion(), false)
 	if errInGenerateFullApp != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get target version app failed: "+errInGenerateFullApp.Error())
 		return

@@ -16,6 +16,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/illacloud/builder-backend/src/model"
 	"github.com/illacloud/builder-backend/src/utils/datacontrol"
@@ -196,12 +197,19 @@ func (controller *Controller) SaveAppSnapshotByVersion(c *gin.Context, teamID in
 	return newAppSnapShot, nil
 }
 
-func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int, appID int, version int) (*model.FullAppForExport, error) {
+func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int, appID int, version int, getPublicApp bool) (*model.FullAppForExport, error) {
 	// fetch app
 	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(appID, teamID)
 	if errInRetrieveApp != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app full data error: "+errInRetrieveApp.Error())
 		return nil, errInRetrieveApp
+	}
+
+	// check if we need public app
+	if getPublicApp && !app.IsPublic {
+		errInGetPublicApp := errors.New("can not access this app")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app full data error: "+errInGetPublicApp.Error())
+		return nil, errInGetPublicApp
 	}
 
 	// set for auto-version
