@@ -64,6 +64,12 @@ func (resource *Resource) UpdateByUpdateResourceRequest(userID int, req *request
 	resource.InitUpdatedAt()
 }
 
+func (resource *Resource) UpdateGoogleSheetOAuth2Options(userID int, options *model.GoogleSheetsOAuth2Options) {
+	resource.Options = options.ExportInString()
+	resource.UpdatedBy = userID
+	resource.InitUpdatedAt()
+}
+
 func (resource *Resource) CleanID() {
 	resource.ID = 0
 }

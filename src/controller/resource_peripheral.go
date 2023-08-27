@@ -2,25 +2,12 @@ package controller
 
 import (
 	"encoding/json"
-	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/go-resty/resty/v2"
-	"github.com/illacloud/builder-backend/pkg/resource"
+	"github.com/illacloud/builder-backend/src/response"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
-	"github.com/illacloud/builder-backend/src/utils/idconvertor"
-	"github.com/mitchellh/mapstructure"
 )
-
-type OAuth2Opts struct {
-	AccessType   string
-	AccessToken  string
-	TokenType    string
-	RefreshToken string
-	Status       int
-}
 
 func (controller *Controller) CreateOAuthToken(c *gin.Context) {
 	// fetch needed params
@@ -165,7 +152,7 @@ func (controller *Controller) GoogleSheetsOAuth2(c *gin.Context) {
 	return
 }
 
-func (controller *Controller) RefreshGSOAuth(c *gin.Context) {
+func (controller *Controller) RefreshGoogleSheetsOAuth(c *gin.Context) {
 	// fetch needed params
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	resourceID, errInGetResourceID := controller.GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
@@ -191,75 +178,49 @@ func (controller *Controller) RefreshGSOAuth(c *gin.Context) {
 		return
 	}
 
-	// validate the resource id
-	res, err := controller.resourceService.GetResource(teamID, resourceID)
-	if err != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GOOGLE_SHEETS, "get resources error: "+err.Error())
+	// get resource
+	resource, errInRetrieveResource := controller.Storage.ResourceStorage.RetrieveByTeamIDAndResourceID(teamID, resourceID)
+	if errInRetrieveResource != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+errInRetrieveResource.Error())
 		return
 	}
-	if res.Type != "googlesheets" {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GOOGLE_SHEETS, "unsupported resource type")
+
+	// check resource type for create OAuth token
+	if !resource.CanCreateOAuthToken() {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported resource type")
 		return
 	}
-	var googleSheetsResource GoogleSheetsResource
-	if err := mapstructure.Decode(res.Options, &googleSheetsResource); err != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GOOGLE_SHEETS, "get resource error: "+err.Error())
+
+	// new resource option
+	resourceOptionGoogleSheets, errInNewGoogleSheetResourceOption := model.NewResourceOptionGoogleSheetsByResource(resource)
+	if errInNewGoogleSheetResourceOption != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported resource type: "+errInNewGoogleSheetResourceOption.Error())
 		return
 	}
-	if googleSheetsResource.Authentication != "oauth2" {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GOOGLE_SHEETS, "unsupported authentication type")
+
+	// validate resource option
+	if !resourceOptionGoogleSheets.IsAvaliableAuthenticationMethod() {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported authentication type")
 		return
 	}
 
 	// get new access token
-	client := resty.New()
-	resp, err := client.R().
-		SetFormData(map[string]string{
-			"client_id":     os.Getenv("ILLA_GS_CLIENT_ID"),
-			"client_secret": os.Getenv("ILLA_GS_CLIENT_SECRET"),
-			"refresh_token": googleSheetsResource.Opts.RefreshToken,
-			"grant_type":    "refresh_token",
-		}).
-		Post("https://oauth2.googleapis.com/token")
-	if resp.IsSuccess() {
-		type RefreshTokenSuccessResponse struct {
-			AccessToken string `json:"access_token"`
-			Expiry      int    `json:"expires_in"`
-			Scope       string `json:"scope"`
-			TokenType   string `json:"token_type"`
-		}
-		var refreshTokenSuccessResponse RefreshTokenSuccessResponse
-		if err := json.Unmarshal(resp.Body(), &refreshTokenSuccessResponse); err != nil {
-			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GOOGLE_SHEETS, "fresh google sheets error: "+err.Error())
-			return
-		}
-		googleSheetsResource.Opts.AccessToken = refreshTokenSuccessResponse.AccessToken
-	} else if resp.IsError() {
-		googleSheetsResource.Opts.RefreshToken = ""
-		googleSheetsResource.Opts.Status = 1
-		googleSheetsResource.Opts.AccessToken = ""
-		googleSheetsResource.Opts.TokenType = ""
+	refreshTokenResponse, errInRefreshOAuthToken := oauthgoogle.RefreshOAuthToken(resourceOptionGoogleSheets.ExportRefreshToken())
+	if errInRefreshOAuthToken != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GOOGLE_SHEETS, "fresh google sheets oauth token error: "+errInRefreshOAuthToken.Error())
+		return
+	}
+	resourceOptionGoogleSheets.SetAccessToken(refreshTokenResponse.ExportAccessToken())
+	resource.UpdateGoogleSheetOAuth2Options(userID, resourceOptionGoogleSheets)
+
+	// update resource
+	errInUpdateResource := controller.Storage.ResourceStorage.UpdateWholeResource(resource)
+	if errInUpdateResource != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_RESOURCE, "update resources error: "+errInUpdateResource.Error())
+		return
 	}
 
-	// update resource and return response
-	updateRes, err := controller.resourceService.UpdateResource(resource.ResourceDto{
-		ID:   idconvertor.ConvertStringToInt(res.ID),
-		Name: res.Name,
-		Type: res.Type,
-		Options: map[string]interface{}{
-			"authentication": googleSheetsResource.Authentication,
-			"opts": map[string]interface{}{
-				"accessType":   googleSheetsResource.Opts.AccessType,
-				"accessToken":  googleSheetsResource.Opts.AccessToken,
-				"tokenType":    googleSheetsResource.Opts.TokenType,
-				"refreshToken": googleSheetsResource.Opts.RefreshToken,
-				"status":       googleSheetsResource.Opts.Status,
-			},
-		},
-		UpdatedAt: time.Now().UTC(),
-		UpdatedBy: userID,
-	})
-	res.Options = updateRes.Options
-	controller.FeedbackOK(c, res)
+	// feedback
+	controller.FeedbackOK(c, response.NewUpdateResourceResponse(resource))
 	return
 }
