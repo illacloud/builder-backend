@@ -142,9 +142,9 @@ const (
 	ERROR_FLAG_GENERATE_PASSWORD_FAILED      = "ERROR_FLAG_GENERATE_PASSWORD_FAILED"
 
 	// google sheets oauth2 failed
-	ERROR_FLAG_CAN_NOT_CREATE_TOKEN = "ERROR_FLAG_CAN_NOT_CREATE_TOKEN"
-	ERROR_FLAG_CAN_NOT_AUTHORIZE_GS = "ERROR_FLAG_CAN_NOT_AUTHORIZE_GS"
-	ERROR_FLAG_CAN_NOT_REFRESH_GS   = "ERROR_FLAG_CAN_NOT_REFRESH_GS"
+	ERROR_FLAG_CAN_NOT_CREATE_TOKEN            = "ERROR_FLAG_CAN_NOT_CREATE_TOKEN"
+	ERROR_FLAG_CAN_NOT_AUTHORIZE_GOOGLE_SHEETS = "ERROR_FLAG_CAN_NOT_AUTHORIZE_GOOGLE_SHEETS"
+	ERROR_FLAG_CAN_NOT_REFRESH_GOOGLE_SHEETS   = "ERROR_FLAG_CAN_NOT_REFRESH_GOOGLE_SHEETS"
 )
 
 var SKIPPING_MAGIC_ID = map[string]int{
@@ -382,25 +382,6 @@ func (controller *Controller) FeedbackInternalServerError(c *gin.Context, errorF
 		"errorMessage": errorMessage,
 	})
 	return
-}
-
-func validateGSOAuth2Token(accessToken string) (int, error) {
-	authClaims := &GSOAuth2Claims{}
-	token, err := jwt.ParseWithClaims(accessToken, authClaims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("ILLA_SECRET_KEY")), nil
-	})
-	if err != nil {
-		return 0, err
-	}
-
-	claims, ok := token.Claims.(*GSOAuth2Claims)
-	if !(ok && token.Valid) {
-		return 0, err
-	}
-
-	access := claims.Access
-
-	return access, nil
 }
 
 func extractGSOAuth2Token(stateToken string) (teamID, userID, resourceID int, url string, err error) {

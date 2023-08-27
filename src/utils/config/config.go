@@ -77,6 +77,10 @@ type Config struct {
 	IllaMarketplaceInternalRestAPI string `env:"ILLA_MARKETPLACE_INTERNAL_API"     envDefault:"http://illa-marketplace-backend-internal:9003/api/v1"`
 	// token for internal api
 	ControlToken string `env:"ILLA_CONTROL_TOKEN"     envDefault:""`
+	// google config
+	IllaGoogleSheetsClientID     `env:"ILLA_GS_CLIENT_ID"     					   envDefault:""`
+	IllaGoogleSheetsClientSecret `env:"ILLA_GS_CLIENT_SECRET" 					   envDefault:""`
+	IllaGoogleSheetsRedirectURI  `env:"ILLA_GS_REDIRECT_URI"  					   envDefault:""`
 }
 
 func getConfig() (*Config, error) {
@@ -270,4 +274,16 @@ func (c *Config) GetIllaResourceManagerInternalRestAPI() string {
 
 func (c *Config) GetIllaMarketplaceInternalRestAPI() string {
 	return c.IllaMarketplaceInternalRestAPI
+}
+
+func (c *Config) GetIllaGoogleSheetsClientID() string {
+	return c.IllaGoogleSheetsClientID
+}
+
+func (c *Config) GetIllaGoogleSheetsClientSecret() string {
+	return c.IllaGoogleSheetsClientSecret
+}
+
+func (c *Config) GetIllaGoogleSheetsRedirectURI() string {
+	return c.IllaGoogleSheetsRedirectURI
 }
