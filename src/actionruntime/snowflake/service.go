@@ -1,4 +1,4 @@
-// Copyright 2022 The ILLA Authors.
+// Copyright 2023 Illa Soft, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,80 +12,83 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mysql
+package snowflake
 
 import (
 	"errors"
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	parser_sql "github.com/illacloud/builder-backend/internal/parser/sql"
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
+	parser_sql "github.com/illacloud/builder-backend/src/utils/parser/sql"
 	"github.com/mitchellh/mapstructure"
 )
 
-type MySQLConnector struct {
-	Resource MySQLOptions
-	Action   MySQLQuery
+type Connector struct {
+	resourceOpts Resource
+	actionOpts   Action
 }
 
-func (m *MySQLConnector) ValidateResourceOptions(resourceOptions map[string]interface{}) (common.ValidateResult, error) {
+func (s *Connector) ValidateResourceOptions(resourceOpts map[string]interface{}) (common.ValidateResult, error) {
 	// format resource options
-	if err := mapstructure.Decode(resourceOptions, &m.Resource); err != nil {
+	if err := mapstructure.Decode(resourceOpts, &s.resourceOpts); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 
-	// validate mysql options
+	// validate snowflake options
 	validate := validator.New()
-	if err := validate.Struct(m.Resource); err != nil {
+	if err := validate.Struct(s.resourceOpts); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
+
 	return common.ValidateResult{Valid: true}, nil
 }
 
-func (m *MySQLConnector) ValidateActionTemplate(actionOptions map[string]interface{}) (common.ValidateResult, error) {
-	// format sql options
-	if err := mapstructure.Decode(actionOptions, &m.Action); err != nil {
+func (s *Connector) ValidateActionTemplate(actionOpts map[string]interface{}) (common.ValidateResult, error) {
+	// format action options
+	if err := mapstructure.Decode(actionOpts, &s.actionOpts); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 
-	// validate mysql options
+	// validate snowflake options
 	validate := validator.New()
-	if err := validate.Struct(m.Action); err != nil {
+	if err := validate.Struct(s.actionOpts); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
+
 	return common.ValidateResult{Valid: true}, nil
 }
 
-func (m *MySQLConnector) TestConnection(resourceOptions map[string]interface{}) (common.ConnectionResult, error) {
-	// get mysql connection
-	db, err := m.getConnectionWithOptions(resourceOptions)
+func (s *Connector) TestConnection(resourceOpts map[string]interface{}) (common.ConnectionResult, error) {
+	// get snowflake connection
+	db, err := s.getConnectionWithOptions(resourceOpts)
 	if err != nil {
 		return common.ConnectionResult{Success: false}, err
 	}
 	defer db.Close()
 
-	// test mysql connection
+	// test snowflake connection
 	if err := db.Ping(); err != nil {
 		return common.ConnectionResult{Success: false}, err
 	}
+
 	return common.ConnectionResult{Success: true}, nil
 }
 
-func (m *MySQLConnector) GetMetaInfo(resourceOptions map[string]interface{}) (common.MetaInfoResult, error) {
-	// get mysql connection
-	db, err := m.getConnectionWithOptions(resourceOptions)
+func (s *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.MetaInfoResult, error) {
+	// get snowflake connection
+	db, err := s.getConnectionWithOptions(resourceOpts)
 	if err != nil {
 		return common.MetaInfoResult{Success: false}, err
 	}
 	defer db.Close()
 
-	// test mysql connection
+	// test snowflake connection
 	if err := db.Ping(); err != nil {
 		return common.MetaInfoResult{Success: false}, err
 	}
 
-	columns := fieldsInfo(db, m.Resource.DatabaseName, tablesInfo(db, m.Resource.DatabaseName))
+	columns := fieldsInfo(db, tablesInfo(db, fmt.Sprintf("%s.%s", s.resourceOpts.Database, s.resourceOpts.Schema)))
 
 	return common.MetaInfoResult{
 		Success: true,
@@ -93,20 +96,20 @@ func (m *MySQLConnector) GetMetaInfo(resourceOptions map[string]interface{}) (co
 	}, nil
 }
 
-func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
-	// get mysql connection
-	db, err := m.getConnectionWithOptions(resourceOptions)
+func (s *Connector) Run(resourceOpts map[string]interface{}, actionOpts map[string]interface{}) (common.RuntimeResult, error) {
+	// get snowflake connection
+	db, err := s.getConnectionWithOptions(resourceOpts)
 	if err != nil {
-		return common.RuntimeResult{Success: false}, errors.New("failed to get mysql connection")
+		return common.RuntimeResult{Success: false}, errors.New("failed to get snowflake connection")
 	}
 	defer db.Close()
 
 	// format query
-	if err := mapstructure.Decode(actionOptions, &m.Action); err != nil {
+	if err := mapstructure.Decode(actionOpts, &s.actionOpts); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 
-	// run mysql query
+	// run clickhouse query
 	queryResult := common.RuntimeResult{
 		Success: false,
 		Rows:    []map[string]interface{}{},
@@ -115,7 +118,7 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 	// check if m.Action.Query is select query
 	isSelectQuery := false
 
-	lexer := parser_sql.NewLexer(m.Action.Query)
+	lexer := parser_sql.NewLexer(s.actionOpts.Query)
 	isSelectQuery, err = parser_sql.IsSelectSQL(lexer)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -123,7 +126,7 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 
 	// fetch data
 	if isSelectQuery {
-		rows, err := db.Query(m.Action.Query)
+		rows, err := db.Query(s.actionOpts.Query)
 		if err != nil {
 			return queryResult, err
 		}
@@ -135,7 +138,7 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else { // update, insert, delete data
-		execResult, err := db.Exec(m.Action.Query)
+		execResult, err := db.Exec(s.actionOpts.Query)
 		if err != nil {
 			return queryResult, err
 		}

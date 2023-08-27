@@ -6,11 +6,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/illacloud/builder-backend/internal/auditlogger"
 	"github.com/illacloud/builder-backend/src/model"
 	"github.com/illacloud/builder-backend/src/request"
 	"github.com/illacloud/builder-backend/src/response"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
+	"github.com/illacloud/builder-backend/src/utils/auditlogger"
 )
 
 func (controller *Controller) GetAllResources(c *gin.Context) {

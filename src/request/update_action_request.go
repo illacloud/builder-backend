@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/illacloud/builder-backend/src/model"
-	"github.com/illacloud/builder-backend/src/utils/idconverter"
+	"github.com/illacloud/builder-backend/src/utils/idconvertor"
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 )
 
@@ -67,7 +67,7 @@ func (req *UpdateActionRequest) ExportTransformerInString() string {
 }
 
 func (req *UpdateActionRequest) ExportResourceIDInInt() int {
-	return idconverter.ConvertStringToInt(req.ResourceID)
+	return idconvertor.ConvertStringToInt(req.ResourceID)
 }
 
 func (req *UpdateActionRequest) ExportActionTypeInInt() int {

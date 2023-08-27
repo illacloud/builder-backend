@@ -1,9 +1,9 @@
 package controller
 
 import (
-	"github.com/illacloud/builder-backend/internal/auditlogger"
-	"github.com/illacloud/builder-backend/internal/datacontrol"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
+	"github.com/illacloud/builder-backend/src/utils/auditlogger"
+	"github.com/illacloud/builder-backend/src/utils/datacontrol"
 
 	"github.com/gin-gonic/gin"
 )

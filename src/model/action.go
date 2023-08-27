@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/src/request"
-	"github.com/illacloud/builder-backend/src/uitls/resourcelist"
+	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 )
 
 const (
