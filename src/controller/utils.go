@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -383,40 +382,6 @@ func (controller *Controller) FeedbackInternalServerError(c *gin.Context, errorF
 		"errorMessage": errorMessage,
 	})
 	return
-}
-
-type GSOAuth2Claims struct {
-	Team     int    `json:"team"`
-	User     int    `json:"user"`
-	Resource int    `json:"resource"`
-	Access   int    `json:"access"`
-	URL      string `json:"url"`
-	jwt.RegisteredClaims
-}
-
-func generateGSOAuth2Token(teamID, userID, resourceID, accessType int, redirectURL string) (string, error) {
-	claims := &GSOAuth2Claims{
-		Team:     teamID,
-		User:     userID,
-		Resource: resourceID,
-		Access:   accessType,
-		URL:      redirectURL,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer: "ILLA",
-			ExpiresAt: &jwt.NumericDate{
-				Time: time.Now().Add(time.Minute * 1),
-			},
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	accessToken, err := token.SignedString([]byte(os.Getenv("ILLA_SECRET_KEY")))
-	if err != nil {
-		return "", err
-	}
-
-	return accessToken, nil
 }
 
 func validateGSOAuth2Token(accessToken string) (int, error) {
