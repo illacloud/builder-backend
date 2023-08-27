@@ -1,6 +1,6 @@
 package illamarketplacesdk
 
-import "github.com/illacloud/illa-resource-manager-backend/src/model"
+import "github.com/illacloud/builder-backend/src/model"
 
 type AIAgentForMarketplace struct {
 	Name        string `json:"name"`

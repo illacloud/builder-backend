@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	parser_sql "github.com/illacloud/builder-backend/internal/parser/sql"
-	"github.com/illacloud/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/builder-backend/src/actionruntime/common"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"

@@ -19,7 +19,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/illacloud/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/builder-backend/src/actionruntime/common"
 
 	es "github.com/elastic/go-elasticsearch/v8"
 )

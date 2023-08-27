@@ -1,7 +1,7 @@
 package accesscontrol
 
 import (
-	"github.com/illacloud/illa-resource-manager-backend/src/utils/supervisor"
+	"github.com/illacloud/builder-backend/src/utils/supervisor"
 )
 
 // default

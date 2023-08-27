@@ -6,7 +6,7 @@ import (
 
 	"crypto/md5"
 
-	"github.com/illacloud/illa-resource-manager-backend/src/utils/config"
+	"github.com/illacloud/builder-backend/src/utils/config"
 )
 
 type RequestTokenValidator struct {

@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/illacloud/illa-resource-manager-backend/src/utils/config"
+	"github.com/illacloud/builder-backend/src/utils/config"
 )
 
 type AWSConfig struct {

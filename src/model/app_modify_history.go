@@ -17,8 +17,6 @@ package model
 import (
 	"encoding/json"
 	"time"
-
-	"github.com/illacloud/builder-backend/internal/util/builderoperation"
 )
 
 const SNAPSHOT_TARGET_APP = "app"

@@ -22,9 +22,9 @@ import (
 	"sync"
 
 	resty "github.com/go-resty/resty/v2"
-	"github.com/illacloud/illa-resource-manager-backend/src/utils/config"
-	"github.com/illacloud/illa-resource-manager-backend/src/utils/idconvertor"
-	"github.com/illacloud/illa-resource-manager-backend/src/utils/tokenvalidator"
+	"github.com/illacloud/builder-backend/src/utils/config"
+	"github.com/illacloud/builder-backend/src/utils/idconvertor"
+	"github.com/illacloud/builder-backend/src/utils/tokenvalidator"
 )
 
 const (

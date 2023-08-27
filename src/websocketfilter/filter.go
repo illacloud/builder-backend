@@ -18,7 +18,6 @@ import (
 	"log"
 
 	proto "github.com/golang/protobuf/proto"
-	"github.com/illacloud/builder-backend/internal/util/builderoperation"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 )
 

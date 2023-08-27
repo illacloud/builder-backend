@@ -1,7 +1,7 @@
 package controltoken
 
 import (
-	"github.com/illacloud/illa-resource-manager-backend/src/utils/config"
+	"github.com/illacloud/builder-backend/src/utils/config"
 )
 
 func IsControlTokenAvaliable(token string) bool {

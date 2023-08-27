@@ -25,8 +25,6 @@ import (
 	"github.com/illacloud/builder-backend/internal/accesscontrol"
 	"github.com/illacloud/builder-backend/internal/repository"
 	"github.com/illacloud/builder-backend/internal/util"
-	"github.com/illacloud/builder-backend/internal/util/builderoperation"
-	"github.com/illacloud/builder-backend/internal/util/supervisior"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 	"github.com/illacloud/builder-backend/src/utils/idconvertor"
 

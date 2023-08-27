@@ -19,7 +19,6 @@ import (
 
 	"github.com/illacloud/builder-backend/internal/datacontrol"
 	"github.com/illacloud/builder-backend/internal/repository"
-	"github.com/illacloud/builder-backend/internal/util/supervisior"
 	ws "github.com/illacloud/builder-backend/internal/websocket"
 	"github.com/illacloud/builder-backend/pkg/user"
 )

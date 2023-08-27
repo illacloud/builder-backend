@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/illacloud/illa-resource-manager-backend/src/utils/config"
+	"github.com/illacloud/builder-backend/src/utils/config"
 	kafka "github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl/scram"
 	"go.uber.org/zap"

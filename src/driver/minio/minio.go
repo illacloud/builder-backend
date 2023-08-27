@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/illacloud/illa-resource-manager-backend/src/utils/config"
+	"github.com/illacloud/builder-backend/src/utils/config"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )

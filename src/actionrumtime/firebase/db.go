@@ -18,7 +18,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/illacloud/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/builder-backend/src/actionruntime/common"
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/go-playground/validator/v10"

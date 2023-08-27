@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/illacloud/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/builder-backend/src/actionruntime/common"
 
 	"github.com/mitchellh/mapstructure"
 	"go.mongodb.org/mongo-driver/bson"

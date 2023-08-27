@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"github.com/illacloud/illa-resource-manager-backend/src/utils/config"
+	"github.com/illacloud/builder-backend/src/utils/config"
 	redis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )

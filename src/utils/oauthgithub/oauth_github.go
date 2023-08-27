@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/illacloud/illa-resource-manager-backend/src/utils/config"
-	"github.com/illacloud/illa-resource-manager-backend/src/utils/randomstring"
+	"github.com/illacloud/builder-backend/src/utils/config"
+	"github.com/illacloud/builder-backend/src/utils/randomstring"
 )
 
 const GITHUB_OAUTH_AUTHORIZE_URI_TEMPLATE = "https://github.com/login/oauth/authorize?client_id=%s&redirect_uri=%s&scope=%s&state=%s"

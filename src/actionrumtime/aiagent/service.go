@@ -18,8 +18,8 @@ import (
 	"errors"
 	"fmt"
 
-	resourcemanager "github.com/illacloud/builder-backend/internal/util/illaresourcemanagersdk"
-	"github.com/illacloud/builder-backend/pkg/plugins/common"
+	"github.com/illacloud/builder-backend/src/actionruntime/common"
+	resourcemanager "github.com/illacloud/builder-backend/src/utilsillaresourcemanagersdk"
 )
 
 type AIAgentConnector struct {
