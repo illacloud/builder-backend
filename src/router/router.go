@@ -81,9 +81,9 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	resourceRouter.DELETE("/:resourceID", r.Controller.DeleteResource)
 	resourceRouter.POST("/testConnection", r.Controller.TestConnection)
 	resourceRouter.GET("/:resourceID/meta", r.Controller.GetMetaInfo)
-	resourceRouter.POST("/:resourceID/token", r.Controller.CreateOAuthToken)
-	resourceRouter.GET("/:resourceID/oauth2", r.Controller.GoogleSheetsOAuth2)
-	resourceRouter.POST("/:resourceID/refresh", r.Controller.RefreshGSOAuth)
+	resourceRouter.POST("/:resourceID/token", r.Controller.CreateGoogleOAuthToken)
+	resourceRouter.GET("/:resourceID/oauth2", r.Controller.GetGoogleSheetsOAuth2Token)
+	resourceRouter.POST("/:resourceID/refresh", r.Controller.RefreshGoogleSheetsOAuth)
 
 	// public app routers
 	publicAppRouter.GET(":appID/versions/:version", r.Controller.GetFullPublicApp)
@@ -93,7 +93,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	publicActionRouter.POST("/:actionID/run", r.Controller.RunPublicAction)
 
 	// oauth2 router
-	oauth2Router.GET("/authorize", r.Controller.GoogleOAuth2)
+	oauth2Router.GET("/authorize", r.Controller.GoogleOAuth2Exchange)
 
 	// status router
 	statusRouter.GET("", r.Controller.Status)

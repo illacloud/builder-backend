@@ -21,6 +21,11 @@ const (
 	GOOGLE_SHEETS_OAUTH2_ACCESS_TYPE_READ_ONLY      = 2
 )
 
+const (
+	GOOGLE_SHEETS_OAUTH_STATUS_SUCCESS = 1
+	GOOGLE_SHEETS_OAUTH_STATUS_FAILED = 2
+)
+
 func NewGoogleSheetsOAuth2Claims() *GoogleSheetsOAuth2Claims {
 	return &GoogleSheetsOAuth2Claims{}
 }
@@ -55,7 +60,25 @@ func GenerateGoogleSheetsOAuth2Token(teamID, userID, resourceID, createOAuthToke
 }
 
 
-func (i *GoogleSheetsOAuth2Claims) ValidateAccessToken(accessToken stirng) (int, error) {
+func (i *GoogleSheetsOAuth2Claims) ExtractGoogleSheetsOAuth2TokenInfo(accessToken string) (teamID, userID, resourceID int, url string, err error) {
+	token, errInParseClaims := jwt.ParseWithClaims(accessToken, i, func(token *jwt.Token) (interface{}, error) {
+		conf := config.GetInstance()
+		return []byte(conf.GetSecretKey()), nil
+	})
+	if errInParseClaims != nil {
+		return 0, 0, 0, "", errInParseClaims
+	}
+
+	claims, assertPass := token.Claims.(*GoogleSheetsOAuth2Claims)
+	if !(assertPass && token.Valid) {
+		return 0, 0, 0, "", errors.New("invalied access token")
+	}
+
+	return claims.Team, claims.User, claims.Resource, claims.URL, nil
+}
+
+
+func (i *GoogleSheetsOAuth2Claims) ValidateAccessToken(accessToken string) (int, error) {
 	token, errInParseClaims := jwt.ParseWithClaims(accessToken, i, func(token *jwt.Token) (interface{}, error) {
 		conf := config.GetInstance()
 		return []byte(conf.GetSecretKey()), nil

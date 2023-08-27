@@ -13,12 +13,52 @@ type RefreshTokenResponse struct {
 	TokenType   string `json:"token_type"`
 }
 
+type ExchangeTokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	Expiry       int    `json:"expires_in"`
+	Scope        string `json:"scope"`
+	TokenType    string `json:"token_type"`
+}
+
 func NewRefreshTokenResponse() *RefreshTokenResponse {
 	return &RefreshTokenResponse{}
 }
 
+func NewExchangeTokenResponse() *ExchangeTokenResponse {
+	return &ExchangeTokenResponse{}
+}
+
 func (resp *RefreshTokenResponse) ExportAccessToken() string {
 	return resp.AccessToken
+}
+
+func ExchangeOAuthToken(code string) (*RefreshTokenSuccessResponse, error) {
+	conf := config.GetInstance()
+	googleOAuthClientID := conf.GetIllaGoogleSheetsClientID()
+	googleOAuthClientSecret := conf.GetIllaGoogleSheetsClientSecret()
+	googleOAuthRedirectURI := conf.GetIllaGoogleSheetsRedirectURI()
+	client := resty.New()
+	// request
+	resp, err := client.R().
+		SetFormData(map[string]string{
+			"client_id":     googleOAuthClientID,
+			"client_secret": googleOAuthClientSecret,
+			"code":          code,
+			"grant_type":    "authorization_code",
+			"redirect_uri":  googleOAuthRedirectURI,
+		}).
+		Post(GOOGLE_OAUTH2_API)
+	if resp.IsError() {
+		return nil, errInPost
+	}
+	// unmarshal
+	exchangeTokenResponse := NewExchangeTokenResponse()
+	errInUnmarshal := json.Unmarshal(resp.Body(), &exchangeTokenResponse)
+	if errInUnmarshal != nil {
+		return nil, errInUnmarshal
+	}
+	return exchangeTokenResponse, nil
 }
 
 func RefreshOAuthToken(refreshToken string) (*RefreshTokenSuccessResponse, error) {

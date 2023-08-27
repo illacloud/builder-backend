@@ -9,7 +9,7 @@ import (
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
 )
 
-func (controller *Controller) CreateOAuthToken(c *gin.Context) {
+func (controller *Controller) CreateGoogleOAuthToken(c *gin.Context) {
 	// fetch needed params
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	resourceID, errInGetResourceID := controller.GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
@@ -87,7 +87,7 @@ func (controller *Controller) CreateOAuthToken(c *gin.Context) {
 	return
 }
 
-func (controller *Controller) GoogleSheetsOAuth2(c *gin.Context) {
+func (controller *Controller) GetGoogleSheetsOAuth2Token(c *gin.Context) {
 	// fetch needed params
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	resourceID, errInGetResourceID := controller.GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
@@ -204,7 +204,7 @@ func (controller *Controller) RefreshGoogleSheetsOAuth(c *gin.Context) {
 		return
 	}
 
-	// get new access token
+	// refresh access token
 	refreshTokenResponse, errInRefreshOAuthToken := oauthgoogle.RefreshOAuthToken(resourceOptionGoogleSheets.ExportRefreshToken())
 	if errInRefreshOAuthToken != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GOOGLE_SHEETS, "fresh google sheets oauth token error: "+errInRefreshOAuthToken.Error())

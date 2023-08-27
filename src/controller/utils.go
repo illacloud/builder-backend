@@ -4,11 +4,9 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/illacloud/builder-backend/src/utils/idconvertor"
 	"github.com/illacloud/illa-marketplace-backend/src/response"
 )
@@ -34,6 +32,9 @@ const (
 	PARAM_PAGE_LIMIT       = "pageLimit"
 	PARAM_PAGE             = "page"
 	PARAM_SNAPSHOT_ID      = "snapshotID"
+	PARAM_STATE            = "state"
+	PARAM_CODE             = "code"
+	PARAM_ERROR            = "error"
 )
 
 const (
@@ -375,6 +376,11 @@ func (controller *Controller) FeedbackBadRequest(c *gin.Context, errorFlag strin
 	return
 }
 
+func (controller *Controller) FeedbackRedirect(c *gin.Context, uri string) {
+	c.Redirect(302, uri)
+	return
+}
+
 func (controller *Controller) FeedbackInternalServerError(c *gin.Context, errorFlag string, errorMessage string) {
 	c.JSON(http.StatusInternalServerError, gin.H{
 		"errorCode":    500,
@@ -382,21 +388,4 @@ func (controller *Controller) FeedbackInternalServerError(c *gin.Context, errorF
 		"errorMessage": errorMessage,
 	})
 	return
-}
-
-func extractGSOAuth2Token(stateToken string) (teamID, userID, resourceID int, url string, err error) {
-	authClaims := &GSOAuth2Claims{}
-	token, err := jwt.ParseWithClaims(stateToken, authClaims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("ILLA_SECRET_KEY")), nil
-	})
-	if err != nil {
-		return 0, 0, 0, "", err
-	}
-
-	claims, ok := token.Claims.(*GSOAuth2Claims)
-	if !(ok && token.Valid) {
-		return 0, 0, 0, "", err
-	}
-
-	return claims.Team, claims.User, claims.Resource, claims.URL, nil
 }
