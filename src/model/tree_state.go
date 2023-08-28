@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	util "github.com/illacloud/builder-backend/src/utils/extendslice"
+	"github.com/illacloud/builder-backend/src/utils/extendslice"
 )
 
 const TREE_STATE_SUMMIT_ID = 0
@@ -36,7 +36,7 @@ type TreeState struct {
 	UID                uuid.UUID `json:"uid" 							 gorm:"column:uid;type:uuid;not null"`
 	TeamID             int       `json:"teamID" 						 gorm:"column:team_id;type:bigserial"`
 	StateType          int       `json:"state_type" 					 gorm:"column:state_type;type:bigint"`
-	ParentNode         string    `json:"parentNode" 					 gorm"-" 									    sql:"-"`
+	ParentNode         string    `json:"parentNode" sql:"-" gorm:"-"`
 	ParentNodeRefID    int       `json:"parent_node_ref_id" 			 gorm:"column:parent_node_ref_id;type:bigint"`
 	ChildrenNodeRefIDs string    `json:"children_node_ref_ids" 		     gorm:"column:children_node_ref_ids;type:jsonb"`
 	AppRefID           int       `json:"app_ref_id" 					 gorm:"column:app_ref_id;type:bigint"`
@@ -209,7 +209,7 @@ func (treeState *TreeState) RemoveChildrenNodeRefIDs(id int) error {
 	if err := json.Unmarshal([]byte(treeState.ChildrenNodeRefIDs), &ids); err != nil {
 		return err
 	}
-	ids = util.DeleteElement(ids, id)
+	ids = extendslice.DeleteElement(ids, id)
 	idsjsonb, err := json.Marshal(ids)
 	if err != nil {
 		return err
