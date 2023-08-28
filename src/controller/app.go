@@ -219,7 +219,7 @@ func (controller *Controller) ConfigApp(c *gin.Context) {
 	app.UpdateAppByConfigAppRawRequest(rawRequest) // for "app name" field which not in config struct
 
 	// update app
-	errInUpdateApp := controller.Storage.AppStorage.Update(app)
+	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
 	if errInUpdateApp != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "config app error: "+errInUpdateApp.Error())
 		return
