@@ -45,7 +45,7 @@ func (controller *Controller) GetAllResources(c *gin.Context) {
 	}
 
 	// feedback
-	c.JSON(http.StatusOK, resources)
+	c.JSON(http.StatusOK, model.BatchNewResourceForExport(resources))
 	return
 }
 

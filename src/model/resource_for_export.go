@@ -38,6 +38,14 @@ func NewResourceForExport(r *Resource) *ResourceForExport {
 	}
 }
 
+func BatchNewResourceForExport(r []*Resource) []*ResourceForExport {
+	var resourcesForExport []*ResourceForExport
+	for _, resource := range r {
+		resourcesForExport = append(resourcesForExport, NewResourceForExport(resource))
+	}
+	return resourcesForExport
+}
+
 func (resp *ResourceForExport) ExportName() string {
 	return resp.Name
 }
