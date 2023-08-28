@@ -21,7 +21,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	engine.UseRawPath = true
 
 	// init route
-	routerGroup := engine.Group("/api/routerGroup")
+	routerGroup := engine.Group("/api/v1")
 
 	builderRouter := routerGroup.Group("/teams/:teamID/builder")
 	appRouter := routerGroup.Group("/teams/:teamID/apps")
@@ -43,7 +43,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	resourceRouter.Use(remotejwtauth.RemoteJWTAuth())
 
 	// builder routers
-	builderRouter.GET("desc", r.Controller.GetTeamBuilderDesc)
+	builderRouter.GET("/desc", r.Controller.GetTeamBuilderDesc)
 
 	// app routers
 	appRouter.POST("", r.Controller.CreateApp)
