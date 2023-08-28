@@ -32,82 +32,73 @@ func NewKVStateStorage(logger *zap.SugaredLogger, db *gorm.DB) *KVStateStorage {
 	}
 }
 
-func (impl *KVStateStorage) Create(kvstate *model.KVState) error {
-	if err := impl.db.Create(kvstate).Error; err != nil {
+func (impl *KVStateStorage) Create(kvState *model.KVState) error {
+	if err := impl.db.Create(kvState).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (impl *KVStateStorage) Delete(teamID int, kvstateID int) error {
-	if err := impl.db.Where("id = ? AND team_id = ?", kvstateID, teamID).Delete(&model.KVState{}).Error; err != nil {
+func (impl *KVStateStorage) Delete(teamID int, kvStateID int) error {
+	if err := impl.db.Where("id = ? AND team_id = ?", kvStateID, teamID).Delete(&model.KVState{}).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (impl *KVStateStorage) Update(kvstate *model.KVState) error {
-	if err := impl.db.Model(kvstate).UpdateColumns(model.KVState{
-		ID:        kvstate.ID,
-		StateType: kvstate.StateType,
-		AppRefID:  kvstate.AppRefID,
-		Version:   kvstate.Version,
-		Key:       kvstate.Key,
-		Value:     kvstate.Value,
-		UpdatedAt: kvstate.UpdatedAt,
-		UpdatedBy: kvstate.UpdatedBy,
-	}).Error; err != nil {
+func (impl *KVStateStorage) Update(kvState *model.KVState) error {
+	if err := impl.db.Model(kvState).Where("id = ?", kvState.ID).UpdateColumns(kvState).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (impl *KVStateStorage) RetrieveByID(teamID int, kvstateID int) (*model.KVState, error) {
-	var kvstate *model.KVState
-	if err := impl.db.Where("id = ? AND team_id = ?", kvstateID, teamID).First(&kvstate).Error; err != nil {
+func (impl *KVStateStorage) RetrieveByID(teamID int, kvStateID int) (*model.KVState, error) {
+	var kvState *model.KVState
+	if err := impl.db.Where("id = ? AND team_id = ?", kvStateID, teamID).First(&kvState).Error; err != nil {
 		return &model.KVState{}, err
 	}
-	return kvstate, nil
+	return kvState, nil
 }
 
 func (impl *KVStateStorage) RetrieveKVStatesByVersion(teamID int, version int) ([]*model.KVState, error) {
-	var kvstates []*model.KVState
-	if err := impl.db.Where("team_id = ? AND version = ?", teamID, version).Find(&kvstates).Error; err != nil {
+	var kvStates []*model.KVState
+	if err := impl.db.Where("team_id = ? AND version = ?", teamID, version).Find(&kvStates).Error; err != nil {
 		return nil, err
 	}
-	return kvstates, nil
+	return kvStates, nil
 }
 
 func (impl *KVStateStorage) RetrieveKVStatesByKey(teamID int, key string) ([]*model.KVState, error) {
-	var kvstates []*model.KVState
-	if err := impl.db.Where("team_id = ? AND key = ?", teamID, key).Find(&kvstates).Error; err != nil {
+	var kvStates []*model.KVState
+	if err := impl.db.Where("team_id = ? AND key = ?", teamID, key).Find(&kvStates).Error; err != nil {
 		return nil, err
 	}
-	return kvstates, nil
+	return kvStates, nil
 }
 
 func (impl *KVStateStorage) RetrieveKVStatesByApp(teamID int, apprefid int, statetype int, version int) ([]*model.KVState, error) {
-	var kvstates []*model.KVState
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ?", teamID, apprefid, statetype, version).Find(&kvstates).Error; err != nil {
+	var kvStates []*model.KVState
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ?", teamID, apprefid, statetype, version).Find(&kvStates).Error; err != nil {
 		return nil, err
 	}
-	return kvstates, nil
+	return kvStates, nil
 }
 
 func (impl *KVStateStorage) RetrieveEditVersionByAppAndKey(teamID int, apprefid int, statetype int, key string) (*model.KVState, error) {
-	var kvstate *model.KVState
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ? AND key = ?", teamID, apprefid, statetype, model.APP_EDIT_VERSION, key).First(&kvstate).Error; err != nil {
+	var kvState *model.KVState
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND state_type = ? AND version = ? AND key = ?", teamID, apprefid, statetype, model.APP_EDIT_VERSION, key).First(&kvState).Error; err != nil {
 		return nil, err
 	}
-	return kvstate, nil
+	return kvState, nil
 }
 
 func (impl *KVStateStorage) RetrieveKVStatesByTeamIDAppIDAndVersion(teamID int, apprefid int, version int) ([]*model.KVState, error) {
-	var kvstates []*model.KVState
-	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, apprefid, version).Find(&kvstates).Error; err != nil {
+	var kvStates []*model.KVState
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, apprefid, version).Find(&kvStates).Error; err != nil {
 		return nil, err
 	}
-	return kvstates, nil
+	return kvStates, nil
 }
 
 func (impl *KVStateStorage) DeleteAllTypeKVStatesByApp(teamID int, apprefid int) error {
@@ -126,6 +117,13 @@ func (impl *KVStateStorage) DeleteAllKVStatesByAppVersionAndType(teamID int, app
 
 func (impl *KVStateStorage) DeleteAllTypeKVStatesByTeamIDAppIDAndVersion(teamID int, apprefid int, targetVersion int) error {
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, apprefid, targetVersion).Delete(&model.KVState{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (impl *KVStateStorage) DeleteAllTypeKVStatesByTeamIDAppIDAndVersionAndKey(teamID int, apprefid int, targetVersion int, key string) error {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ? AND key = ?", teamID, apprefid, targetVersion, key).Delete(&model.KVState{}).Error; err != nil {
 		return err
 	}
 	return nil

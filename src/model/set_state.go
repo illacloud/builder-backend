@@ -1,23 +1,14 @@
-// Copyright 2022 The ILLA Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package model
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
+)
+
+const (
+	SET_STATE_FIELD_DISPLAY_NAME = "displayName"
 )
 
 type SetState struct {
@@ -32,6 +23,36 @@ type SetState struct {
 	CreatedBy int       `json:"created_by" gorm:"column:created_by;type:bigint"`
 	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at;type:timestamp"`
 	UpdatedBy int       `json:"updated_by" gorm:"column:updated_by;type:bigint"`
+}
+
+func NewSetStateByApp(app *App, stateType int) *SetState {
+	setState := &SetState{
+		TeamID:    app.ExportTeamID(),
+		StateType: stateType,
+		AppRefID:  app.ExportID(),
+		Version:   APP_EDIT_VERSION,
+		CreatedBy: app.ExportUpdatedBy(),
+		UpdatedBy: app.ExportUpdatedBy(),
+	}
+	setState.InitUID()
+	setState.InitCreatedAt()
+	setState.InitUpdatedAt()
+	return setState
+}
+
+func NewSetStateByWebsocketMessage(app *App, stateType int, data interface{}) (*SetState, error) {
+	setState := NewSetStateByApp(app, stateType)
+	udata, ok := data.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("SetStateDto ConstructByMap failed, please check your input.")
+	}
+	displayName, mapok := udata[SET_STATE_FIELD_DISPLAY_NAME].(string)
+	if !mapok {
+		return nil, errors.New("SetStateDto ConstructByMap failed, can not find displayName field.")
+	}
+	// fild
+	setState.Value = displayName
+	return setState, nil
 }
 
 func (setState *SetState) CleanID() {
@@ -68,6 +89,20 @@ func (setState *SetState) AppendNewVersion(newVersion int) {
 	setState.Version = newVersion
 }
 
+func (setState *SetState) UpdateByNewSetState(newSetState *SetState) {
+	setState.Value = newSetState.Value
+	setState.UpdatedBy = newSetState.UpdatedBy
+	setState.InitUpdatedAt()
+}
+
 func (setState *SetState) ExportID() int {
 	return setState.ID
+}
+
+func (setState *SetState) ExportValue() string {
+	return setState.Value
+}
+
+func (setState *SetState) ExportVersion() int {
+	return setState.Version
 }

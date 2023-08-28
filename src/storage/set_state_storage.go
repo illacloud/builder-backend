@@ -40,15 +40,7 @@ func (impl *SetStateStorage) DeleteByValue(setState *model.SetState) error {
 }
 
 func (impl *SetStateStorage) Update(setState *model.SetState) error {
-	if err := impl.db.Model(setState).UpdateColumns(model.SetState{
-		ID:        setState.ID,
-		StateType: setState.StateType,
-		AppRefID:  setState.AppRefID,
-		Version:   setState.Version,
-		Value:     setState.Value,
-		UpdatedAt: setState.UpdatedAt,
-		UpdatedBy: setState.UpdatedBy,
-	}).Error; err != nil {
+	if err := impl.db.Model(setState).Where("id = ?", setState.ID).UpdateColumns(setState).Error; err != nil {
 		return err
 	}
 	return nil
@@ -115,6 +107,13 @@ func (impl *SetStateStorage) DeleteAllTypeSetStatesByApp(teamID int, apprefid in
 
 func (impl *SetStateStorage) DeleteAllTypeSetStatesByTeamIDAppIDAndVersion(teamID int, apprefid int, targetVersion int) error {
 	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ?", teamID, apprefid, targetVersion).Delete(&model.SetState{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (impl *SetStateStorage) DeleteAllTypeSetStatesByTeamIDAppIDAndVersionAndValue(teamID int, apprefid int, targetVersion int, value string) error {
+	if err := impl.db.Where("team_id = ? AND app_ref_id = ? AND version = ? AND value = ?", teamID, apprefid, targetVersion, value).Delete(&model.SetState{}).Error; err != nil {
 		return err
 	}
 	return nil

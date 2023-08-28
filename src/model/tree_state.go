@@ -16,6 +16,7 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,6 +25,11 @@ import (
 
 const TREE_STATE_SUMMIT_ID = 0
 const TREE_STATE_SUMMIT_NAME = "root"
+
+const (
+	TREE_STATE_FIELD_DISPLAY_NAME = "displayName"
+	TREE_STATE_FIELD_PARENT_NODE  = "parentNode"
+)
 
 type TreeState struct {
 	ID                 int       `json:"id" 							 gorm:"column:id;type:bigserial"`
@@ -58,9 +64,9 @@ func NewTreeStateByTeamIDAndStateType(teamID int, stateType int) *TreeState {
 	return treeState
 }
 
-func NewTreeStateByApp(app *App) *TreeState {
+func NewTreeStateByApp(app *App, stateType int) *TreeState {
 	treeState := &TreeState{
-		StateType:          TREE_STATE_TYPE_COMPONENTS,
+		StateType:          stateType,
 		ParentNodeRefID:    0,
 		ChildrenNodeRefIDs: "[]",
 		TeamID:             app.ExportTeamID(),
@@ -68,7 +74,7 @@ func NewTreeStateByApp(app *App) *TreeState {
 		Version:            APP_EDIT_VERSION,
 		Name:               TREE_STATE_SUMMIT_NAME,
 		Content:            "",
-		CreatedBy:          app.ExportCreatedBy(),
+		CreatedBy:          app.ExportUpdatedBy(),
 		UpdatedBy:          app.ExportUpdatedBy(),
 	}
 	treeState.InitUID()
@@ -77,12 +83,29 @@ func NewTreeStateByApp(app *App) *TreeState {
 	return treeState
 }
 
-func NewTreeStateByAppAndComponentState(app *App, componentNode *ComponentNode) (*TreeState, error) {
+func NewTreeStateByWebsocketMessage(app *App, stateType int, data interface{}) (*TreeState, error) {
+	treeState := NewTreeStateByApp(app, stateType)
+	udata, ok := data.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("can not init tree state")
+	}
+	for k, v := range udata {
+		switch k {
+		case TREE_STATE_FIELD_DISPLAY_NAME:
+			treeState.Name, _ = v.(string)
+		case TREE_STATE_FIELD_PARENT_NODE:
+			treeState.ParentNode, _ = v.(string)
+		}
+	}
+	return treeState, nil
+}
+
+func NewTreeStateByAppAndComponentState(app *App, stateType int, componentNode *ComponentNode) (*TreeState, error) {
 	componentNodeSerilized, errInSerialization := componentNode.SerializationForDatabase()
 	if errInSerialization != nil {
 		return nil, errInSerialization
 	}
-	treeState := NewTreeStateByApp(app)
+	treeState := NewTreeStateByApp(app, stateType)
 	treeState.Name = componentNode.DisplayName
 	treeState.Content = componentNodeSerilized
 	return treeState, nil
@@ -138,12 +161,29 @@ func (treeState *TreeState) ExportContentAsComponentState() (*ComponentNode, err
 	return cnode, nil
 }
 
+func (treeState *TreeState) UpdateByNewTreeState(newTreeState *TreeState) {
+	treeState.ParentNode = newTreeState.ParentNode
+	treeState.ParentNodeRefID = newTreeState.ParentNodeRefID
+	treeState.ChildrenNodeRefIDs = newTreeState.ChildrenNodeRefIDs
+	treeState.Content = newTreeState.Content
+	treeState.UpdatedBy = newTreeState.UpdatedBy
+	treeState.InitUpdatedAt()
+}
+
 func (treeState *TreeState) ExportChildrenNodeRefIDs() ([]int, error) {
 	var ids []int
 	if err := json.Unmarshal([]byte(treeState.ChildrenNodeRefIDs), &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
+}
+
+func (treeState *TreeState) ExportName() string {
+	return treeState.Name
+}
+
+func (treeState *TreeState) ExportStateType() int {
+	return treeState.StateType
 }
 
 func (treeState *TreeState) SetParentNodeRefID(id int) {
@@ -176,6 +216,29 @@ func (treeState *TreeState) RemoveChildrenNodeRefIDs(id int) error {
 	}
 	treeState.ChildrenNodeRefIDs = string(idsjsonb)
 	return nil
+}
+
+func (treeState *TreeState) RemapChildrenNodeRefIDs(idMap map[int]int) {
+	// convert string to []int
+	var oldIDs []int
+	if err := json.Unmarshal([]byte(treeState.ChildrenNodeRefIDs), &oldIDs); err != nil {
+		return
+	}
+
+	// map old id to new id
+	newIDs := make([]int, 0, len(oldIDs))
+	for _, oldID := range oldIDs {
+		newIDs = append(newIDs, idMap[oldID])
+	}
+
+	// convert []int to string
+	idsjsonb, err := json.Marshal(newIDs)
+	if err != nil {
+		return
+	}
+
+	// set new
+	treeState.ChildrenNodeRefIDs = string(idsjsonb)
 }
 
 // reset parent id by idmap[oldID]newID

@@ -388,7 +388,7 @@ func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int
 
 func (controller *Controller) BuildComponentTree(app *model.App, parentNodeID int, componentNodeTree *model.ComponentNode) error {
 	// convert ComponentNode to TreeState
-	currentNode, errInNewCurrentNode := model.NewTreeStateByAppAndComponentState(app, componentNodeTree)
+	currentNode, errInNewCurrentNode := model.NewTreeStateByAppAndComponentState(app, model.TREE_STATE_TYPE_COMPONENTS, componentNodeTree)
 	if errInNewCurrentNode != nil {
 		return errInNewCurrentNode
 	}
