@@ -331,7 +331,7 @@ func (controller *Controller) RunAction(c *gin.Context) {
 	}
 
 	// get action
-	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDActionIDAndVersion(teamID, appID, app.ExportMainlineVersion())
+	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDActionIDAndVersion(teamID, actionID, app.ExportMainlineVersion())
 	if errInRetrieveAction != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errInRetrieveAction.Error())
 		return
