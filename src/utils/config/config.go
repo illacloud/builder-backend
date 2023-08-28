@@ -37,14 +37,18 @@ func GetInstance() *Config {
 
 type Config struct {
 	// server config
-	ServerHost          string `env:"ILLA_SERVER_HOST"              envDefault:"0.0.0.0"`
-	ServerPort          string `env:"ILLA_SERVER_PORT"              envDefault:"8003"`
-	InternalServerPort  string `env:"ILLA_SERVER_INTERNAL_PORT"     envDefault:"9001"`
-	WebsocketServerPort string `env:"ILLA_SERVER_WEBSOCKET_PORT"    envDefault:"8002"`
-	ServerMode          string `env:"ILLA_SERVER_MODE"              envDefault:"debug"`
-	DeployMode          string `env:"ILLA_DEPLOY_MODE"              envDefault:"cloud-test"`
-	SecretKey           string `env:"ILLA_SECRET_KEY" 			    envDefault:"8xEMrWkBARcDDYQ"`
-	WSSEnabled          string `env:"ILLA_WSS_ENABLED" 			    envDefault:"false"`
+	ServerHost                    string `env:"ILLA_SERVER_HOST"                    envDefault:"0.0.0.0"`
+	ServerPort                    string `env:"ILLA_SERVER_PORT"                    envDefault:"8003"`
+	InternalServerPort            string `env:"ILLA_SERVER_INTERNAL_PORT"           envDefault:"9001"`
+	ServerMode                    string `env:"ILLA_SERVER_MODE"                    envDefault:"debug"`
+	DeployMode                    string `env:"ILLA_DEPLOY_MODE"                    envDefault:"cloud-test"`
+	SecretKey                     string `env:"ILLA_SECRET_KEY" 			        envDefault:"8xEMrWkBARcDDYQ"`
+	WebsocketServerHost           string `env:"ILLA_WEBSOCKET_SERVER_HOST"          envDefault:"0.0.0.0"`
+	WebsocketServerPort           string `env:"ILLA_WEBSOCKET_SERVER_PORT"          envDefault:"8002"`
+	WebsocketServerConnectionHost string `env:"ILLA_WEBSOCKET_CONNECTION_HOST"      envDefault:"0.0.0.0"`
+	WebsocketServerConnectionPort string `env:"ILLA_WEBSOCKET_CONNECTION_PORT"      envDefault:"80"`
+	WSSEnabled                    string `env:"ILLA_WSS_ENABLED" 			        envDefault:"false"`
+
 	// key for idconvertor
 	RandomKey string `env:"ILLA_RANDOM_KEY"  envDefault:"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"`
 	// storage config
@@ -128,7 +132,11 @@ func (c *Config) IsCloudProductionMode() bool {
 }
 
 func (c *Config) GetWebScoketServerListenAddress() string {
-	return c.ServerHost + ":" + c.WebsocketServerPort
+	return c.WebsocketServerHost + ":" + c.WebsocketServerPort
+}
+
+func (c *Config) GetWebScoketServerConnectionAddress() string {
+	return c.WebsocketServerConnectionHost + ":" + c.WebsocketServerConnectionPort
 }
 
 func (c *Config) GetWebsocketProtocol() string {

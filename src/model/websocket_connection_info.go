@@ -30,7 +30,7 @@ func (i *WebsocketConnectionInfo) GetDashboardConnectionAddress(teamID int) stri
 	if i.Config.IsSelfHostMode() {
 		return fmt.Sprintf(SELF_HOST_DASHBOARD_WS_URL, idconvertor.ConvertIntToString(teamID))
 	} else {
-		return fmt.Sprintf(DASHBOARD_WS_URL, i.Config.GetWebsocketProtocol(), i.Config.GetWebScoketServerListenAddress(), idconvertor.ConvertIntToString(teamID))
+		return fmt.Sprintf(DASHBOARD_WS_URL, i.Config.GetWebsocketProtocol(), i.Config.GetWebScoketServerConnectionAddress(), idconvertor.ConvertIntToString(teamID))
 	}
 }
 
@@ -38,7 +38,7 @@ func (i *WebsocketConnectionInfo) GetAppRoomConnectionAddress(teamID int, roomID
 	if i.Config.IsSelfHostMode() {
 		return fmt.Sprintf(SELF_HOST_ROOM_WS_URL, idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
 	} else {
-		return fmt.Sprintf(ROOM_WS_URL, i.Config.GetWebsocketProtocol(), i.Config.GetWebScoketServerListenAddress(), idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
+		return fmt.Sprintf(ROOM_WS_URL, i.Config.GetWebsocketProtocol(), i.Config.GetWebScoketServerConnectionAddress(), idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
 	}
 }
 
@@ -46,6 +46,6 @@ func (i *WebsocketConnectionInfo) GetAppRoomBinaryConnectionAddress(teamID int, 
 	if i.Config.IsSelfHostMode() {
 		return fmt.Sprintf(SELF_HOST_ROOM_BINARY_WS_URL, idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
 	} else {
-		return fmt.Sprintf(ROOM_BINARY_WS_URL, i.Config.GetWebsocketProtocol(), i.Config.GetWebScoketServerListenAddress(), idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
+		return fmt.Sprintf(ROOM_BINARY_WS_URL, i.Config.GetWebsocketProtocol(), i.Config.GetWebScoketServerConnectionAddress(), idconvertor.ConvertIntToString(teamID), idconvertor.ConvertIntToString(roomID))
 	}
 }
