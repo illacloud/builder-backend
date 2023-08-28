@@ -39,7 +39,7 @@ func (controller *Controller) TestResourceConnection(c *gin.Context, resource *m
 	// check build
 	resourceFactory := model.NewActionFactoryByResource(resource)
 	resourceAssemblyLine, errInBuild := resourceFactory.Build()
-	if errInBuild == nil {
+	if errInBuild != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action type error: "+errInBuild.Error())
 		return errInBuild
 	}
