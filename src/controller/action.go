@@ -368,11 +368,11 @@ func (controller *Controller) RunAction(c *gin.Context) {
 	_, errInValidate := actionAssemblyLine.ValidateActionTemplate(action.ExportTemplateInMap())
 	if errInValidate != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action template error: "+errInValidate.Error())
-		return errInValidate
+		return
 	}
 
 	// run
-	actionRunResult, errInRunAction := actionAssemblyLine.Run(resource.Options, action.Template)
+	actionRunResult, errInRunAction := actionAssemblyLine.Run(resource.ExportOptionsInMap(), action.ExportTemplateInMap())
 	if errInRunAction != nil {
 		if strings.HasPrefix(errInRunAction.Error(), "Error 1064:") {
 			lineNumber, _ := strconv.Atoi(errInRunAction.Error()[len(errInRunAction.Error())-1:])

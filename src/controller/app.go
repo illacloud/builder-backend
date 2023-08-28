@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -316,7 +317,7 @@ func (controller *Controller) GetAllApps(c *gin.Context) {
 	}
 
 	// feedback
-	controller.FeedbackOK(c, response.GenerateGetAllAppsResponse(allApps, usersLT))
+	c.JSON(http.StatusOK, response.GenerateGetAllAppsResponse(allApps, usersLT))
 }
 
 func (controller *Controller) GetFullApp(c *gin.Context) {
@@ -347,7 +348,7 @@ func (controller *Controller) GetFullApp(c *gin.Context) {
 	}
 
 	// do get app for editor method
-	fullAppForExport, errInGenerateFullApp := controller.GetTargetVersionFullApp(c, teamID, appID, version)
+	fullAppForExport, errInGenerateFullApp := controller.GetTargetVersionFullApp(c, teamID, appID, version, false)
 	if errInGenerateFullApp != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "build full app failed: "+errInGenerateFullApp.Error())
 		return

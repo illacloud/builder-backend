@@ -1,6 +1,11 @@
 package oauthgoogle
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/illacloud/builder-backend/src/utils/config"
+)
 
 const (
 	GOOGLE_OAUTH2_API = "https://oauth2.googleapis.com/token"
@@ -33,14 +38,18 @@ func (resp *RefreshTokenResponse) ExportAccessToken() string {
 	return resp.AccessToken
 }
 
-func ExchangeOAuthToken(code string) (*RefreshTokenSuccessResponse, error) {
+func (resp *ExchangeTokenResponse) ExportAccessToken() string {
+	return resp.AccessToken
+}
+
+func ExchangeOAuthToken(code string) (*ExchangeTokenResponse, error) {
 	conf := config.GetInstance()
 	googleOAuthClientID := conf.GetIllaGoogleSheetsClientID()
 	googleOAuthClientSecret := conf.GetIllaGoogleSheetsClientSecret()
 	googleOAuthRedirectURI := conf.GetIllaGoogleSheetsRedirectURI()
 	client := resty.New()
 	// request
-	resp, err := client.R().
+	resp, errInPost := client.R().
 		SetFormData(map[string]string{
 			"client_id":     googleOAuthClientID,
 			"client_secret": googleOAuthClientSecret,
@@ -61,7 +70,7 @@ func ExchangeOAuthToken(code string) (*RefreshTokenSuccessResponse, error) {
 	return exchangeTokenResponse, nil
 }
 
-func RefreshOAuthToken(refreshToken string) (*RefreshTokenSuccessResponse, error) {
+func RefreshOAuthToken(refreshToken string) (*RefreshTokenResponse, error) {
 	conf := config.GetInstance()
 	googleOAuthClientID := conf.GetIllaGoogleSheetsClientID()
 	googleOAuthClientSecret := conf.GetIllaGoogleSheetsClientSecret()
@@ -80,7 +89,7 @@ func RefreshOAuthToken(refreshToken string) (*RefreshTokenSuccessResponse, error
 		return nil, errInPost
 	}
 	// unmarshal
-	refreshTokenResponse := RefreshTokenResponse()
+	refreshTokenResponse := NewRefreshTokenResponse()
 	errInUnmarshal := json.Unmarshal(resp.Body(), &refreshTokenResponse)
 	if errInUnmarshal != nil {
 		return nil, errInUnmarshal

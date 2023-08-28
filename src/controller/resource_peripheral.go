@@ -5,8 +5,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/illacloud/builder-backend/src/model"
+	"github.com/illacloud/builder-backend/src/request"
 	"github.com/illacloud/builder-backend/src/response"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
+	"github.com/illacloud/builder-backend/src/utils/oauthgoogle"
 )
 
 func (controller *Controller) CreateGoogleOAuthToken(c *gin.Context) {
@@ -83,7 +86,7 @@ func (controller *Controller) CreateGoogleOAuthToken(c *gin.Context) {
 	}
 
 	// feedback
-	controller.FeedbackOK(c, NewCreateOAuthTokenResponse(token))
+	controller.FeedbackOK(c, response.NewCreateOAuthTokenResponse(token))
 	return
 }
 
@@ -91,7 +94,7 @@ func (controller *Controller) GetGoogleSheetsOAuth2Token(c *gin.Context) {
 	// fetch needed params
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	resourceID, errInGetResourceID := controller.GetMagicIntParamFromRequest(c, PARAM_RESOURCE_ID)
-	accessToken, errInGetAccessToken := GetFirstStringParamValueFromURI(c, PARAM_ACCESS_TOKEN)
+	accessToken, errInGetAccessToken := controller.GetFirstStringParamValueFromURI(c, PARAM_ACCESS_TOKEN)
 	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetResourceID != nil || errInGetAccessToken != nil || errInGetAuthToken != nil {
 		return
@@ -140,7 +143,7 @@ func (controller *Controller) GetGoogleSheetsOAuth2Token(c *gin.Context) {
 	}
 
 	// validate access token
-	googleSheetsOAuth2Claims := NewGoogleSheetsOAuth2Claims()
+	googleSheetsOAuth2Claims := model.NewGoogleSheetsOAuth2Claims()
 	accessType, errinValidateAccessToken := googleSheetsOAuth2Claims.ValidateAccessToken(accessToken)
 	if errinValidateAccessToken != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_AUTHORIZE_GOOGLE_SHEETS, "validate token error: "+errinValidateAccessToken.Error())
@@ -148,7 +151,7 @@ func (controller *Controller) GetGoogleSheetsOAuth2Token(c *gin.Context) {
 	}
 
 	// return new url
-	controller.FeedbackOK(c, NewGoogleSheetsOAuth2Response(accessType, accessToken))
+	controller.FeedbackOK(c, response.NewGoogleSheetsOAuth2Response(accessType, accessToken))
 	return
 }
 

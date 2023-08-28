@@ -96,6 +96,6 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	oauth2Router.GET("/authorize", r.Controller.GoogleOAuth2Exchange)
 
 	// status router
-	statusRouter.GET("", r.Controller.Status)
+	statusRouter.GET("", r.Controller.GetStatus)
 
 }

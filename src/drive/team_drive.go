@@ -38,9 +38,9 @@ func NewTeamDrive(drive *Drive) *TeamDrive {
 }
 
 func (d *TeamDrive) SetTeam(team *model.Team) {
-	d.UID = team.GetUID()
-	d.TeamSystemFolder = TEAM_FOLDER_PREFIX + team.GetUIDInString() + TEAM_SYSTEM_FOLDER
-	d.TeamSpaceFolder = TEAM_FOLDER_PREFIX + team.GetUIDInString() + TEAM_SPACE_FOLDER
+	d.UID = team.ExportUID()
+	d.TeamSystemFolder = TEAM_FOLDER_PREFIX + team.ExportUIDInString() + TEAM_SYSTEM_FOLDER
+	d.TeamSpaceFolder = TEAM_FOLDER_PREFIX + team.ExportUIDInString() + TEAM_SPACE_FOLDER
 }
 
 func (d *TeamDrive) GetIconUploadPreSignedURL(fileName string) (string, error) {

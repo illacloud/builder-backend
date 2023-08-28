@@ -3,7 +3,6 @@ package request
 import (
 	"encoding/json"
 
-	"github.com/illacloud/builder-backend/src/model"
 	"github.com/illacloud/builder-backend/src/utils/idconvertor"
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 )
@@ -78,7 +77,7 @@ func (req *CreateActionRequest) ExportConfigInString() string {
 }
 
 func (req *CreateActionRequest) AppendVirtualResourceToTemplate(value interface{}) {
-	req.Content[model.ACTION_CONFIG_FIELD_VIRTUAL_RESOURCE] = value
+	req.Content[ACTION_REQUEST_CONTENT_FIELD_VIRTUAL_RESOURCE] = value
 }
 
 func (req *CreateActionRequest) IsVirtualAction() bool {

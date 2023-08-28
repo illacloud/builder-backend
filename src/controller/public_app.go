@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"github.com/illacloud/builder-backend/src/model"
+	"github.com/illacloud/builder-backend/src/response"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
 	"github.com/illacloud/builder-backend/src/utils/auditlogger"
 	"github.com/illacloud/builder-backend/src/utils/datacontrol"
@@ -48,7 +50,7 @@ func (controller *Controller) GetFullPublicApp(c *gin.Context) {
 	}
 
 	// check if app is public app
-	fullAppForExport, errInGenerateFullApp := controller.GetTargetVersionFullApp(c, teamID, appID, version, true)
+	fullAppForExport, errInGenerateFullApp := controller.GetTargetVersionFullApp(c, teamID, publicAppID, version, true)
 	if errInGenerateFullApp != nil {
 		return
 	}
@@ -80,23 +82,23 @@ func (controller *Controller) IsPublicApp(c *gin.Context) {
 	// get team id by team teamIdentifier
 	team, errInGetTeamInfo := datacontrol.GetTeamInfoByIdentifier(teamIdentifier)
 	if errInGetTeamInfo != nil {
-		controller.FeedbackOK(c, model.NewIsPublicAppResponse(false))
+		controller.FeedbackOK(c, response.NewIsPublicAppResponse(false))
 		return
 	}
 	teamID := team.GetID()
 
 	// check if app is public app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(appID, teamID)
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(publicAppID, teamID)
 	if errInRetrieveApp != nil {
-		controller.FeedbackOK(c, model.NewIsPublicAppResponse(false))
+		controller.FeedbackOK(c, response.NewIsPublicAppResponse(false))
 		return
 	}
 	if !app.IsPublic() {
-		controller.FeedbackOK(c, model.NewIsPublicAppResponse(false))
+		controller.FeedbackOK(c, response.NewIsPublicAppResponse(false))
 		return
 	}
 
 	// feedback
-	controller.FeedbackOK(c, model.NewIsPublicAppResponse(true))
+	controller.FeedbackOK(c, response.NewIsPublicAppResponse(true))
 	return
 }

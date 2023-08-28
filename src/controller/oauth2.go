@@ -4,7 +4,9 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/illacloud/builder-backend/src/model"
 	"github.com/illacloud/builder-backend/src/utils/idconvertor"
+	"github.com/illacloud/builder-backend/src/utils/oauthgoogle"
 )
 
 func (controller *Controller) GoogleOAuth2Exchange(c *gin.Context) {
@@ -14,20 +16,16 @@ func (controller *Controller) GoogleOAuth2Exchange(c *gin.Context) {
 
 	// check input
 	if errInGetState != nil {
-		controller.FeedbackBadRequest(c, nil)
+		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_URI_FAILED, "")
 		return
 	}
 
 	// new OAuth claims
 	googleSheetsOAuth2Claims := model.NewGoogleSheetsOAuth2Claims()
 	teamID, userID, resourceID, url, errInExtract := googleSheetsOAuth2Claims.ExtractGoogleSheetsOAuth2TokenInfo(state)
-	if errInExtract != nil {
-		c.Redirect(302)
-		return
-	}
 	redirectURIForFailed := fmt.Sprintf("%s?status=%d&resourceID=%s", url, model.GOOGLE_SHEETS_OAUTH_STATUS_FAILED, idconvertor.ConvertIntToString(resourceID))
 	redirectURIForSuccess := fmt.Sprintf("%s?status=%d&resourceID=%s", url, model.GOOGLE_SHEETS_OAUTH_STATUS_SUCCESS, idconvertor.ConvertIntToString(resourceID))
-	if errorOAuth2Callback != "" || code == "" {
+	if errorOAuth2Callback != "" || errInGetCode != nil || errInGetError != nil || code == "" || errInExtract != nil {
 		controller.FeedbackRedirect(c, redirectURIForFailed)
 		return
 	}
@@ -59,12 +57,12 @@ func (controller *Controller) GoogleOAuth2Exchange(c *gin.Context) {
 	}
 
 	// exchange access token
-	refreshTokenResponse, errInRefreshOAuthToken := oauthgoogle.ExchangeOAuthToken(code)
-	if errInRefreshOAuthToken != nil {
+	exchangeTokenResponse, errInExchangeOAuthToken := oauthgoogle.ExchangeOAuthToken(code)
+	if errInExchangeOAuthToken != nil {
 		controller.FeedbackRedirect(c, redirectURIForFailed)
 		return
 	}
-	resourceOptionGoogleSheets.SetAccessToken(refreshTokenResponse.ExportAccessToken())
+	resourceOptionGoogleSheets.SetAccessToken(exchangeTokenResponse.ExportAccessToken())
 	resource.UpdateGoogleSheetOAuth2Options(userID, resourceOptionGoogleSheets)
 
 	// update resource

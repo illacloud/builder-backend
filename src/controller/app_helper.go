@@ -206,7 +206,7 @@ func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int
 	}
 
 	// check if we need public app
-	if getPublicApp && !app.IsPublic {
+	if getPublicApp && !app.IsPublic() {
 		errInGetPublicApp := errors.New("can not access this app")
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app full data error: "+errInGetPublicApp.Error())
 		return nil, errInGetPublicApp
@@ -448,13 +448,4 @@ func (controller *Controller) BuildComponentTree(app *model.App, parentNodeID in
 		}
 	}
 	return nil
-}
-
-func (controller *Controller) IsPublicApp(c *gin.Context, teamID int, appID int) (bool, error) {
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
-	if errInRetrieveApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
-		return false, errInRetrieveApp
-	}
-	return app.IsPublic(), nil
 }

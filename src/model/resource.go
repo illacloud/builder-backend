@@ -57,14 +57,14 @@ func NewResourceByTestResourceConnectionRequest(teamID int, userID int, req *req
 }
 
 func (resource *Resource) UpdateByUpdateResourceRequest(userID int, req *request.UpdateResourceRequest) {
-	resource.Name = req.Name
+	resource.Name = req.ResourceName
 	resource.Type = resourcelist.GetResourceNameMappedID(req.ResourceType)
 	resource.Options = req.ExportOptionsInString()
 	resource.UpdatedBy = userID
 	resource.InitUpdatedAt()
 }
 
-func (resource *Resource) UpdateGoogleSheetOAuth2Options(userID int, options *model.GoogleSheetsOAuth2Options) {
+func (resource *Resource) UpdateGoogleSheetOAuth2Options(userID int, options *ResourceOptionGoogleSheets) {
 	resource.Options = options.ExportInString()
 	resource.UpdatedBy = userID
 	resource.InitUpdatedAt()
@@ -92,6 +92,10 @@ func (resource *Resource) ExportUpdatedAt() time.Time {
 
 func (resource *Resource) ExportType() int {
 	return resource.Type
+}
+
+func (resource *Resource) ExportTypeInString() string {
+	return resourcelist.GetResourceIDMappedType(resource.Type)
 }
 
 func (resource *Resource) ExportOptionsInMap() map[string]interface{} {

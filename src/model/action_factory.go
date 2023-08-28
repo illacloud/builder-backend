@@ -45,7 +45,7 @@ func NewActionFactoryByResource(resource *Resource) *ActionFactory {
 	}
 }
 
-func (f *ActionFactory) Build() (*common.DataConnector, error) {
+func (f *ActionFactory) Build() (common.DataConnector, error) {
 	switch f.Type {
 	case resourcelist.TYPE_RESTAPI_ID:
 		restapiAction := &restapi.RESTAPIConnector{}

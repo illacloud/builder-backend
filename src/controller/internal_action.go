@@ -97,14 +97,14 @@ func (controller *Controller) GenerateSQL(c *gin.Context) {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action type error: "+errInBuild.Error())
 		return
 	}
-	resourceMetaInfo, errInGetMetaInfo := actionAssemblyLine.GetMetaInfo(resource.Options)
+	resourceMetaInfo, errInGetMetaInfo := actionAssemblyLine.GetMetaInfo(resource.ExportOptionsInMap())
 	if errInGetMetaInfo != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE_META_INFO, "error in fetch resource meta info: "+errInGetMetaInfo.Error())
 		return
 	}
 
 	// form request payload
-	generateSQLPeripheralRequest, errInNewReq := illacloudperipheralapisdk.NewGenerateSQLPeripheralRequest(resource.Type, resourceMetaInfo, generateSQLRequest.Description, generateSQLRequest.GetActionInString())
+	generateSQLPeripheralRequest, errInNewReq := illacloudperipheralapisdk.NewGenerateSQLPeripheralRequest(resource.ExportTypeInString(), resourceMetaInfo, generateSQLRequest.Description, generateSQLRequest.GetActionInString())
 	if errInNewReq != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_GENERATE_SQL_FAILED, "generate request failed: "+errInNewReq.Error())
 		return

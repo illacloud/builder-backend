@@ -1,6 +1,11 @@
 package response
 
-import "net/url"
+import (
+	"net/url"
+
+	"github.com/illacloud/builder-backend/src/model"
+	"github.com/illacloud/builder-backend/src/utils/config"
+)
 
 type GoogleSheetsOAuth2Response struct {
 	URL string `json:"url"`

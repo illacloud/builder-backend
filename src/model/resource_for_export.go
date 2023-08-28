@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -29,7 +30,7 @@ func NewResourceForExport(r *Resource) *ResourceForExport {
 		TeamID:    idconvertor.ConvertIntToString(r.TeamID),
 		Name:      r.Name,
 		Type:      resourcelist.GetResourceIDMappedType(r.Type),
-		Options:   r.Options,
+		Options:   r.ExportOptionsInMap(),
 		CreatedAt: r.CreatedAt,
 		CreatedBy: idconvertor.ConvertIntToString(r.CreatedBy),
 		UpdatedAt: r.UpdatedAt,
@@ -41,33 +42,13 @@ func (resp *ResourceForExport) ExportName() string {
 	return resp.Name
 }
 
-func (resp *ResourceForExport) ExportForFeedback() interface{} {
-	return resp
+func (resp *ResourceForExport) ExportOptionsInString() string {
+	optionsByte, _ := json.Marshal(resp.Options)
+	return string(optionsByte)
 }
 
-func (resp *ResourceForExport) ExportResource() Resource {
-	resourceDto := Resource{
-		UID:       resp.UID,
-		Name:      resp.Name,
-		Type:      resourcelist.GetResourceNameMappedID(resp.Type),
-		Options:   resp.Options,
-		CreatedAt: resp.CreatedAt,
-		UpdatedAt: resp.UpdatedAt,
-	}
-	if resp.TeamID != "" {
-		resourceDto.TeamID = idconvertor.ConvertStringToInt(resp.TeamID)
-	}
-	if resp.ID != "" {
-		resourceDto.ID = idconvertor.ConvertStringToInt(resp.ID)
-	}
-	if resp.CreatedBy != "" {
-		resourceDto.CreatedBy = idconvertor.ConvertStringToInt(resp.CreatedBy)
-	}
-	if resp.UpdatedBy != "" {
-		resourceDto.UpdatedBy = idconvertor.ConvertStringToInt(resp.UpdatedBy)
-	}
-	return resourceDto
-
+func (resp *ResourceForExport) ExportForFeedback() interface{} {
+	return resp
 }
 
 func NewResourceForExportByMap(data interface{}) (*ResourceForExport, error) {

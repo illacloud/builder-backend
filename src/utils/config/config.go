@@ -68,6 +68,9 @@ type Config struct {
 	DriveTeamBucketName   string `env:"ILLA_DRIVE_TEAM_BUCKET_NAME"   envDefault:"illa-cloud-team"`
 	DriveUploadTimeoutRaw string `env:"ILLA_DRIVE_UPLOAD_TIMEOUT"     envDefault:"30s"`
 	DriveUploadTimeout    time.Duration
+	// supervisor API
+	IllaSupervisorInternalRestAPI string `env:"ILLA_SUPERVISOR_INTERNAL_API"     envDefault:"http://illa-cloud-backend-internal:9001/api/v1"`
+
 	// peripheral API
 	IllaPeripheralAPI string `env:"ILLA_PERIPHERAL_API" envDefault:"https://peripheral-api.illasoft.com/v1/"`
 	// resource manager API
@@ -78,9 +81,9 @@ type Config struct {
 	// token for internal api
 	ControlToken string `env:"ILLA_CONTROL_TOKEN"     envDefault:""`
 	// google config
-	IllaGoogleSheetsClientID     `env:"ILLA_GS_CLIENT_ID"     					   envDefault:""`
-	IllaGoogleSheetsClientSecret `env:"ILLA_GS_CLIENT_SECRET" 					   envDefault:""`
-	IllaGoogleSheetsRedirectURI  `env:"ILLA_GS_REDIRECT_URI"  					   envDefault:""`
+	IllaGoogleSheetsClientID     string `env:"ILLA_GS_CLIENT_ID"     					   envDefault:""`
+	IllaGoogleSheetsClientSecret string `env:"ILLA_GS_CLIENT_SECRET" 					   envDefault:""`
+	IllaGoogleSheetsRedirectURI  string `env:"ILLA_GS_REDIRECT_URI"  					   envDefault:""`
 }
 
 func getConfig() (*Config, error) {
@@ -258,6 +261,10 @@ func (c *Config) GetMINIOTimeout() time.Duration {
 
 func (c *Config) GetControlToken() string {
 	return c.ControlToken
+}
+
+func (c *Config) GetIllaSupervisorInternalRestAPI() string {
+	return c.IllaSupervisorInternalRestAPI
 }
 
 func (c *Config) GetIllaPeripheralAPI() string {

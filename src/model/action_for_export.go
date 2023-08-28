@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/src/utils/idconvertor"
+	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 )
 
 const (
@@ -37,14 +38,14 @@ func NewActionForExport(action *Action) *ActionForExport {
 		ID:                idconvertor.ConvertIntToString(action.ID),
 		UID:               action.UID,
 		TeamID:            idconvertor.ConvertIntToString(action.TeamID),
-		App:               idconvertor.ConvertIntToString(action.App),
+		App:               idconvertor.ConvertIntToString(action.AppRefID),
 		Version:           action.Version,
-		Resource:          idconvertor.ConvertIntToString(action.Resource),
+		Resource:          idconvertor.ConvertIntToString(action.ResourceRefID),
 		DisplayName:       action.ExportDisplayName(),
 		Type:              action.ExportTypeInString(),
 		IsVirtualResource: resourcelist.IsVirtualResourceByIntType(action.ExportType()),
-		Template:          action.Template,
-		Transformer:       action.Transformer,
+		Template:          action.ExportTemplateInMap(),
+		Transformer:       action.ExportTransformerInMap(),
 		TriggerMode:       action.TriggerMode,
 		Config:            action.ExportConfig(),
 		CreatedAt:         action.CreatedAt,

@@ -112,7 +112,7 @@ func (controller *Controller) CreateResource(c *gin.Context) {
 		IP:           c.ClientIP(),
 		ResourceID:   resource.ID,
 		ResourceName: resource.Name,
-		ResourceType: resource.Type,
+		ResourceType: resource.ExportTypeInString(),
 	})
 
 	// feedback
@@ -229,7 +229,7 @@ func (controller *Controller) UpdateResource(c *gin.Context) {
 		IP:           c.ClientIP(),
 		ResourceID:   resource.ID,
 		ResourceName: resource.Name,
-		ResourceType: resource.Type,
+		ResourceType: resource.ExportTypeInString(),
 	})
 
 	// feedback
@@ -279,7 +279,7 @@ func (controller *Controller) DeleteResource(c *gin.Context) {
 		IP:           c.ClientIP(),
 		ResourceID:   resourceID,
 		ResourceName: resource.Name,
-		ResourceType: resource.Type,
+		ResourceType: resource.ExportTypeInString(),
 	})
 
 	// delete
@@ -299,7 +299,8 @@ func (controller *Controller) TestConnection(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
-	if errInGetTeamID != nil || errInGetAuthToken != nil {
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
+	if errInGetTeamID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
 	}
 
@@ -334,7 +335,7 @@ func (controller *Controller) TestConnection(c *gin.Context) {
 	}
 
 	// new temp resource
-	resource := model.NewResourceByTestResourceConnectionRequest(testResourceConnectionRequest)
+	resource := model.NewResourceByTestResourceConnectionRequest(teamID, userID, testResourceConnectionRequest)
 
 	// test connection
 	errInTestConnection := controller.TestResourceConnection(c, resource)

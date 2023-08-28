@@ -16,9 +16,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (impl PublicActionRestHandlerImpl) RunPublicAction(c *gin.Context) {
+func (controller *Controller) RunPublicAction(c *gin.Context) {
 	// fetch needed param
-	teamIdentifier, errInGetTeamIdentifier := GetStringParamFromRequest(c, PARAM_TEAM_IDENTIFIER)
+	userID := model.ANONYMOUS_USER_ID
+	userAuthToken := accesscontrol.ANONYMOUS_AUTH_TOKEN
+	teamIdentifier, errInGetTeamIdentifier := controller.GetStringParamFromRequest(c, PARAM_TEAM_IDENTIFIER)
 	publicActionID, errInGetPublicActionID := controller.GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
 	appID, errInGetAppID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	if errInGetTeamIdentifier != nil || errInGetPublicActionID != nil || errInGetAppID != nil {
@@ -49,8 +51,15 @@ func (impl PublicActionRestHandlerImpl) RunPublicAction(c *gin.Context) {
 		return
 	}
 
+	// get action mapped app
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
+	if errInRetrieveApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
+		return
+	}
+
 	// check if action is public action
-	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDActionIDAndVersion(teamID, appID, app.ExportMainlineVersion())
+	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDActionIDAndVersion(teamID, publicActionID, app.ExportMainlineVersion())
 	if errInRetrieveAction != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errInRetrieveAction.Error())
 		return
@@ -70,20 +79,6 @@ func (impl PublicActionRestHandlerImpl) RunPublicAction(c *gin.Context) {
 	runActionRequest := request.NewRunActionRequest()
 	if err := json.NewDecoder(c.Request.Body).Decode(&runActionRequest); err != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error"+err.Error())
-		return
-	}
-
-	// get action mapped app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
-	if errInRetrieveApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
-		return
-	}
-
-	// get action
-	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDActionIDAndVersion(teamID, appID, app.ExportMainlineVersion())
-	if errInRetrieveAction != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errInRetrieveAction.Error())
 		return
 	}
 
@@ -118,11 +113,11 @@ func (impl PublicActionRestHandlerImpl) RunPublicAction(c *gin.Context) {
 	_, errInValidate := actionAssemblyLine.ValidateActionTemplate(action.ExportTemplateInMap())
 	if errInValidate != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action template error: "+errInValidate.Error())
-		return errInValidate
+		return
 	}
 
 	// run
-	actionRunResult, errInRunAction := actionAssemblyLine.Run(resource.Options, action.Template)
+	actionRunResult, errInRunAction := actionAssemblyLine.Run(resource.ExportOptionsInMap(), action.ExportTemplateInMap())
 	if errInRunAction != nil {
 		if strings.HasPrefix(errInRunAction.Error(), "Error 1064:") {
 			lineNumber, _ := strconv.Atoi(errInRunAction.Error()[len(errInRunAction.Error())-1:])

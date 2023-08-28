@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/gin-gonic/gin"
+	"github.com/illacloud/builder-backend/src/actionruntime/common"
 	"github.com/illacloud/builder-backend/src/model"
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 )
@@ -51,20 +52,20 @@ func (controller *Controller) TestResourceConnection(c *gin.Context, resource *m
 	}
 
 	// test connection
-	resourceConnection, errInTestConnection := resourceAssemblyLine.TestConnection(resource.Options)
+	resourceConnection, errInTestConnection := resourceAssemblyLine.TestConnection(resource.ExportOptionsInMap())
 	if errInTestConnection != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_TEST_RESOURCE_CONNECTION, "test resource connection error: "+errInTestConnection.Error())
 		return errInTestConnection
 	}
 	if !resourceConnection.Success {
 		errInConnection := errors.New("test resource connection error, resource connection failed")
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_TEST_RESOURCE_CONNECTION, errInConnection)
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_TEST_RESOURCE_CONNECTION, errInConnection.Error())
 		return errInConnection
 	}
 	return nil
 }
 
-func (controller *Controller) GetResourceMetaInfo(c *gin.Context, resource *model.Resource) (map[string]interface{}, error) {
+func (controller *Controller) GetResourceMetaInfo(c *gin.Context, resource *model.Resource) (*common.MetaInfoResult, error) {
 	if resourcelist.IsVirtualResourceHaveNoOption(resource.ExportType()) {
 		return nil, nil
 	}
@@ -81,8 +82,8 @@ func (controller *Controller) GetResourceMetaInfo(c *gin.Context, resource *mode
 	resourceMetaInfo, errInGetMetaInfo := resourceAssemblyLine.GetMetaInfo(resource.ExportOptionsInMap())
 	if errInGetMetaInfo != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "ger resource meta info error: "+errInGetMetaInfo.Error())
-		return nil, errInValidate
+		return nil, errInGetMetaInfo
 	}
 
-	return resourceMetaInfo, nil
+	return &resourceMetaInfo, nil
 }

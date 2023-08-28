@@ -27,7 +27,13 @@ func (m *GenerateSQLPeripheralRequest) Export() map[string]string {
 	return payload
 }
 
-func NewGenerateSQLPeripheralRequest(resourceType string, metaInfo map[string]interface{}, description string, sqlAction string) (*GenerateSQLPeripheralRequest, error) {
+func NewGenerateSQLPeripheralRequest(resourceType string, metaInfo interface{}, description string, sqlAction string) (*GenerateSQLPeripheralRequest, error) {
+	// decode meta info
+	metaInfoAsserted, assertMetaInfoPass := metaInfo.(map[string]interface{})
+	if !assertMetaInfoPass {
+		return nil, errors.New("invalied meta info")
+	}
+
 	// generate meta info, the meta info like:
 	// {
 	//     "resourceName": "mssqlExample",
@@ -80,7 +86,7 @@ func NewGenerateSQLPeripheralRequest(resourceType string, metaInfo map[string]in
 	//         },
 	// 		...
 	allTableDesc := ""
-	for k1, v1 := range metaInfo {
+	for k1, v1 := range metaInfoAsserted {
 		if k1 == "schema" {
 			tableInfo, ok := v1.(map[string]interface{})
 			if !ok {

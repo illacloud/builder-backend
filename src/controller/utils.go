@@ -35,6 +35,7 @@ const (
 	PARAM_STATE            = "state"
 	PARAM_CODE             = "code"
 	PARAM_ERROR            = "error"
+	PARAM_ACCESS_TOKEN     = "accessToken"
 )
 
 const (

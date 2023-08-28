@@ -56,6 +56,14 @@ func (u *Team) GetID() int {
 	return u.ID
 }
 
+func (u *Team) ExportUID() uuid.UUID {
+	return u.UID
+}
+
 func (u *Team) ExportIDInString() string {
 	return idconvertor.ConvertIntToString(u.ID)
+}
+
+func (u *Team) ExportUIDInString() string {
+	return u.UID.String()
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/src/request"
+	"github.com/illacloud/builder-backend/src/utils/idconvertor"
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 )
 
@@ -41,9 +42,9 @@ func NewAcitonByCreateActionRequest(app *App, userID int, req *request.CreateAct
 		TeamID:        app.ExportTeamID(),
 		AppRefID:      app.ExportID(),
 		Version:       APP_EDIT_VERSION, // new action always created in builder edit mode, and it is edit version.
-		ResourceRefID: req.ResourceID,
-		Name:          req.Name,
-		Type:          resourcelist.GetResourceNameMappedID(req.Type),
+		ResourceRefID: idconvertor.ConvertStringToInt(req.ResourceID),
+		Name:          req.DisplayName,
+		Type:          resourcelist.GetResourceNameMappedID(req.ActionType),
 		TriggerMode:   req.TriggerMode,
 		Transformer:   req.ExportTransformerInString(),
 		Template:      req.ExportTemplateInString(),
@@ -51,15 +52,15 @@ func NewAcitonByCreateActionRequest(app *App, userID int, req *request.CreateAct
 		CreatedBy:     userID,
 		UpdatedBy:     userID,
 	}
-	if app.IsPublic(){
-		action.SetPublic()
+	if app.IsPublic() {
+		action.SetPublic(userID)
 	} else {
-		action.SetPrivate()
+		action.SetPrivate(userID)
 	}
 	action.InitUID()
 	action.InitCreatedAt()
 	action.InitUpdatedAt()
-	return action
+	return action, nil
 }
 
 func NewAcitonByUpdateActionRequest(app *App, userID int, req *request.UpdateActionRequest) (*Action, error) {
@@ -67,9 +68,9 @@ func NewAcitonByUpdateActionRequest(app *App, userID int, req *request.UpdateAct
 		TeamID:        app.ExportTeamID(),
 		AppRefID:      app.ExportID(),
 		Version:       APP_EDIT_VERSION, // new action always created in builder edit mode, and it is edit version.
-		ResourceRefID: req.ResourceID,
-		Name:          req.Name,
-		Type:          resourcelist.GetResourceNameMappedID(req.Type),
+		ResourceRefID: idconvertor.ConvertStringToInt(req.ResourceID),
+		Name:          req.DisplayName,
+		Type:          resourcelist.GetResourceNameMappedID(req.ActionType),
 		TriggerMode:   req.TriggerMode,
 		Transformer:   req.ExportTransformerInString(),
 		Template:      req.ExportTemplateInString(),
@@ -77,15 +78,15 @@ func NewAcitonByUpdateActionRequest(app *App, userID int, req *request.UpdateAct
 		CreatedBy:     userID,
 		UpdatedBy:     userID,
 	}
-	if app.IsPublic(){
-		action.SetPublic()
+	if app.IsPublic() {
+		action.SetPublic(userID)
 	} else {
-		action.SetPrivate()
+		action.SetPrivate(userID)
 	}
 	action.InitUID()
 	action.InitCreatedAt()
 	action.InitUpdatedAt()
-	return action
+	return action, nil
 }
 
 func (action *Action) CleanID() {
@@ -185,22 +186,21 @@ func (action *Action) IsVirtualAction() bool {
 	return resourcelist.IsVirtualResourceByIntType(action.Type)
 }
 
-
-func (action *Action)ExportTransformerInMap() map[string]interface{} {
-	var payload map[string]interface
-	json.Unmarshal(action.Transformer, payload)
+func (action *Action) ExportTransformerInMap() map[string]interface{} {
+	var payload map[string]interface{}
+	json.Unmarshal([]byte(action.Transformer), &payload)
 	return payload
 }
 
-func (action *Action)ExportTemplateInMap() map[string]interface{} {
-	var payload map[string]interface
-	json.Unmarshal(action.Template, payload)
+func (action *Action) ExportTemplateInMap() map[string]interface{} {
+	var payload map[string]interface{}
+	json.Unmarshal([]byte(action.Template), &payload)
 	return payload
 }
 
-func (action *Action)ExportConfigInMap() map[string]interface{} {
-	var payload map[string]interface
-	json.Unmarshal(action.Config, payload)
+func (action *Action) ExportConfigInMap() map[string]interface{} {
+	var payload map[string]interface{}
+	json.Unmarshal([]byte(action.Config), &payload)
 	return payload
 }
 
@@ -213,5 +213,5 @@ func (action *Action) AppendRuntimeInfoForVirtualResource(authorization string) 
 	template[ACTION_RUNTIME_INFO_FIELD_AUTHORIZATION] = authorization
 	template[ACTION_RUNTIME_INFO_FIELD_RUN_BY_ANONYMOUS] = (authorization == "")
 	templateInByte, _ := json.Marshal(template)
-	action.Template = string(templateInByte) 
+	action.Template = string(templateInByte)
 }

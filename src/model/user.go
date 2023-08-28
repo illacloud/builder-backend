@@ -16,6 +16,11 @@ const PENDING_USER_NICKNAME = "pending"
 const PENDING_USER_PASSWORDDIGEST = "pending"
 const PENDING_USER_AVATAR = ""
 
+// anonymous user config
+const (
+	ANONYMOUS_USER_ID = -1
+)
+
 type RawUser struct {
 	ID             string    `json:"id" gorm:"column:id;type:bigserial;primary_key;index:users_ukey"`
 	UID            uuid.UUID `json:"uid" gorm:"column:uid;type:uuid;not null;index:users_ukey"`
@@ -78,7 +83,7 @@ func NewUser(u *RawUser) *User {
 
 func NewInvaliedUser() *User {
 	return &User{
-		ID:       -1,
+		ID:       ANONYMOUS_USER_ID,
 		Nickname: "invalied",
 		Email:    "invalied",
 		Avatar:   "invalied",
