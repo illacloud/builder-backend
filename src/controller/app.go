@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -318,6 +319,247 @@ func (controller *Controller) GetAllApps(c *gin.Context) {
 
 	// feedback
 	c.JSON(http.StatusOK, response.GenerateGetAllAppsResponse(allApps, usersLT))
+}
+
+func (controller *Controller) SearchAppByKeywordsByPage(c *gin.Context) {
+	// get user input params
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	keywords, errInGetKeywords := controller.GetStringParamFromRequest(c, PARAM_KEYWORDS)
+	limit, errInGetlimit := controller.GetIntParamFromRequest(c, PARAM_LIMIT)
+	page, errInGetPage := controller.GetIntParamFromRequest(c, PARAM_PAGE)
+	sortBy, errInGetSortBy := controller.GetStringParamFromRequest(c, PARAM_SORT_BY)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetKeywords != nil || errInGetSortBy != nil || errInGetAuthToken != nil || errInGetlimit != nil || errInGetPage != nil {
+		return
+	}
+
+	// validate
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
+	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	if errInCheckAttr != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canAccess {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// get all apps
+	var appList []*model.App
+	var errInRetrieveAppList error
+	pagination := storage.NewPagination(limit, page)
+
+	appTotalRows, errInRetrieveAppCount := controller.Storage.AppStorage.CountByTeamIDAndKeywords(teamID, keywords)
+	if errInRetrieveAppCount != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "retrieve AI-Agent tital count error: "+errInRetrieveAppCount.Error())
+		return
+	}
+	pagination.CalculateTotalPagesByTotalRows(appTotalRows)
+
+	// retrieve
+	switch sortBy {
+	case request.ORDER_BY_CREATED_AT:
+		appList, errInRetrieveAppList = controller.Storage.AppStorage.RetrieveByKeywordsAndSortByCreatedAtDesc(teamID, keywords)
+	case request.ORDER_BY_UPDATED_AT:
+		appList, errInRetrieveAppList = controller.Storage.AppStorage.RetrieveByKeywordsAndSortByUpdatedAtDesc(teamID, keywords)
+	default:
+		appList, errInRetrieveAppList = controller.Storage.AppStorage.RetrieveByKeywordsAndSortByCreatedAtDesc(teamID, keywords)
+	}
+	if errInRetrieveAppList != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "retrieve AI-Agent list error: "+errInRetrieveAppList.Error())
+		return
+	}
+
+	// build user look up table
+	usersLT := make(map[int]*model.User)
+	if len(appList) > 0 {
+		// get all modifier user ids from all apps
+		allUserIDs := model.ExtractAllEditorIDFromApps(appList)
+
+		// fet all user id mapped user info, and build user info lookup table
+		var errInGetMultiUserInfo error
+		usersLT, errInGetMultiUserInfo = datacontrol.GetMultiUserInfo(allUserIDs)
+		if errInGetMultiUserInfo != nil {
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+			return
+		}
+	}
+
+	// feedback
+	appListForExport, errInNewAppForExport := response.NewAppListResponse(appList, pagination, usersLT)
+	if errInNewAppForExport != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "build AI-Agent list error: "+errInNewAppForExport.Error())
+		return
+	}
+	controller.FeedbackOK(c, appListForExport)
+}
+
+func (controller *Controller) SearchAppByKeywordsByPageUsingURIParam(c *gin.Context) {
+	// get user input params
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	keywords, errInGetKeywords := controller.GetFirstStringParamValueFromURI(c, PARAM_KEYWORDS)
+	limitString, errInGetlimit := controller.GetFirstStringParamValueFromURI(c, PARAM_LIMIT)
+	pageString, errInGetPage := controller.GetFirstStringParamValueFromURI(c, PARAM_PAGE)
+	sortBy, errInGetSortBy := controller.GetFirstStringParamValueFromURI(c, PARAM_SORT_BY)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetKeywords != nil || errInGetSortBy != nil || errInGetAuthToken != nil || errInGetlimit != nil || errInGetPage != nil {
+		return
+	}
+
+	// convert param
+	limit, _ := strconv.Atoi(limitString)
+	page, _ := strconv.Atoi(pageString)
+
+	// validate
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
+	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	if errInCheckAttr != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canAccess {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// get all apps
+	var appList []*model.App
+	var errInRetrieveAppList error
+	pagination := storage.NewPagination(limit, page)
+
+	appTotalRows, errInRetrieveAppCount := controller.Storage.AppStorage.CountByTeamIDAndKeywords(teamID, keywords)
+	if errInRetrieveAppCount != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "retrieve AI-Agent tital count error: "+errInRetrieveAppCount.Error())
+		return
+	}
+	pagination.CalculateTotalPagesByTotalRows(appTotalRows)
+
+	// retrieve
+	switch sortBy {
+	case request.ORDER_BY_CREATED_AT:
+		appList, errInRetrieveAppList = controller.Storage.AppStorage.RetrieveByKeywordsAndSortByCreatedAtDesc(teamID, keywords)
+	case request.ORDER_BY_UPDATED_AT:
+		appList, errInRetrieveAppList = controller.Storage.AppStorage.RetrieveByKeywordsAndSortByUpdatedAtDesc(teamID, keywords)
+	default:
+		appList, errInRetrieveAppList = controller.Storage.AppStorage.RetrieveByKeywordsAndSortByCreatedAtDesc(teamID, keywords)
+	}
+	if errInRetrieveAppList != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "retrieve AI-Agent list error: "+errInRetrieveAppList.Error())
+		return
+	}
+
+	// build user look up table
+	usersLT := make(map[int]*model.User)
+	if len(appList) > 0 {
+		// get all modifier user ids from all apps
+		allUserIDs := model.ExtractAllEditorIDFromApps(appList)
+
+		// fet all user id mapped user info, and build user info lookup table
+		var errInGetMultiUserInfo error
+		usersLT, errInGetMultiUserInfo = datacontrol.GetMultiUserInfo(allUserIDs)
+		if errInGetMultiUserInfo != nil {
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+			return
+		}
+	}
+
+	// feedback
+	appListForExport, errInNewAppForExport := response.NewAppListResponse(appList, pagination, usersLT)
+	if errInNewAppForExport != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "build AI-Agent list error: "+errInNewAppForExport.Error())
+		return
+	}
+	controller.FeedbackOK(c, appListForExport)
+}
+
+func (controller *Controller) GetAllAppByPage(c *gin.Context) {
+	// get user input params
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	limitString, errInGetlimit := controller.GetFirstStringParamValueFromURI(c, PARAM_LIMIT)
+	pageString, errInGetPage := controller.GetFirstStringParamValueFromURI(c, PARAM_PAGE)
+	sortBy, errInGetSortBy := controller.GetFirstStringParamValueFromURI(c, PARAM_SORT_BY)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetSortBy != nil || errInGetAuthToken != nil || errInGetlimit != nil || errInGetPage != nil {
+		return
+	}
+
+	// convert param
+	limit, _ := strconv.Atoi(limitString)
+	page, _ := strconv.Atoi(pageString)
+
+	// validate
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(teamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
+	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	if errInCheckAttr != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canAccess {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// get all apps
+	var appList []*model.App
+	var errInRetrieveAppList error
+	pagination := storage.NewPagination(limit, page)
+
+	appTotalRows, errInRetrieveAppCount := controller.Storage.AppStorage.CountByTeamID(teamID)
+	if errInRetrieveAppCount != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "retrieve AI-Agent tital count error: "+errInRetrieveAppCount.Error())
+		return
+	}
+	pagination.CalculateTotalPagesByTotalRows(appTotalRows)
+
+	// retrieve
+	switch sortBy {
+	case request.ORDER_BY_CREATED_AT:
+		appList, errInRetrieveAppList = controller.Storage.AppStorage.RetrieveByTeamIDAndSortByCreatedAtDescByPage(teamID, pagination)
+	case request.ORDER_BY_UPDATED_AT:
+		appList, errInRetrieveAppList = controller.Storage.AppStorage.RetrieveByTeamIDAndSortByUpdatedAtDescByPage(teamID, pagination)
+	default:
+		appList, errInRetrieveAppList = controller.Storage.AppStorage.RetrieveByTeamIDAndSortByCreatedAtDescByPage(teamID, pagination)
+	}
+	if errInRetrieveAppList != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "retrieve AI-Agent list error: "+errInRetrieveAppList.Error())
+		return
+	}
+
+	// build user look up table
+	usersLT := make(map[int]*model.User)
+	if len(appList) > 0 {
+		// get all modifier user ids from all apps
+		allUserIDs := model.ExtractAllEditorIDFromApps(appList)
+
+		// fet all user id mapped user info, and build user info lookup table
+		var errInGetMultiUserInfo error
+		usersLT, errInGetMultiUserInfo = datacontrol.GetMultiUserInfo(allUserIDs)
+		if errInGetMultiUserInfo != nil {
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+			return
+		}
+	}
+
+	// feedback
+	appListForExport, errInNewAppForExport := response.NewAppListResponse(appList, pagination, usersLT)
+	if errInNewAppForExport != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "build AI-Agent list error: "+errInNewAppForExport.Error())
+		return
+	}
+	controller.FeedbackOK(c, appListForExport)
 }
 
 func (controller *Controller) GetFullApp(c *gin.Context) {

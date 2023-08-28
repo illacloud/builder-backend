@@ -36,6 +36,10 @@ const (
 	PARAM_CODE             = "code"
 	PARAM_ERROR            = "error"
 	PARAM_ACCESS_TOKEN     = "accessToken"
+	PARAM_SORT_BY          = "sortBy"
+	PARAM_LIMIT            = "limit"
+	PARAM_KEYWORDS         = "keywords"
+	PARAM_TO_TEAM_ID       = "toTeamID"
 )
 
 const (

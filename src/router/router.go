@@ -57,6 +57,9 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	appRouter.GET(":appID/snapshotList/limit/:pageLimit/page/:page", r.Controller.GetSnapshotList)
 	appRouter.GET(":appID/snapshot/:snapshotID", r.Controller.GetSnapshot)
 	appRouter.POST(":appID/recoverSnapshot/:snapshotID", r.Controller.RecoverSnapshot)
+	appRouter.GET("/list", r.Controller.GetAllAppByPage)
+	appRouter.GET("/list/like", r.Controller.SearchAppByKeywordsByPageUsingURIParam)
+	appRouter.GET("/list/limit/:limit/page/:page/sortBy/:sortBy/like/keywords/:keywords", r.Controller.SearchAppByKeywordsByPage)
 
 	// room routers
 	roomRouter.GET("/websocketConnection/dashboard", r.Controller.GetDashboardRoomConnectionAddress)
