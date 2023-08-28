@@ -36,7 +36,7 @@ type TreeState struct {
 	UID                uuid.UUID `json:"uid" 							 gorm:"column:uid;type:uuid;not null"`
 	TeamID             int       `json:"teamID" 						 gorm:"column:team_id;type:bigserial"`
 	StateType          int       `json:"state_type" 					 gorm:"column:state_type;type:bigint"`
-	ParentNode         string    `json:"parentNode" 					 gorm"-"`
+	ParentNode         string    `json:"parentNode" 					 gorm"-" 									    sql:"-"`
 	ParentNodeRefID    int       `json:"parent_node_ref_id" 			 gorm:"column:parent_node_ref_id;type:bigint"`
 	ChildrenNodeRefIDs string    `json:"children_node_ref_ids" 		     gorm:"column:children_node_ref_ids;type:jsonb"`
 	AppRefID           int       `json:"app_ref_id" 					 gorm:"column:app_ref_id;type:bigint"`
