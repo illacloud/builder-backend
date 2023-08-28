@@ -23,7 +23,7 @@ RUN cat ./Makefile
 RUN make all
 
 RUN ls -alh ./bin/illa-builder-backend
-RUN ls -alh ./bin/illa-builder-backend-ws
+RUN ls -alh ./bin/illa-builder-backend-websocket
 
 
 # -------------------
