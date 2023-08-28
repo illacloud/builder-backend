@@ -16,8 +16,8 @@ require (
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/elastic/go-elasticsearch/v8 v8.9.0
 	github.com/gin-gonic/gin v1.9.1
-	github.com/go-kivik/couchdb/v4 v4.0.0-20230828092922-1166218a772d
-	github.com/go-kivik/kivik/v4 v4.0.0-20230828083916-40cf6109d7f4
+	github.com/go-kivik/couchdb/v4 v4.0.0-20220217152009-9380cf8517a0
+	github.com/go-kivik/kivik/v4 v4.0.0-20221214110802-0ad92c6bcd46
 	github.com/go-playground/validator/v10 v10.15.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-resty/resty/v2 v2.7.0
