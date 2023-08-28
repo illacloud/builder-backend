@@ -1,0 +1,150 @@
+// Copyright 2022 The ILLA Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package postgresql
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/illacloud/builder-backend/src/actionruntime/common"
+	parser_sql "github.com/illacloud/builder-backend/src/utils/parser/sql"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/mitchellh/mapstructure"
+)
+
+type Connector struct {
+	Resource Options
+	Action   Query
+}
+
+func (p *Connector) ValidateResourceOptions(resourceOptions map[string]interface{}) (common.ValidateResult, error) {
+	// format resource options
+	if err := mapstructure.Decode(resourceOptions, &p.Resource); err != nil {
+		return common.ValidateResult{Valid: false}, err
+	}
+
+	// validate postgresql options
+	validate := validator.New()
+	if err := validate.Struct(p.Resource); err != nil {
+		return common.ValidateResult{Valid: false}, err
+	}
+	return common.ValidateResult{Valid: true}, nil
+}
+
+func (p *Connector) ValidateActionTemplate(actionOptions map[string]interface{}) (common.ValidateResult, error) {
+	// format sql options
+	if err := mapstructure.Decode(actionOptions, &p.Action); err != nil {
+		return common.ValidateResult{Valid: false}, err
+	}
+
+	// validate postgresql options
+	validate := validator.New()
+	if err := validate.Struct(p.Action); err != nil {
+		return common.ValidateResult{Valid: false}, err
+	}
+	return common.ValidateResult{Valid: true}, nil
+}
+
+func (p *Connector) TestConnection(resourceOptions map[string]interface{}) (common.ConnectionResult, error) {
+	// get postgresql connection
+	db, err := p.getConnectionWithOptions(resourceOptions)
+	if err != nil {
+		return common.ConnectionResult{Success: false}, err
+	}
+	defer db.Close(context.Background())
+
+	// test postgresql connection
+	if err := db.Ping(context.Background()); err != nil {
+		return common.ConnectionResult{Success: false}, err
+	}
+	return common.ConnectionResult{Success: true}, nil
+}
+
+func (p *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.MetaInfoResult, error) {
+	// get postgresql connection
+	db, err := p.getConnectionWithOptions(resourceOptions)
+	if err != nil {
+		return common.MetaInfoResult{Success: false}, err
+	}
+	defer db.Close(context.Background())
+
+	// test postgresql connection
+	if err := db.Ping(context.Background()); err != nil {
+		return common.MetaInfoResult{Success: false}, err
+	}
+
+	columns := fieldsInfo(db, "public", tablesInfo(db, "public"))
+
+	return common.MetaInfoResult{
+		Success: true,
+		Schema:  columns,
+	}, nil
+}
+
+func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
+	// get postgresql connection
+	db, err := p.getConnectionWithOptions(resourceOptions)
+	if err != nil {
+		return common.RuntimeResult{Success: false}, errors.New("failed to get postgresql connection")
+	}
+	defer db.Close(context.Background())
+
+	// format query
+	if err := mapstructure.Decode(actionOptions, &p.Action); err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+
+	// run postgresql query
+	queryResult := common.RuntimeResult{
+		Success: false,
+		Rows:    []map[string]interface{}{},
+		Extra:   map[string]interface{}{},
+	}
+	// check if m.Action.Query is select query
+	isSelectQuery := false
+
+	lexer := parser_sql.NewLexer(p.Action.Query)
+	isSelectQuery, err = parser_sql.IsSelectSQL(lexer)
+	if err != nil {
+		return common.RuntimeResult{Success: false}, err
+	}
+
+	// fetch data
+	if isSelectQuery {
+		rows, err := db.Query(context.Background(), p.Action.Query)
+		if err != nil {
+			return queryResult, err
+		}
+		mapRes, err := RetrieveToMap(rows)
+		if err != nil {
+			return queryResult, err
+		}
+		defer rows.Close()
+		queryResult.Success = true
+		queryResult.Rows = mapRes
+	} else { // update, insert, delete data
+		execResult, err := db.Exec(context.Background(), p.Action.Query)
+		if err != nil {
+			return queryResult, err
+		}
+		affectedRows := execResult.RowsAffected()
+		queryResult.Success = true
+		queryResult.Extra["message"] = fmt.Sprintf("Affeted %d rows.", affectedRows)
+	}
+
+	return queryResult, nil
+}

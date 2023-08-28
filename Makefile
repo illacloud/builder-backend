@@ -1,14 +1,14 @@
 .PHONY: build all test clean
 
-all: build build-websocket-server
+all: build
 
 build: build-http-server build-websocket-server
 
 build-http-server:
-	go build -o bin/illa-builder-backend cmd/http-server/main.go cmd/http-server/wire_gen.go cmd/http-server/server.go
+	go build -o bin/illa-builder-backend src/cmd/illa-builder-backend/main.go
 
 build-websocket-server:
-	go build -o bin/illa-builder-backend-ws cmd/websocket-server/main.go
+	go build -o bin/illa-builder-backend-websocket src/cmd/illa-builder-backend-websocket/main.go
 
 test:
 	PROJECT_PWD=$(shell pwd) go test -race ./...
