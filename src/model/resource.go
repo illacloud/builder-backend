@@ -100,7 +100,7 @@ func (resource *Resource) ExportTypeInString() string {
 
 func (resource *Resource) ExportOptionsInMap() map[string]interface{} {
 	var options map[string]interface{}
-	json.Unmarshal([]byte(resource.Options), options)
+	json.Unmarshal([]byte(resource.Options), &options)
 	return options
 }
 
