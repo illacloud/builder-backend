@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/illacloud/builder-backend/src/utils/extendslice"
+	util "github.com/illacloud/builder-backend/src/utils/extendslice"
 )
 
 const TREE_STATE_SUMMIT_ID = 0
@@ -209,7 +209,7 @@ func (treeState *TreeState) RemoveChildrenNodeRefIDs(id int) error {
 	if err := json.Unmarshal([]byte(treeState.ChildrenNodeRefIDs), &ids); err != nil {
 		return err
 	}
-	ids = extendslice.DeleteElement(ids, id)
+	ids = util.DeleteElement(ids, id)
 	idsjsonb, err := json.Marshal(ids)
 	if err != nil {
 		return err
