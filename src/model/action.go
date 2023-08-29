@@ -18,6 +18,8 @@ const (
 	ACTION_RUNTIME_INFO_FIELD_RUN_BY_ANONYMOUS = "runByAnonymous"
 )
 
+const ()
+
 type Action struct {
 	ID            int       `gorm:"column:id;type:bigserial;primary_key"`
 	UID           uuid.UUID `gorm:"column:uid;type:uuid;not null"`
@@ -143,6 +145,27 @@ func (action *Action) ExportConfig() *ActionConfig {
 
 func (action *Action) ExportDisplayName() string {
 	return action.Name
+}
+
+func (action *Action) ExportIcon() string {
+	content := action.ExportTemplateInMap()
+	virtualResource, hitVirtualResource := content["virtualResource"]
+	if !hitVirtualResource {
+		return ""
+	}
+	virtualResourceAsserted, virtualResourceAssertPass := virtualResource.(map[string]interface{})
+	if !virtualResourceAssertPass {
+		return ""
+	}
+	icon, hitIcon := virtualResourceAsserted["icon"]
+	if !hitIcon {
+		return ""
+	}
+	iconAsserted, iconAssertPass := icon.(string)
+	if !iconAssertPass {
+		return ""
+	}
+	return iconAsserted
 }
 
 func (action *Action) ExportTypeInString() string {

@@ -15,6 +15,7 @@ type ActionSummaryForExport struct {
 	Version           int       `json:"version"`
 	Resource          string    `json:"resourceID,omitempty"`
 	DisplayName       string    `json:"name"`
+	Icon              string    `json:"icon"`
 	Type              string    `json:"type"`
 	IsVirtualResource bool      `json:"isVirtualResource"`
 	CreatedAt         time.Time `json:"createdAt,omitempty"`
@@ -31,6 +32,7 @@ func NewActionSummaryForExportByAction(action *Action) *ActionSummaryForExport {
 		Version:           action.Version,
 		Resource:          idconvertor.ConvertIntToString(action.ResourceRefID),
 		DisplayName:       action.ExportDisplayName(),
+		Icon:              action.ExportIcon(),
 		Type:              action.ExportTypeInString(),
 		IsVirtualResource: resourcelist.IsVirtualResourceByIntType(action.ExportType()),
 		CreatedAt:         action.CreatedAt,
