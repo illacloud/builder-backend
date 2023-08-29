@@ -11,7 +11,7 @@ import (
 // ```json
 //
 //	{
-//	    "resourceId": "ILAfx4p1C7cc",
+//	    "resourceID": "ILAfx4p1C7cc",
 //	    "actionType": "postgresql",
 //	    "displayName": "postgresql1",
 //	    "content": {
@@ -22,7 +22,7 @@ import (
 //
 // ```
 type RunActionRequest struct {
-	ResourceID  string                 `json:"resourceId,omitempty"`
+	ResourceID  string                 `json:"resourceID,omitempty"`
 	ActionType  string                 `json:"actionType"         validate:"required"`
 	DisplayName string                 `json:"displayName"        validate:"required"`
 	Content     map[string]interface{} `json:"content"            validate:"required"`

@@ -5,7 +5,7 @@ import (
 )
 
 type DeleteResourceResponse struct {
-	ID string `json:"resourceId"`
+	ID string `json:"resourceID"`
 }
 
 func NewDeleteResourceResponse(id int) *DeleteResourceResponse {

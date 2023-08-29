@@ -10,12 +10,12 @@ import (
 )
 
 type CreateActionResponse struct {
-	ActionID          string                 `json:"actionId"`
+	ActionID          string                 `json:"actionID"`
 	UID               uuid.UUID              `json:"uid"`
 	TeamID            string                 `json:"teamID"`
 	AppID             string                 `json:"appID"`
 	Version           int                    `json:"version"`
-	ResourceID        string                 `json:"resourceId,omitempty"`
+	ResourceID        string                 `json:"resourceID,omitempty"`
 	DisplayName       string                 `json:"displayName"`
 	ActionType        string                 `json:"actionType"`
 	IsVirtualResource bool                   `json:"isVirtualResource"`

@@ -13,7 +13,7 @@ import (
 //	{
 //	    "actionType": "postgresql",
 //	    "displayName": "postgresql1",
-//	    "resourceId": "ILAfx4p1C7cd",
+//	    "resourceID": "ILAfx4p1C7cd",
 //	    "content": {
 //	        "mode": "sql",
 //	        "query": ""
@@ -41,7 +41,7 @@ import (
 type CreateActionRequest struct {
 	ActionType        string                 `json:"actionType"         validate:"required"`
 	DisplayName       string                 `json:"displayName"        validate:"required"`
-	ResourceID        string                 `json:"resourceId,omitempty"`
+	ResourceID        string                 `json:"resourceID,omitempty"`
 	IsVirtualResource bool                   `json:"isVirtualResource"`
 	Content           map[string]interface{} `json:"content"            validate:"required"`
 	Transformer       map[string]interface{} `json:"transformer"        validate:"required"`

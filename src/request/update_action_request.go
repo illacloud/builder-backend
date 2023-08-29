@@ -11,10 +11,10 @@ import (
 // ```json
 //
 //	{
-//	    "actionId": "ILAex4p1C7rD",
+//	    "actionID": "ILAex4p1C7rD",
 //	    "uid": "781f0ed4-62eb-4615-bd41-80bf2af8ceb4",
 //	    "teamID": "ILAfx4p1C7bN",
-//	    "resourceId": "ILAfx4p1C7cc",
+//	    "resourceID": "ILAfx4p1C7cc",
 //	    "displayName": "postgresql1",
 //	    "actionType": "postgresql",
 //	    "isVirtualResource": false,
@@ -48,7 +48,7 @@ import (
 type UpdateActionRequest struct {
 	ActionType        string                 `json:"actionType"         validate:"required"`
 	DisplayName       string                 `json:"displayName"        validate:"required"`
-	ResourceID        string                 `json:"resourceId,omitempty"`
+	ResourceID        string                 `json:"resourceID,omitempty"`
 	IsVirtualResource bool                   `json:"isVirtualResource"`
 	Content           map[string]interface{} `json:"content"            validate:"required"`
 	Transformer       map[string]interface{} `json:"transformer"        validate:"required"`

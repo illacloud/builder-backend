@@ -203,7 +203,7 @@ func (a *AuditLogger) Log(logInfo *LogInfo) {
 		}
 	case AUDIT_LOG_CREATE_RESOURCE, AUDIT_LOG_UPDATE_RESOURCE, AUDIT_LOG_DELETE_RESOURCE:
 		contextData["resourceInfo"] = map[string]interface{}{
-			"resourceId":   logInfo.ResourceID,
+			"resourceID":   logInfo.ResourceID,
 			"resourceName": logInfo.ResourceName,
 			"resourceType": logInfo.ResourceType,
 		}
@@ -217,12 +217,12 @@ func (a *AuditLogger) Log(logInfo *LogInfo) {
 			"appName": logInfo.AppName,
 		}
 		contextData["resourceInfo"] = map[string]interface{}{
-			"resourceId":   logInfo.ResourceID,
+			"resourceID":   logInfo.ResourceID,
 			"resourceName": logInfo.ResourceName,
 			"resourceType": logInfo.ResourceType,
 		}
 		contextData["actionInfo"] = map[string]interface{}{
-			"actionId":        logInfo.ActionID,
+			"actionID":        logInfo.ActionID,
 			"actionName":      logInfo.ActionName,
 			"actionParameter": logInfo.ActionParameter,
 		}

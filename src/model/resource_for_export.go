@@ -11,7 +11,7 @@ import (
 )
 
 type ResourceForExport struct {
-	ID        string                 `json:"resourceId"`
+	ID        string                 `json:"resourceID"`
 	UID       uuid.UUID              `json:"uid"`
 	TeamID    string                 `json:"teamID"`
 	Name      string                 `json:"resourceName" validate:"required"`

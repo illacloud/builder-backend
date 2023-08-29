@@ -14,12 +14,12 @@ const (
 )
 
 type ActionForExport struct {
-	ID                string                 `json:"actionId"`
+	ID                string                 `json:"actionID"`
 	UID               uuid.UUID              `json:"uid"`
 	TeamID            string                 `json:"teamID"`
 	App               string                 `json:"-"`
 	Version           int                    `json:"-"`
-	Resource          string                 `json:"resourceId,omitempty"`
+	Resource          string                 `json:"resourceID,omitempty"`
 	DisplayName       string                 `json:"displayName"`
 	Type              string                 `json:"actionType"`
 	IsVirtualResource bool                   `json:"isVirtualResource"`

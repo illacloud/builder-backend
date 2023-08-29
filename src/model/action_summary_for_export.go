@@ -13,7 +13,7 @@ type ActionSummaryForExport struct {
 	UID               uuid.UUID `json:"uid"`
 	TeamID            string    `json:"teamID"`
 	Version           int       `json:"version"`
-	Resource          string    `json:"resourceId,omitempty"`
+	Resource          string    `json:"resourceID,omitempty"`
 	DisplayName       string    `json:"name"`
 	Type              string    `json:"type"`
 	IsVirtualResource bool      `json:"isVirtualResource"`
