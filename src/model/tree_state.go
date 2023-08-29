@@ -222,6 +222,7 @@ func (treeState *TreeState) UpdateByNewTreeState(newTreeState *TreeState) {
 	treeState.ParentNode = newTreeState.ParentNode
 	treeState.ParentNodeRefID = newTreeState.ParentNodeRefID
 	treeState.ChildrenNodeRefIDs = newTreeState.ChildrenNodeRefIDs
+	treeState.Name = newTreeState.Name
 	treeState.Content = newTreeState.Content
 	treeState.UpdatedBy = newTreeState.UpdatedBy
 	treeState.InitUpdatedAt()

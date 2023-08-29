@@ -73,7 +73,8 @@ func SignalUpdateState(hub *websocket.Hub, message *websocket.Message) error {
 			fmt.Printf("[DUMP] inDatabaseTreeState: %+v\n", inDatabaseTreeState)
 
 			// init current tree state node
-			currentTreeStateNode, errInInitCurrentNode := model.NewTreeStateByWebsocketMessage(app, stateType, componentStateForUpdate.After)
+			componentNodeAfter := model.ConstructComponentNodeByMap(componentStateForUpdate.After)
+			currentTreeStateNode, errInInitCurrentNode := model.NewTreeStateByAppAndComponentState(app, stateType, componentNodeAfter)
 			if errInInitCurrentNode != nil {
 				currentClient.Feedback(message, websocket.ERROR_CREATE_OR_UPDATE_STATE_FAILED, errInInitCurrentNode)
 				return errInInitCurrentNode
