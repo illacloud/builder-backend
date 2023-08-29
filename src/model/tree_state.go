@@ -84,6 +84,57 @@ func NewTreeStateByApp(app *App, stateType int) *TreeState {
 	return treeState
 }
 
+// data sample:
+//
+//	{
+//	    "signal": 5,
+//	    "target": 1,
+//	    "option": 0,
+//	    "broadcast": null,
+//	    "payload": [
+//	        {
+//	            "before": {
+//	                "displayName": "input1"
+//	            },
+//	            "after": {
+//	                "w": 6,
+//	                "h": 5,
+//	                "minW": 1,
+//	                "minH": 3,
+//	                "x": 19,
+//	                "y": 22,
+//	                "z": 0,
+//	                "showName": "input",
+//	                "type": "INPUT_WIDGET",
+//	                "displayName": "input1",
+//	                "containerType": "EDITOR_SCALE_SQUARE",
+//	                "parentNode": "bodySection1-bodySectionContainer1",
+//	                "childrenNode": [],
+//	                "props": {
+//	                    "value": "",
+//	                    "label": "Label",
+//	                    "labelAlign": "left",
+//	                    "labelPosition": "left",
+//	                    "labelWidth": "{{33}}",
+//	                    "colorScheme": "blue",
+//	                    "hidden": false,
+//	                    "formDataKey": "{{input1.displayName}}",
+//	                    "placeholder": "input sth",
+//	                    "$dynamicAttrPaths": [
+//	                        "labelWidth",
+//	                        "formDataKey",
+//	                        "showVisibleButton"
+//	                    ],
+//	                    "type": "input",
+//	                    "showVisibleButton": "{{true}}"
+//	                },
+//	                "version": 0
+//	            }
+//	        }
+//	    ],
+//	    "teamID": "ILAfx4p1C7bN",
+//	    "uid": "ILAfx4p1C7bN"
+//	}
 func NewTreeStateByWebsocketMessage(app *App, stateType int, data interface{}) (*TreeState, error) {
 	treeState := NewTreeStateByApp(app, stateType)
 	udata, ok := data.(map[string]interface{})

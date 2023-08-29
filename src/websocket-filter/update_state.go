@@ -55,19 +55,27 @@ func SignalUpdateState(hub *websocket.Hub, message *websocket.Message) error {
 		stateType = model.TREE_STATE_TYPE_COMPONENTS
 		displayNames := make([]string, 0)
 		for _, v := range message.Payload {
+			componentStateForUpdate, errInConstructComponentStateForUpdate := model.ConstructComponentStateForUpdateByPayload(v)
+			if errInConstructComponentStateForUpdate != nil {
+				currentClient.Feedback(message, websocket.ERROR_UPDATE_STATE_FAILED, errInConstructComponentStateForUpdate)
+				return errInConstructComponentStateForUpdate
+			}
+
+			// init before state
+			beforeTreeStateNode, errInInitCurrentNode := model.NewTreeStateByWebsocketMessage(app, stateType, componentStateForUpdate.Before)
+			inDatabaseTreeState, errInRetrieveTreeState := hub.Storage.TreeStateStorage.RetrieveEditVersionByAppAndName(teamID, appID, beforeTreeStateNode.ExportStateType(), beforeTreeStateNode.ExportName())
+			if errInRetrieveTreeState != nil {
+				currentClient.Feedback(message, websocket.ERROR_CREATE_OR_UPDATE_STATE_FAILED, errInRetrieveTreeState)
+				return errInRetrieveTreeState
+			}
+
 			// init current tree state node
-			currentTreeStateNode, errInInitCurrentNode := model.NewTreeStateByWebsocketMessage(app, stateType, v)
+			currentTreeStateNode, errInInitCurrentNode := model.NewTreeStateByWebsocketMessage(app, stateType, componentStateForUpdate.After)
 			if errInInitCurrentNode != nil {
 				currentClient.Feedback(message, websocket.ERROR_CREATE_OR_UPDATE_STATE_FAILED, errInInitCurrentNode)
 				return errInInitCurrentNode
 			}
 
-			// check if state already in database
-			inDatabaseTreeState, errInRetrieveTreeState := hub.Storage.TreeStateStorage.RetrieveEditVersionByAppAndName(teamID, appID, currentTreeStateNode.ExportStateType(), currentTreeStateNode.ExportName())
-			if errInRetrieveTreeState != nil {
-				currentClient.Feedback(message, websocket.ERROR_CREATE_OR_UPDATE_STATE_FAILED, errInRetrieveTreeState)
-				return errInRetrieveTreeState
-			}
 			// it is in database, update it
 			inDatabaseTreeState.UpdateByNewTreeState(currentTreeStateNode)
 			errInUpdateTreeState := hub.Storage.TreeStateStorage.Update(inDatabaseTreeState)
