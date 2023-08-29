@@ -2,6 +2,7 @@ package illaresourcemanagersdk
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/illacloud/builder-backend/src/utils/idconvertor"
 )
@@ -98,7 +99,7 @@ func NewRunAIAgentRequest(rawRequest map[string]interface{}) (*RunAIAgentRequest
 
 		}
 		if !assertPass {
-			return nil, errors.New("assert request field failed for RunAIAgentRequest")
+			return nil, errors.New(fmt.Sprintf("assert request field %s with value \"%s\"for RunAIAgentRequest", key, value))
 		}
 	}
 	return runAIAgentRequest, nil
