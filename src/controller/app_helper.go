@@ -239,8 +239,6 @@ func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int
 		return nil, errInGetMultiUserInfo
 	}
 
-	appForExport := model.NewAppForExport(app, usersLT)
-
 	// form editor object field appForExport, We need:
 	//     AppInfo               which is: *AppForExport
 	//  -> Actions               which is: []*ActionForExport
@@ -378,6 +376,9 @@ func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int
 	for _, displayName := range displayNameSetStates {
 		displayNameState = append(displayNameState, displayName.Value)
 	}
+
+	// and last one, get app for export with full config info
+	appForExport := model.NewAppForExportWithFullConfigInfo(app, usersLT, treeStateComponents, actions)
 
 	// finally, make a brand new editor object
 	fullAppForExport := model.NewFullAppForExport(appForExport, actionsForExport, componentTree, dependenciesState, dragShadowState, dottedLineSquareState, displayNameState)

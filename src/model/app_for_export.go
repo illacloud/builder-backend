@@ -90,6 +90,48 @@ func NewAppForExport(a *App, usersLT map[int]*User) *AppForExport {
 	return ret
 }
 
+func NewAppForExportWithFullConfigInfo(a *App, usersLT map[int]*User, treeStates []*TreeState, actions []*Action) *AppForExport {
+	// construct app activity
+	user, hit := usersLT[a.ExportUpdatedBy()]
+	appActivity := NewAppActivity()
+	if hit {
+		appActivity = NewAppActivityWithPayload(user.Nickname, a.ExportUpdatedAt())
+	}
+	// construct edited by
+	appEditedBys := a.ExportEditedBy()
+	editedByUsers := make([]*UserForEditedBy, 0)
+	for _, appEditedBy := range appEditedBys {
+		if appEditedBy == nil {
+			continue
+		}
+		userID := appEditedBy.UserID
+		user, hit := usersLT[userID]
+		if !hit {
+			continue
+		}
+		editedByUser := NewUserForEditedBy(user, appEditedBy.EditedAt)
+		editedByUsers = append(editedByUsers, editedByUser)
+	}
+	// feedback
+	ret := &AppForExport{
+		ID:              idconvertor.ConvertIntToString(a.ID),
+		UID:             a.UID,
+		TeamID:          idconvertor.ConvertIntToString(a.TeamID),
+		Name:            a.Name,
+		ReleaseVersion:  a.ReleaseVersion,
+		MainlineVersion: a.MainlineVersion,
+		Config:          NewAppConfigForExport(a.ExportConfig(), treeStates, actions),
+		CreatedBy:       idconvertor.ConvertIntToString(a.CreatedBy),
+		CreatedAt:       a.CreatedAt,
+		UpdatedBy:       idconvertor.ConvertIntToString(a.UpdatedBy),
+		UpdatedAt:       a.UpdatedAt,
+		AppActivity:     appActivity,
+		EditedBy:        editedByUsers,
+	}
+	ret.CalculateIsDeployed()
+	return ret
+}
+
 func NewAppForExportByMap(data interface{}) (*AppForExport, error) {
 	udata, ok := data.(map[string]interface{})
 	if !ok {
