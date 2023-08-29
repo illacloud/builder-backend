@@ -387,6 +387,190 @@ func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int
 	return fullAppForExport, nil
 }
 
+func (controller *Controller) GetTargetVersionFullAppByAppID(c *gin.Context, appID int, version int) (*model.FullAppForExport, error) {
+	// fetch app
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveByID(appID)
+	if errInRetrieveApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app full data error: "+errInRetrieveApp.Error())
+		return nil, errInRetrieveApp
+	}
+	teamID := app.ExportTeamID()
+
+	// set for auto-version
+	if version == model.APP_AUTO_MAINLINE_VERSION {
+		version = app.MainlineVersion
+	}
+	if version == model.APP_AUTO_RELEASE_VERSION {
+		version = app.ReleaseVersion
+	}
+
+	// form editor object field appForExport, We need:
+	//  -> AppInfo               which is: *AppForExport
+	//     Actions               which is: []*ActionForExport
+	//     Components            which is: *ComponentNode
+	//     DependenciesState     which is: map[string][]string
+	//     DragShadowState       which is: map[string]interface{}
+	//     DottedLineSquareState which is: map[string]interface{}
+	//     DisplayNameState      which is: []string
+
+	// get all modifier user ids from all apps
+	allUserIDs := model.ExtractAllEditorIDFromApps([]*model.App{app})
+
+	// fet all user id mapped user info, and build user info lookup table
+	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
+	if errInGetMultiUserInfo != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+		return nil, errInGetMultiUserInfo
+	}
+
+	// form editor object field appForExport, We need:
+	//     AppInfo               which is: *AppForExport
+	//  -> Actions               which is: []*ActionForExport
+	//     Components            which is: *ComponentNode
+	//     DependenciesState     which is: map[string][]string
+	//     DragShadowState       which is: map[string]interface{}
+	//     DottedLineSquareState which is: map[string]interface{}
+	//     DisplayNameState      which is: []string
+
+	// form editor object field actions
+	actions, errInRetrieveActions := controller.Storage.ActionStorage.RetrieveActionsByTeamIDAppIDAndVersion(teamID, appID, version)
+
+	// ok, we have no actions for this app
+	if errInRetrieveActions != nil {
+		actions = []*model.Action{}
+	}
+
+	// build actions for expost
+	actionsForExport := make([]*model.ActionForExport, 0)
+	for _, action := range actions {
+		actionForExport := model.NewActionForExport(action)
+		// append remote virtual resource
+		if actionForExport.Type == resourcelist.TYPE_AI_AGENT {
+			api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
+			if errInNewAPI != nil {
+				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
+				return nil, errInNewAPI
+			}
+			aiAgent, errInGetAIAgent := api.GetAIAgent(actionForExport.ExportResourceIDInInt())
+			if errInGetAIAgent != nil {
+				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetAIAgent.Error())
+				return nil, errInGetAIAgent
+			}
+			actionForExport.AppendVirtualResourceToTemplate(aiAgent)
+		}
+		actionsForExport = append(actionsForExport, actionForExport)
+	}
+
+	// form editor object field appForExport, We need:
+	//     AppInfo               which is: *AppForExport
+	//     Actions               which is: []*ActionForExport
+	//  -> Components            which is: *ComponentNode
+	//     DependenciesState     which is: map[string][]string
+	//     DragShadowState       which is: map[string]interface{}
+	//     DottedLineSquareState which is: map[string]interface{}
+	//     DisplayNameState      which is: []string
+
+	// form editor object field components
+	treeStateComponents, errInRetrieveTreeStateComponents := controller.Storage.TreeStateStorage.RetrieveTreeStatesByApp(teamID, appID, model.TREE_STATE_TYPE_COMPONENTS, version)
+	if errInRetrieveTreeStateComponents != nil {
+		treeStateComponents = []*model.TreeState{}
+	}
+	treeStateLT := model.BuildTreeStateLookupTable(treeStateComponents)
+	rootOfTreeState := model.PickUpTreeStatesRootNode(treeStateComponents)
+	componentTree, _ := model.BuildComponentTree(rootOfTreeState, treeStateLT, nil)
+
+	// form editor object field appForExport, We need:
+	//     AppInfo               which is: *AppForExport
+	//     Actions               which is: []*ActionForExport
+	//     Components            which is: *ComponentNode
+	//  -> DependenciesState     which is: map[string][]string
+	//     DragShadowState       which is: map[string]interface{}
+	//     DottedLineSquareState which is: map[string]interface{}
+	//     DisplayNameState      which is: []string
+
+	// form editor object field dependenciesState
+	dependenciesState := map[string][]string{}
+	dependenciesKVStates, errInRetrieveDependenciesKVStates := controller.Storage.KVStateStorage.RetrieveKVStatesByApp(teamID, appID, model.KV_STATE_TYPE_DEPENDENCIES, version)
+	if errInRetrieveDependenciesKVStates != nil {
+		dependenciesKVStates = []*model.KVState{}
+	}
+	for _, dependency := range dependenciesKVStates {
+		var revMsg []string
+		json.Unmarshal([]byte(dependency.Value), &revMsg)
+		dependenciesState[dependency.Key] = revMsg // value convert to []string
+	}
+
+	// form editor object field appForExport, We need:
+	//     AppInfo               which is: *AppForExport
+	//     Actions               which is: []*ActionForExport
+	//     Components            which is: *ComponentNode
+	//     DependenciesState     which is: map[string][]string
+	//  -> DragShadowState       which is: map[string]interface{}
+	//     DottedLineSquareState which is: map[string]interface{}
+	//     DisplayNameState      which is: []string
+
+	// form editor object field dragShadowState
+	dragShadowState := map[string]interface{}{}
+	dragShadowKVStates, errInRetrieveDragShadowKVStates := controller.Storage.KVStateStorage.RetrieveKVStatesByApp(teamID, appID, model.KV_STATE_TYPE_DRAG_SHADOW, version)
+	if errInRetrieveDragShadowKVStates != nil {
+		dragShadowKVStates = []*model.KVState{}
+	}
+	for _, dragShadow := range dragShadowKVStates {
+		var revMsg []string
+		json.Unmarshal([]byte(dragShadow.Value), &revMsg)
+		dragShadowState[dragShadow.Key] = revMsg // value convert to []string
+	}
+
+	// form editor object field appForExport, We need:
+	//     AppInfo               which is: *AppForExport
+	//     Actions               which is: []*ActionForExport
+	//     Components            which is: *ComponentNode
+	//     DependenciesState     which is: map[string][]string
+	//     DragShadowState       which is: map[string]interface{}
+	//  -> DottedLineSquareState which is: map[string]interface{}
+	//     DisplayNameState      which is: []string
+
+	// form editor object field dottedLineSquareState
+	dottedLineSquareState := map[string]interface{}{}
+	dottedLineSquareKVStates, errInRetrieveDottedLineSquareKVStates := controller.Storage.KVStateStorage.RetrieveKVStatesByApp(teamID, appID, model.KV_STATE_TYPE_DOTTED_LINE_SQUARE, version)
+	if errInRetrieveDottedLineSquareKVStates != nil {
+		dottedLineSquareKVStates = []*model.KVState{}
+	}
+	for _, dottedLineSquare := range dottedLineSquareKVStates {
+		var revMsg []string
+		json.Unmarshal([]byte(dottedLineSquare.Value), &revMsg)
+		dottedLineSquareState[dottedLineSquare.Key] = revMsg // value convert to []string
+	}
+
+	// form editor object field appForExport, We need:
+	//     AppInfo               which is: *AppForExport
+	//     Actions               which is: []*ActionForExport
+	//     Components            which is: *ComponentNode
+	//     DependenciesState     which is: map[string][]string
+	//     DragShadowState       which is: map[string]interface{}
+	//     DottedLineSquareState which is: map[string]interface{}
+	//  -> DisplayNameState      which is: []string
+
+	// form editor object field displayNameState
+	displayNameSetStates, errInRetrieveDisplayNameSetState := controller.Storage.SetStateStorage.RetrieveSetStatesByTeamIDAppIDAndVersion(teamID, appID, model.SET_STATE_TYPE_DISPLAY_NAME, version)
+	if errInRetrieveDisplayNameSetState != nil {
+		displayNameSetStates = []*model.SetState{}
+	}
+	displayNameState := make([]string, 0, len(displayNameSetStates))
+	for _, displayName := range displayNameSetStates {
+		displayNameState = append(displayNameState, displayName.Value)
+	}
+
+	// and last one, get app for export with full config info
+	appForExport := model.NewAppForExportWithFullConfigInfo(app, usersLT, treeStateComponents, actions)
+
+	// finally, make a brand new editor object
+	fullAppForExport := model.NewFullAppForExport(appForExport, actionsForExport, componentTree, dependenciesState, dragShadowState, dottedLineSquareState, displayNameState)
+
+	// feedback
+	return fullAppForExport, nil
+}
+
 func (controller *Controller) BuildComponentTree(app *model.App, parentNodeID int, componentNodeTree *model.ComponentNode) error {
 	// convert ComponentNode to TreeState
 	currentNode, errInNewCurrentNode := model.NewTreeStateByAppAndComponentState(app, model.TREE_STATE_TYPE_COMPONENTS, componentNodeTree)

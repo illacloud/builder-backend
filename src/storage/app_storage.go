@@ -63,6 +63,14 @@ func (impl *AppStorage) RetrieveByID(appID int) (*model.App, error) {
 	return app, nil
 }
 
+func (d *AppStorage) RetrieveByIDs(ids []int) ([]*model.App, error) {
+	apps := []*model.App{}
+	if err := d.db.Where("(id) IN ?", ids).Find(&apps).Error; err != nil {
+		return nil, err
+	}
+	return apps, nil
+}
+
 func (impl *AppStorage) RetrieveByTeamID(teamID int) ([]*model.App, error) {
 	var apps []*model.App
 	if err := impl.db.Where("team_id = ?", teamID).Find(&apps).Error; err != nil {

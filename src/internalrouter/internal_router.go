@@ -27,6 +27,6 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 
 	// ai agentrouters
 	appRouter.POST("/fetchByIDs", r.Controller.GetAllAppListByIDInternal)
-	appRouter.GET("/:appID", r.Controller.GetAppInternal)
+	appRouter.GET("/:appID/releaseVersion", r.Controller.GetReleaseVersionAppInternal)
 
 }
