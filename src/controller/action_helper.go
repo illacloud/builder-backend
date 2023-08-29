@@ -14,7 +14,7 @@ func (controller *Controller) ValidateActionTemplate(c *gin.Context, action *mod
 	// check build
 	actionFactory := model.NewActionFactoryByAction(action)
 	actionAssemblyLine, errInBuild := actionFactory.Build()
-	if errInBuild == nil {
+	if errInBuild != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action type error: "+errInBuild.Error())
 		return errInBuild
 	}

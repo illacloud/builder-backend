@@ -93,7 +93,7 @@ func (controller *Controller) GenerateSQL(c *gin.Context) {
 	// fetch resource meta info
 	actionFactory := model.NewActionFactoryByResource(resource)
 	actionAssemblyLine, errInBuild := actionFactory.Build()
-	if errInBuild == nil {
+	if errInBuild != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action type error: "+errInBuild.Error())
 		return
 	}
