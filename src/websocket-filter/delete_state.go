@@ -51,6 +51,7 @@ func SignalDeleteState(hub *websocket.Hub, message *websocket.Message) error {
 	case builderoperation.TARGET_NOTNING:
 		return nil
 	case builderoperation.TARGET_COMPONENTS:
+		stateType = model.TREE_STATE_TYPE_COMPONENTS
 		for _, v := range message.Payload {
 			// init current tree state node
 			currentTreeStateNode, errInInitCurrentNode := model.NewTreeStateByDeleteComponentsWebsocketMessage(app, stateType, v)
