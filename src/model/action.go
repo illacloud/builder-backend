@@ -215,3 +215,11 @@ func (action *Action) AppendRuntimeInfoForVirtualResource(authorization string) 
 	templateInByte, _ := json.Marshal(template)
 	action.Template = string(templateInByte)
 }
+
+func ExportAllActionASActionSummary(actions []*Action) []*ActionSummaryForExport {
+	ret := make([]*ActionSummaryForExport, 0)
+	for _, action := range actions {
+		ret = append(ret, NewActionSummaryForExportByAction(action))
+	}
+	return ret
+}

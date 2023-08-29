@@ -17,6 +17,7 @@ package model
 import (
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -287,4 +288,77 @@ func PickUpTreeStatesRootNode(treeStates []*TreeState) *TreeState {
 		}
 	}
 	return root
+}
+
+// the tree_state content field like:
+//
+//	{
+//	    "h": 110,
+//	    "w": 64,
+//	    "x": 0,
+//	    "y": 11,
+//	    "z": 0,
+//	    "minH": 3,
+//	    "minW": 2,
+//	    "type": "CONTAINER_WIDGET",
+//	    "error": false,
+//	    "props": {
+//	        "radius": "4px",
+//	        "shadow": "small",
+//	        "viewList": [
+//	            {
+//	                "id": "b58e92d5-22c3-4ffd-a4bc-aab23675387f",
+//	                "key": "View 1",
+//	                "label": "View 1"
+//	            }
+//	        ],
+//	        "currentKey": "View 1",
+//	        "borderColor": "#ffffffff",
+//	        "borderWidth": "0px",
+//	        "currentIndex": 0,
+//	        "dynamicHeight": "fixed",
+//	        "backgroundColor": "#f7f7f7ff",
+//	        "resizeDirection": "ALL",
+//	        "$dynamicAttrPaths": []
+//	    },
+//	    "unitH": 8,
+//	    "unitW": 18.109375,
+//	    "showName": "container",
+//	    "isDragging": false,
+//	    "parentNode": "",
+//	    "displayName": "container9",
+//	    "panelConfig": null,
+//	    "childrenNode": null,
+//	    "containerType": "EDITOR_SCALE_SQUARE",
+//	    "verticalResize": false
+//	}
+//
+// we need extract type field which suffixed with "_WIDGET" and put them in to slice and return.
+func ExtractComponentsNameList(treeStates []*TreeState) []string {
+	widgetLT := make(map[string]bool)
+	ret := make([]string, 0)
+	for _, treeState := range treeStates {
+		var content map[string]interface{}
+		unmarshalError := json.Unmarshal([]byte(treeState.Content), &content)
+		if unmarshalError != nil {
+			continue
+		}
+		typeField, hit := content["type"]
+		if !hit {
+			continue
+		}
+		typeFieldAsserted, assertPass := typeField.(string)
+		if !assertPass {
+			continue
+		}
+		widgetSuffixPos := strings.Index(typeFieldAsserted, "_WIDGET")
+		if widgetSuffixPos < 0 {
+			continue
+		}
+		widgetLT[typeFieldAsserted] = true
+	}
+	for key, _ := range widgetLT {
+		ret = append(ret, key)
+	}
+	return ret
 }

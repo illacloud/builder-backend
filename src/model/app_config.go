@@ -27,8 +27,8 @@ type AppConfig struct {
 	Public                 bool   `json:"public"` // switch for public app (which can view by anonymous user)
 	WaterMark              bool   `json:"waterMark"`
 	Description            string `json:"description"`
-	publishedToMarketplace bool   `json:"publishedToMarketplace"`
-	cover                  string `json:"cover"`
+	PublishedToMarketplace bool   `json:"publishedToMarketplace"`
+	Cover                  string `json:"cover"`
 }
 
 func NewAppConfig() *AppConfig {
@@ -57,11 +57,15 @@ func (appConfig *AppConfig) DisableWaterMark() {
 }
 
 func (appConfig *AppConfig) SetublishedToMarketplace() {
-	appConfig.publishedToMarketplace = true
+	appConfig.PublishedToMarketplace = true
 }
 
 func (appConfig *AppConfig) SetNotPublishedToMarketplace() {
-	appConfig.publishedToMarketplace = false
+	appConfig.PublishedToMarketplace = false
+}
+
+func (appConfig *AppConfig) SetCover(cover string) {
+	appConfig.Cover = cover
 }
 
 func (appConfig *AppConfig) UpdateAppConfigByConfigAppRawRequest(rawReq map[string]interface{}) error {
