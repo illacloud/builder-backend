@@ -24,9 +24,11 @@ const APP_CONFIG_FIELD_WATER_MARK = "waterMark"
 const APP_CONFIG_FIELD_DESCRIPTION = "description"
 
 type AppConfig struct {
-	Public      bool   `json:"public"` // switch for public app (which can view by anonymous user)
-	WaterMark   bool   `json:"waterMark"`
-	Description string `json:"description"`
+	Public                 bool   `json:"public"` // switch for public app (which can view by anonymous user)
+	WaterMark              bool   `json:"waterMark"`
+	Description            string `json:"description"`
+	publishedToMarketplace bool   `json:"publishedToMarketplace"`
+	cover                  string `json:"cover"`
 }
 
 func NewAppConfig() *AppConfig {
@@ -37,21 +39,29 @@ func NewAppConfig() *AppConfig {
 	}
 }
 
-func (ac *AppConfig) ExportToJSONString() string {
-	r, _ := json.Marshal(ac)
+func (appConfig *AppConfig) ExportToJSONString() string {
+	r, _ := json.Marshal(appConfig)
 	return string(r)
 }
 
-func (ac *AppConfig) IsPublic() bool {
-	return ac.Public
+func (appConfig *AppConfig) IsPublic() bool {
+	return appConfig.Public
 }
 
-func (ac *AppConfig) EnableWaterMark() {
-	ac.WaterMark = true
+func (appConfig *AppConfig) EnableWaterMark() {
+	appConfig.WaterMark = true
 }
 
-func (ac *AppConfig) DisableWaterMark() {
-	ac.WaterMark = false
+func (appConfig *AppConfig) DisableWaterMark() {
+	appConfig.WaterMark = false
+}
+
+func (appConfig *AppConfig) SetublishedToMarketplace() {
+	appConfig.publishedToMarketplace = true
+}
+
+func (appConfig *AppConfig) SetNotPublishedToMarketplace() {
+	appConfig.publishedToMarketplace = false
 }
 
 func (appConfig *AppConfig) UpdateAppConfigByConfigAppRawRequest(rawReq map[string]interface{}) error {

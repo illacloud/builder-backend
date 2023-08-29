@@ -844,7 +844,7 @@ func (controller *Controller) TakeSnapshot(c *gin.Context) {
 	}
 
 	// fetch app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(appID, teamID)
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
 	if errInRetrieveApp != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
 		return
@@ -1038,7 +1038,7 @@ func (controller *Controller) RecoverSnapshot(c *gin.Context) {
 	// phrase 1: take snapshot for current edit version
 
 	// fetch app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(appID, teamID)
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
 	if errInRetrieveApp != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
 		return
