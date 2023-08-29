@@ -2,13 +2,16 @@
 
 all: build
 
-build: build-http-server build-websocket-server
+build: build-http-server build-websocket-server build-http-server-internal
 
 build-http-server:
 	go build -o bin/illa-builder-backend src/cmd/illa-builder-backend/main.go
 
 build-websocket-server:
 	go build -o bin/illa-builder-backend-websocket src/cmd/illa-builder-backend-websocket/main.go
+
+build-http-server-internal:
+	go build -o bin/illa-builder-backend-internal src/cmd/illa-builder-backend-internal/main.go
 
 test:
 	PROJECT_PWD=$(shell pwd) go test -race ./...

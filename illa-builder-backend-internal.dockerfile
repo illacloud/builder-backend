@@ -1,5 +1,5 @@
 # ---------------------
-# build illa-backend
+# build illa-builder-backend-internal
 FROM golang:1.19-bullseye as builder-for-backend
 
 ## set env
@@ -20,10 +20,9 @@ COPY ./ ./
 
 RUN cat ./Makefile
 
-RUN make all
+RUN make build-http-server-internal
 
-RUN ls -alh ./bin/illa-builder-backend
-RUN ls -alh ./bin/illa-builder-backend-websocket
+RUN ls -alh ./bin/illa-builder-backend-internal
 
 
 # -------------------
@@ -33,7 +32,7 @@ FROM alpine:latest as runner
 WORKDIR /opt/illa/illa-builder-backend/bin/
 
 ## copy backend bin
-COPY --from=builder-for-backend /opt/illa/illa-builder-backend/bin/illa-builder-backend /opt/illa/illa-builder-backend/bin/
+COPY --from=builder-for-backend /opt/illa/illa-builder-backend/bin/illa-builder-backend-internal /opt/illa/illa-builder-backend/bin/
 
 
 RUN ls -alh /opt/illa/illa-builder-backend/bin/
@@ -41,5 +40,5 @@ RUN ls -alh /opt/illa/illa-builder-backend/bin/
 
 
 # run
-EXPOSE 8001
-CMD ["/bin/sh", "-c", "/opt/illa/illa-builder-backend/bin/illa-builder-backend"]
+EXPOSE 9005
+CMD ["/bin/sh", "-c", "/opt/illa/illa-builder-backend/bin/illa-builder-backend-internal"]
