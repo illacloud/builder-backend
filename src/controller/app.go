@@ -2,7 +2,6 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -1133,6 +1132,61 @@ func (controller *Controller) ForkMarketplaceApp(c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("%v", appID)
-	fmt.Printf("%v", userID)
+	// get app, only published ai-agent can be fork.
+	app, errInRetrieve := controller.Storage.AppStorage.RetrieveByID(appID)
+	if errInRetrieve != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_FORK_APP, "target app nost exists failed: "+errInRetrieve.Error())
+		return
+	}
+	if !app.IsPublishedToMarketplace() {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_FORK_APP, "permission denied")
+		return
+	}
+
+	// create new app for duplicate
+	duplicatedApp := model.NewAppForDuplicate(app, app.ExportAppName(), userID)
+	duplicatedApp.InitForFork(toTeamID, userID)
+	duplicatedAppID, errInCreateApp := controller.Storage.AppStorage.Create(duplicatedApp)
+	if errInCreateApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_FORK_APP, "error in create app: "+errInCreateApp.Error())
+		return
+	}
+
+	// duplicate app following units
+	// duplicate will copy following units from target app mainline version to duplicated app edit version
+	controller.DuplicateTreeStateByVersion(c, app.ExportTeamID(), toTeamID, appID, duplicatedAppID, app.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
+	controller.DuplicateKVStateByVersion(c, app.ExportTeamID(), toTeamID, appID, duplicatedAppID, app.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
+	controller.DuplicateSetStateByVersion(c, app.ExportTeamID(), toTeamID, appID, duplicatedAppID, app.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
+	controller.DuplicateActionByVersion(c, app.ExportTeamID(), toTeamID, appID, duplicatedAppID, app.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
+
+	// audit log
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType: auditlogger.AUDIT_LOG_CREATE_APP,
+		TeamID:    toTeamID,
+		UserID:    userID,
+		IP:        c.ClientIP(),
+		AppID:     duplicatedApp.ExportID(),
+		AppName:   duplicatedApp.ExportAppName(),
+	})
+
+	// init app snapshot
+	_, errInInitAppSnapSHot := controller.InitAppSnapshot(c, toTeamID, duplicatedApp.ExportID())
+	if errInInitAppSnapSHot != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_SNAPSHOT, "error in create app snapshot: "+errInInitAppSnapSHot.Error())
+
+	}
+
+	// get all modifier user ids from all apps
+	allUserIDs := model.ExtractAllEditorIDFromApps([]*model.App{duplicatedApp})
+
+	// fet all user id mapped user info, and build user info lookup table
+	usersLT, errInGetMultiUserInfo := datacontrol.GetMultiUserInfo(allUserIDs)
+	if errInGetMultiUserInfo != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_USER, "get user info failed: "+errInGetMultiUserInfo.Error())
+		return
+	}
+
+	// feedback
+	controller.FeedbackOK(c, model.NewAppForExport(duplicatedApp, usersLT))
 }

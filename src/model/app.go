@@ -117,6 +117,15 @@ func (app *App) InitUpdatedAt() {
 	app.UpdatedAt = time.Now().UTC()
 }
 
+func (app *App) InitForFork(teamID int, modifyUserID int) {
+	app.ID = 0
+	app.UID = uuid.New()
+	app.TeamID = teamID
+	app.InitCreatedAt()
+	app.Modify(modifyUserID)
+	app.SetNotPublishedToMarketplace(modifyUserID)
+}
+
 func (app *App) BumpMainlineVersion() {
 	app.MainlineVersion += 1
 }
@@ -159,6 +168,20 @@ func (app *App) ExportConfig() *AppConfig {
 func (app *App) IsPublic() bool {
 	ac := app.ExportConfig()
 	return ac.Public
+}
+
+func (app *App) IsPublishedToMarketplace() bool {
+	ac := app.ExportConfig()
+	return ac.PublishedToMarketplace
+}
+
+func (app *App) SetNotPublishedToMarketplace(userID int) {
+	appConfig := app.ExportConfig()
+	appConfig.SetNotPublishedToMarketplace()
+	app.Config = appConfig.ExportToJSONString()
+	app.UpdatedBy = userID
+	app.PushEditedBy(NewAppEditedByUserID(userID))
+	app.InitUpdatedAt()
 }
 
 func (app *App) SetID(appID int) {

@@ -55,6 +55,14 @@ func (impl *AppStorage) UpdateWholeApp(app *model.App) error {
 	return nil
 }
 
+func (impl *AppStorage) RetrieveByID(appID int) (*model.App, error) {
+	var app *model.App
+	if err := impl.db.Where("id = ?", appID).First(&app).Error; err != nil {
+		return nil, err
+	}
+	return app, nil
+}
+
 func (impl *AppStorage) RetrieveByTeamID(teamID int) ([]*model.App, error) {
 	var apps []*model.App
 	if err := impl.db.Where("team_id = ?", teamID).Find(&apps).Error; err != nil {
