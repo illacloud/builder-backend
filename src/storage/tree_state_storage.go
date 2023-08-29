@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/illacloud/builder-backend/src/model"
 	"go.uber.org/zap"
@@ -31,10 +32,12 @@ func (impl *TreeStateStorage) Create(treeState *model.TreeState) (int, error) {
 // insert tree state by component tree
 func (impl *TreeStateStorage) CreateComponentTree(app *model.App, parentNodeID int, componentNodeTree *model.ComponentNode) error {
 	// convert ComponentNode to TreeState
+	log.Printf("[0] -----------------------------------------------------------------------------------------------------\n")
 	currentNode, errInNewTreeState := model.NewTreeStateByAppAndComponentState(app, model.TREE_STATE_TYPE_COMPONENTS, componentNodeTree)
 	if errInNewTreeState != nil {
 		return errInNewTreeState
 	}
+	log.Printf("[1] parentNode.ID: %d, currentNode.ID: %d, currentNode.ParentNode: %s \n", parentNodeID, currentNode.ID, currentNode.ParentNode)
 
 	// get parentNode
 	parentTreeState := model.NewTreeState()
@@ -65,6 +68,7 @@ func (impl *TreeStateStorage) CreateComponentTree(app *model.App, parentNodeID i
 		if errInRetrieveParentTreeState != nil {
 			return errInRetrieveParentTreeState
 		}
+		log.Printf("[2] isSummitNode: true, currentNode.Name: %s, parentTreeState.ID: %d, parentTreeState.Name: %s, parentTreeState.ChildrenNodeRefIDs: %+v\n", currentNode.Name, parentTreeState.ID, parentTreeState.Name, parentTreeState.ChildrenNodeRefIDs)
 	}
 
 	// hook parent node for current node
@@ -76,6 +80,7 @@ func (impl *TreeStateStorage) CreateComponentTree(app *model.App, parentNodeID i
 		return errInCreateTreeState
 	}
 
+	log.Printf("[3] currentNodeID: %d, currentNode.ParentNodeRefID %d\n", currentNodeID, currentNode.ParentNodeRefID)
 	// fill currentNode id into parentNode.ChildrenNodeRefIDs and update it
 	if currentNode.Name != model.TREE_STATE_SUMMIT_NAME {
 		parentTreeState.AppendChildrenNodeRefIDs(currentNodeID)

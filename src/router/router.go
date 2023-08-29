@@ -25,6 +25,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 
 	builderRouter := routerGroup.Group("/teams/:teamID/builder")
 	appRouter := routerGroup.Group("/teams/:teamID/apps")
+	appsRouter := routerGroup.Group("/apps")
 	publicAppRouter := routerGroup.Group("/teams/byIdentifier/:teamIdentifier/publicApps")
 	resourceRouter := routerGroup.Group("/teams/:teamID/resources")
 	actionRouter := routerGroup.Group("/teams/:teamID/apps/:appID/actions")
@@ -37,6 +38,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	// register auth
 	builderRouter.Use(remotejwtauth.RemoteJWTAuth())
 	appRouter.Use(remotejwtauth.RemoteJWTAuth())
+	appsRouter.Use(remotejwtauth.RemoteJWTAuth())
 	roomRouter.Use(remotejwtauth.RemoteJWTAuth())
 	actionRouter.Use(remotejwtauth.RemoteJWTAuth())
 	internalActionRouter.Use(remotejwtauth.RemoteJWTAuth())
@@ -60,6 +62,9 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	appRouter.GET("/list", r.Controller.GetAllAppByPage)
 	appRouter.GET("/list/like", r.Controller.SearchAppByKeywordsByPageUsingURIParam)
 	appRouter.GET("/list/limit/:limit/page/:page/sortBy/:sortBy/like/keywords/:keywords", r.Controller.SearchAppByKeywordsByPage)
+
+	// apps router
+	appsRouter.POST(":appID/forkTo/teams/:toTeamID", r.Controller.ForkMarketplaceApp)
 
 	// room routers
 	roomRouter.GET("/websocketConnection/dashboard", r.Controller.GetDashboardRoomConnectionAddress)

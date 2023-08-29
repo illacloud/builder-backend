@@ -1105,3 +1105,7 @@ func (controller *Controller) RecoverSnapshot(c *gin.Context) {
 	return
 
 }
+
+func (controller *Controller) ForkMarketplaceApp(c *gin.Context) {
+
+}
