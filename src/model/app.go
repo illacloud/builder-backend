@@ -184,6 +184,15 @@ func (app *App) SetNotPublishedToMarketplace(userID int) {
 	app.InitUpdatedAt()
 }
 
+func (app *App) SetPublishedToMarketplace(publishedToMarketpalce bool, modifyUserID int) {
+	appConfig := app.ExportConfig()
+	appConfig.PublishedToMarketplace = publishedToMarketpalce
+	app.Config = appConfig.ExportToJSONString()
+	app.UpdatedBy = modifyUserID
+	app.PushEditedBy(NewAppEditedByUserID(modifyUserID))
+	app.InitUpdatedAt()
+}
+
 func (app *App) SetID(appID int) {
 	app.ID = appID
 }
