@@ -7,7 +7,7 @@ import (
 	"github.com/illacloud/builder-backend/src/drive"
 	"github.com/illacloud/builder-backend/src/driver/awss3"
 	"github.com/illacloud/builder-backend/src/driver/postgres"
-	"github.com/illacloud/builder-backend/src/router"
+	"github.com/illacloud/builder-backend/src/internalrouter"
 	"github.com/illacloud/builder-backend/src/storage"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
 	"github.com/illacloud/builder-backend/src/utils/config"
@@ -22,12 +22,12 @@ import (
 
 type Server struct {
 	engine *gin.Engine
-	router *router.Router
+	router *internalrouter.Router
 	logger *zap.SugaredLogger
 	config *config.Config
 }
 
-func NewServer(config *config.Config, engine *gin.Engine, router *router.Router, logger *zap.SugaredLogger) *Server {
+func NewServer(config *config.Config, engine *gin.Engine, router *internalrouter.Router, logger *zap.SugaredLogger) *Server {
 	return &Server{
 		engine: engine,
 		config: config,
@@ -75,10 +75,9 @@ func initServer() (*Server, error) {
 
 	// init controller
 	c := controller.NewControllerForBackend(storage, drive, validator, attrg)
-	router := router.NewRouter(c)
+	router := internalrouter.NewRouter(c)
 	server := NewServer(globalConfig, engine, router, sugaredLogger)
 	return server, nil
-
 }
 
 func (server *Server) Start() {
