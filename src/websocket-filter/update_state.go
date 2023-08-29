@@ -16,6 +16,7 @@ package filter
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/illacloud/builder-backend/src/model"
 	"github.com/illacloud/builder-backend/src/utils/builderoperation"
@@ -55,6 +56,7 @@ func SignalUpdateState(hub *websocket.Hub, message *websocket.Message) error {
 		stateType = model.TREE_STATE_TYPE_COMPONENTS
 		displayNames := make([]string, 0)
 		for _, v := range message.Payload {
+			fmt.Printf("[DUMP] v: %+v\n", v)
 			componentStateForUpdate, errInConstructComponentStateForUpdate := model.ConstructComponentStateForUpdateByPayload(v)
 			if errInConstructComponentStateForUpdate != nil {
 				currentClient.Feedback(message, websocket.ERROR_UPDATE_STATE_FAILED, errInConstructComponentStateForUpdate)
@@ -68,6 +70,7 @@ func SignalUpdateState(hub *websocket.Hub, message *websocket.Message) error {
 				currentClient.Feedback(message, websocket.ERROR_CREATE_OR_UPDATE_STATE_FAILED, errInRetrieveTreeState)
 				return errInRetrieveTreeState
 			}
+			fmt.Printf("[DUMP] inDatabaseTreeState: %+v\n", inDatabaseTreeState)
 
 			// init current tree state node
 			currentTreeStateNode, errInInitCurrentNode := model.NewTreeStateByWebsocketMessage(app, stateType, componentStateForUpdate.After)
@@ -75,9 +78,12 @@ func SignalUpdateState(hub *websocket.Hub, message *websocket.Message) error {
 				currentClient.Feedback(message, websocket.ERROR_CREATE_OR_UPDATE_STATE_FAILED, errInInitCurrentNode)
 				return errInInitCurrentNode
 			}
+			fmt.Printf("[DUMP] currentTreeStateNode: %+v\n", currentTreeStateNode)
 
 			// it is in database, update it
 			inDatabaseTreeState.UpdateByNewTreeState(currentTreeStateNode)
+			fmt.Printf("[DUMP] inDatabaseTreeState.UpdateByNewTreeState: %+v\n", inDatabaseTreeState)
+
 			errInUpdateTreeState := hub.Storage.TreeStateStorage.Update(inDatabaseTreeState)
 			if errInUpdateTreeState != nil {
 				currentClient.Feedback(message, websocket.ERROR_CREATE_OR_UPDATE_STATE_FAILED, errInUpdateTreeState)
