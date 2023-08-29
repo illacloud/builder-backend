@@ -22,8 +22,7 @@ func (controller *Controller) RunPublicAction(c *gin.Context) {
 	userAuthToken := accesscontrol.ANONYMOUS_AUTH_TOKEN
 	teamIdentifier, errInGetTeamIdentifier := controller.GetStringParamFromRequest(c, PARAM_TEAM_IDENTIFIER)
 	publicActionID, errInGetPublicActionID := controller.GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
-	appID, errInGetAppID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
-	if errInGetTeamIdentifier != nil || errInGetPublicActionID != nil || errInGetAppID != nil {
+	if errInGetTeamIdentifier != nil || errInGetPublicActionID != nil {
 		return
 	}
 
@@ -51,15 +50,8 @@ func (controller *Controller) RunPublicAction(c *gin.Context) {
 		return
 	}
 
-	// get action mapped app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
-	if errInRetrieveApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
-		return
-	}
-
 	// check if action is public action
-	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDActionIDAndVersion(teamID, publicActionID, app.ExportMainlineVersion())
+	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDActionID(teamID, publicActionID)
 	if errInRetrieveAction != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errInRetrieveAction.Error())
 		return

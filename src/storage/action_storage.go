@@ -140,9 +140,9 @@ func (impl *ActionStorage) RetrieveActionsByTeamIDAppIDAndVersion(teamID int, ap
 	return actions, nil
 }
 
-func (impl *ActionStorage) RetrieveActionsByTeamIDActionIDAndVersion(teamID int, actionID int, version int) (*model.Action, error) {
+func (impl *ActionStorage) RetrieveActionsByTeamIDActionID(teamID int, actionID int) (*model.Action, error) {
 	var action *model.Action
-	if err := impl.db.Where("team_id = ? AND id = ? AND version = ?", teamID, actionID, version).First(&action).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND id = ?", teamID, actionID).First(&action).Error; err != nil {
 		return nil, err
 	}
 	return action, nil

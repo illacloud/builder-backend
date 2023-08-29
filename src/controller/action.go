@@ -287,10 +287,9 @@ func (controller *Controller) RunAction(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	actionID, errInGetActionID := controller.GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
-	appID, errInGetAppID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
-	if errInGetTeamID != nil || errInGetActionID != nil || errInGetAuthToken != nil || errInGetUserID != nil || errInGetAppID != nil {
+	if errInGetTeamID != nil || errInGetActionID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
 	}
 
@@ -323,15 +322,8 @@ func (controller *Controller) RunAction(c *gin.Context) {
 		return
 	}
 
-	// get action mapped app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
-	if errInRetrieveApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
-		return
-	}
-
 	// get action
-	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDActionIDAndVersion(teamID, actionID, app.ExportMainlineVersion())
+	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDActionID(teamID, actionID)
 	if errInRetrieveAction != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errInRetrieveAction.Error())
 		return
