@@ -29,7 +29,90 @@ func (impl *TreeStateStorage) Create(treeState *model.TreeState) (int, error) {
 	return treeState.ID, nil
 }
 
-// insert tree state by component tree
+// insert tree state by component tree, websocket message like:
+//
+//	{
+//	    "signal": 3,
+//	    "target": 1,
+//	    "option": 1,
+//	    "broadcast": {
+//	        "type": "components/addComponentReducer",
+//	        "payload": [
+//	            {
+//	                "w": 6,
+//	                "h": 5,
+//	                "minW": 1,
+//	                "minH": 3,
+//	                "x": 18,
+//	                "y": 28,
+//	                "z": 0,
+//	                "showName": "input",
+//	                "type": "INPUT_WIDGET",
+//	                "displayName": "input1",
+//	                "containerType": "EDITOR_SCALE_SQUARE",
+//	                "parentNode": "bodySection1-bodySectionContainer1",
+//	                "childrenNode": [],
+//	                "props": {
+//	                    "value": "",
+//	                    "label": "Label",
+//	                    "labelAlign": "left",
+//	                    "labelPosition": "left",
+//	                    "labelWidth": "{{33}}",
+//	                    "colorScheme": "blue",
+//	                    "hidden": false,
+//	                    "formDataKey": "{{input1.displayName}}",
+//	                    "placeholder": "input sth",
+//	                    "$dynamicAttrPaths": [
+//	                        "labelWidth",
+//	                        "formDataKey",
+//	                        "showVisibleButton"
+//	                    ],
+//	                    "type": "input",
+//	                    "showVisibleButton": "{{true}}"
+//	                },
+//	                "version": 0
+//	            }
+//	        ]
+//	    },
+//	    "payload": [
+//	        {
+//	            "w": 6,
+//	            "h": 5,
+//	            "minW": 1,
+//	            "minH": 3,
+//	            "x": 18,
+//	            "y": 28,
+//	            "z": 0,
+//	            "showName": "input",
+//	            "type": "INPUT_WIDGET",
+//	            "displayName": "input1",
+//	            "containerType": "EDITOR_SCALE_SQUARE",
+//	            "parentNode": "bodySection1-bodySectionContainer1",
+//	            "childrenNode": [],
+//	            "props": {
+//	                "value": "",
+//	                "label": "Label",
+//	                "labelAlign": "left",
+//	                "labelPosition": "left",
+//	                "labelWidth": "{{33}}",
+//	                "colorScheme": "blue",
+//	                "hidden": false,
+//	                "formDataKey": "{{input1.displayName}}",
+//	                "placeholder": "input sth",
+//	                "$dynamicAttrPaths": [
+//	                    "labelWidth",
+//	                    "formDataKey",
+//	                    "showVisibleButton"
+//	                ],
+//	                "type": "input",
+//	                "showVisibleButton": "{{true}}"
+//	            },
+//	            "version": 0
+//	        }
+//	    ],
+//	    "teamID": "ILAfx4p1C7bN",
+//	    "uid": "ILAfx4p1C7bN"
+//	}
 func (impl *TreeStateStorage) CreateComponentTree(app *model.App, parentNodeID int, componentNodeTree *model.ComponentNode) error {
 	// convert ComponentNode to TreeState
 	log.Printf("[0] -----------------------------------------------------------------------------------------------------\n")
@@ -80,7 +163,7 @@ func (impl *TreeStateStorage) CreateComponentTree(app *model.App, parentNodeID i
 		return errInCreateTreeState
 	}
 
-	log.Printf("[3] currentNodeID: %d, currentNode.ParentNodeRefID %d\n", currentNodeID, currentNode.ParentNodeRefID)
+	log.Printf("[3] currentNodeID: %d, currentNode.ParentNodeRefID %d, currentNode.Name: %s, parentTreeState.Name: %s\n", currentNodeID, currentNode.ParentNodeRefID, currentNode.Name, parentTreeState.Name)
 	// fill currentNode id into parentNode.ChildrenNodeRefIDs and update it
 	if currentNode.Name != model.TREE_STATE_SUMMIT_NAME {
 		parentTreeState.AppendChildrenNodeRefIDs(currentNodeID)

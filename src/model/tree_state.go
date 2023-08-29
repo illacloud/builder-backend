@@ -108,6 +108,7 @@ func NewTreeStateByAppAndComponentState(app *App, stateType int, componentNode *
 	}
 	treeState := NewTreeStateByApp(app, stateType)
 	treeState.Name = componentNode.DisplayName
+	treeState.ParentNode = componentNode.ParentNode
 	treeState.Content = componentNodeSerilized
 	return treeState, nil
 }

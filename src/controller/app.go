@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -1107,5 +1108,31 @@ func (controller *Controller) RecoverSnapshot(c *gin.Context) {
 }
 
 func (controller *Controller) ForkMarketplaceApp(c *gin.Context) {
+	// get user input params
+	toTeamID, errInGetToTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TO_TEAM_ID)
+	appID, errInGetAppID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
+	if errInGetToTeamID != nil || errInGetUserID != nil || errInGetAppID != nil || errInGetAuthToken != nil {
+		return
+	}
 
+	// validate
+	controller.AttributeGroup.Init()
+	controller.AttributeGroup.SetTeamID(toTeamID)
+	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
+	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
+	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_FORK_APP)
+	if errInCheckAttr != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canManage {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	fmt.Printf("%v", appID)
+	fmt.Printf("%v", userID)
 }
