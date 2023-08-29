@@ -312,7 +312,7 @@ func (a *Connector) UpdateRecord() (common.RuntimeResult, error) {
 			"baseId":    a.Action.BaseConfig.BaseID,
 			"tableName": a.Action.BaseConfig.TableName,
 		}).
-		Patch(AIRTABLE_API + "/" + updateConfig.RecordId)
+		Patch(AIRTABLE_API + "/" + updateConfig.RecordID)
 
 	// handle response
 	if resp.StatusCode() != http.StatusOK {
@@ -348,8 +348,8 @@ func (a *Connector) DeleteMultipleRecords() (common.RuntimeResult, error) {
 	}
 
 	// call `Delete Multiple Records` method
-	deleteIds := make([]string, 0, len(bulkDeleteConfig.RecordIds))
-	for _, ids := range bulkDeleteConfig.RecordIds {
+	deleteIds := make([]string, 0, len(bulkDeleteConfig.RecordIDs))
+	for _, ids := range bulkDeleteConfig.RecordIDs {
 		deleteIds = append(deleteIds, fmt.Sprintf("records=%s", ids))
 	}
 	deleteIdsQueryParams := "?" + strings.Join(deleteIds, "&")
@@ -413,7 +413,7 @@ func (a *Connector) DeleteRecord() (common.RuntimeResult, error) {
 			"baseId":    a.Action.BaseConfig.BaseID,
 			"tableName": a.Action.BaseConfig.TableName,
 		}).
-		Delete(AIRTABLE_API + "/" + deleteConfig.RecordId)
+		Delete(AIRTABLE_API + "/" + deleteConfig.RecordID)
 
 	// handle response
 	if resp.StatusCode() != http.StatusOK {

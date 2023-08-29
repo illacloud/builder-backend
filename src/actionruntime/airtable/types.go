@@ -80,14 +80,14 @@ type BulkUpdateConfig struct {
 }
 
 type UpdateConfig struct {
-	RecordId string                 `mapstructure:"recordId" validate:"required"`
+	RecordID string                 `mapstructure:"recordId" validate:"required"`
 	Record   map[string]interface{} `mapstructure:"record" validate:"required"`
 }
 
 type DeleteConfig struct {
-	RecordId string `mapstructure:"recordId" validate:"required"`
+	RecordID string `mapstructure:"recordId" validate:"required"`
 }
 
 type BulkDeleteConfig struct {
-	RecordIds []string `mapstructure:"recordIds" validate:"required,gt=0,lt=11"`
+	RecordIDs []string `mapstructure:"recordIds" validate:"required,gt=0,lt=11"`
 }
