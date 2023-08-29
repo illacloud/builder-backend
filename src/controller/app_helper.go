@@ -199,7 +199,7 @@ func (controller *Controller) SaveAppSnapshotByVersion(c *gin.Context, teamID in
 
 func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int, appID int, version int, getPublicApp bool) (*model.FullAppForExport, error) {
 	// fetch app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(appID, teamID)
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
 	if errInRetrieveApp != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app full data error: "+errInRetrieveApp.Error())
 		return nil, errInRetrieveApp
