@@ -71,14 +71,14 @@ func (impl *TreeStateStorage) CreateComponentTree(app *model.App, parentNodeID i
 	currentNode.ParentNodeRefID = parentTreeState.ID
 
 	// insert currentNode and get id
-	_, errInCreateTreeState := impl.Create(currentNode)
+	currentNodeID, errInCreateTreeState := impl.Create(currentNode)
 	if errInCreateTreeState != nil {
 		return errInCreateTreeState
 	}
 
 	// fill currentNode id into parentNode.ChildrenNodeRefIDs and update it
 	if currentNode.Name != model.TREE_STATE_SUMMIT_NAME {
-		parentTreeState.AppendChildrenNodeRefIDs(currentNode.ID)
+		parentTreeState.AppendChildrenNodeRefIDs(currentNodeID)
 		// update parentNode
 		errInUpdateTreeState := impl.Update(parentTreeState)
 		if errInUpdateTreeState != nil {
