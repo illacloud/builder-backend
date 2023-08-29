@@ -149,6 +149,10 @@ func NewTreeStateByWebsocketMessage(app *App, stateType int, data interface{}) (
 			treeState.ParentNode, _ = v.(string)
 		}
 	}
+	marshaledData, marshalError := json.Marshal(data)
+	if marshalError != nil {
+		treeState.Content = string(marshaledData)
+	}
 	return treeState, nil
 }
 
