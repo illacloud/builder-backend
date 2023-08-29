@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -51,7 +52,8 @@ func (controller *Controller) RunPublicAction(c *gin.Context) {
 	}
 
 	// check if action is public action
-	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDActionID(teamID, publicActionID)
+	fmt.Printf("[RetrieveActionsByTeamIDActionID] teamID: %d, publicActionID: %d\n", teamID, publicActionID)
+	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionByTeamIDActionID(teamID, publicActionID)
 	if errInRetrieveAction != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errInRetrieveAction.Error())
 		return

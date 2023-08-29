@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -323,7 +324,8 @@ func (controller *Controller) RunAction(c *gin.Context) {
 	}
 
 	// get action
-	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDActionID(teamID, actionID)
+	fmt.Printf("[RetrieveActionsByTeamIDActionID] teamID: %d, actionID: %d\n", teamID, actionID)
+	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionByTeamIDActionID(teamID, actionID)
 	if errInRetrieveAction != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errInRetrieveAction.Error())
 		return
