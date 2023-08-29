@@ -93,10 +93,10 @@ func NewTreeStateByApp(app *App, stateType int) *TreeState {
 //	    "broadcast": null,
 //	    "payload": [
 //	        {
-//	            "before": {
+//	            "before": { <- data
 //	                "displayName": "input1"
 //	            },
-//	            "after": {
+//	            "after": {  <- data
 //	                "w": 6,
 //	                "h": 5,
 //	                "minW": 1,
@@ -153,6 +153,37 @@ func NewTreeStateByWebsocketMessage(app *App, stateType int, data interface{}) (
 	if marshalError != nil {
 		treeState.Content = string(marshaledData)
 	}
+	return treeState, nil
+}
+
+// delete component tree, message like:
+//
+//	{
+//	    "signal": 4,
+//	    "target": 1,
+//	    "option": 1,
+//	    "broadcast": {
+//	        "type": "components/deleteComponentNodeReducer",
+//	        "payload": {
+//	            "displayNames": [
+//	                "image1"
+//	            ],
+//	            "source": "manage_delete"
+//	        }
+//	    },
+//	    "payload": [
+//	        "image1" <- data
+//	    ],
+//	    "teamID": "ILAfx4p1C7bN",
+//	    "uid": "ILAfx4p1C7bN"
+//	}
+func NewTreeStateByDeleteComponentsWebsocketMessage(app *App, stateType int, data interface{}) (*TreeState, error) {
+	treeState := NewTreeStateByApp(app, stateType)
+	udata, ok := data.(string)
+	if !ok {
+		return nil, errors.New("can not init tree state")
+	}
+	treeState.Name = udata
 	return treeState, nil
 }
 

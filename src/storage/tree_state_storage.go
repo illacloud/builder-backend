@@ -183,6 +183,27 @@ func (impl *TreeStateStorage) CreateComponentTree(app *model.App, parentNodeID i
 	return nil
 }
 
+// delete component tree, message like:
+//
+//	{
+//	    "signal": 4,
+//	    "target": 1,
+//	    "option": 1,
+//	    "broadcast": {
+//	        "type": "components/deleteComponentNodeReducer",
+//	        "payload": {
+//	            "displayNames": [
+//	                "image1"
+//	            ],
+//	            "source": "manage_delete"
+//	        }
+//	    },
+//	    "payload": [
+//	        "image1"
+//	    ],
+//	    "teamID": "ILAfx4p1C7bN",
+//	    "uid": "ILAfx4p1C7bN"
+//	}
 func (impl *TreeStateStorage) DeleteComponentTree(currentNode *model.TreeState) error {
 	// get currentTreeState by displayName from database
 	currentTreeState, errInRetrieveCurrentNode := impl.RetrieveEditVersionByAppAndName(currentNode.TeamID, currentNode.AppRefID, currentNode.StateType, currentNode.Name)

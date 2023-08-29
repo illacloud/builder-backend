@@ -53,7 +53,7 @@ func SignalDeleteState(hub *websocket.Hub, message *websocket.Message) error {
 	case builderoperation.TARGET_COMPONENTS:
 		for _, v := range message.Payload {
 			// init current tree state node
-			currentTreeStateNode, errInInitCurrentNode := model.NewTreeStateByWebsocketMessage(app, stateType, v)
+			currentTreeStateNode, errInInitCurrentNode := model.NewTreeStateByDeleteComponentsWebsocketMessage(app, stateType, v)
 			if errInInitCurrentNode != nil {
 				currentClient.Feedback(message, websocket.ERROR_DELETE_STATE_FAILED, errInInitCurrentNode)
 				return errInInitCurrentNode
