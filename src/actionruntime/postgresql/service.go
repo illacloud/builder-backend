@@ -16,6 +16,7 @@ package postgresql
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -36,8 +37,9 @@ func (p *Connector) ValidateResourceOptions(resourceOptions map[string]interface
 	if err := mapstructure.Decode(resourceOptions, &p.Resource); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
-
+	mar, _ := json.Marshal(resourceOptions)
 	fmt.Printf("[DUMP] resourceOptions: %+v\n", resourceOptions)
+	fmt.Printf("[DUMP] resourceOptionsEncoded: %+v\n", mar)
 	fmt.Printf("[DUMP] p.Resource: %+v\n", p.Resource)
 
 	// validate postgresql options

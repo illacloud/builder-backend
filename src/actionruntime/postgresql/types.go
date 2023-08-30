@@ -20,7 +20,7 @@ type Options struct {
 	DatabaseName     string     `validate:"required"`
 	DatabaseUsername string     `validate:"required"`
 	DatabasePassword string     `validate:"required"`
-	SSL              SSLOptions `validate:"required,omitempty"`
+	SSL              SSLOptions `validate:"required"`
 }
 
 type SSLOptions struct {
