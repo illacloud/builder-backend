@@ -130,7 +130,7 @@ func (app *App) BumpMainlineVersion() {
 	app.MainlineVersion += 1
 }
 
-func (app *App) BumpMainlineVersionOverReleaseVersoin() {
+func (app *App) BumpMainlineVersionOverReleaseVersion() {
 	app.MainlineVersion += 1
 	for {
 		if app.MainlineVersion > app.ReleaseVersion {
@@ -140,9 +140,9 @@ func (app *App) BumpMainlineVersionOverReleaseVersoin() {
 	}
 }
 
-func (app *App) SyncMainlineVersoinWithTreeStateLatestVersion(treeStateLatestVersoin int) {
-	if app.MainlineVersion < treeStateLatestVersoin {
-		app.MainlineVersion = treeStateLatestVersoin
+func (app *App) SyncMainlineVersionWithTreeStateLatestVersion(treeStateLatestVersion int) {
+	if app.MainlineVersion < treeStateLatestVersion {
+		app.MainlineVersion = treeStateLatestVersion
 	}
 }
 
@@ -151,7 +151,7 @@ func (app *App) ReleaseMainlineVersion() {
 }
 
 func (app *App) Release() {
-	app.BumpMainlineVersionOverReleaseVersoin()
+	app.BumpMainlineVersion()
 	app.ReleaseMainlineVersion()
 }
 
@@ -256,7 +256,7 @@ func (app *App) ExportMainlineVersion() int {
 	return app.MainlineVersion
 }
 
-func (app *App) ExportReleaseVersoin() int {
+func (app *App) ExportReleaseVersion() int {
 	return app.ReleaseVersion
 }
 

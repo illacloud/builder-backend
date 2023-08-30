@@ -1,15 +1,23 @@
 package response
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/illacloud/builder-backend/src/model"
+)
 
 type ReleaseAppResponse struct {
-	Version int `json:"version"`
+	Version         int `json:"version"`
+	ReleaseVersion  int `json:"releaseVersion"`
+	MainlineVersion int `json:"mainlineVersion"`
 }
 
-func NewReleaseAppResponse(version int) *ReleaseAppResponse {
-	fmt.Printf("[DUMP] NewReleaseAppResponse: %+v\n", version)
+func NewReleaseAppResponse(app *model.App) *ReleaseAppResponse {
+	fmt.Printf("[DUMP] NewReleaseAppResponse: %+v\n", app.ExportReleaseVersion())
 	resp := &ReleaseAppResponse{
-		Version: version,
+		Version:         app.ExportReleaseVersion(),
+		ReleaseVersion:  app.ExportReleaseVersion(),
+		MainlineVersion: app.ExportMainlineVersion(),
 	}
 	return resp
 }

@@ -849,7 +849,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	fmt.Printf("[10]\n")
 
 	// feedback
-	controller.FeedbackOK(c, response.NewReleaseAppResponse(app.ExportReleaseVersoin()))
+	controller.FeedbackOK(c, response.NewReleaseAppResponse(app))
 	fmt.Printf("[11]\n")
 
 	return
@@ -902,8 +902,8 @@ func (controller *Controller) TakeSnapshot(c *gin.Context) {
 
 	// config app version
 	treeStateLatestVersion, _ := controller.Storage.TreeStateStorage.RetrieveTreeStatesLatestVersion(teamID, appID)
-	app.SyncMainlineVersoinWithTreeStateLatestVersion(treeStateLatestVersion)
-	app.BumpMainlineVersionOverReleaseVersoin()
+	app.SyncMainlineVersionWithTreeStateLatestVersion(treeStateLatestVersion)
+	app.BumpMainlineVersionOverReleaseVersion()
 
 	// update app for version bump, we should update app first in case create tree state failed with mismatch release & mainline version
 	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
