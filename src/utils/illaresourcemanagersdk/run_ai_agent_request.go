@@ -3,8 +3,10 @@ package illaresourcemanagersdk
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/illacloud/builder-backend/src/utils/idconvertor"
+	"github.com/illacloud/builder-backend/src/utils/tokenvalidator"
 )
 
 const (
@@ -147,4 +149,9 @@ func (req *RunAIAgentRequest) ExportAuthorization() string {
 
 func (req *RunAIAgentRequest) IsRunByAnonymous() bool {
 	return req.RunByAnonymous
+}
+
+func (req *RunAIAgentRequest) ExportRequestToken() string {
+	tokenValidator := tokenvalidator.NewRequestTokenValidator()
+	return tokenValidator.GenerateValidateToken(strconv.Itoa(req.AIAgentID))
 }

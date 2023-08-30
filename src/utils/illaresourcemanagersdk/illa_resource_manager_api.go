@@ -102,12 +102,13 @@ func (r *IllaResourceManagerRestAPI) RunAIAgent(req map[string]interface{}) (*Ru
 	if r.Debug {
 		log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  uri: %+v \n", uri)
 	}
-	tokenValidator := tokenvalidator.NewRequestTokenValidator()
-	requestToken := tokenValidator.GenerateValidateToken(strconv.Itoa(reqInstance.ExportAIAgentIDInInt()))
+	requestToken := reqInstance.ExportRequestToken()
 	log.Printf("[IllaResourceManagerRestAPI.RunAiAgent()]  uri: %+v \n", uri)
+	log.Printf("[reqInstance]  reqInstance: %+v \n", reqInstance)
 	fmt.Printf("[requestToken] %+v\n", requestToken)
 	resp, errInPost := client.R().
 		SetHeader("Request-Token", requestToken).
+		SetHeader("Authorization", reqInstance.ExportAuthorization()).
 		SetBody(req).
 		Post(uri)
 	if r.Debug {
