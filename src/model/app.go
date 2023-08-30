@@ -221,6 +221,13 @@ func (app *App) Modify(userID int) {
 	app.PushEditedBy(NewAppEditedByUserID(userID))
 }
 
+// WARRING! this is an view-level method, do not use this method to sync database changes, just for export data.
+func (app *App) RewritePublicSettings(isPublic bool) {
+	appConfig := app.ExportConfig()
+	appConfig.Public = isPublic
+	app.Config = appConfig.ExportToJSONString()
+}
+
 func (app *App) ExportID() int {
 	return app.ID
 }

@@ -193,6 +193,13 @@ func (action *Action) SetPrivate(userID int) {
 	action.InitUpdatedAt()
 }
 
+// WARRING! this is an view-level method, do not use this method to sync database changes, just for export data.
+func (action *Action) RewritePublicSettings(isPublic bool) {
+	actionConfig := action.ExportConfig()
+	actionConfig.Public = isPublic
+	action.Config = actionConfig.ExportToJSONString()
+}
+
 func (action *Action) UpdateAppConfig(actionConfig *ActionConfig, userID int) {
 	action.Config = actionConfig.ExportToJSONString()
 	action.UpdatedBy = userID

@@ -205,7 +205,10 @@ func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int
 		return nil, errInRetrieveApp
 	}
 
-	// check if we need public app
+	// sync app publisedToMarketplace status
+	app.RewritePublicSettings(app.IsPublishedToMarketplace())
+
+	// not published to marketplace, check permission
 	if getPublicApp && !app.IsPublic() {
 		errInGetPublicApp := errors.New("can not access this app")
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app full data error: "+errInGetPublicApp.Error())
@@ -259,6 +262,7 @@ func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int
 	// build actions for expost
 	actionsForExport := make([]*model.ActionForExport, 0)
 	for _, action := range actions {
+		action.RewritePublicSettings(app.IsPublishedToMarketplace())
 		actionForExport := model.NewActionForExport(action)
 		// append remote virtual resource
 		if actionForExport.Type == resourcelist.TYPE_AI_AGENT {
