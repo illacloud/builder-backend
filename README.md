@@ -39,8 +39,8 @@ out [Contributing Guide](CONTRIBUTING.md) for details about how you can get invo
 
 ## 📖 Learn more
 
-Please visit [ILLA Cloud](https://www.illacloud.com/docs/about-illa)
+Please visit [ILLA Cloud](https://www.illacloud.com/docs/about-illa).
 
 ## License
 
-This project is [Apache License 2.0](LICENSE)
+This project is [Apache License 2.0](LICENSE).
