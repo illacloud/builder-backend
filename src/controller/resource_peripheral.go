@@ -23,12 +23,13 @@ func (controller *Controller) CreateGoogleOAuthToken(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_RESOURCE)
-	controller.AttributeGroup.SetUnitID(resourceID)
-	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_EDIT_RESOURCE)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_RESOURCE,
+		resourceID,
+		accesscontrol.ACTION_MANAGE_EDIT_RESOURCE,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -101,12 +102,13 @@ func (controller *Controller) GetGoogleSheetsOAuth2Token(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_RESOURCE)
-	controller.AttributeGroup.SetUnitID(resourceID)
-	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_EDIT_RESOURCE)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_RESOURCE,
+		resourceID,
+		accesscontrol.ACTION_MANAGE_EDIT_RESOURCE,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -166,12 +168,13 @@ func (controller *Controller) RefreshGoogleSheetsOAuth(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_RESOURCE)
-	controller.AttributeGroup.SetUnitID(resourceID)
-	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_EDIT_RESOURCE)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_RESOURCE,
+		resourceID,
+		accesscontrol.ACTION_MANAGE_EDIT_RESOURCE,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return

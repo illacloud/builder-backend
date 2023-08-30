@@ -41,12 +41,13 @@ func (controller *Controller) CreateApp(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
-	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_CREATE_APP)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		accesscontrol.DEFAULT_UNIT_ID,
+		accesscontrol.ACTION_MANAGE_CREATE_APP,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -119,12 +120,13 @@ func (controller *Controller) DeleteApp(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(appID)
-	canDelete, errInCheckAttr := controller.AttributeGroup.CanDelete(accesscontrol.ACTION_DELETE)
+	canDelete, errInCheckAttr := controller.AttributeGroup.CanDelete(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		appID,
+		accesscontrol.ACTION_DELETE,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -187,12 +189,13 @@ func (controller *Controller) ConfigApp(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(appID)
-	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_EDIT_APP)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		appID,
+		accesscontrol.ACTION_MANAGE_EDIT_APP,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -268,12 +271,13 @@ func (controller *Controller) GetAllApps(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
-	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		accesscontrol.DEFAULT_UNIT_ID,
+		accesscontrol.ACTION_ACCESS_VIEW,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -284,7 +288,13 @@ func (controller *Controller) GetAllApps(c *gin.Context) {
 	}
 
 	// check if user is viewer (the viewer role can not access undeployed app aka "edit app" and have no ACTION_MANAGE_EDIT_APP attribute)
-	canManage, errInCheckAttrManage := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_EDIT_APP)
+	canManage, errInCheckAttrManage := controller.AttributeGroup.CanManage(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		accesscontrol.DEFAULT_UNIT_ID,
+		accesscontrol.ACTION_MANAGE_EDIT_APP,
+	)
 	if errInCheckAttrManage != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -339,12 +349,13 @@ func (controller *Controller) SearchAppByKeywordsByPage(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
-	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		accesscontrol.DEFAULT_UNIT_ID,
+		accesscontrol.ACTION_ACCESS_VIEW,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -421,12 +432,13 @@ func (controller *Controller) SearchAppByKeywordsByPageUsingURIParam(c *gin.Cont
 	page, _ := strconv.Atoi(pageString)
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
-	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		accesscontrol.DEFAULT_UNIT_ID,
+		accesscontrol.ACTION_ACCESS_VIEW,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -502,12 +514,12 @@ func (controller *Controller) GetAllAppByPage(c *gin.Context) {
 	page, _ := strconv.Atoi(pageString)
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
-	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		accesscontrol.DEFAULT_UNIT_ID,
+		accesscontrol.ACTION_ACCESS_VIEW,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -579,12 +591,12 @@ func (controller *Controller) GetFullApp(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(appID)
-	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		appID,
+		accesscontrol.ACTION_ACCESS_VIEW,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -632,12 +644,12 @@ func (controller *Controller) DuplicateApp(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(appID)
-	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_EDIT_APP)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		appID,
+		accesscontrol.ACTION_MANAGE_EDIT_APP,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -734,12 +746,12 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(appID)
-	canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(accesscontrol.ACTION_SPECIAL_RELEASE_APP)
+	canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		appID,
+		accesscontrol.ACTION_SPECIAL_RELEASE_APP)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -751,7 +763,13 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 
 	// check team can release public app
 	if req.ExportPublic() {
-		canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(accesscontrol.ACTION_SPECIAL_RELEASE_PUBLIC_APP)
+		canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(
+			teamID,
+			userAuthToken,
+			accesscontrol.UNIT_TYPE_APP,
+			appID,
+			accesscontrol.ACTION_SPECIAL_RELEASE_PUBLIC_APP,
+		)
 		if errInCheckAttr != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 			return
@@ -833,12 +851,13 @@ func (controller *Controller) TakeSnapshot(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(appID)
-	canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(accesscontrol.ACTOIN_SPECIAL_TAKE_SNAPSHOT)
+	canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		appID,
+		accesscontrol.ACTOIN_SPECIAL_TAKE_SNAPSHOT,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -898,12 +917,13 @@ func (controller *Controller) GetSnapshotList(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(appID)
-	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		appID,
+		accesscontrol.ACTION_ACCESS_VIEW,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -954,12 +974,13 @@ func (controller *Controller) GetSnapshot(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(appID)
-	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		appID,
+		accesscontrol.ACTION_ACCESS_VIEW,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -1025,12 +1046,13 @@ func (controller *Controller) RecoverSnapshot(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(appID)
-	canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(accesscontrol.ACTOIN_SPECIAL_RECOVER_SNAPSHOT)
+	canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		appID,
+		accesscontrol.ACTOIN_SPECIAL_RECOVER_SNAPSHOT,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -1122,12 +1144,13 @@ func (controller *Controller) ForkMarketplaceApp(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(toTeamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
-	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_FORK_APP)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
+		toTeamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		accesscontrol.DEFAULT_UNIT_ID,
+		accesscontrol.ACTION_MANAGE_FORK_APP,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return

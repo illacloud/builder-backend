@@ -12,6 +12,8 @@ import (
 
 func (controller *Controller) GetFullPublicApp(c *gin.Context) {
 	// fetch needed param
+	userID := model.ANONYMOUS_USER_ID
+	userAuthToken := accesscontrol.ANONYMOUS_AUTH_TOKEN
 	teamIdentifier, errInGetTeamIdentifier := controller.GetStringParamFromRequest(c, PARAM_TEAM_IDENTIFIER)
 	publicAppID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	version, errInGetVersion := controller.GetIntParamFromRequest(c, PARAM_VERSION)
@@ -34,12 +36,13 @@ func (controller *Controller) GetFullPublicApp(c *gin.Context) {
 	teamID := team.GetID()
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(accesscontrol.ANONYMOUS_AUTH_TOKEN)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
-	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		accesscontrol.DEFAULT_UNIT_ID,
+		accesscontrol.ACTION_ACCESS_VIEW,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -60,7 +63,7 @@ func (controller *Controller) GetFullPublicApp(c *gin.Context) {
 	auditLogger.Log(&auditlogger.LogInfo{
 		EventType: auditlogger.AUDIT_LOG_VIEW_APP,
 		TeamID:    teamID,
-		UserID:    -1,
+		UserID:    userID,
 		IP:        c.ClientIP(),
 		AppID:     publicAppID,
 		AppName:   fullAppForExport.AppInfo.Name,

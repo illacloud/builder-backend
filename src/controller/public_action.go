@@ -37,12 +37,13 @@ func (controller *Controller) RunPublicAction(c *gin.Context) {
 	teamID := team.GetID()
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(accesscontrol.ANONYMOUS_AUTH_TOKEN)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_ACTION)
-	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
-	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_RUN_ACTION)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_ACTION,
+		accesscontrol.DEFAULT_UNIT_ID,
+		accesscontrol.ACTION_MANAGE_RUN_ACTION,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return

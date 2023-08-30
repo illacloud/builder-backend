@@ -133,12 +133,13 @@ func main() {
 
 		// check if user have access permission to target team and app
 		attributeGroup, _ := accesscontrol.NewRawAttributeGroup()
-		attributeGroup.Init()
-		attributeGroup.SetTeamID(teamIDInt)
-		attributeGroup.SetUserAuthToken(authorizationToken)
-		attributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-		attributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
-		canManage, errInCheckAttr := attributeGroup.CanManage(accesscontrol.ACTION_MANAGE_EDIT_APP)
+		canManage, errInCheckAttr := attributeGroup.CanManage(
+			teamIDInt,
+			authorizationToken,
+			accesscontrol.UNIT_TYPE_APP,
+			appIDInt,
+			accesscontrol.ACTION_MANAGE_EDIT_APP,
+		)
 		if errInCheckAttr != nil {
 			return
 		}

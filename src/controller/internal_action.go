@@ -38,12 +38,13 @@ func (controller *Controller) GenerateSQL(c *gin.Context) {
 	resourceID := generateSQLRequest.ExportResourceIDInInt()
 
 	// validate sql generate special management
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_PERIPHERAL_SERVICE)
-	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
-	canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(accesscontrol.ACTION_SPECIAL_GENERATE_SQL)
+	canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_PERIPHERAL_SERVICE,
+		accesscontrol.DEFAULT_UNIT_ID,
+		accesscontrol.ACTION_SPECIAL_GENERATE_SQL,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -54,12 +55,13 @@ func (controller *Controller) GenerateSQL(c *gin.Context) {
 	}
 
 	// validate resource access
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_RESOURCE)
-	controller.AttributeGroup.SetUnitID(resourceID)
-	canAccessResource, errInCheckResourceAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	canAccessResource, errInCheckResourceAttr := controller.AttributeGroup.CanAccess(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_RESOURCE,
+		resourceID,
+		accesscontrol.ACTION_ACCESS_VIEW,
+	)
 	if errInCheckResourceAttr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"errorCode":    500,

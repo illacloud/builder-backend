@@ -36,12 +36,13 @@ func (controller *Controller) GetDashboardRoomConnectionAddress(c *gin.Context) 
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_BUILDER_DASHBOARD)
-	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
-	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_BUILDER_DASHBOARD,
+		accesscontrol.DEFAULT_UNIT_ID,
+		accesscontrol.ACTION_ACCESS_VIEW,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -66,12 +67,13 @@ func (controller *Controller) GetAppRoomConnectionAddress(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
-	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		accesscontrol.DEFAULT_UNIT_ID,
+		accesscontrol.ACTION_ACCESS_VIEW,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -96,12 +98,13 @@ func (controller *Controller) GetAppRoomBinaryConnectionAddress(c *gin.Context) 
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_APP)
-	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
-	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_APP,
+		accesscontrol.DEFAULT_UNIT_ID,
+		accesscontrol.ACTION_ACCESS_VIEW,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return

@@ -28,12 +28,13 @@ func (controller *Controller) CreateAction(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_ACTION)
-	controller.AttributeGroup.SetUnitID(accesscontrol.DEFAULT_UNIT_ID)
-	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_CREATE_ACTION)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_ACTION,
+		accesscontrol.DEFAULT_UNIT_ID,
+		accesscontrol.ACTION_MANAGE_CREATE_ACTION,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -116,12 +117,13 @@ func (controller *Controller) UpdateAction(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_ACTION)
-	controller.AttributeGroup.SetUnitID(actionID)
-	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_EDIT_ACTION)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_ACTION,
+		actionID,
+		accesscontrol.ACTION_MANAGE_EDIT_ACTION,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -160,21 +162,24 @@ func (controller *Controller) UpdateAction(c *gin.Context) {
 		return
 	}
 
-	// init action instace
-	action, errorInNewAction := model.NewAcitonByUpdateActionRequest(app, userID, updateActionRequest)
-	if errorInNewAction != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "error in create action instance: "+errorInNewAction.Error())
+	// get action
+	inDatabaseAction, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionByTeamIDActionID(teamID, actionID)
+	if errInRetrieveAction != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveAction.Error())
 		return
 	}
 
+	// update inDatabaseAction instance
+	inDatabaseAction.UpdateAcitonByUpdateActionRequest(app, userID, updateActionRequest)
+
 	// validate action options
-	errInValidateActionOptions := controller.ValidateActionTemplate(c, action)
+	errInValidateActionOptions := controller.ValidateActionTemplate(c, inDatabaseAction)
 	if errInValidateActionOptions != nil {
 		return
 	}
 
 	// update action
-	errInUpdateAction := controller.Storage.ActionStorage.UpdateWholeAction(action)
+	errInUpdateAction := controller.Storage.ActionStorage.UpdateWholeAction(inDatabaseAction)
 	if errInUpdateAction != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "update action error: "+errInUpdateAction.Error())
 		return
@@ -189,7 +194,7 @@ func (controller *Controller) UpdateAction(c *gin.Context) {
 	}
 
 	// feedback
-	controller.FeedbackOK(c, response.NewUpdateActionResponse(action))
+	controller.FeedbackOK(c, response.NewUpdateActionResponse(inDatabaseAction))
 }
 
 func (controller *Controller) DeleteAction(c *gin.Context) {
@@ -202,12 +207,13 @@ func (controller *Controller) DeleteAction(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_ACTION)
-	controller.AttributeGroup.SetUnitID(actionID)
-	canManage, errInCheckAttr := controller.AttributeGroup.CanDelete(accesscontrol.ACTION_DELETE)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanDelete(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_ACTION,
+		actionID,
+		accesscontrol.ACTION_DELETE,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -239,12 +245,13 @@ func (controller *Controller) GetAction(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_ACTION)
-	controller.AttributeGroup.SetUnitID(actionID)
-	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(accesscontrol.ACTION_ACCESS_VIEW)
+	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_ACTION,
+		actionID,
+		accesscontrol.ACTION_ACCESS_VIEW,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return
@@ -295,12 +302,13 @@ func (controller *Controller) RunAction(c *gin.Context) {
 	}
 
 	// validate
-	controller.AttributeGroup.Init()
-	controller.AttributeGroup.SetTeamID(teamID)
-	controller.AttributeGroup.SetUserAuthToken(userAuthToken)
-	controller.AttributeGroup.SetUnitType(accesscontrol.UNIT_TYPE_ACTION)
-	controller.AttributeGroup.SetUnitID(actionID)
-	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(accesscontrol.ACTION_MANAGE_RUN_ACTION)
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_ACTION,
+		actionID,
+		accesscontrol.ACTION_MANAGE_RUN_ACTION,
+	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
 		return

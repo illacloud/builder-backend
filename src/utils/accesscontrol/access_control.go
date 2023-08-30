@@ -188,126 +188,68 @@ const (
 )
 
 type AttributeGroup struct {
-	TeamID        int
-	UserAuthToken string
-	UserRole      int
-	UnitType      int
-	UnitID        int
-	Remote        *supervisor.Supervisor
+	Remote *supervisor.Supervisor
 }
 
-func (attrg *AttributeGroup) Init() {
-	attrg.TeamID = 0
-	attrg.UserAuthToken = ""
-	attrg.UserRole = 0
-	attrg.UnitType = 0
-	attrg.UnitID = 0
-}
-
-func (attrg *AttributeGroup) SetTeamID(teamID int) {
-	attrg.TeamID = teamID
-}
-
-func (attrg *AttributeGroup) SetUserAuthToken(token string) {
-	attrg.UserAuthToken = token
-}
-
-func (attrg *AttributeGroup) SetUserRole(userRole int) {
-	attrg.UserRole = userRole
-}
-
-func (attrg *AttributeGroup) SetUnitType(unitType int) {
-	attrg.UnitType = unitType
-}
-
-func (attrg *AttributeGroup) SetUnitID(unitID int) {
-	attrg.UnitID = unitID
-}
-
-func (attrg *AttributeGroup) CanAccess(attribute int) (bool, error) {
+func (attrg *AttributeGroup) CanAccess(teamID int, userAuthToken string, unitType int, unitID int, attribute int) (bool, error) {
 	// remote method
-	req, errInRemote := attrg.Remote.CanAccess(attrg.UserAuthToken, attrg.TeamID, attrg.UnitType, attrg.UnitID, attribute)
+	req, errInRemote := attrg.Remote.CanAccess(userAuthToken, teamID, unitType, unitID, attribute)
 	if errInRemote != nil {
 		return false, errInRemote
 	}
 	return req, nil
 }
 
-func (attrg *AttributeGroup) CanDelete(attribute int) (bool, error) {
-	req, errInRemote := attrg.Remote.CanDelete(attrg.UserAuthToken, attrg.TeamID, attrg.UnitType, attrg.UnitID, attribute)
+func (attrg *AttributeGroup) CanDelete(teamID int, userAuthToken string, unitType int, unitID int, attribute int) (bool, error) {
+	req, errInRemote := attrg.Remote.CanDelete(userAuthToken, teamID, unitType, unitID, attribute)
 	if errInRemote != nil {
 		return false, errInRemote
 	}
 	return req, nil
 }
 
-func (attrg *AttributeGroup) CanManage(attribute int) (bool, error) {
-	req, errInRemote := attrg.Remote.CanManage(attrg.UserAuthToken, attrg.TeamID, attrg.UnitType, attrg.UnitID, attribute)
+func (attrg *AttributeGroup) CanManage(teamID int, userAuthToken string, unitType int, unitID int, attribute int) (bool, error) {
+	req, errInRemote := attrg.Remote.CanManage(userAuthToken, teamID, unitType, unitID, attribute)
 	if errInRemote != nil {
 		return false, errInRemote
 	}
 	return req, nil
 }
 
-func (attrg *AttributeGroup) CanManageSpecial(attribute int) (bool, error) {
-	req, errInRemote := attrg.Remote.CanManageSpecial(attrg.UserAuthToken, attrg.TeamID, attrg.UnitType, attrg.UnitID, attribute)
+func (attrg *AttributeGroup) CanManageSpecial(teamID int, userAuthToken string, unitType int, unitID int, attribute int) (bool, error) {
+	req, errInRemote := attrg.Remote.CanManageSpecial(userAuthToken, teamID, unitType, unitID, attribute)
 	if errInRemote != nil {
 		return false, errInRemote
 	}
 	return req, nil
 }
 
-func (attrg *AttributeGroup) CanModify(attribute, fromID, toID int) (bool, error) {
-	req, errInRemote := attrg.Remote.CanModify(attrg.UserAuthToken, attrg.TeamID, attrg.UnitType, attrg.UnitID, attribute, fromID, toID)
+func (attrg *AttributeGroup) CanModify(teamID int, userAuthToken string, unitType int, unitID int, attribute int, fromID int, toID int) (bool, error) {
+	req, errInRemote := attrg.Remote.CanModify(userAuthToken, teamID, unitType, unitID, attribute, fromID, toID)
 	if errInRemote != nil {
 		return false, errInRemote
 	}
 	return req, nil
 }
 
-func (attrg *AttributeGroup) CanInvite(userRole int) (bool, error) {
-	// convert to attribute
-	attribute, hit := InviteRoleAttributeMap[userRole]
-	if !hit {
-		return false, nil
-	}
-	// check attirbute
-	return attrg.CanAccess(attribute)
-}
-
-func (attrg *AttributeGroup) DoesNowUserAreEditorOrViewer() bool {
-	if attrg.UserRole == USER_ROLE_EDITOR || attrg.UserRole == USER_ROLE_VIEWER {
-		return true
-	}
-	return false
-}
-
-func NewAttributeGroup(teamID int, userAuthToken string, userRole int, unitType int, unitID int) (*AttributeGroup, error) {
+func NewAttributeGroup() (*AttributeGroup, error) {
 	// init sdk
 	instance := supervisor.GetInstance()
 
 	// init
 	attrg := &AttributeGroup{
-		TeamID:        teamID, // 0 for self-host mode by default
-		UserRole:      userRole,
-		UserAuthToken: userAuthToken,
-		UnitType:      unitType,
-		UnitID:        unitID,
-		Remote:        instance,
+		Remote: instance,
 	}
 	return attrg, nil
 }
 
-func NewAttributeGroupForController(teamID int, userAuthToken string, unitType int) (*AttributeGroup, error) {
+func NewAttributeGroupForController() (*AttributeGroup, error) {
 	// init sdk
 	instance := supervisor.GetInstance()
 
 	// init
 	attrg := &AttributeGroup{
-		TeamID:        teamID, // 0 for self-host mode by default
-		UserAuthToken: userAuthToken,
-		UnitType:      unitType,
-		Remote:        instance,
+		Remote: instance,
 	}
 	return attrg, nil
 }

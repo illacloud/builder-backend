@@ -18,8 +18,6 @@ const (
 	ACTION_RUNTIME_INFO_FIELD_RUN_BY_ANONYMOUS = "runByAnonymous"
 )
 
-const ()
-
 type Action struct {
 	ID            int       `gorm:"column:id;type:bigserial;primary_key"`
 	UID           uuid.UUID `gorm:"column:uid;type:uuid;not null"`
@@ -209,6 +207,26 @@ func (action *Action) UpdateAppConfig(actionConfig *ActionConfig, userID int) {
 func (action *Action) UpdateWithRunActionRequest(req *request.RunActionRequest, userID int) {
 	action.Template = req.ExportTemplateInString()
 	action.UpdatedBy = userID
+	action.InitUpdatedAt()
+}
+
+func (action *Action) UpdateAcitonByUpdateActionRequest(app *App, userID int, req *request.UpdateActionRequest) {
+	action.TeamID = app.ExportTeamID()
+	action.AppRefID = app.ExportID()
+	action.Version = APP_EDIT_VERSION // new action always created in builder edit mode, and it is edit version.
+	action.ResourceRefID = idconvertor.ConvertStringToInt(req.ResourceID)
+	action.Name = req.DisplayName
+	action.Type = resourcelist.GetResourceNameMappedID(req.ActionType)
+	action.TriggerMode = req.TriggerMode
+	action.Transformer = req.ExportTransformerInString()
+	action.Template = req.ExportTemplateInString()
+	action.Config = req.ExportConfigInString()
+	action.UpdatedBy = userID
+	if app.IsPublic() {
+		action.SetPublic(userID)
+	} else {
+		action.SetPrivate(userID)
+	}
 	action.InitUpdatedAt()
 }
 
