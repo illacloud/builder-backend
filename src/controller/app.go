@@ -787,6 +787,22 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		return
 	}
 
+	// config app & action public status
+	if req.ExportPublic() {
+		// deploy app as public
+		app.SetPublic(userID)
+		controller.Storage.ActionStorage.MakeActionPublicByTeamIDAndAppID(teamID, appID, userID)
+	} else {
+		// marketplace app can not published as private
+		if app.IsPublishedToMarketplace() {
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_RELEASE_APP, "this app already published to marketplace, can not make it private.")
+			return
+		}
+		// deploy app as private
+		app.SetPrivate(userID)
+		controller.Storage.ActionStorage.MakeActionPrivateByTeamIDAndAppID(teamID, appID, userID)
+	}
+
 	// release app version
 	app.Release()
 
@@ -796,15 +812,6 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 	controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 	controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-
-	// config app & action public status
-	if req.ExportPublic() {
-		app.SetPublic(userID)
-		controller.Storage.ActionStorage.MakeActionPublicByTeamIDAndAppID(teamID, appID, userID)
-	} else {
-		app.SetPrivate(userID)
-		controller.Storage.ActionStorage.MakeActionPrivateByTeamIDAndAppID(teamID, appID, userID)
-	}
 
 	// release app
 	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
