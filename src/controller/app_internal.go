@@ -27,6 +27,7 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
+	userID := req.UserID
 
 	// validate payload required fields
 	validate := validator.New()
@@ -49,10 +50,25 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 	}
 
 	// publish
-	app.SetPublishedToMarketplace(req.PublishedToMarketplace, req.UserID)
+	// - publish will set app.Config.Public & app.Config.PublishedToMarketplace both to true
+	// - unpublish will set app.Config.Public to false
+	app.SetPublishedToMarketplace(req.PublishedToMarketplace, userID)
+
+	// deploy app, publish an app need deploy it
+	if req.PublishedToMarketplace {
+		// release app version
+		app.Release()
+
+		// release app following components & actions
+		// release will copy following units from edit version to app mainline version
+		controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+		controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+		controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+		controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	}
 
 	// save
-	errInUpdateAppByID := controller.Storage.AppStorage.Update(app)
+	errInUpdateAppByID := controller.Storage.AppStorage.UpdateWholeApp(app)
 	if errInUpdateAppByID != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "update App error: "+errInUpdateAppByID.Error())
 		return
