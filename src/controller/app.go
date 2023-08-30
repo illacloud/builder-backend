@@ -816,6 +816,14 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 
 	fmt.Printf("[7]\n")
 
+	// update app for version bump, we should update app first in case create tree state failed with mismatch release & mainline version
+	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
+	if errInUpdateApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
+		return
+	}
+	fmt.Printf("[8]\n")
+
 	// release app following components & actions
 	// release will copy following units from edit version to app mainline version
 	errInDuplicateTreeStateByVersion := controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
@@ -825,14 +833,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	if errInDuplicateTreeStateByVersion != nil || errInDuplicateKVStateByVersion != nil || errInDuplicateSetStateByVersion != nil || errInDuplicateActionByVersion != nil {
 		return
 	}
-	fmt.Printf("[8]\n")
 
-	// release app
-	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
-	if errInUpdateApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
-		return
-	}
 	fmt.Printf("[9]\n")
 
 	// audit log
@@ -904,6 +905,13 @@ func (controller *Controller) TakeSnapshot(c *gin.Context) {
 	app.SyncMainlineVersoinWithTreeStateLatestVersion(treeStateLatestVersion)
 	app.BumpMainlineVersionOverReleaseVersoin()
 
+	// update app for version bump, we should update app first in case create tree state failed with mismatch release & mainline version
+	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
+	if errInUpdateApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
+		return
+	}
+
 	// do snapshot for app following components and actions
 	// do snapshot will copy following units from edit version to app mainline version
 	controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
@@ -914,13 +922,6 @@ func (controller *Controller) TakeSnapshot(c *gin.Context) {
 	// save snapshot
 	_, errInTakeSnapshot := controller.SaveAppSnapshot(c, teamID, appID, userID, app.ExportMainlineVersion(), model.SNAPSHOT_TRIGGER_MODE_MANUAL)
 	if errInTakeSnapshot != nil {
-		return
-	}
-
-	// update app for version bump
-	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
-	if errInUpdateApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
 		return
 	}
 
@@ -1099,6 +1100,13 @@ func (controller *Controller) RecoverSnapshot(c *gin.Context) {
 	// bump app mainline versoin
 	app.BumpMainlineVersion()
 
+	// update app for version bump, we should update app first in case create tree state failed with mismatch release & mainline version
+	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
+	if errInUpdateApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
+		return
+	}
+
 	// do snapshot for app following components and actions
 	// do snapshot will copy following units from edit version to app mainline version
 	controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
@@ -1109,13 +1117,6 @@ func (controller *Controller) RecoverSnapshot(c *gin.Context) {
 	// save app snapshot
 	newAppSnapshot, errInTakeSnapshot := controller.SaveAppSnapshot(c, teamID, appID, userID, app.ExportMainlineVersion(), model.SNAPSHOT_TRIGGER_MODE_AUTO)
 	if errInTakeSnapshot != nil {
-		return
-	}
-
-	// update app version
-	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
-	if errInUpdateApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
 		return
 	}
 

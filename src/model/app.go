@@ -318,7 +318,7 @@ func (app *App) PushEditedBy(currentEditedBy *AppEditedBy) {
 }
 
 func (app *App) UpdateAppByConfigAppRawRequest(rawReq map[string]interface{}) error {
-	var assertPass bool
+	assertPass := true
 	for key, value := range rawReq {
 		switch key {
 		case APP_FIELD_NAME:

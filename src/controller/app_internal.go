@@ -54,6 +54,13 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 	// - unpublish will set app.Config.Public to false
 	app.SetPublishedToMarketplace(req.PublishedToMarketplace, userID)
 
+	// save
+	errInUpdateAppByID := controller.Storage.AppStorage.UpdateWholeApp(app)
+	if errInUpdateAppByID != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "update App error: "+errInUpdateAppByID.Error())
+		return
+	}
+
 	// deploy app, publish an app need deploy it
 	if req.PublishedToMarketplace {
 		// release app version
@@ -65,13 +72,6 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 		controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 		controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 		controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-	}
-
-	// save
-	errInUpdateAppByID := controller.Storage.AppStorage.UpdateWholeApp(app)
-	if errInUpdateAppByID != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "update App error: "+errInUpdateAppByID.Error())
-		return
 	}
 
 	// feedback
