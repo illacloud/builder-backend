@@ -30,7 +30,7 @@ var (
 type Options struct {
 	ConfigType    string                 `validate:"required,oneof=gui uri"`
 	ConfigContent map[string]interface{} `validate:"required"`
-	SSL           SSLOptions             `validate:"required"`
+	SSL           SSLOptions
 }
 
 type GUIOptions struct {

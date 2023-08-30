@@ -15,17 +15,17 @@
 package postgresql
 
 type Options struct {
-	Host             string     `validate:"required"`
-	Port             string     `validate:"required"`
-	DatabaseName     string     `validate:"required"`
-	DatabaseUsername string     `validate:"required"`
-	DatabasePassword string     `validate:"required"`
-	SSL              SSLOptions `validate:"required"`
+	Host             string `validate:"required"`
+	Port             string `validate:"required"`
+	DatabaseName     string `validate:"required"`
+	DatabaseUsername string `validate:"required"`
+	DatabasePassword string `validate:"required"`
+	SSL              SSLOptions
 }
 
 type SSLOptions struct {
-	SSL        bool   `validate:"required,boolean"`
-	ServerCert string `validate:"required_if=SSL true"`
+	SSL        bool
+	ServerCert string `validate:"required_unless=SSL false"`
 	ClientKey  string
 	ClientCert string
 }

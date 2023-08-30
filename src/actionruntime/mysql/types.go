@@ -15,12 +15,12 @@
 package mysql
 
 type MySQLOptions struct {
-	Host             string     `validate:"required"`
-	Port             string     `validate:"required"`
-	DatabaseName     string     `validate:"required"`
-	DatabaseUsername string     `validate:"required"`
-	DatabasePassword string     `validate:"required"`
-	SSL              SSLOptions `validate:"required,omitempty"`
+	Host             string `validate:"required"`
+	Port             string `validate:"required"`
+	DatabaseName     string `validate:"required"`
+	DatabaseUsername string `validate:"required"`
+	DatabasePassword string `validate:"required"`
+	SSL              SSLOptions
 }
 
 type SSLOptions struct {

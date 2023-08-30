@@ -21,7 +21,7 @@ type Resource struct {
 	Username       string
 	Password       string
 	ConnectionOpts []map[string]string `validate:"required"`
-	SSL            SSLOptions          `validate:"required"`
+	SSL            SSLOptions
 }
 
 type SSLOptions struct {

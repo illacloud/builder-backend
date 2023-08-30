@@ -20,7 +20,7 @@ type Resource struct {
 	DatabaseName string `validate:"required"`
 	Username     string
 	Password     string
-	SSL          SSLOptions `validate:"required"`
+	SSL          SSLOptions
 }
 
 type SSLOptions struct {
