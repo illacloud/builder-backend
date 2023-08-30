@@ -18,6 +18,10 @@ const (
 	ACTION_RUNTIME_INFO_FIELD_RUN_BY_ANONYMOUS = "runByAnonymous"
 )
 
+const (
+	INVALIED_ACTION_ID = 0
+)
+
 type Action struct {
 	ID            int       `gorm:"column:id;type:bigserial;primary_key"`
 	UID           uuid.UUID `gorm:"column:uid;type:uuid;not null"`
@@ -35,6 +39,10 @@ type Action struct {
 	CreatedBy     int       `gorm:"column:created_by;type:bigint;not null"`
 	UpdatedAt     time.Time `gorm:"column:updated_at;type:timestamp;not null"`
 	UpdatedBy     int       `gorm:"column:updated_by;type:bigint;not null"`
+}
+
+func NewAction() *Action {
+	return &Action{}
 }
 
 func NewAcitonByCreateActionRequest(app *App, userID int, req *request.CreateActionRequest) (*Action, error) {
@@ -87,6 +95,29 @@ func NewAcitonByUpdateActionRequest(app *App, userID int, req *request.UpdateAct
 	action.InitCreatedAt()
 	action.InitUpdatedAt()
 	return action, nil
+}
+
+func NewAcitonByRunActionRequest(app *App, userID int, req *request.RunActionRequest) *Action {
+	action := &Action{
+		TeamID:        app.ExportTeamID(),
+		AppRefID:      app.ExportID(),
+		Version:       APP_EDIT_VERSION, // new action always created in builder edit mode, and it is edit version.
+		ResourceRefID: idconvertor.ConvertStringToInt(req.ResourceID),
+		Name:          req.DisplayName,
+		Type:          resourcelist.GetResourceNameMappedID(req.ActionType),
+		Template:      req.ExportTemplateInString(),
+		CreatedBy:     userID,
+		UpdatedBy:     userID,
+	}
+	if app.IsPublic() {
+		action.SetPublic(userID)
+	} else {
+		action.SetPrivate(userID)
+	}
+	action.InitUID()
+	action.InitCreatedAt()
+	action.InitUpdatedAt()
+	return action
 }
 
 func (action *Action) CleanID() {
@@ -270,4 +301,8 @@ func ExportAllActionASActionSummary(actions []*Action) []*ActionSummaryForExport
 		ret = append(ret, NewActionSummaryForExportByAction(action))
 	}
 	return ret
+}
+
+func DoesActionHasBeenCreated(actionID int) bool {
+	return actionID > INVALIED_ACTION_ID
 }

@@ -294,10 +294,11 @@ func (controller *Controller) GetAction(c *gin.Context) {
 func (controller *Controller) RunAction(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAppID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	actionID, errInGetActionID := controller.GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
 	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
-	if errInGetTeamID != nil || errInGetActionID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
+	if errInGetTeamID != nil || errInGetAppID != nil || errInGetActionID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
 	}
 
@@ -332,11 +333,26 @@ func (controller *Controller) RunAction(c *gin.Context) {
 	}
 
 	// get action
+	action := model.NewAction()
 	fmt.Printf("[RetrieveActionsByTeamIDActionID] teamID: %d, actionID: %d\n", teamID, actionID)
-	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionByTeamIDActionID(teamID, actionID)
-	if errInRetrieveAction != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errInRetrieveAction.Error())
-		return
+
+	// actionID has not been created (like actionID is 0 'ILAfx4p1C7d0'), but we still can run it (onboarding case)
+	if model.DoesActionHasBeenCreated(actionID) {
+		// fetch app
+		app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
+		if errInRetrieveApp != nil {
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
+			return
+		}
+		action = model.NewAcitonByRunActionRequest(app, userID, runActionRequest)
+	} else {
+		// ok, we retrieve action from database
+		var errInRetrieveAction error
+		action, errInRetrieveAction = controller.Storage.ActionStorage.RetrieveActionByTeamIDActionID(teamID, actionID)
+		if errInRetrieveAction != nil {
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errInRetrieveAction.Error())
+			return
+		}
 	}
 
 	// update action data with run action reqeust
