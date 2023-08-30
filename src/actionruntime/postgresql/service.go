@@ -39,7 +39,7 @@ func (p *Connector) ValidateResourceOptions(resourceOptions map[string]interface
 	}
 	mar, _ := json.Marshal(resourceOptions)
 	fmt.Printf("[DUMP] resourceOptions: %+v\n", resourceOptions)
-	fmt.Printf("[DUMP] resourceOptionsEncoded: %+v\n", mar)
+	fmt.Printf("[DUMP] resourceOptionsEncoded: %+v\n", string(mar))
 	fmt.Printf("[DUMP] p.Resource: %+v\n", p.Resource)
 
 	// validate postgresql options
