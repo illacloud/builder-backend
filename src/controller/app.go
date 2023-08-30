@@ -738,12 +738,16 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		return
 	}
 
+	fmt.Printf("[1]\n")
+
 	// get request body
 	req := request.NewReleaseAppRequest()
 	if errInDecode := json.NewDecoder(c.Request.Body).Decode(&req); errInDecode != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_RELEASE_APP, "release app error: "+errInDecode.Error())
 		return
 	}
+
+	fmt.Printf("[2]\n")
 
 	// validate
 	canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(
@@ -760,6 +764,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
+	fmt.Printf("[3]\n")
 
 	// check team can release public app
 	if req.ExportPublic() {
@@ -779,6 +784,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 			return
 		}
 	}
+	fmt.Printf("[4]\n")
 
 	// fetch app
 	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
@@ -786,6 +792,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
 		return
 	}
+	fmt.Printf("[5]\n")
 
 	// config app & action public status
 	if req.ExportPublic() {
@@ -802,16 +809,23 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		app.SetPrivate(userID)
 		controller.Storage.ActionStorage.MakeActionPrivateByTeamIDAndAppID(teamID, appID, userID)
 	}
+	fmt.Printf("[6]\n")
 
 	// release app version
 	app.Release()
 
+	fmt.Printf("[7]\n")
+
 	// release app following components & actions
 	// release will copy following units from edit version to app mainline version
-	controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-	controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-	controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-	controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	errInDuplicateTreeStateByVersion := controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	errInDuplicateKVStateByVersion := controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	errInDuplicateSetStateByVersion := controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	errInDuplicateActionByVersion := controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	if errInDuplicateTreeStateByVersion != nil || errInDuplicateKVStateByVersion != nil || errInDuplicateSetStateByVersion != nil || errInDuplicateActionByVersion != nil {
+		return
+	}
+	fmt.Printf("[6]\n")
 
 	// release app
 	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
@@ -819,6 +833,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
 		return
 	}
+	fmt.Printf("[7]\n")
 
 	// audit log
 	auditLogger := auditlogger.GetInstance()
@@ -830,6 +845,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		AppID:     appID,
 		AppName:   app.ExportAppName(),
 	})
+	fmt.Printf("[8]\n")
 
 	// feedback
 	controller.FeedbackOK(c, response.NewReleaseAppResponse(app.ReleaseVersion))
