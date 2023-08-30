@@ -90,6 +90,10 @@ func (appConfig *AppConfig) UpdateAppConfigByConfigAppRawRequest(rawReq map[stri
 		default:
 		}
 	}
+	// check app config phrase
+	if appConfig.PublishedToMarketplace && !appConfig.Public {
+		return errors.New("can not make app to private, this app already published to marketplace")
+	}
 	return nil
 }
 
