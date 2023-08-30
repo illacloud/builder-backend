@@ -10,7 +10,7 @@ import (
 const (
 	RUN_AI_AGENT_REQUEST_FIELD_TEAM_ID          = "teamID"
 	RUN_AI_AGENT_REQUEST_FIELD_RESOURCE_ID      = "resourceID"
-	RUN_AI_AGENT_REQUEST_FIELD_AIAGENT_ID       = "aiAgentID"
+	RUN_AI_AGENT_REQUEST_FIELD_AI_AGENT_ID      = "aiAgentID"
 	RUN_AI_AGENT_REQUEST_FIELD_AUTHORIZATION    = "authorization"
 	RUN_AI_AGENT_REQUEST_FIELD_RUN_BY_ANONYMOUS = "runByAnonymous"
 	RUN_AI_AGENT_REQUEST_FIELD_AGENT_TYPE       = "agentType"
@@ -54,8 +54,15 @@ func NewRunAIAgentRequest(rawRequest map[string]interface{}) (*RunAIAgentRequest
 		case RUN_AI_AGENT_REQUEST_FIELD_TEAM_ID:
 			runAIAgentRequest.TeamID, assertPass = value.(string)
 		case RUN_AI_AGENT_REQUEST_FIELD_RESOURCE_ID:
+			// accept string & flat64 type id
 			runAIAgentRequest.AIAgentID, assertPass = value.(string)
-		case RUN_AI_AGENT_REQUEST_FIELD_AIAGENT_ID:
+			if !assertPass {
+				var aiAgentIDFloat64 float64
+				aiAgentIDFloat64, assertPass = value.(float64)
+				aiAgentIDint := int(aiAgentIDFloat64)
+				runAIAgentRequest.AIAgentID = fmt.Sprintf("%d", aiAgentIDint)
+			}
+		case RUN_AI_AGENT_REQUEST_FIELD_AI_AGENT_ID:
 			runAIAgentRequest.AIAgentID, assertPass = value.(string)
 		case RUN_AI_AGENT_REQUEST_FIELD_AUTHORIZATION:
 			runAIAgentRequest.Authorization, assertPass = value.(string)
