@@ -133,6 +133,14 @@ var virtualResourceList = map[string]bool{
 	TYPE_AI_AGENT:    true,
 }
 
+var localVirtualResourceList = map[string]bool{
+	TYPE_TRANSFORMER: true,
+}
+
+var remoteVirtualResourceList = map[string]bool{
+	TYPE_AI_AGENT: true,
+}
+
 var emptyOptionResourceList = map[string]bool{
 	TYPE_TRANSFORMER: true,
 }
@@ -152,6 +160,16 @@ func GetResourceNameMappedID(name string) int {
 // The virtual resource have no resource id
 func IsVirtualResource(resourceType string) bool {
 	itIs, hit := virtualResourceList[resourceType]
+	return itIs && hit
+}
+
+func IsLocalVirtualResource(resourceType string) bool {
+	itIs, hit := localVirtualResourceList[resourceType]
+	return itIs && hit
+}
+
+func IsRemoteVirtualResource(resourceType string) bool {
+	itIs, hit := remoteVirtualResourceList[resourceType]
 	return itIs && hit
 }
 
