@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -294,8 +295,12 @@ func (controller *Controller) GetAllApps(c *gin.Context) {
 	var errInRetrieveAllApps error
 	if canManage {
 		allApps, errInRetrieveAllApps = controller.Storage.AppStorage.RetrieveByTeamID(teamID)
+		fmt.Printf("[DUMP] canManage: %+v\n", canManage)
+		fmt.Printf("[DUMP] RetrieveByTeamID.allApps: %+v\n", allApps)
 	} else {
 		allApps, errInRetrieveAllApps = controller.Storage.AppStorage.RetrieveDeployedAppByTeamID(teamID)
+		fmt.Printf("[DUMP] canManage: %+v\n", canManage)
+		fmt.Printf("[DUMP] RetrieveDeployedAppByTeamID.allApps: %+v\n", allApps)
 	}
 	if errInRetrieveAllApps != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get apps by team id failed: "+errInRetrieveAllApps.Error())
