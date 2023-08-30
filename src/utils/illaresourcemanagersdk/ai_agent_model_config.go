@@ -58,7 +58,7 @@ type AIAgentModelConfig struct {
 
 // only reflect field: maxTokens, temperature, stream
 func ReflectAIAgentModelConfigManually(aiAgentModelConfig *AIAgentModelConfig, rawRequest map[string]interface{}) (*AIAgentModelConfig, error) {
-	var assertPass bool
+	assertPass := true
 	for key, value := range rawRequest {
 		switch key {
 		case AI_AGENT_MODEL_CONFIG_FIELD_SUFFIX:

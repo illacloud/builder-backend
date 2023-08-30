@@ -69,7 +69,7 @@ func (appConfig *AppConfig) SetCover(cover string) {
 }
 
 func (appConfig *AppConfig) UpdateAppConfigByConfigAppRawRequest(rawReq map[string]interface{}) error {
-	var assertPass bool
+	assertPass := true
 	for key, value := range rawReq {
 		switch key {
 		case APP_CONFIG_FIELD_PUBLIC:

@@ -75,7 +75,7 @@ func (ac *ActionConfig) SetIsNotVirtualResource() {
 }
 
 func NewActionConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*ActionConfig, error) {
-	var assertPass bool
+	assertPass := true
 	actionConfig := &ActionConfig{}
 	for key, value := range rawReq {
 		switch key {
@@ -91,7 +91,7 @@ func NewActionConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*Actio
 }
 
 func NewActionConfigByConfigActionRawRequest(rawReq map[string]interface{}) (*ActionConfig, error) {
-	var assertPass bool
+	assertPass := true
 	actionConfig := &ActionConfig{}
 	for key, value := range rawReq {
 		switch key {

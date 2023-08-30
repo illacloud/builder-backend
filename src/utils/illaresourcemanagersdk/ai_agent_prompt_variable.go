@@ -18,7 +18,7 @@ type AIAgentPromptVariable struct {
 
 func NewAIAgentPromptVariableByMap(rawData map[string]interface{}) (*AIAgentPromptVariable, error) {
 	aiAgentPromptVariable := &AIAgentPromptVariable{}
-	var assertPass bool
+	assertPass := true
 	for key, value := range rawData {
 		switch key {
 		case AIAGENTPROMPTVARIABLE_FIELD_KEY:
