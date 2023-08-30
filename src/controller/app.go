@@ -848,7 +848,9 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	fmt.Printf("[10]\n")
 
 	// feedback
-	controller.FeedbackOK(c, response.NewReleaseAppResponse(app.ReleaseVersion))
+	controller.FeedbackOK(c, response.NewReleaseAppResponse(app.ExportReleaseVersoin()))
+	fmt.Printf("[11]\n")
+
 	return
 }
 
