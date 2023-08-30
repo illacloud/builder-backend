@@ -22,8 +22,9 @@ func (controller *Controller) RunPublicAction(c *gin.Context) {
 	userID := model.ANONYMOUS_USER_ID
 	userAuthToken := accesscontrol.ANONYMOUS_AUTH_TOKEN
 	teamIdentifier, errInGetTeamIdentifier := controller.GetStringParamFromRequest(c, PARAM_TEAM_IDENTIFIER)
+	appID, errInGetAppID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
 	publicActionID, errInGetPublicActionID := controller.GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
-	if errInGetTeamIdentifier != nil || errInGetPublicActionID != nil {
+	if errInGetTeamIdentifier != nil || errInGetAppID != nil || errInGetPublicActionID != nil {
 		return
 	}
 
@@ -51,13 +52,27 @@ func (controller *Controller) RunPublicAction(c *gin.Context) {
 		return
 	}
 
-	// check if action is public action
+	// fetch app
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
+	if errInRetrieveApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app full data error: "+errInRetrieveApp.Error())
+		return
+	}
+
+	// sync app publisedToMarketplace status
+	app.RewritePublicSettings(app.IsPublishedToMarketplace())
+
+	// get action
 	fmt.Printf("[RetrieveActionsByTeamIDActionID] teamID: %d, publicActionID: %d\n", teamID, publicActionID)
 	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionByTeamIDActionID(teamID, publicActionID)
 	if errInRetrieveAction != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errInRetrieveAction.Error())
 		return
 	}
+	// sync action with app.PublishedToMarketplace status
+	action.RewritePublicSettings(app.IsPublishedToMarketplace())
+
+	// check if action is public action
 	if !action.IsPublic() {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this action.")
 		return
