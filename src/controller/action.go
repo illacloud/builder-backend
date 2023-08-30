@@ -345,7 +345,7 @@ func (controller *Controller) RunAction(c *gin.Context) {
 	// assembly action
 	actionFactory := model.NewActionFactoryByAction(action)
 	actionAssemblyLine, errInBuild := actionFactory.Build()
-	if errInBuild == nil {
+	if errInBuild != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action type error: "+errInBuild.Error())
 		return
 	}
