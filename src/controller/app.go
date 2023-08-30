@@ -825,7 +825,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	if errInDuplicateTreeStateByVersion != nil || errInDuplicateKVStateByVersion != nil || errInDuplicateSetStateByVersion != nil || errInDuplicateActionByVersion != nil {
 		return
 	}
-	fmt.Printf("[6]\n")
+	fmt.Printf("[8]\n")
 
 	// release app
 	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
@@ -833,19 +833,19 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app failed: "+errInUpdateApp.Error())
 		return
 	}
-	fmt.Printf("[7]\n")
+	fmt.Printf("[9]\n")
 
 	// audit log
-	// auditLogger := auditlogger.GetInstance()
-	// auditLogger.Log(&auditlogger.LogInfo{
-	// 	EventType: auditlogger.AUDIT_LOG_DEPLOY_APP,
-	// 	TeamID:    teamID,
-	// 	UserID:    userID,
-	// 	IP:        c.ClientIP(),
-	// 	AppID:     appID,
-	// 	AppName:   app.ExportAppName(),
-	// })
-	fmt.Printf("[8]\n")
+	auditLogger := auditlogger.GetInstance()
+	auditLogger.Log(&auditlogger.LogInfo{
+		EventType: auditlogger.AUDIT_LOG_DEPLOY_APP,
+		TeamID:    teamID,
+		UserID:    userID,
+		IP:        c.ClientIP(),
+		AppID:     appID,
+		AppName:   app.ExportAppName(),
+	})
+	fmt.Printf("[10]\n")
 
 	// feedback
 	controller.FeedbackOK(c, response.NewReleaseAppResponse(app.ReleaseVersion))

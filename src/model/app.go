@@ -151,7 +151,7 @@ func (app *App) ReleaseMainlineVersion() {
 }
 
 func (app *App) Release() {
-	app.BumpMainlineVersion()
+	app.BumpMainlineVersionOverReleaseVersoin()
 	app.ReleaseMainlineVersion()
 }
 
