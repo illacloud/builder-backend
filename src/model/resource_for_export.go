@@ -39,7 +39,7 @@ func NewResourceForExport(r *Resource) *ResourceForExport {
 }
 
 func BatchNewResourceForExport(r []*Resource) []*ResourceForExport {
-	var resourcesForExport []*ResourceForExport
+	resourcesForExport := make([]*ResourceForExport, 0, len(r))
 	for _, resource := range r {
 		resourcesForExport = append(resourcesForExport, NewResourceForExport(resource))
 	}
