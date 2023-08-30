@@ -37,6 +37,9 @@ func (p *Connector) ValidateResourceOptions(resourceOptions map[string]interface
 		return common.ValidateResult{Valid: false}, err
 	}
 
+	fmt.Printf("[DUMP] resourceOptions: %+v\n", resourceOptions)
+	fmt.Printf("[DUMP] p.Resource: %+v\n", p.Resource)
+
 	// validate postgresql options
 	validate := validator.New()
 	if err := validate.Struct(p.Resource); err != nil {
