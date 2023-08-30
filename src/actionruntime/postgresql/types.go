@@ -25,7 +25,7 @@ type Options struct {
 
 type SSLOptions struct {
 	SSL        bool   `validate:"required,boolean"`
-	ServerCert string `validate:"required_unless=SSL false"`
+	ServerCert string `validate:"required_if=SSL true"`
 	ClientKey  string
 	ClientCert string
 }
