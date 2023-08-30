@@ -30,8 +30,8 @@ const (
 //	    "input": "can you tell me a story"
 //	}
 type RunAIAgentRequest struct {
-	TeamID         string                   `json:"-"`
-	AIAgentID      string                   `json:"-"` // alias of "resourceID"
+	TeamID         int                      `json:"-"`
+	AIAgentID      int                      `json:"-"` // alias of "resourceID"
 	Authorization  string                   `json:"-"`
 	RunByAnonymous bool                     `json:"runByAnonymous"`
 	AgentType      int                      `json:"agentType"`
@@ -41,43 +41,56 @@ type RunAIAgentRequest struct {
 	Input          string                   `json:"input"`
 }
 
+func assertMagicStringIDToInt(magicStringID interface{}) (int, bool) {
+	magicStringIDAsserted, assertPass := magicStringID.(string)
+	if !assertPass {
+		return 0, assertPass
+	}
+	return idconvertor.ConvertStringToInt(magicStringIDAsserted), true
+}
+
+func assertFloatIDToInt(floatID interface{}) (int, bool) {
+	floatIDAsserted, assertPass := floatID.(float64)
+	if !assertPass {
+		return 0, assertPass
+	}
+	return int(floatIDAsserted), true
+}
+
 func NewRunAIAgentRequest(rawRequest map[string]interface{}) (*RunAIAgentRequest, error) {
 	runAIAgentRequest := &RunAIAgentRequest{}
 	assertPass := true
-	var agentTypeFloat64 float64
-	var modelFloat64 float64
 	var variablesRaw []interface{}
 	var modelConfigRaw map[string]interface{}
 	var errInNewModelConfig error
 	for key, value := range rawRequest {
 		switch key {
 		case RUN_AI_AGENT_REQUEST_FIELD_TEAM_ID:
-			runAIAgentRequest.TeamID, assertPass = value.(string)
-		case RUN_AI_AGENT_REQUEST_FIELD_RESOURCE_ID:
-			// accept string & flat64 type id
-			runAIAgentRequest.AIAgentID, assertPass = value.(string)
+			// accept string & float64 type id
+			runAIAgentRequest.TeamID, assertPass = assertMagicStringIDToInt(value)
 			if !assertPass {
-				var aiAgentIDFloat64 float64
-				aiAgentIDFloat64, assertPass = value.(float64)
-				aiAgentIDint := int(aiAgentIDFloat64)
-				runAIAgentRequest.AIAgentID = fmt.Sprintf("%d", aiAgentIDint)
+				runAIAgentRequest.TeamID, assertPass = assertFloatIDToInt(value)
+			}
+		case RUN_AI_AGENT_REQUEST_FIELD_RESOURCE_ID:
+			// accept string & float64 type id
+			runAIAgentRequest.AIAgentID, assertPass = assertMagicStringIDToInt(value)
+			if !assertPass {
+				runAIAgentRequest.AIAgentID, assertPass = assertFloatIDToInt(value)
 			}
 		case RUN_AI_AGENT_REQUEST_FIELD_AI_AGENT_ID:
-			runAIAgentRequest.AIAgentID, assertPass = value.(string)
+			// accept string & float64 type id
+			runAIAgentRequest.AIAgentID, assertPass = assertMagicStringIDToInt(value)
+			if !assertPass {
+				runAIAgentRequest.AIAgentID, assertPass = assertFloatIDToInt(value)
+			}
 		case RUN_AI_AGENT_REQUEST_FIELD_AUTHORIZATION:
 			runAIAgentRequest.Authorization, assertPass = value.(string)
 		case RUN_AI_AGENT_REQUEST_FIELD_RUN_BY_ANONYMOUS:
 			runAIAgentRequest.RunByAnonymous, assertPass = value.(bool)
 		case RUN_AI_AGENT_REQUEST_FIELD_AGENT_TYPE:
-			agentTypeFloat64, assertPass = value.(float64)
-			if assertPass {
-				runAIAgentRequest.AgentType = int(agentTypeFloat64)
-			}
+			runAIAgentRequest.AgentType, assertPass = assertFloatIDToInt(value)
 		case RUN_AI_AGENT_REQUEST_FIELD_MODEL:
-			modelFloat64, assertPass = value.(float64)
-			if assertPass {
-				runAIAgentRequest.Model = int(modelFloat64)
-			}
+			runAIAgentRequest.Model, assertPass = assertFloatIDToInt(value)
 		case RUN_AI_AGENT_REQUEST_FIELD_VARIABLES:
 			variablesRaw, assertPass = value.([]interface{})
 			for _, variableRaw := range variablesRaw {
@@ -112,20 +125,20 @@ func NewRunAIAgentRequest(rawRequest map[string]interface{}) (*RunAIAgentRequest
 	return runAIAgentRequest, nil
 }
 
-func (req *RunAIAgentRequest) ExportTeamID() string {
-	return req.TeamID
+func (req *RunAIAgentRequest) ExportTeamIDInMagicString() string {
+	return idconvertor.ConvertIntToString(req.TeamID)
 }
 
 func (req *RunAIAgentRequest) ExportTeamIDInInt() int {
-	return idconvertor.ConvertStringToInt(req.TeamID)
+	return req.TeamID
 }
 
-func (req *RunAIAgentRequest) ExportAIAgentID() string {
-	return req.AIAgentID
+func (req *RunAIAgentRequest) ExportAIAgentIDInMagicString() string {
+	return idconvertor.ConvertIntToString(req.AIAgentID)
 }
 
 func (req *RunAIAgentRequest) ExportAIAgentIDInInt() int {
-	return idconvertor.ConvertStringToInt(req.AIAgentID)
+	return req.AIAgentID
 }
 
 func (req *RunAIAgentRequest) ExportAuthorization() string {
