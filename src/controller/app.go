@@ -304,7 +304,7 @@ func (controller *Controller) GetAllApps(c *gin.Context) {
 	var allApps []*model.App
 	var errInRetrieveAllApps error
 	if canManage {
-		allApps, errInRetrieveAllApps = controller.Storage.AppStorage.RetrieveByTeamID(teamID)
+		allApps, errInRetrieveAllApps = controller.Storage.AppStorage.RetrieveByTeamIDOrderByUpdatedTime(teamID)
 		fmt.Printf("[DUMP] canManage: %+v\n", canManage)
 		fmt.Printf("[DUMP] RetrieveByTeamID.allApps: %+v\n", allApps)
 	} else {

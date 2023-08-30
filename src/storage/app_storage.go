@@ -87,6 +87,14 @@ func (impl *AppStorage) RetrieveDeployedAppByTeamID(teamID int) ([]*model.App, e
 	return apps, nil
 }
 
+func (impl *AppStorage) RetrieveDeployedAppByTeamIDOrderByUpdatedTime(teamID int) ([]*model.App, error) {
+	var apps []*model.App
+	if err := impl.db.Where("team_id = ? and release_version <> ?", teamID, model.APP_EDIT_VERSION).Order("updated_at desc").Find(&apps).Error; err != nil {
+		return nil, err
+	}
+	return apps, nil
+}
+
 func (impl *AppStorage) RetrieveAppByTeamIDAndAppID(teamID int, appID int) (*model.App, error) {
 	var app *model.App
 	if err := impl.db.Where("id = ? AND team_id = ?", appID, teamID).Find(&app).Error; err != nil {
@@ -95,7 +103,7 @@ func (impl *AppStorage) RetrieveAppByTeamIDAndAppID(teamID int, appID int) (*mod
 	return app, nil
 }
 
-func (impl *AppStorage) RetrieveAllByUpdatedTime(teamID int) ([]*model.App, error) {
+func (impl *AppStorage) RetrieveByTeamIDOrderByUpdatedTime(teamID int) ([]*model.App, error) {
 	var apps []*model.App
 	if err := impl.db.Where("team_id = ?", teamID).Order("updated_at desc").Find(&apps).Error; err != nil {
 		return nil, err
