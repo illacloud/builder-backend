@@ -836,15 +836,15 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	fmt.Printf("[7]\n")
 
 	// audit log
-	auditLogger := auditlogger.GetInstance()
-	auditLogger.Log(&auditlogger.LogInfo{
-		EventType: auditlogger.AUDIT_LOG_DEPLOY_APP,
-		TeamID:    teamID,
-		UserID:    userID,
-		IP:        c.ClientIP(),
-		AppID:     appID,
-		AppName:   app.ExportAppName(),
-	})
+	// auditLogger := auditlogger.GetInstance()
+	// auditLogger.Log(&auditlogger.LogInfo{
+	// 	EventType: auditlogger.AUDIT_LOG_DEPLOY_APP,
+	// 	TeamID:    teamID,
+	// 	UserID:    userID,
+	// 	IP:        c.ClientIP(),
+	// 	AppID:     appID,
+	// 	AppName:   app.ExportAppName(),
+	// })
 	fmt.Printf("[8]\n")
 
 	// feedback
