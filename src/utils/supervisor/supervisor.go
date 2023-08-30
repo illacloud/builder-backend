@@ -75,7 +75,6 @@ func (supervisor *Supervisor) ValidateUserAccount(token string) (bool, error) {
 		SetHeader("Authorization-Token", token).
 		SetHeader("Request-Token", supervisor.Validator.GenerateValidateToken(token)).
 		Get(supervisor.API + VALIDATE_USER_ACCOUNT)
-	fmt.Printf("response: %+v, err: %+v", resp, err)
 	if resp.StatusCode() != http.StatusOK {
 		if err != nil {
 			return false, errors.New("request illa supervisor failed.")
@@ -97,7 +96,6 @@ func (supervisor *Supervisor) GetTeamPermissions(teamID int) (string, error) {
 		}
 		return "", errors.New("validate failed.")
 	}
-	fmt.Printf("response: %+v, err: %+v", resp, err)
 	return resp.String(), nil
 }
 
