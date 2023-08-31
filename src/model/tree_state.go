@@ -279,12 +279,12 @@ func (treeState *TreeState) SetParentNodeRefID(id int) {
 	treeState.ParentNodeRefID = id
 }
 
-func (treeState *TreeState) AppendChildrenNodeRefIDs(id int) error {
+func (treeState *TreeState) AppendChildrenNodeRefIDs(targetIDs []int) error {
 	var ids []int
-	if err := json.Unmarshal([]byte(treeState.ChildrenNodeRefIDs), &ids); err != nil {
-		return err
+	json.Unmarshal([]byte(treeState.ChildrenNodeRefIDs), &ids)
+	for _, targetID := range targetIDs {
+		ids = append(ids, targetID)
 	}
-	ids = append(ids, id)
 	idsjsonb, err := json.Marshal(ids)
 	if err != nil {
 		return err

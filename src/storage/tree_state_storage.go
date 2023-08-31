@@ -154,7 +154,7 @@ func (impl *TreeStateStorage) CreateComponentTree(app *model.App, parentNodeID i
 		if errInRetrieveParentTreeState != nil {
 			return errInRetrieveParentTreeState
 		}
-		log.Printf("[2] isSummitNode: true, currentNode.Name: %s, parentTreeState.ID: %d, parentTreeState.Name: %s, parentTreeState.ChildrenNodeRefIDs: %+v\n", currentNode.Name, parentTreeState.ID, parentTreeState.Name, parentTreeState.ChildrenNodeRefIDs)
+		log.Printf("[2] isSummitNode: true, currentNode.Name: %s, parentTreeState.ID: %d, parentTreeState.Name: %s, parentTreeState.ChildrenNodeRefIDs: %+v\n", parentTreeState.Name, parentTreeState.ID, parentTreeState.Name, parentTreeState.ChildrenNodeRefIDs)
 	}
 
 	// hook parent node for current node
@@ -169,11 +169,12 @@ func (impl *TreeStateStorage) CreateComponentTree(app *model.App, parentNodeID i
 	log.Printf("[3] currentNodeID: %d, currentNode.ParentNodeRefID %d, currentNode.Name: %s, parentTreeState.Name: %s\n", currentNodeID, currentNode.ParentNodeRefID, currentNode.Name, parentTreeState.Name)
 	// fill currentNode id into parentNode.ChildrenNodeRefIDs and update it
 	if currentNode.Name != model.TREE_STATE_SUMMIT_NAME {
-		parentTreeState.AppendChildrenNodeRefIDs(currentNodeID)
+		parentTreeState.AppendChildrenNodeRefIDs([]int{currentNodeID})
 		// update parentNode
+		log.Printf("[3.2] isSummitNode: true, currentNode.Name: %s, parentTreeState.ID: %d, parentTreeState.Name: %s, parentTreeState.ChildrenNodeRefIDs: %+v\n", parentTreeState.Name, parentTreeState.ID, parentTreeState.Name, parentTreeState.ChildrenNodeRefIDs)
 		errInUpdateTreeState := impl.Update(parentTreeState)
 		if errInUpdateTreeState != nil {
-			log.Printf("[3.1] errInUpdateTreeState: %+v \n", errInUpdateTreeState)
+			log.Printf("[3.3] errInUpdateTreeState: %+v \n", errInUpdateTreeState)
 			return errInUpdateTreeState
 		}
 	}
@@ -306,7 +307,7 @@ func (impl *TreeStateStorage) MoveTreeStateNode(currentNode *model.TreeState) er
 	}
 
 	// add now TreeState id into new parent TreeState.ChildrenNodeRefIDs
-	newParentTreeState.AppendChildrenNodeRefIDs(currentTreeState.ID)
+	newParentTreeState.AppendChildrenNodeRefIDs([]int{currentTreeState.ID})
 
 	// update newParentTreeState
 	if err := impl.Update(newParentTreeState); err != nil {
