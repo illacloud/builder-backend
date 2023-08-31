@@ -37,21 +37,31 @@ func (controller *Controller) GetFullPublicApp(c *gin.Context) {
 	}
 	teamID := team.GetID()
 
-	// validate
-	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(
-		teamID,
-		userAuthToken,
-		accesscontrol.UNIT_TYPE_APP,
-		accesscontrol.DEFAULT_UNIT_ID,
-		accesscontrol.ACTION_ACCESS_VIEW,
-	)
-	if errInCheckAttr != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+	// get app
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, publicAppID)
+	if errInRetrieveApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get target app by id error: "+errInRetrieveApp.Error())
 		return
 	}
-	if !canAccess {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
-		return
+
+	// check if app publishedToMarketplace, if it is, every one can access app and do not need authorization and access controll check
+	if !app.IsPublishedToMarketplace() {
+		// validate
+		canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(
+			teamID,
+			userAuthToken,
+			accesscontrol.UNIT_TYPE_APP,
+			accesscontrol.DEFAULT_UNIT_ID,
+			accesscontrol.ACTION_ACCESS_VIEW,
+		)
+		if errInCheckAttr != nil {
+			controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+			return
+		}
+		if !canAccess {
+			controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+			return
+		}
 	}
 
 	// check if app is public app
