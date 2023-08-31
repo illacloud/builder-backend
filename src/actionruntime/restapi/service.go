@@ -18,6 +18,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -99,7 +100,10 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	}
 	var err error
 
-	u, err := url.ParseRequestURI(r.Resource.BaseURL)
+	fmt.Printf("[DUMP] RESTAPIConnector.Resource: %+v, r.Resource.BaseURL: %+v\n", r.Resource, r.Resource.BaseURL)
+	uriParsed, err := url.ParseRequestURI(r.Resource.BaseURL)
+	fmt.Printf("[DUMP] ParseRequestURI: uriParsed:%+v, err: %+v\n", uriParsed, err)
+
 	if err != nil {
 		res.Success = false
 		return res, err
@@ -140,7 +144,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 
 	// self-signed cert
 	if r.Resource.SelfSignedCert {
-		serverName := u.Hostname()
+		serverName := uriParsed.Hostname()
 		tlsCfg, err := loadSelfSignedCerts(serverName, r.Resource.Certs)
 		if err != nil {
 			return res, err
