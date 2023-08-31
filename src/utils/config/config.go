@@ -42,12 +42,12 @@ type Config struct {
 	InternalServerPort            string `env:"ILLA_SERVER_INTERNAL_PORT"           envDefault:"9005"`
 	ServerMode                    string `env:"ILLA_SERVER_MODE"                    envDefault:"debug"`
 	DeployMode                    string `env:"ILLA_DEPLOY_MODE"                    envDefault:"self-host"`
-	SecretKey                     string `env:"ILLA_SECRET_KEY" 			        envDefault:"8xEMrWkBARcDDYQ"`
+	SecretKey                     string `env:"ILLA_SECRET_KEY"                     envDefault:"8xEMrWkBARcDDYQ"`
 	WebsocketServerHost           string `env:"ILLA_WEBSOCKET_SERVER_HOST"          envDefault:"0.0.0.0"`
 	WebsocketServerPort           string `env:"ILLA_WEBSOCKET_SERVER_PORT"          envDefault:"8002"`
 	WebsocketServerConnectionHost string `env:"ILLA_WEBSOCKET_CONNECTION_HOST"      envDefault:"0.0.0.0"`
 	WebsocketServerConnectionPort string `env:"ILLA_WEBSOCKET_CONNECTION_PORT"      envDefault:"80"`
-	WSSEnabled                    string `env:"ILLA_WSS_ENABLED" 			        envDefault:"false"`
+	WSSEnabled                    string `env:"ILLA_WSS_ENABLED"                    envDefault:"false"`
 
 	// key for idconvertor
 	RandomKey string `env:"ILLA_RANDOM_KEY"  envDefault:"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"`
@@ -85,9 +85,9 @@ type Config struct {
 	// token for internal api
 	ControlToken string `env:"ILLA_CONTROL_TOKEN"     envDefault:""`
 	// google config
-	IllaGoogleSheetsClientID     string `env:"ILLA_GS_CLIENT_ID"     					   envDefault:""`
-	IllaGoogleSheetsClientSecret string `env:"ILLA_GS_CLIENT_SECRET" 					   envDefault:""`
-	IllaGoogleSheetsRedirectURI  string `env:"ILLA_GS_REDIRECT_URI"  					   envDefault:""`
+	IllaGoogleSheetsClientID     string `env:"ILLA_GS_CLIENT_ID"           envDefault:""`
+	IllaGoogleSheetsClientSecret string `env:"ILLA_GS_CLIENT_SECRET"       envDefault:""`
+	IllaGoogleSheetsRedirectURI  string `env:"ILLA_GS_REDIRECT_URI"        envDefault:""`
 }
 
 func getConfig() (*Config, error) {
