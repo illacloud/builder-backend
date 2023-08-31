@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -17,6 +18,7 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 	teamIDInString, errInGetTeamInString := controller.GetStringParamFromRequest(c, PARAM_TEAM_ID)
 	appID, errInGetAppID := controller.GetIntParamFromRequest(c, PARAM_APP_ID)
 	appIDInString, errInGetAppIDInString := controller.GetStringParamFromRequest(c, PARAM_APP_ID)
+	log.Printf("[CALL] PublishAppToMarketplaceInternal teamID: %+v, appID: %+v\n", teamID, appID)
 	if errInGetTeamID != nil || errInGetTeamInString != nil || errInGetAppID != nil || errInGetAppIDInString != nil {
 		return
 	}
@@ -79,13 +81,14 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 	return
 }
 
-func (controller *Controller) GetAllAppListByIDInternal(c *gin.Context) {
+func (controller *Controller) GetAllAppListByIDsInternal(c *gin.Context) {
 	// get request body
 	req := request.NewGetAppByIDsInternalRequest()
 	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
+	log.Printf("[CALL] GetAllAppListByIDsInternal req: %+v\n", req)
 
 	// validate payload required fields
 	validate := validator.New()
@@ -129,6 +132,7 @@ func (controller *Controller) GetReleaseVersionAppInternal(c *gin.Context) {
 	if errInGetAppID != nil || errInGetAppIDInString != nil {
 		return
 	}
+	log.Printf("[CALL] GetReleaseVersionAppInternal appID: %+v\n", appID)
 
 	// validate request data
 	validated, errInValidate := controller.ValidateRequestTokenFromHeader(c, appIDInString)

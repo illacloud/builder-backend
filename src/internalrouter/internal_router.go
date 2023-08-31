@@ -26,7 +26,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	teamsRouter.PATCH("/:teamID/apps/:appID", r.Controller.PublishAppToMarketplaceInternal)
 
 	// ai agentrouters
-	appRouter.POST("/fetchByIDs", r.Controller.GetAllAppListByIDInternal)
+	appRouter.POST("/fetchByIDs", r.Controller.GetAllAppListByIDsInternal)
 	appRouter.GET("/:appID/releaseVersion", r.Controller.GetReleaseVersionAppInternal)
 
 }
