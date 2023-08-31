@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"fmt"
+
 	"github.com/illacloud/builder-backend/src/model"
 	"github.com/illacloud/builder-backend/src/response"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
@@ -92,16 +94,14 @@ func (controller *Controller) IsPublicApp(c *gin.Context) {
 
 	// check if app is public app
 	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(publicAppID, teamID)
+	fmt.Printf("[DUMP] IsPublicApp.app: %+v\n", app)
+	fmt.Printf("[DUMP] IsPublicApp.errInRetrieveApp: %+v\n", errInRetrieveApp)
 	if errInRetrieveApp != nil {
-		controller.FeedbackOK(c, response.NewIsPublicAppResponse(false))
-		return
-	}
-	if !app.IsPublic() {
 		controller.FeedbackOK(c, response.NewIsPublicAppResponse(false))
 		return
 	}
 
 	// feedback
-	controller.FeedbackOK(c, response.NewIsPublicAppResponse(true))
+	controller.FeedbackOK(c, response.NewIsPublicAppResponse(app.IsPublic()))
 	return
 }
