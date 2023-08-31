@@ -130,19 +130,22 @@ func (impl *TreeStateStorage) CreateComponentTree(app *model.App, parentNodeID i
 	// process parentNode
 	if parentNodeID != 0 || currentNode.ParentNode == model.TREE_STATE_SUMMIT_NAME {
 		// parentNode is in database
+		log.Printf("[1.1.a] parentNode is in database \n")
 		isSummitNode = false
 		parentTreeState, errInRetrieveParentTreeState = impl.RetrieveByID(app.ExportTeamID(), parentNodeID)
 		if errInRetrieveParentTreeState != nil {
 			return errInRetrieveParentTreeState
 		}
 	} else if componentNodeTree.ParentNode != "" && componentNodeTree.ParentNode != model.TREE_STATE_SUMMIT_NAME {
-		//  parentNode not in database but parentNode exists
+		// parentNode in database but id not given, check it out by displayName
+		log.Printf("[1.1.b] parentNode in database but id not given, check it out by displayName \n")
 		isSummitNode = false
 		parentTreeState, errInRetrieveParentTreeState = impl.RetrieveEditVersionByAppAndName(app.ExportTeamID(), currentNode.AppRefID, currentNode.StateType, componentNodeTree.ParentNode)
 		if errInRetrieveParentTreeState != nil {
 			return errInRetrieveParentTreeState
 		}
 	}
+	log.Printf("[1.5] Retrieve ParentNode.ID: %d, ParentNode.Name: %d, ParentNode.parent_node_ref_id: %v, ParentNode.children_node_ref_ids: %v \n", parentTreeState.ID, parentTreeState.Name, parentTreeState.ParentNodeRefID, parentTreeState.ChildrenNodeRefIDs)
 
 	// no parentNode, currentNode is tree summit
 	if isSummitNode && currentNode.Name != model.TREE_STATE_SUMMIT_NAME {
@@ -170,6 +173,7 @@ func (impl *TreeStateStorage) CreateComponentTree(app *model.App, parentNodeID i
 		// update parentNode
 		errInUpdateTreeState := impl.Update(parentTreeState)
 		if errInUpdateTreeState != nil {
+			log.Printf("[3.1] errInUpdateTreeState: %+v \n", errInUpdateTreeState)
 			return errInUpdateTreeState
 		}
 	}
