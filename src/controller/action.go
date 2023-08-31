@@ -273,7 +273,7 @@ func (controller *Controller) GetAction(c *gin.Context) {
 	getActionResponse := response.NewGetActionResponse(action)
 
 	// append remote virtual resource
-	if action.IsVirtualAction() {
+	if action.IsRemoteVirtualAction() {
 		api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
 		if errInNewAPI != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
