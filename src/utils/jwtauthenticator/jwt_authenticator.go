@@ -2,11 +2,11 @@ package jwtauthenticator
 
 import (
 	"errors"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/illacloud/builder-backend/src/utils/config"
 )
 
 const JWT_ISSUER = "ILLA Cloud"
@@ -30,7 +30,8 @@ func GenerateAndSendVerificationCode(username, usage string) (string, error) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	codeToken, err := token.SignedString([]byte(os.Getenv("ILLA_SECRET_KEY")))
+	conf := config.GetInstance()
+	codeToken, err := token.SignedString([]byte(conf.GetSecretKey()))
 	if err != nil {
 		return "", err
 	}
@@ -48,7 +49,8 @@ func Validate(jwtToken, username, usage string) (bool, error) {
 	// check
 	defaultClaims := &DefaultClaims{}
 	token, err := jwt.ParseWithClaims(jwtTokenFinal, defaultClaims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("ILLA_SECRET_KEY")), nil
+		conf := config.GetInstance()
+		return []byte(conf.GetSecretKey()), nil
 	})
 	if err != nil {
 		return false, err

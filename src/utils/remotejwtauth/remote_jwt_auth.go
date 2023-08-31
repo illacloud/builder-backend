@@ -3,11 +3,11 @@ package remotejwtauth
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
+	"github.com/illacloud/builder-backend/src/utils/config"
 	"github.com/illacloud/builder-backend/src/utils/supervisor"
 )
 
@@ -55,9 +55,11 @@ func RemoteJWTAuth() gin.HandlerFunc {
 }
 
 func ExtractUserIDFromToken(accessToken string) (int, uuid.UUID, error) {
+
 	authClaims := &AuthClaims{}
 	token, err := jwt.ParseWithClaims(accessToken, authClaims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("ILLA_SECRET_KEY")), nil
+		conf := config.GetInstance()
+		return []byte(conf.GetSecretKey()), nil
 	})
 	if err != nil {
 		return 0, uuid.Nil, err
