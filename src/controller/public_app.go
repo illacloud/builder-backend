@@ -91,9 +91,11 @@ func (controller *Controller) IsPublicApp(c *gin.Context) {
 		return
 	}
 	teamID := team.GetID()
+	fmt.Printf("[DUMP] IsPublicApp.teamIdentifier: %+v, teamID: %+v, IsPublicApp.publicAppID: %+v \n", teamIdentifier, teamID, publicAppID)
+	fmt.Printf("[DUMP] IsPublicApp.team: %+v\n", team)
 
 	// check if app is public app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(publicAppID, teamID)
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, publicAppID)
 	fmt.Printf("[DUMP] IsPublicApp.app: %+v\n", app)
 	fmt.Printf("[DUMP] IsPublicApp.errInRetrieveApp: %+v\n", errInRetrieveApp)
 	if errInRetrieveApp != nil {
