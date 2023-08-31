@@ -154,7 +154,11 @@ func (controller *Controller) DeleteApp(c *gin.Context) {
 	go func() {
 		defer wg.Done()
 		marketplaceAPI := illamarketplacesdk.NewIllaMarketplaceRestAPI()
-		marketplaceAPI.DeleteProduct(illamarketplacesdk.PRODUCT_TYPE_APPS, appID)
+		marketplaceAPI.OpenDebug()
+		errInDeleteProduct := marketplaceAPI.DeleteProduct(illamarketplacesdk.PRODUCT_TYPE_APPS, appID)
+		if errInDeleteProduct != nil {
+			log.Printf("[DUMP] DeleteApp.errInDeleteProduct: %+v\n", errInDeleteProduct)
+		}
 	}()
 
 	// audit log
