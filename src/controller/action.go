@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -391,6 +392,8 @@ func (controller *Controller) RunAction(c *gin.Context) {
 	}
 
 	// run
+	log.Printf("[DUMP]action: %+v\n", action)
+	log.Printf("[DUMP] resource.ExportOptionsInMap(): %+v, action.ExportTemplateInMap(): %+v\n", resource.ExportOptionsInMap(), action.ExportTemplateInMap())
 	actionRunResult, errInRunAction := actionAssemblyLine.Run(resource.ExportOptionsInMap(), action.ExportTemplateInMap())
 	if errInRunAction != nil {
 		if strings.HasPrefix(errInRunAction.Error(), "Error 1064:") {
