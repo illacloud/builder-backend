@@ -82,7 +82,8 @@ func SignalUpdateState(hub *websocket.Hub, message *websocket.Message) error {
 			fmt.Printf("[DUMP] currentTreeStateNode: %+v\n", currentTreeStateNode)
 
 			// it is in database, update it
-			inDatabaseTreeState.UpdateByNewTreeState(currentTreeStateNode)
+			// NOTE, tree_state with SIGNAL_UPDATE_STATE, will only update name and content field.
+			inDatabaseTreeState.UpdateNameAndContent(currentTreeStateNode)
 			fmt.Printf("[DUMP] inDatabaseTreeState.UpdateByNewTreeState: %+v\n", inDatabaseTreeState)
 
 			errInUpdateTreeState := hub.Storage.TreeStateStorage.Update(inDatabaseTreeState)

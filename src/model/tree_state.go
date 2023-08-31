@@ -361,6 +361,11 @@ func (treeState *TreeState) ResetChildrenNodeRefIDsByMap(idMap map[int]int) {
 	treeState.ChildrenNodeRefIDs = string(idsjsonb)
 }
 
+func (treeState *TreeState) UpdateNameAndContent(newTreeState *TreeState) {
+	treeState.Name = newTreeState.Name
+	treeState.Content = newTreeState.Content
+}
+
 func BuildTreeStateLookupTable(treeStates []*TreeState) map[int]*TreeState {
 	tempMap := make(map[int]*TreeState, len(treeStates))
 	for _, component := range treeStates {
