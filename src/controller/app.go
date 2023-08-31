@@ -777,8 +777,16 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		return
 	}
 
-	// check team can release public app
-	if req.ExportPublic() {
+	// fetch app
+	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
+	if errInRetrieveApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
+		return
+	}
+
+	// check team can release public app, the free team can not release app as public.
+	// but when publish app to marketplace, the can re-deploy this app as public.
+	if req.ExportPublic() && !app.IsPublishedToMarketplace() {
 		canManageSpecial, errInCheckAttr := controller.AttributeGroup.CanManageSpecial(
 			teamID,
 			userAuthToken,
@@ -794,13 +802,6 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 			return
 		}
-	}
-
-	// fetch app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
-	if errInRetrieveApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
-		return
 	}
 
 	// config app & action public status
