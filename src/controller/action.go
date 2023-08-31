@@ -378,6 +378,12 @@ func (controller *Controller) RunAction(c *gin.Context) {
 			return
 		}
 		// resource option validate only happend in create or update phrase
+		// note that validate will set resprce options to actionAssemblyLine
+		_, errInValidateResourceOptions := actionAssemblyLine.ValidateResourceOptions(resource.ExportOptionsInMap())
+		if errInValidateResourceOptions != nil {
+			controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_RESOURCE_FAILED, "validate resource failed: "+errInValidateResourceOptions.Error())
+			return
+		}
 	} else {
 		// process virtual resource action
 		action.AppendRuntimeInfoForVirtualResource(userAuthToken)
