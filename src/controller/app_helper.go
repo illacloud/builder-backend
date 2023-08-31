@@ -624,7 +624,7 @@ func (controller *Controller) BuildComponentTree(app *model.App, parentNodeID in
 
 	// fill parentNode.ChildrenNodeRefIDs with currentNode.ID (when current node is not root)
 	if currentNode.Name != model.TREE_STATE_SUMMIT_NAME {
-		parentTreeState.AppendChildrenNodeRefIDs(currentNode.ID)
+		parentTreeState.AppendChildrenNodeRefIDs([]int{currentNode.ID})
 		// update parentNode
 		errInUpdateParentNode := controller.Storage.TreeStateStorage.Update(parentTreeState)
 		if errInUpdateParentNode != nil {
