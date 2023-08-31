@@ -17,6 +17,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/illacloud/builder-backend/src/model"
 	"github.com/illacloud/builder-backend/src/utils/datacontrol"
@@ -288,12 +289,18 @@ func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int
 
 	// form editor object field components
 	treeStateComponents, errInRetrieveTreeStateComponents := controller.Storage.TreeStateStorage.RetrieveTreeStatesByApp(teamID, appID, model.TREE_STATE_TYPE_COMPONENTS, version)
+	fmt.Printf("[DUMP] treeStateComponents: %+v\n", treeStateComponents)
 	if errInRetrieveTreeStateComponents != nil {
+		fmt.Printf("[DUMP] errInRetrieveTreeStateComponents: %+v\n", errInRetrieveTreeStateComponents)
 		treeStateComponents = []*model.TreeState{}
 	}
 	treeStateLT := model.BuildTreeStateLookupTable(treeStateComponents)
 	rootOfTreeState := model.PickUpTreeStatesRootNode(treeStateComponents)
-	componentTree, _ := model.BuildComponentTree(rootOfTreeState, treeStateLT, nil)
+	componentTree, errInBuildComponentsTree := model.BuildComponentTree(rootOfTreeState, treeStateLT, nil)
+	if errInBuildComponentsTree != nil {
+		fmt.Printf("[DUMP] errInBuildComponentsTree: %+v\n", errInBuildComponentsTree)
+	}
+	fmt.Printf("[DUMP] componentTree: %+v\n", componentTree)
 
 	// form editor object field appForExport, We need:
 	//     AppInfo               which is: *AppForExport

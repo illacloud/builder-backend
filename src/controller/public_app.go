@@ -44,7 +44,7 @@ func (controller *Controller) GetFullPublicApp(c *gin.Context) {
 		return
 	}
 
-	// check if app publishedToMarketplace, if it is, every one can access app and do not need authorization and access controll check
+	// check if app publishedToMarketplace, if it is, everyone can access app and do not need authorization and access controll check
 	if !app.IsPublishedToMarketplace() {
 		// validate
 		canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(

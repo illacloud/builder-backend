@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -605,6 +606,8 @@ func (controller *Controller) GetFullApp(c *gin.Context) {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
+
+	log.Printf("[DUMP] GetFullApp teamID: %+v, appID: %+v, version: %+v\n", teamID, appID, version)
 
 	// do get app for editor method
 	fullAppForExport, errInGenerateFullApp := controller.GetTargetVersionFullApp(c, teamID, appID, version, false)
