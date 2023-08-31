@@ -52,6 +52,7 @@ func SignalMoveState(hub *websocket.Hub, message *websocket.Message) error {
 	case builderoperation.TARGET_NOTNING:
 		return nil
 	case builderoperation.TARGET_COMPONENTS:
+		stateType = model.TREE_STATE_TYPE_COMPONENTS
 		displayNames := make([]string, 0)
 		for _, v := range message.Payload {
 			// init current tree state node
