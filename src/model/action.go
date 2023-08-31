@@ -265,6 +265,14 @@ func (action *Action) IsVirtualAction() bool {
 	return resourcelist.IsVirtualResourceByIntType(action.Type)
 }
 
+func (action *Action) IsLocalVirtualAction() bool {
+	return resourcelist.IsLocalVirtualResourceByIntType(action.Type)
+}
+
+func (action *Action) IsRemoteVirtualAction() bool {
+	return resourcelist.IsRemoteVirtualResourceByIntType(action.Type)
+}
+
 func (action *Action) ExportTransformerInMap() map[string]interface{} {
 	var payload map[string]interface{}
 	json.Unmarshal([]byte(action.Transformer), &payload)

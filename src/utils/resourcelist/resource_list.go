@@ -179,6 +179,18 @@ func IsVirtualResourceByIntType(resourceType int) bool {
 	return itIs && hit
 }
 
+func IsLocalVirtualResourceByIntType(resourceType int) bool {
+	resourceTypeString := GetResourceIDMappedType(resourceType)
+	itIs, hit := localVirtualResourceList[resourceTypeString]
+	return itIs && hit
+}
+
+func IsRemoteVirtualResourceByIntType(resourceType int) bool {
+	resourceTypeString := GetResourceIDMappedType(resourceType)
+	itIs, hit := remoteVirtualResourceList[resourceTypeString]
+	return itIs && hit
+}
+
 func IsVirtualResourceHaveNoOption(resourceType int) bool {
 	resourceTypeString := GetResourceIDMappedType(resourceType)
 	itIs, hit := emptyOptionResourceList[resourceTypeString]

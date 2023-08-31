@@ -90,3 +90,11 @@ func (req *UpdateActionRequest) AppendVirtualResourceToTemplate(value interface{
 func (req *UpdateActionRequest) IsVirtualAction() bool {
 	return resourcelist.IsVirtualResource(req.ActionType)
 }
+
+func (req *UpdateActionRequest) IsLocalVirtualAction() bool {
+	return resourcelist.IsLocalVirtualResource(req.ActionType)
+}
+
+func (req *UpdateActionRequest) IsRemoteVirtualAction() bool {
+	return resourcelist.IsRemoteVirtualResource(req.ActionType)
+}

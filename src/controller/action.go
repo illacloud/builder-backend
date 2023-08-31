@@ -141,16 +141,16 @@ func (controller *Controller) UpdateAction(c *gin.Context) {
 		return
 	}
 
-	// append remote virtual resource
-	if updateActionRequest.IsVirtualAction() {
+	// append remote virtual resource (like aiagent, but the transformet is local virtual resource)
+	if updateActionRequest.IsRemoteVirtualAction() {
 		api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
 		if errInNewAPI != nil {
-			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
 			return
 		}
 		virtualResource, errInGetVirtualResource := api.GetResource(updateActionRequest.ExportActionTypeInInt(), updateActionRequest.ExportResourceIDInInt())
 		if errInGetVirtualResource != nil {
-			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetVirtualResource.Error())
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetVirtualResource.Error())
 			return
 		}
 		updateActionRequest.AppendVirtualResourceToTemplate(virtualResource)
