@@ -12,6 +12,7 @@ import (
 	"github.com/illacloud/builder-backend/src/utils/datacontrol"
 )
 
+// hold publish or remove from marketplace
 func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 	// get user input params
 	teamID, errInGetTeamID := controller.GetIntParamFromRequest(c, PARAM_TEAM_ID)
@@ -56,6 +57,11 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 	// - unpublish will set app.Config.Public to false
 	app.SetPublishedToMarketplace(req.PublishedToMarketplace, userID)
 
+	// release app, publish to marketplace alwasy deploy a new version of app
+	if req.PublishedToMarketplace {
+		app.Release()
+	}
+
 	// save
 	errInUpdateAppByID := controller.Storage.AppStorage.UpdateWholeApp(app)
 	if errInUpdateAppByID != nil {
@@ -65,9 +71,6 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 
 	// deploy app, publish an app need deploy it
 	if req.PublishedToMarketplace {
-		// release app version
-		app.Release()
-
 		// release app following components & actions
 		// release will copy following units from edit version to app mainline version
 		controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
