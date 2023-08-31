@@ -73,7 +73,7 @@ type Config struct {
 	DriveUploadTimeoutRaw string `env:"ILLA_DRIVE_UPLOAD_TIMEOUT"     envDefault:"30s"`
 	DriveUploadTimeout    time.Duration
 	// supervisor API
-	IllaSupervisorInternalRestAPI string `env:"ILLA_SUPERVISOR_INTERNAL_API"     envDefault:"http://illa-cloud-backend-internal:9001/api/v1"`
+	IllaSupervisorInternalRestAPI string `env:"ILLA_SUPERVISOR_INTERNAL_API"     envDefault:"http://127.0.0.1:9001/api/v1"`
 
 	// peripheral API
 	IllaPeripheralAPI string `env:"ILLA_PERIPHERAL_API" envDefault:"https://peripheral-api.illasoft.com/v1/"`
