@@ -42,7 +42,7 @@ type Config struct {
 	InternalServerPort            string `env:"ILLA_SERVER_INTERNAL_PORT"           envDefault:"9005"`
 	ServerMode                    string `env:"ILLA_SERVER_MODE"                    envDefault:"debug"`
 	DeployMode                    string `env:"ILLA_DEPLOY_MODE"                    envDefault:"self-host"`
-	SecretKey                     string `env:"ILLA_SECRET_KEY" 			        envDefault:"8xEMrWkBARcDDYQ"`
+	SecretKey                     string `env:"ILLA_SECRET_KEY" 			        envDefault:""`
 	WebsocketServerHost           string `env:"ILLA_WEBSOCKET_SERVER_HOST"          envDefault:"0.0.0.0"`
 	WebsocketServerPort           string `env:"ILLA_WEBSOCKET_SERVER_PORT"          envDefault:"8002"`
 	WebsocketServerConnectionHost string `env:"ILLA_WEBSOCKET_CONNECTION_HOST"      envDefault:"0.0.0.0"`
