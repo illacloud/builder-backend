@@ -146,6 +146,17 @@ func (controller *Controller) DeleteApp(c *gin.Context) {
 		return
 	}
 
+	// init parallel counter
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	// add counter to marketpalce
+	go func() {
+		defer wg.Done()
+		marketplaceAPI := illamarketplacesdk.NewIllaMarketplaceRestAPI()
+		marketplaceAPI.DeleteProduct(illamarketplacesdk.PRODUCT_TYPE_APPS, appID)
+	}()
+
 	// audit log
 	auditLogger := auditlogger.GetInstance()
 	auditLogger.Log(&auditlogger.LogInfo{
@@ -826,6 +837,21 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	errInDuplicateActionByVersion := controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 	if errInDuplicateTreeStateByVersion != nil || errInDuplicateKVStateByVersion != nil || errInDuplicateSetStateByVersion != nil || errInDuplicateActionByVersion != nil {
 		return
+	}
+
+	// if app already published to marketplace, sync app to marketplace
+	if app.IsPublishedToMarketplace() {
+		// init parallel counter
+		var wg sync.WaitGroup
+		wg.Add(1)
+
+		// add counter to marketpalce
+		go func() {
+			defer wg.Done()
+			marketplaceAPI := illamarketplacesdk.NewIllaMarketplaceRestAPI()
+			marketplaceAPI.UpdateProduct(illamarketplacesdk.PRODUCT_TYPE_APPS, appID, illamarketplacesdk.NewAppForMarketplace(app))
+		}()
+
 	}
 
 	// audit log
