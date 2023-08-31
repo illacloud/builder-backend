@@ -293,12 +293,14 @@ func (treeState *TreeState) AppendChildrenNodeRefIDs(id int) error {
 	return nil
 }
 
-func (treeState *TreeState) RemoveChildrenNodeRefIDs(id int) error {
+func (treeState *TreeState) RemoveChildrenNodeRefIDs(targetIDs []int) error {
 	var ids []int
 	if err := json.Unmarshal([]byte(treeState.ChildrenNodeRefIDs), &ids); err != nil {
 		return err
 	}
-	ids = util.DeleteElement(ids, id)
+	for _, targetID := range targetIDs {
+		ids = util.DeleteElement(ids, targetID)
+	}
 	idsjsonb, err := json.Marshal(ids)
 	if err != nil {
 		return err

@@ -214,12 +214,12 @@ func (impl *TreeStateStorage) DeleteComponentTree(currentNode *model.TreeState) 
 	// unlink parentNode
 	if currentTreeState.ParentNodeRefID != 0 { // parentNode is in database
 		// get parentNode
-		parentTreeState, errInRetrieveParentTreeState := impl.RetrieveByID(currentNode.TeamID, currentTreeState.ID)
+		parentTreeState, errInRetrieveParentTreeState := impl.RetrieveByID(currentNode.TeamID, currentTreeState.ParentNodeRefID)
 		if errInRetrieveParentTreeState != nil {
 			return errInRetrieveParentTreeState
 		}
 		// update parentNode for unlink
-		parentTreeState.RemoveChildrenNodeRefIDs(currentTreeState.ID)
+		parentTreeState.RemoveChildrenNodeRefIDs([]int{currentTreeState.ID})
 		errInUpdateParentTreeState := impl.Update(parentTreeState)
 		if errInUpdateParentTreeState != nil {
 			return errInUpdateParentTreeState
@@ -310,7 +310,7 @@ func (impl *TreeStateStorage) MoveTreeStateNode(currentNode *model.TreeState) er
 	}
 
 	// remove now TreeState id from old parent TreeState.ChildrenNodeRefIDs
-	oldParentTreeState.RemoveChildrenNodeRefIDs(currentTreeState.ID)
+	oldParentTreeState.RemoveChildrenNodeRefIDs([]int{currentTreeState.ID})
 
 	// update oldParentTreeState
 	if err := impl.Update(oldParentTreeState); err != nil {
