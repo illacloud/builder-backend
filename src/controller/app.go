@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -16,6 +17,7 @@ import (
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
 	"github.com/illacloud/builder-backend/src/utils/auditlogger"
 	"github.com/illacloud/builder-backend/src/utils/datacontrol"
+	"github.com/illacloud/builder-backend/src/utils/illamarketplacesdk"
 )
 
 func (controller *Controller) CreateApp(c *gin.Context) {
@@ -1200,6 +1202,17 @@ func (controller *Controller) ForkMarketplaceApp(c *gin.Context) {
 	controller.DuplicateSetStateByVersion(c, app.ExportTeamID(), toTeamID, appID, duplicatedAppID, app.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
 	controller.DuplicateActionByVersion(c, app.ExportTeamID(), toTeamID, appID, duplicatedAppID, app.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
 
+	// init parallel counter
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	// add counter to marketpalce
+	go func() {
+		defer wg.Done()
+		marketplaceAPI := illamarketplacesdk.NewIllaMarketplaceRestAPI()
+		marketplaceAPI.ForkCounter(illamarketplacesdk.PRODUCT_TYPE_APPS, appID)
+	}()
+
 	// audit log
 	auditLogger := auditlogger.GetInstance()
 	auditLogger.Log(&auditlogger.LogInfo{
@@ -1215,7 +1228,7 @@ func (controller *Controller) ForkMarketplaceApp(c *gin.Context) {
 	_, errInInitAppSnapSHot := controller.InitAppSnapshot(c, toTeamID, duplicatedApp.ExportID())
 	if errInInitAppSnapSHot != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_SNAPSHOT, "error in create app snapshot: "+errInInitAppSnapSHot.Error())
-
+		return
 	}
 
 	// get all modifier user ids from all apps

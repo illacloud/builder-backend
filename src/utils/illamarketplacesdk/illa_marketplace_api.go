@@ -67,23 +67,6 @@ func (r *IllaMarketplaceRestAPI) ForkCounter(productType string, productID int) 
 	return nil
 }
 
-func (r *IllaMarketplaceRestAPI) RunCounter(productType string, productID int) error {
-	client := resty.New()
-	resp, err := client.R().
-		SetHeader("Request-Token", r.Validator.GenerateValidateToken(fmt.Sprintf("%d", productID))).
-		Post(r.Config.IllaMarketplaceInternalRestAPI + fmt.Sprintf(RUN_COUNTER_API, productType, productID))
-	if r.Debug {
-		log.Printf("[IllaMarketplaceRestAPI.RunCounter()]  response: %+v, err: %+v", resp, err)
-	}
-	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
-		if err != nil {
-			return err
-		}
-		return errors.New(resp.String())
-	}
-	return nil
-}
-
 func (r *IllaMarketplaceRestAPI) DeleteTeamAllProducts(teamID int) error {
 	client := resty.New()
 	resp, err := client.R().
