@@ -274,14 +274,18 @@ func (impl *TreeStateStorage) retrieveChildrenNodes(treeState *model.TreeState, 
 
 // @todo: add tree ref circle checker.
 func (impl *TreeStateStorage) MoveTreeStateNode(currentNode *model.TreeState) error {
+	fmt.Printf("[CALL] MoveTreeStateNode() currentNode.TeamID: %+v, currentNode.AppRefID: %+v, currentNode.StateType: %+v, currentNode.Name: %+v \n", currentNode.TeamID, currentNode.AppRefID, currentNode.StateType, currentNode.Name)
 	// get currentTreeState by name
 	currentTreeState, errInRetrieveCurrentTreeState := impl.RetrieveEditVersionByAppAndName(currentNode.TeamID, currentNode.AppRefID, currentNode.StateType, currentNode.Name)
 	if errInRetrieveCurrentTreeState != nil {
 		return errInRetrieveCurrentTreeState
 	}
 
-	// get oldParentTreeState by id
+	// get oldParentTreeState by id, id specified version
+	fmt.Printf("[CALL] MoveTreeStateNode() currentTreeState.ParentNodeRefID: %+v \n", currentTreeState.ParentNodeRefID)
 	oldParentTreeState, errInRetrieveOldParentTreeState := impl.RetrieveByID(currentNode.TeamID, currentTreeState.ParentNodeRefID)
+	fmt.Printf("[CALL] MoveTreeStateNode() oldParentTreeState.ID: %+v, oldParentTreeState.Name: %+v, oldParentTreeState.ChildrenNodeRefIDs: %+v \n", oldParentTreeState.ID, oldParentTreeState.Name, oldParentTreeState.ChildrenNodeRefIDs)
+
 	if errInRetrieveOldParentTreeState != nil {
 		return errInRetrieveOldParentTreeState
 	}
@@ -291,7 +295,10 @@ func (impl *TreeStateStorage) MoveTreeStateNode(currentNode *model.TreeState) er
 	var errInRetrieveNewParentTreeState error
 	switch currentNode.StateType {
 	case model.TREE_STATE_TYPE_COMPONENTS:
+		fmt.Printf("[CALL] MoveTreeStateNode() currentNode.TeamID: %+v, currentNode.AppRefID: %+v, currentNode.StateType: %+v, currentNode.ParentNode: %+v \n", currentNode.TeamID, currentNode.AppRefID, currentNode.StateType, currentNode.ParentNode)
 		newParentTreeState, errInRetrieveNewParentTreeState = impl.RetrieveEditVersionByAppAndName(currentNode.TeamID, currentNode.AppRefID, currentNode.StateType, currentNode.ParentNode)
+		fmt.Printf("[CALL] MoveTreeStateNode() newParentTreeState.ID: %+v, newParentTreeState.Name: %+v, newParentTreeState.ChildrenNodeRefIDs: %+v \n", newParentTreeState.ID, newParentTreeState.Name, newParentTreeState.ChildrenNodeRefIDs)
+
 		if errInRetrieveNewParentTreeState != nil {
 			return errInRetrieveNewParentTreeState
 		}
@@ -305,6 +312,7 @@ func (impl *TreeStateStorage) MoveTreeStateNode(currentNode *model.TreeState) er
 	if err := impl.Update(currentTreeState); err != nil {
 		return err
 	}
+	fmt.Printf("[DUMP] currentTreeState: %+v\n", currentTreeState)
 
 	// add now TreeState id into new parent TreeState.ChildrenNodeRefIDs
 	newParentTreeState.AppendChildrenNodeRefIDs([]int{currentTreeState.ID})
@@ -313,6 +321,7 @@ func (impl *TreeStateStorage) MoveTreeStateNode(currentNode *model.TreeState) er
 	if err := impl.Update(newParentTreeState); err != nil {
 		return err
 	}
+	fmt.Printf("[DUMP] newParentTreeState: %+v\n", newParentTreeState)
 
 	// remove now TreeState id from old parent TreeState.ChildrenNodeRefIDs
 	oldParentTreeState.RemoveChildrenNodeRefIDs([]int{currentTreeState.ID})
@@ -321,6 +330,8 @@ func (impl *TreeStateStorage) MoveTreeStateNode(currentNode *model.TreeState) er
 	if err := impl.Update(oldParentTreeState); err != nil {
 		return err
 	}
+	fmt.Printf("[DUMP] oldParentTreeState: %+v\n", oldParentTreeState)
+
 	return nil
 }
 

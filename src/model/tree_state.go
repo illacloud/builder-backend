@@ -84,58 +84,112 @@ func NewTreeStateByApp(app *App, stateType int) *TreeState {
 	return treeState
 }
 
+// data sample: ------------------------
+//
+//	                                   |
+//		{                              |
+//		    "signal": 5,               |
+//		    "target": 1,               |
+//		    "option": 0,               |
+//		    "broadcast": null,         |
+//		    "payload": [               |
+//		        {                      ↓
+//		            "before": { <- data
+//		                "displayName": "input1"
+//		            },                 ↓
+//		            "after": {  <- data
+//		                "w": 6,
+//		                "h": 5,
+//		                "minW": 1,
+//		                "minH": 3,
+//		                "x": 19,
+//		                "y": 22,
+//		                "z": 0,
+//		                "showName": "input",
+//		                "type": "INPUT_WIDGET",
+//		                "displayName": "input1",
+//		                "containerType": "EDITOR_SCALE_SQUARE",
+//		                "parentNode": "bodySection1-bodySectionContainer1",
+//		                "childrenNode": [],
+//		                "props": {
+//		                    "value": "",
+//		                    "label": "Label",
+//		                    "labelAlign": "left",
+//		                    "labelPosition": "left",
+//		                    "labelWidth": "{{33}}",
+//		                    "colorScheme": "blue",
+//		                    "hidden": false,
+//		                    "formDataKey": "{{input1.displayName}}",
+//		                    "placeholder": "input sth",
+//		                    "$dynamicAttrPaths": [
+//		                        "labelWidth",
+//		                        "formDataKey",
+//		                        "showVisibleButton"
+//		                    ],
+//		                    "type": "input",
+//		                    "showVisibleButton": "{{true}}"
+//		                },
+//		                "version": 0
+//		            }
+//		        }
+//		    ],
+//		    "teamID": "ILAfx4p1C7bN",
+//		    "uid": "ILAfx4p1C7bN"
+//		}
+func NewTreeStateByWebsocketMessage(app *App, stateType int, data interface{}) (*TreeState, error) {
+	treeState := NewTreeStateByApp(app, stateType)
+	udata, ok := data.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("can not init tree state")
+	}
+	for k, v := range udata {
+		switch k {
+		case TREE_STATE_FIELD_DISPLAY_NAME:
+			treeState.Name, _ = v.(string)
+		case TREE_STATE_FIELD_PARENT_NODE:
+			treeState.ParentNode, _ = v.(string)
+		}
+	}
+	marshaledData, marshalError := json.Marshal(data)
+	if marshalError != nil {
+		treeState.Content = string(marshaledData)
+	}
+	return treeState, nil
+}
+
 // data sample:
 //
 //	{
-//	    "signal": 5,
+//	    "signal": 6,
 //	    "target": 1,
-//	    "option": 0,
-//	    "broadcast": null,
+//	    "option": 1,
+//	    "broadcast": {
+//	        "type": "components/updateComponentContainerReducer",
+//	        "payload": {
+//	            "oldParentNodeDisplayName": "bodySection1-bodySectionContainer1",
+//	            "newParentNodeDisplayName": "canvas1",
+//	            "updateSlices": [
+//	                {
+//	                    "displayName": "text1",
+//	                    "x": 8,
+//	                    "y": 4,
+//	                    "w": 20,
+//	                    "h": 5
+//	                }
+//	            ]
+//	        }
+//	    },
 //	    "payload": [
 //	        {
-//	            "before": { <- data
-//	                "displayName": "input1"
-//	            },
-//	            "after": {  <- data
-//	                "w": 6,
-//	                "h": 5,
-//	                "minW": 1,
-//	                "minH": 3,
-//	                "x": 19,
-//	                "y": 22,
-//	                "z": 0,
-//	                "showName": "input",
-//	                "type": "INPUT_WIDGET",
-//	                "displayName": "input1",
-//	                "containerType": "EDITOR_SCALE_SQUARE",
-//	                "parentNode": "bodySection1-bodySectionContainer1",
-//	                "childrenNode": [],
-//	                "props": {
-//	                    "value": "",
-//	                    "label": "Label",
-//	                    "labelAlign": "left",
-//	                    "labelPosition": "left",
-//	                    "labelWidth": "{{33}}",
-//	                    "colorScheme": "blue",
-//	                    "hidden": false,
-//	                    "formDataKey": "{{input1.displayName}}",
-//	                    "placeholder": "input sth",
-//	                    "$dynamicAttrPaths": [
-//	                        "labelWidth",
-//	                        "formDataKey",
-//	                        "showVisibleButton"
-//	                    ],
-//	                    "type": "input",
-//	                    "showVisibleButton": "{{true}}"
-//	                },
-//	                "version": 0
-//	            }
+//	            "displayName": "text1",
+//	            "parentNode": "canvas1",
+//	            "childrenNode": null
 //	        }
 //	    ],
-//	    "teamID": "ILAfx4p1C7bN",
-//	    "uid": "ILAfx4p1C7bN"
+//	    "teamID": "ILAfx4p1C7dL",
+//	    "uid": "ILAfx4p1C7dL"
 //	}
-func NewTreeStateByWebsocketMessage(app *App, stateType int, data interface{}) (*TreeState, error) {
+func NewTreeStateByMoveStateWebsocketMessage(app *App, stateType int, data interface{}) (*TreeState, error) {
 	treeState := NewTreeStateByApp(app, stateType)
 	udata, ok := data.(map[string]interface{})
 	if !ok {

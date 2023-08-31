@@ -55,7 +55,7 @@ func SignalMoveState(hub *websocket.Hub, message *websocket.Message) error {
 		displayNames := make([]string, 0)
 		for _, v := range message.Payload {
 			// init current tree state node
-			currentTreeStateNode, errInInitCurrentNode := model.NewTreeStateByWebsocketMessage(app, stateType, v)
+			currentTreeStateNode, errInInitCurrentNode := model.NewTreeStateByMoveStateWebsocketMessage(app, stateType, v)
 			if errInInitCurrentNode != nil {
 				currentClient.Feedback(message, websocket.ERROR_MOVE_STATE_FAILED, errInInitCurrentNode)
 				return errInInitCurrentNode
