@@ -187,10 +187,8 @@ func (app *App) SetNotPublishedToMarketplace(userID int) {
 func (app *App) SetPublishedToMarketplace(publishedToMarketpalce bool, modifyUserID int) {
 	appConfig := app.ExportConfig()
 	appConfig.PublishedToMarketplace = publishedToMarketpalce
-	// when an app published to marketplace, set app.Public to true for public access from marketplace
-	if publishedToMarketpalce {
-		appConfig.Public = true
-	}
+	// app.Public will sync to publishedToMarketpalce
+	appConfig.Public = publishedToMarketpalce
 	app.Config = appConfig.ExportToJSONString()
 	app.UpdatedBy = modifyUserID
 	app.PushEditedBy(NewAppEditedByUserID(modifyUserID))
