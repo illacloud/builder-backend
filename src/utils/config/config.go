@@ -38,10 +38,10 @@ func GetInstance() *Config {
 type Config struct {
 	// server config
 	ServerHost                    string `env:"ILLA_SERVER_HOST"                    envDefault:"0.0.0.0"`
-	ServerPort                    string `env:"ILLA_SERVER_PORT"                    envDefault:"8003"`
+	ServerPort                    string `env:"ILLA_SERVER_PORT"                    envDefault:"8001"`
 	InternalServerPort            string `env:"ILLA_SERVER_INTERNAL_PORT"           envDefault:"9005"`
 	ServerMode                    string `env:"ILLA_SERVER_MODE"                    envDefault:"debug"`
-	DeployMode                    string `env:"ILLA_DEPLOY_MODE"                    envDefault:"cloud-test"`
+	DeployMode                    string `env:"ILLA_DEPLOY_MODE"                    envDefault:"self-host"`
 	SecretKey                     string `env:"ILLA_SECRET_KEY" 			        envDefault:"8xEMrWkBARcDDYQ"`
 	WebsocketServerHost           string `env:"ILLA_WEBSOCKET_SERVER_HOST"          envDefault:"0.0.0.0"`
 	WebsocketServerPort           string `env:"ILLA_WEBSOCKET_SERVER_PORT"          envDefault:"8002"`
