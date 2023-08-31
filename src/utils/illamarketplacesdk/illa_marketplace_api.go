@@ -51,6 +51,10 @@ func (r *IllaMarketplaceRestAPI) OpenDebug() {
 }
 
 func (r *IllaMarketplaceRestAPI) ForkCounter(productType string, productID int) error {
+	// self-hist need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil
+	}
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Request-Token", r.Validator.GenerateValidateToken(fmt.Sprintf("%d", productID))).
@@ -68,6 +72,10 @@ func (r *IllaMarketplaceRestAPI) ForkCounter(productType string, productID int) 
 }
 
 func (r *IllaMarketplaceRestAPI) DeleteTeamAllProducts(teamID int) error {
+	// self-hist need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil
+	}
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Request-Token", r.Validator.GenerateValidateToken(fmt.Sprintf("%d", teamID))).
@@ -85,6 +93,10 @@ func (r *IllaMarketplaceRestAPI) DeleteTeamAllProducts(teamID int) error {
 }
 
 func (r *IllaMarketplaceRestAPI) DeleteProduct(productType string, productID int) error {
+	// self-hist need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil
+	}
 	client := resty.New()
 	resp, err := client.R().
 		SetHeader("Request-Token", r.Validator.GenerateValidateToken(fmt.Sprintf("%d", productID))).
@@ -102,6 +114,10 @@ func (r *IllaMarketplaceRestAPI) DeleteProduct(productType string, productID int
 }
 
 func (r *IllaMarketplaceRestAPI) UpdateProduct(productType string, productID int, product interface{}) error {
+	// self-hist need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil
+	}
 	b, err := json.Marshal(product)
 	if err != nil {
 		return err

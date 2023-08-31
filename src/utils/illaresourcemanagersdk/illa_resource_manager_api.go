@@ -48,6 +48,10 @@ func (r *IllaResourceManagerRestAPI) OpenDebug() {
 }
 
 func (r *IllaResourceManagerRestAPI) GetResource(resourceType int, resourceID int) (map[string]interface{}, error) {
+	// self-hist need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil, nil
+	}
 	switch resourceType {
 	case resourcelist.TYPE_AI_AGENT_ID:
 		return r.GetAIAgent(resourceID)
@@ -57,6 +61,10 @@ func (r *IllaResourceManagerRestAPI) GetResource(resourceType int, resourceID in
 }
 
 func (r *IllaResourceManagerRestAPI) RunResource(resourceType int, resourceID int, req map[string]interface{}) (*RunResourceResult, error) {
+	// self-hist need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil, nil
+	}
 	switch resourceType {
 	case resourcelist.TYPE_AI_AGENT_ID:
 		return r.RunAIAgent(req)
@@ -66,6 +74,10 @@ func (r *IllaResourceManagerRestAPI) RunResource(resourceType int, resourceID in
 }
 
 func (r *IllaResourceManagerRestAPI) GetAIAgent(aiAgentID int) (map[string]interface{}, error) {
+	// self-hist need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil, nil
+	}
 	client := resty.New()
 	tokenValidator := tokenvalidator.NewRequestTokenValidator()
 	uri := r.Config.GetIllaResourceManagerInternalRestAPI() + fmt.Sprintf(GET_AI_AGENT_INTERNAL_API, aiAgentID)
@@ -93,6 +105,10 @@ func (r *IllaResourceManagerRestAPI) GetAIAgent(aiAgentID int) (map[string]inter
 }
 
 func (r *IllaResourceManagerRestAPI) RunAIAgent(req map[string]interface{}) (*RunResourceResult, error) {
+	// self-hist need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil, nil
+	}
 	reqInstance, errInNewReq := NewRunAIAgentRequest(req)
 	if errInNewReq != nil {
 		return nil, errInNewReq
@@ -131,6 +147,10 @@ func (r *IllaResourceManagerRestAPI) RunAIAgent(req map[string]interface{}) (*Ru
 }
 
 func (r *IllaResourceManagerRestAPI) DeleteTeamAllAIAgent(teamID int) error {
+	// self-hist need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil
+	}
 	client := resty.New()
 	tokenValidator := tokenvalidator.NewRequestTokenValidator()
 	uri := r.Config.GetIllaResourceManagerInternalRestAPI() + fmt.Sprintf(DELETE_TEAM_ALL_AI_AGENT_INTERNAL_API, teamID)
