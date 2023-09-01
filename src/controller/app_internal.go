@@ -59,6 +59,8 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 
 	// release app, publish to marketplace alwasy deploy a new version of app
 	if req.PublishedToMarketplace {
+		treeStateLatestVersion, _ := controller.Storage.TreeStateStorage.RetrieveTreeStatesLatestVersion(teamID, appID)
+		app.SyncMainlineVersionWithTreeStateLatestVersion(treeStateLatestVersion)
 		app.Release()
 	}
 
