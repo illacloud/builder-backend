@@ -18,6 +18,8 @@ func TakeSnapshot(hub *websocket.Hub, message *websocket.Message) error {
 	}
 
 	// config app
+	treeStateLatestVersion, _ := hub.Storage.TreeStateStorage.RetrieveTreeStatesLatestVersion(teamID, appID)
+	app.SyncMainlineVersionWithTreeStateLatestVersion(treeStateLatestVersion)
 	app.BumpMainlineVersion()
 
 	// do snapshot for app following components and actions
