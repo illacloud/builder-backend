@@ -40,7 +40,7 @@ type Resource struct {
 
 type Action struct {
 	Method     string                 `mapstructure:"method" validate:"oneof=list get create update bulkUpdate delete bulkDelete"`
-	BaseConfig BaseConfig             `mapstructure:"baseConfig" validate:"required"`
+	BaseConfig BaseConfig             `mapstructure:"baseConfig"`
 	Config     map[string]interface{} `mapstructure:"config" validate:"required"`
 }
 
