@@ -1235,16 +1235,10 @@ func (controller *Controller) ForkMarketplaceApp(c *gin.Context) {
 	controller.DuplicateSetStateByVersion(c, app.ExportTeamID(), toTeamID, appID, duplicatedAppID, app.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
 	controller.DuplicateActionByVersion(c, app.ExportTeamID(), toTeamID, appID, duplicatedAppID, app.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
 
-	// init parallel counter
-	var wg sync.WaitGroup
-	wg.Add(1)
-
 	// add counter to marketpalce
-	go func() {
-		defer wg.Done()
-		marketplaceAPI := illamarketplacesdk.NewIllaMarketplaceRestAPI()
-		marketplaceAPI.ForkCounter(illamarketplacesdk.PRODUCT_TYPE_APPS, appID)
-	}()
+	marketplaceAPI := illamarketplacesdk.NewIllaMarketplaceRestAPI()
+	errInForkCounter := marketplaceAPI.ForkCounter(illamarketplacesdk.PRODUCT_TYPE_APPS, appID)
+	log.Printf("errInForkCounter: %+v\n", errInForkCounter)
 
 	// audit log
 	auditLogger := auditlogger.GetInstance()
