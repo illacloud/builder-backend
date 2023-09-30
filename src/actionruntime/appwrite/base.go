@@ -15,7 +15,6 @@
 package appwrite
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/illacloud/appwrite-sdk-go/appwrite"
@@ -24,10 +23,7 @@ import (
 
 func (a *Connector) getClientWithOpts(Opts map[string]interface{}) (*appwrite.Databases, error) {
 	// format resource options
-	fmt.Printf("[DUMP] getClientWithOpts.Opts: %+v\n", Opts)
 	if err := mapstructure.Decode(Opts, &a.Resource); err != nil {
-		fmt.Printf("[DUMP] getClientWithOpts.err: %+v\n", err)
-
 		return nil, err
 	}
 
@@ -39,7 +35,6 @@ func (a *Connector) getClientWithOpts(Opts map[string]interface{}) (*appwrite.Da
 
 	// create appwrite database service
 	database := appwrite.NewDatabases(client)
-	fmt.Printf("[DUMP] getClientWithOpts.database: %+v\n", database)
 
 	return database, nil
 }

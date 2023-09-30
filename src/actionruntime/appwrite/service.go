@@ -17,7 +17,6 @@ package appwrite
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
@@ -81,24 +80,12 @@ func (a *Connector) TestConnection(resourceOpts map[string]interface{}) (common.
 func (a *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.MetaInfoResult, error) {
 	// get appwrite database client
 	db, err := a.getClientWithOpts(resourceOpts)
-	fmt.Printf("[DUMP] GetMetaInfo.db: %+v\n", db)
-	fmt.Printf("[DUMP] GetMetaInfo.err: %+v\n", err)
-
 	if err != nil {
 		return common.MetaInfoResult{Success: false}, err
 	}
 
 	// get collections
 	colls, err := db.ListAllCollections(a.Resource.DatabaseID)
-	fmt.Printf("[DUMP] GetMetaInfo.colls: %+v\n", colls)
-	if colls != nil {
-		fmt.Printf("[DUMP] GetMetaInfo.colls.Result: %+v\n", colls.Result)
-	} else {
-		fmt.Printf("[DUMP] GetMetaInfo.colls.Result: nil\n")
-
-	}
-	fmt.Printf("[DUMP] GetMetaInfo.err: %+v\n", err)
-
 	if err != nil {
 		return common.MetaInfoResult{Success: false}, err
 	}
@@ -112,8 +99,6 @@ func (a *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.Met
 		return common.MetaInfoResult{Success: false}, errors.New("invalid response")
 	}
 	collections, ok := jsonResp["collections"]
-	fmt.Printf("[DUMP] GetMetaInfo.collections: %+v\n", collections)
-
 	if !ok {
 		return common.MetaInfoResult{Success: false}, errors.New("invalid response")
 	}
@@ -121,7 +106,6 @@ func (a *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.Met
 	if !collectionsAssertPass {
 		return common.MetaInfoResult{Success: false}, errors.New("invalid response")
 	}
-	fmt.Printf("[DUMP] GetMetaInfo.collectionsAsserted: %+v\n", collectionsAsserted)
 
 	res := make([]map[string]string, 0)
 	for _, collection := range collectionsAsserted {
@@ -139,7 +123,6 @@ func (a *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.Met
 		}
 		res = append(res, map[string]string{"id": collectionIDString})
 	}
-	fmt.Printf("[DUMP] GetMetaInfo.res: %+v\n", res)
 
 	return common.MetaInfoResult{
 		Success: true,
