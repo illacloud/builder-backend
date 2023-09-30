@@ -112,23 +112,34 @@ func (a *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.Met
 		return common.MetaInfoResult{Success: false}, errors.New("invalid response")
 	}
 	collections, ok := jsonResp["collections"]
+	fmt.Printf("[DUMP] GetMetaInfo.collections: %+v\n", collections)
+
 	if !ok {
 		return common.MetaInfoResult{Success: false}, errors.New("invalid response")
 	}
-	collsBytes, err := json.Marshal(collections)
-	if err != nil {
+	collectionsAsserted, collectionsAssertPass := collections.([]interface{})
+	if !collectionsAssertPass {
 		return common.MetaInfoResult{Success: false}, errors.New("invalid response")
 	}
+	fmt.Printf("[DUMP] GetMetaInfo.collectionsAsserted: %+v\n", collectionsAsserted)
 
-	var collectionsArray []map[string]interface{}
-	if err = json.Unmarshal(collsBytes, &collectionsArray); err != nil {
-		return common.MetaInfoResult{Success: false}, errors.New("invalid response")
+	res := make([]map[string]string, 0)
+	for _, collection := range collectionsAsserted {
+		collectionAsserted, collectionAssertPass := collection.(map[string]interface{})
+		if !collectionAssertPass {
+			continue
+		}
+		collectionID, collectionIDHit := collectionAsserted["$id"]
+		if !collectionIDHit {
+			continue
+		}
+		collectionIDString, collectionIDAssertPass := collectionID.(string)
+		if !collectionIDAssertPass {
+			continue
+		}
+		res = append(res, map[string]string{"id": collectionIDString})
 	}
-
-	res := make([]map[string]interface{}, len(collectionsArray))
-	for i, v := range collectionsArray {
-		res[i] = map[string]interface{}{"id": v["$id"]}
-	}
+	fmt.Printf("[DUMP] GetMetaInfo.res: %+v\n", res)
 
 	return common.MetaInfoResult{
 		Success: true,
