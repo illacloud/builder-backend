@@ -34,6 +34,6 @@ func (i *RuntimeResult) SetSuccess() {
 }
 
 type MetaInfoResult struct {
-	Success bool                   `json:"success"`
-	Schema  map[string]interface{} `json:"schema"`
+	Success bool
+	Schema  map[string]interface{}
 }
