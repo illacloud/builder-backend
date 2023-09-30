@@ -28,7 +28,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/icholy/digest v0.1.22
-	github.com/illacloud/appwrite-sdk-go v0.0.2
+	github.com/illacloud/appwrite-sdk-go v0.0.3
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/microsoft/go-mssqldb v1.5.0
 	github.com/minio/minio-go/v7 v7.0.62
