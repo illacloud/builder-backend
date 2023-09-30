@@ -17,6 +17,7 @@ package appwrite
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
@@ -80,6 +81,9 @@ func (a *Connector) TestConnection(resourceOpts map[string]interface{}) (common.
 func (a *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.MetaInfoResult, error) {
 	// get appwrite database client
 	db, err := a.getClientWithOpts(resourceOpts)
+	fmt.Printf("[DUMP] GetMetaInfo.db: %+v\n", db)
+	fmt.Printf("[DUMP] GetMetaInfo.err: %+v\n", err)
+
 	if err != nil {
 		return common.MetaInfoResult{Success: false}, err
 	}
@@ -87,6 +91,10 @@ func (a *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.Met
 	// get collections
 	var EmptyArray = []interface{}{}
 	colls, err := db.ListCollections(a.Resource.DatabaseID, EmptyArray, "")
+	fmt.Printf("[DUMP] GetMetaInfo.colls: %+v\n", colls)
+	fmt.Printf("[DUMP] GetMetaInfo.colls.Result: %+v\n", colls.Result)
+	fmt.Printf("[DUMP] GetMetaInfo.err: %+v\n", err)
+
 	if err != nil {
 		return common.MetaInfoResult{Success: false}, err
 	}

@@ -81,7 +81,7 @@ func (controller *Controller) GetResourceMetaInfo(c *gin.Context, resource *mode
 	// check template
 	resourceMetaInfo, errInGetMetaInfo := resourceAssemblyLine.GetMetaInfo(resource.ExportOptionsInMap())
 	if errInGetMetaInfo != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "ger resource meta info error: "+errInGetMetaInfo.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "get resource meta info error: "+errInGetMetaInfo.Error())
 		return nil, errInGetMetaInfo
 	}
 
