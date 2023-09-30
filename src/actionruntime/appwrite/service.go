@@ -92,7 +92,12 @@ func (a *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.Met
 	var EmptyArray = []interface{}{}
 	colls, err := db.ListCollections(a.Resource.DatabaseID, EmptyArray, "")
 	fmt.Printf("[DUMP] GetMetaInfo.colls: %+v\n", colls)
-	fmt.Printf("[DUMP] GetMetaInfo.colls.Result: %+v\n", colls.Result)
+	if colls != nil {
+		fmt.Printf("[DUMP] GetMetaInfo.colls.Result: %+v\n", colls.Result)
+	} else {
+		fmt.Printf("[DUMP] GetMetaInfo.colls.Result: nil\n")
+
+	}
 	fmt.Printf("[DUMP] GetMetaInfo.err: %+v\n", err)
 
 	if err != nil {
