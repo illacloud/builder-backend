@@ -29,6 +29,10 @@ const (
 	GOOGLE_SHEETS_OAUTH_STATUS_FAILED  = 2
 )
 
+const (
+	GOOGLE_OAUTH2_TOKEN_DEFAULT_EXIPRED_PERIOD = time.Minute * 60
+)
+
 func NewGoogleSheetsOAuth2Claims() *GoogleSheetsOAuth2Claims {
 	return &GoogleSheetsOAuth2Claims{}
 }
@@ -47,7 +51,7 @@ func GenerateGoogleSheetsOAuth2Token(teamID int, userID int, resourceID int, cre
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer: "ILLA",
 			ExpiresAt: &jwt.NumericDate{
-				Time: time.Now().Add(time.Minute * 1),
+				Time: time.Now().Add(GOOGLE_OAUTH2_TOKEN_DEFAULT_EXIPRED_PERIOD),
 			},
 		},
 	}

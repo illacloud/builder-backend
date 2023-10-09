@@ -34,7 +34,7 @@ func NewResourceOptionGoogleSheetsByResource(resource *Resource) (*ResourceOptio
 		return nil, errInDecode
 	}
 	jstr, _ := json.Marshal(resourceOptionGoogleSheets)
-	fmt.Printf("[DUMP] NewResourceOptionGoogleSheetsByResource().resourceOptionGoogleSheets: %+v\n", jstr)
+	fmt.Printf("[DUMP] NewResourceOptionGoogleSheetsByResource().resourceOptionGoogleSheets: %+v\n", string(jstr))
 	return resourceOptionGoogleSheets, nil
 }
 
