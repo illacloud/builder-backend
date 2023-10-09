@@ -66,19 +66,6 @@ func (controller *Controller) CreateGoogleOAuthToken(c *gin.Context) {
 		return
 	}
 
-	// new resource option
-	resourceOptionGoogleSheets, errInNewGoogleSheetResourceOption := model.NewResourceOptionGoogleSheetsByResource(resource)
-	if errInNewGoogleSheetResourceOption != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported resource type: "+errInNewGoogleSheetResourceOption.Error())
-		return
-	}
-
-	// validate resource option
-	if !resourceOptionGoogleSheets.IsAvaliableAuthenticationMethod() {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported authentication type")
-		return
-	}
-
 	// generate access token
 	token, err := model.GenerateGoogleSheetsOAuth2Token(teamID, userID, resourceID, createOAuthTokenRequest)
 	if err != nil {
