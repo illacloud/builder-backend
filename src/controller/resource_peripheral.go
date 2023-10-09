@@ -127,20 +127,20 @@ func (controller *Controller) GetGoogleSheetsOAuth2Token(c *gin.Context) {
 
 	// check resource type for create OAuth token
 	if !resource.CanCreateOAuthToken() {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported resource type")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_TOKEN, "unsupported resource type")
 		return
 	}
 
 	// new resource option
 	resourceOptionGoogleSheets, errInNewGoogleSheetResourceOption := model.NewResourceOptionGoogleSheetsByResource(resource)
 	if errInNewGoogleSheetResourceOption != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported resource type: "+errInNewGoogleSheetResourceOption.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_TOKEN, "unsupported resource type: "+errInNewGoogleSheetResourceOption.Error())
 		return
 	}
 
 	// validate resource option
 	if !resourceOptionGoogleSheets.IsAvaliableAuthenticationMethod() {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported authentication type")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_TOKEN, "unsupported authentication type")
 		return
 	}
 
@@ -193,20 +193,20 @@ func (controller *Controller) RefreshGoogleSheetsOAuth(c *gin.Context) {
 
 	// check resource type for create OAuth token
 	if !resource.CanCreateOAuthToken() {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported resource type")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_TOKEN, "unsupported resource type")
 		return
 	}
 
 	// new resource option
 	resourceOptionGoogleSheets, errInNewGoogleSheetResourceOption := model.NewResourceOptionGoogleSheetsByResource(resource)
 	if errInNewGoogleSheetResourceOption != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported resource type: "+errInNewGoogleSheetResourceOption.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_TOKEN, "unsupported resource type: "+errInNewGoogleSheetResourceOption.Error())
 		return
 	}
 
 	// validate resource option
 	if !resourceOptionGoogleSheets.IsAvaliableAuthenticationMethod() {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_TOKEN, "unsupported authentication type")
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_TOKEN, "unsupported authentication type")
 		return
 	}
 

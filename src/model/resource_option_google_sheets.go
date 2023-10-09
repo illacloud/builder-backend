@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/mitchellh/mapstructure"
 )
@@ -24,6 +25,8 @@ type ResourceOptionGoogleSheets struct {
 }
 
 func NewResourceOptionGoogleSheetsByResource(resource *Resource) (*ResourceOptionGoogleSheets, error) {
+	fmt.Printf("[DUMP] NewResourceOptionGoogleSheetsByResource().resource: %+v\n", NewResourceOptionGoogleSheetsByResource)
+	fmt.Printf("[DUMP] NewResourceOptionGoogleSheetsByResource().resource.Options: %+v\n", resource.Options)
 	resourceOptionGoogleSheets := &ResourceOptionGoogleSheets{}
 	errInDecode := mapstructure.Decode(resource.Options, &resourceOptionGoogleSheets)
 	if errInDecode != nil {
