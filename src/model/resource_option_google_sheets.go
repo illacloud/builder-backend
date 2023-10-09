@@ -12,16 +12,16 @@ const (
 )
 
 type GoogleSheetsOAuth2Options struct {
-	AccessType   string
-	AccessToken  string
-	TokenType    string
-	RefreshToken string
-	Status       int
+	AccessType   string `json:"accessType"`
+	AccessToken  string `json:"accessToken"`
+	TokenType    string `json:"tokenType"`
+	RefreshToken string `json:"refreshToken"`
+	Status       int    `json:"status"`
 }
 
 type ResourceOptionGoogleSheets struct {
-	Authentication string
-	Options        *GoogleSheetsOAuth2Options
+	Authentication string                     `json:"authentication"`
+	Options        *GoogleSheetsOAuth2Options `json:"opts"`
 }
 
 func NewResourceOptionGoogleSheetsByResource(resource *Resource) (*ResourceOptionGoogleSheets, error) {
