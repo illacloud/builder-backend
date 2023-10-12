@@ -3,7 +3,6 @@ package controller
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -35,25 +34,7 @@ func (controller *Controller) RunPublicAction(c *gin.Context) {
 	}
 	teamID := team.GetID()
 
-	// validate
-	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
-		teamID,
-		userAuthToken,
-		accesscontrol.UNIT_TYPE_ACTION,
-		accesscontrol.DEFAULT_UNIT_ID,
-		accesscontrol.ACTION_MANAGE_RUN_ACTION,
-	)
-	if errInCheckAttr != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
-		return
-	}
-	if !canManage {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
-		return
-	}
-
 	// get action
-	fmt.Printf("[RetrieveActionsByTeamIDActionID] teamID: %d, publicActionID: %d\n", teamID, publicActionID)
 	action, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionByTeamIDActionID(teamID, publicActionID)
 	if errInRetrieveAction != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errInRetrieveAction.Error())
