@@ -713,7 +713,7 @@ func (controller *Controller) DuplicateApp(c *gin.Context) {
 	controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
 	controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
 	controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
-	controller.DuplicateActionByVersion(c, teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
+	controller.DuplicateActionByVersion(c, teamID, teamID, appID, duplicatedAppID, targetApp.ExportMainlineVersion(), model.APP_EDIT_VERSION, false, userID)
 
 	// audit log
 	auditLogger := auditlogger.GetInstance()
@@ -841,7 +841,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	errInDuplicateTreeStateByVersion := controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 	errInDuplicateKVStateByVersion := controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 	errInDuplicateSetStateByVersion := controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-	errInDuplicateActionByVersion := controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	errInDuplicateActionByVersion := controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), req.ExportPublic(), userID)
 	if errInDuplicateTreeStateByVersion != nil || errInDuplicateKVStateByVersion != nil || errInDuplicateSetStateByVersion != nil || errInDuplicateActionByVersion != nil {
 		return
 	}
@@ -939,7 +939,7 @@ func (controller *Controller) TakeSnapshot(c *gin.Context) {
 	controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 	controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 	controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-	controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), app.IsPublic(), userID)
 
 	// save snapshot
 	_, errInTakeSnapshot := controller.SaveAppSnapshot(c, teamID, appID, userID, app.ExportMainlineVersion(), model.SNAPSHOT_TRIGGER_MODE_MANUAL)
@@ -1134,7 +1134,7 @@ func (controller *Controller) RecoverSnapshot(c *gin.Context) {
 	controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 	controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 	controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-	controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+	controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), app.IsPublic(), userID)
 
 	// save app snapshot
 	newAppSnapshot, errInTakeSnapshot := controller.SaveAppSnapshot(c, teamID, appID, userID, app.ExportMainlineVersion(), model.SNAPSHOT_TRIGGER_MODE_AUTO)
@@ -1162,7 +1162,7 @@ func (controller *Controller) RecoverSnapshot(c *gin.Context) {
 	controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, targetVersion, model.APP_EDIT_VERSION, userID)
 	controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, targetVersion, model.APP_EDIT_VERSION, userID)
 	controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, targetVersion, model.APP_EDIT_VERSION, userID)
-	controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, targetVersion, model.APP_EDIT_VERSION, userID)
+	controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, targetVersion, model.APP_EDIT_VERSION, app.IsPublic(), userID)
 
 	// create a snapshot.ModifyHistory for recover snapshot
 	modifyHistoryLog := model.NewRecoverAppSnapshotModifyHistory(userID, targetSnapshot)
@@ -1233,7 +1233,7 @@ func (controller *Controller) ForkMarketplaceApp(c *gin.Context) {
 	controller.DuplicateTreeStateByVersion(c, app.ExportTeamID(), toTeamID, appID, duplicatedAppID, app.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
 	controller.DuplicateKVStateByVersion(c, app.ExportTeamID(), toTeamID, appID, duplicatedAppID, app.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
 	controller.DuplicateSetStateByVersion(c, app.ExportTeamID(), toTeamID, appID, duplicatedAppID, app.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
-	controller.DuplicateActionByVersion(c, app.ExportTeamID(), toTeamID, appID, duplicatedAppID, app.ExportMainlineVersion(), model.APP_EDIT_VERSION, userID)
+	controller.DuplicateActionByVersion(c, app.ExportTeamID(), toTeamID, appID, duplicatedAppID, app.ExportMainlineVersion(), model.APP_EDIT_VERSION, false, userID)
 
 	// init parallel counter
 	var wg sync.WaitGroup

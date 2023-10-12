@@ -118,7 +118,7 @@ func (controller *Controller) DuplicateSetStateByVersion(c *gin.Context, fromTea
 	return nil
 }
 
-func (controller *Controller) DuplicateActionByVersion(c *gin.Context, fromTeamID int, toTeamID int, fromAppID int, toAppID int, fromVersion int, toVersion int, modifierID int) error {
+func (controller *Controller) DuplicateActionByVersion(c *gin.Context, fromTeamID int, toTeamID int, fromAppID int, toAppID int, fromVersion int, toVersion int, makeItPublic bool, modifierID int) error {
 	// get target version action from database
 	actions, errinRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDAppIDAndVersion(fromTeamID, fromAppID, fromVersion)
 	if errinRetrieveAction != nil {
@@ -129,6 +129,11 @@ func (controller *Controller) DuplicateActionByVersion(c *gin.Context, fromTeamI
 	// set fork info
 	for serial, _ := range actions {
 		actions[serial].InitForFork(toTeamID, toAppID, toVersion, modifierID)
+		if makeItPublic {
+			actions[serial].SetPublic(modifierID)
+		} else {
+			actions[serial].SetPrivate(modifierID)
+		}
 	}
 
 	// and put them to the database as duplicate

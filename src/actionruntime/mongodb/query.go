@@ -17,6 +17,7 @@ package mongodb
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
@@ -315,6 +316,7 @@ func (q *QueryRunner) findOne() (common.RuntimeResult, error) {
 			return common.RuntimeResult{Success: false}, err
 		}
 	}
+	fmt.Printf("[DUMP] findOne().filter: %+v\n", filter)
 
 	opts := options.FindOne()
 	if fOOptions.Projection != "" && fOOptions.Projection != "{}" {
