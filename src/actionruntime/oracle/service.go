@@ -100,7 +100,7 @@ func (o *Connector) Run(resourceOpts map[string]interface{}, actionOpts map[stri
 	// get Oracle connection
 	db, err := o.getConnectionWithOptions(resourceOpts)
 	if err != nil {
-		return common.RuntimeResult{Success: false}, errors.New("failed to get clickhouse connection")
+		return common.RuntimeResult{Success: false}, errors.New("failed to get oracle connection")
 	}
 	defer db.Close()
 	// format query
