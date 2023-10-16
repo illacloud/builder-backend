@@ -103,7 +103,7 @@ func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	// get Microsoft SQL Server connection
 	db, err := m.getConnectionWithOptions(resourceOptions)
 	if err != nil {
-		return common.RuntimeResult{Success: false}, errors.New("failed to get clickhouse connection")
+		return common.RuntimeResult{Success: false}, errors.New("failed to get mssql connection")
 	}
 	defer db.Close()
 	// format query
