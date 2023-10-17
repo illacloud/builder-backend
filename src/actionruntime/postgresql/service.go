@@ -139,6 +139,8 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		return common.RuntimeResult{Success: false}, err
 	}
 
+	fmt.Printf("[DUMP] excapedSQL: %s\n", excapedSQL)
+
 	// fetch data
 	if isSelectQuery {
 		rows, err := db.Query(context.Background(), excapedSQL)
