@@ -113,13 +113,9 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	}
 
 	// set context field
-	errInSetRawQuery := p.Action.SetRawQuery(rawActionOptions)
+	errInSetRawQuery := p.Action.SetRawQueryAndContext(rawActionOptions)
 	if errInSetRawQuery != nil {
 		return common.RuntimeResult{Success: false}, errInSetRawQuery
-	}
-	errInSetContext := p.Action.SetContext(rawActionOptions)
-	if errInSetContext != nil {
-		return common.RuntimeResult{Success: false}, errInSetContext
 	}
 	// run postgresql query
 	queryResult := common.RuntimeResult{

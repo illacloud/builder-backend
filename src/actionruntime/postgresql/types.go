@@ -44,28 +44,24 @@ type Query struct {
 	Context  map[string]interface{}
 }
 
-func (q *Query) SetRawQuery(rawTemplate map[string]interface{}) error {
+func (q *Query) SetRawQueryAndContext(rawTemplate map[string]interface{}) error {
 	queryRaw, hit := rawTemplate[FIELD_QUERY]
 	if !hit {
-		return errors.New("missing query field for set raw query in query")
+		return errors.New("missing query field for SetRawQueryAndContext() in query")
 	}
 	queryAsserted, assertPass := queryRaw.(string)
 	if !assertPass {
-		return errors.New("query field assert failed in set raw query method")
+		return errors.New("query field assert failed in SetRawQueryAndContext() method")
 
 	}
 	q.RawQuery = queryAsserted
-	return nil
-}
-
-func (q *Query) SetContext(rawTemplate map[string]interface{}) error {
 	contextRaw, hit := rawTemplate[FIELD_CONTEXT]
 	if !hit {
-		return errors.New("missing context field for set context in query")
+		return errors.New("missing context field SetRawQueryAndContext() in query")
 	}
 	contextAsserted, assertPass := contextRaw.(map[string]interface{})
 	if !assertPass {
-		return errors.New("context field assert failed in set context method")
+		return errors.New("context field assert failed in SetRawQueryAndContext() method")
 
 	}
 	q.Context = contextAsserted

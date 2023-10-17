@@ -21,6 +21,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
 	parser_sql "github.com/illacloud/builder-backend/src/utils/parser/sql"
+	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -106,6 +107,12 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 		return common.RuntimeResult{Success: false}, err
 	}
 
+	// set context field
+	errInSetRawQuery := m.Action.SetRawQueryAndContext(rawActionOptions)
+	if errInSetRawQuery != nil {
+		return common.RuntimeResult{Success: false}, errInSetRawQuery
+	}
+
 	// run mysql query
 	queryResult := common.RuntimeResult{
 		Success: false,
@@ -113,8 +120,12 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 		Extra:   map[string]interface{}{},
 	}
 	// check if m.Action.Query is select query
+	sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_POSTGRESQL_ID)
+	excapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(m.Action.RawQuery, m.Action.Context)
+	if errInEscapeSQL != nil {
+		return queryResult, errInEscapeSQL
+	}
 	isSelectQuery := false
-
 	lexer := parser_sql.NewLexer(m.Action.Query)
 	isSelectQuery, err = parser_sql.IsSelectSQL(lexer)
 	if err != nil {
@@ -123,7 +134,7 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 
 	// fetch data
 	if isSelectQuery {
-		rows, err := db.Query(m.Action.Query)
+		rows, err := db.Query(excapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}
@@ -135,7 +146,7 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else { // update, insert, delete data
-		execResult, err := db.Exec(m.Action.Query)
+		execResult, err := db.Exec(excapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}

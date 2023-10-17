@@ -14,6 +14,13 @@
 
 package mysql
 
+import "errors"
+
+const (
+	FIELD_CONTEXT = "context"
+	FIELD_QUERY   = "query"
+)
+
 type MySQLOptions struct {
 	Host             string `validate:"required"`
 	Port             string `validate:"required"`
@@ -31,6 +38,32 @@ type SSLOptions struct {
 }
 
 type MySQLQuery struct {
-	Mode  string `validate:"required,oneof=gui sql"`
-	Query string
+	Mode     string `validate:"required,oneof=gui sql"`
+	Query    string
+	RawQuery string
+	Context  map[string]interface{}
+}
+
+func (q *MySQLQuery) SetRawQueryAndContext(rawTemplate map[string]interface{}) error {
+	queryRaw, hit := rawTemplate[FIELD_QUERY]
+	if !hit {
+		return errors.New("missing query field for SetRawQueryAndContext() in query")
+	}
+	queryAsserted, assertPass := queryRaw.(string)
+	if !assertPass {
+		return errors.New("query field assert failed in SetRawQueryAndContext() method")
+
+	}
+	q.RawQuery = queryAsserted
+	contextRaw, hit := rawTemplate[FIELD_CONTEXT]
+	if !hit {
+		return errors.New("missing context field SetRawQueryAndContext() in query")
+	}
+	contextAsserted, assertPass := contextRaw.(map[string]interface{})
+	if !assertPass {
+		return errors.New("context field assert failed in SetRawQueryAndContext() method")
+
+	}
+	q.Context = contextAsserted
+	return nil
 }
