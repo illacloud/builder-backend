@@ -127,9 +127,7 @@ func escapeStringBackslash(buf []byte, v string) []byte {
 }
 
 func appendSQLArgString(buf []byte, s string) []byte {
-	buf = append(buf, '\'')
 	buf = escapeStringBackslash(buf, s)
-	buf = append(buf, '\'')
 	return buf
 }
 
@@ -166,21 +164,16 @@ func reflactAllTypesToString(any interface{}) (string, error) {
 		if v.IsZero() {
 			buf = append(buf, "'0000-00-00'"...)
 		} else {
-			buf = append(buf, '\'')
 			buf = v.AppendFormat(buf, "2006-01-02 15:04:05.999999")
-			buf = append(buf, '\'')
 		}
 	case json.RawMessage:
-		buf = append(buf, '\'')
 		buf = escapeBytesBackslash(buf, v)
-		buf = append(buf, '\'')
 	case []byte:
 		if v == nil {
 			buf = append(buf, "NULL"...)
 		} else {
 			buf = append(buf, "_binary'"...)
 			buf = escapeBytesBackslash(buf, v)
-			buf = append(buf, '\'')
 		}
 	case string:
 		buf = appendSQLArgString(buf, escapeSQLString(v))
@@ -189,9 +182,7 @@ func reflactAllTypesToString(any interface{}) (string, error) {
 			if i > 0 {
 				buf = append(buf, ',')
 			}
-			buf = append(buf, '\'')
 			buf = escapeStringBackslash(buf, escapeSQLString(k))
-			buf = append(buf, '\'')
 		}
 	case []float32:
 		for i, k := range v {
