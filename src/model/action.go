@@ -16,6 +16,7 @@ const (
 	ACTION_RUNTIME_INFO_FIELD_ACTION_ID        = "actionID"
 	ACTION_RUNTIME_INFO_FIELD_AUTHORIZATION    = "authorization"
 	ACTION_RUNTIME_INFO_FIELD_RUN_BY_ANONYMOUS = "runByAnonymous"
+	ACTION_RUNTIME_INFO_FIELD_CONTEXT          = "context"
 )
 
 const (
@@ -107,7 +108,7 @@ func NewAcitonByRunActionRequest(app *App, userID int, req *request.RunActionReq
 		Name:          req.DisplayName,
 		Type:          resourcelist.GetResourceNameMappedID(req.ActionType),
 		Template:      req.ExportTemplateInString(),
-		RawTemplate:   req.ExportTemplateInString(),
+		RawTemplate:   req.ExportTemplateWithContextInString(),
 		CreatedBy:     userID,
 		UpdatedBy:     userID,
 	}
@@ -238,7 +239,7 @@ func (action *Action) UpdateAppConfig(actionConfig *ActionConfig, userID int) {
 }
 
 func (action *Action) UpdateWithRunActionRequest(req *request.RunActionRequest, userID int) {
-	action.RawTemplate = action.Template
+	action.MergeRunActionContextToRawTemplate(req.ExportContext())
 	action.Template = req.ExportTemplateInString()
 	action.UpdatedBy = userID
 	action.InitUpdatedAt()
@@ -310,6 +311,13 @@ func (action *Action) AppendRuntimeInfoForVirtualResource(authorization string) 
 	template[ACTION_RUNTIME_INFO_FIELD_RUN_BY_ANONYMOUS] = (authorization == "")
 	templateInByte, _ := json.Marshal(template)
 	action.Template = string(templateInByte)
+}
+
+func (action *Action) MergeRunActionContextToRawTemplate(context map[string]interface{}) {
+	template := action.ExportTemplateInMap()
+	template[ACTION_RUNTIME_INFO_FIELD_CONTEXT] = context
+	templateJsonByte, _ := json.Marshal(template)
+	action.RawTemplate = string(templateJsonByte)
 }
 
 func ExportAllActionASActionSummary(actions []*Action) []*ActionSummaryForExport {
