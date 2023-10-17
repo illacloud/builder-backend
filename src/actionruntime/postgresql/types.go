@@ -18,7 +18,7 @@ import "errors"
 
 const (
 	FIELD_CONTEXT = "context"
-	FIELD_QUERY   = "context"
+	FIELD_QUERY   = "query"
 )
 
 type Options struct {
