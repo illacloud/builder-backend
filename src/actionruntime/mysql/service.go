@@ -120,7 +120,7 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 		Extra:   map[string]interface{}{},
 	}
 	// check if m.Action.Query is select query
-	sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_POSTGRESQL_ID)
+	sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_MYSQL_ID)
 	excapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(m.Action.RawQuery, m.Action.Context)
 	if errInEscapeSQL != nil {
 		return queryResult, errInEscapeSQL
