@@ -8,59 +8,21 @@ import (
 	"strings"
 	"time"
 
+	"github.com/illacloud/illa-resource-manager-backend/src/utils/resourcelist"
 	"github.com/pkg/errors"
 )
 
-func escapeSQLString(source string) string {
-	var j int = 0
-	if len(source) == 0 {
-		return ""
-	}
-	tempStr := source[:]
-	desc := make([]byte, len(tempStr)*2)
-	for i := 0; i < len(tempStr); i++ {
-		flag := false
-		var escape byte
-		switch tempStr[i] {
-		case '\r':
-			flag = true
-			escape = '\r'
-			break
-		case '\n':
-			flag = true
-			escape = '\n'
-			break
-		case '\\':
-			flag = true
-			escape = '\\'
-			break
-		case '\'':
-			flag = true
-			escape = '\''
-			break
-		case '"':
-			flag = true
-			escape = '"'
-			break
-		case '\032':
-			flag = true
-			escape = 'Z'
-			break
-		default:
-		}
-		if flag {
-			desc[j] = '\\'
-			desc[j+1] = escape
-			j = j + 2
-		} else {
-			desc[j] = tempStr[i]
-			j = j + 1
-		}
-	}
-	return string(desc[0:j])
+type SQLEscaper struct {
+	ResourceType int `json:"resourceType"`
 }
 
-func reserveBuffer(buf []byte, appendSize int) []byte {
+func NewSQLEscaper(resourceType int) *SQLEscaper {
+	return &SQLEscaper{
+		ResourceType: resourceType,
+	}
+}
+
+func (sqlEscaper *SQLEscaper) reserveBuffer(buf []byte, appendSize int) []byte {
 	newSize := len(buf) + appendSize
 	if cap(buf) < newSize {
 		newBuf := make([]byte, len(buf)*2+appendSize)
@@ -70,9 +32,9 @@ func reserveBuffer(buf []byte, appendSize int) []byte {
 	return buf[:newSize]
 }
 
-func escapeBytesBackslash(buf []byte, v []byte) []byte {
+func (sqlEscaper *SQLEscaper) escapeBytesBackslash(buf []byte, v []byte) []byte {
 	pos := len(buf)
-	buf = reserveBuffer(buf, len(v)*2)
+	buf = sqlEscaper.reserveBuffer(buf, len(v)*2)
 
 	for _, c := range v {
 		switch c {
@@ -93,9 +55,17 @@ func escapeBytesBackslash(buf []byte, v []byte) []byte {
 			buf[pos+1] = 'Z'
 			pos += 2
 		case '\'':
-			buf[pos] = '\\'
-			buf[pos+1] = '\''
-			pos += 2
+			switch sqlEscaper.ResourceType {
+			case resourcelist.TYPE_POSTGRESQL_ID:
+				buf[pos] = '\''
+				buf[pos+1] = '\''
+				pos += 2
+			default:
+				buf[pos] = '\\'
+				buf[pos+1] = '\''
+				pos += 2
+			}
+
 		case '"':
 			buf[pos] = '\\'
 			buf[pos+1] = '"'
@@ -114,7 +84,7 @@ func escapeBytesBackslash(buf []byte, v []byte) []byte {
 }
 
 // @todo: this method need hack for all SQL types
-func appendSQLArgBool(buf []byte, v bool) []byte {
+func (sqlEscaper *SQLEscaper) appendSQLArgBool(buf []byte, v bool) []byte {
 	if v {
 		return append(buf, '1')
 	}
@@ -122,16 +92,16 @@ func appendSQLArgBool(buf []byte, v bool) []byte {
 }
 
 // escapeStringBackslash will escape string into the buffer, with backslash.
-func escapeStringBackslash(buf []byte, v string) []byte {
-	return escapeBytesBackslash(buf, Slice(v))
+func (sqlEscaper *SQLEscaper) escapeStringBackslash(buf []byte, v string) []byte {
+	return sqlEscaper.escapeBytesBackslash(buf, Slice(v))
 }
 
-func appendSQLArgString(buf []byte, s string) []byte {
-	buf = escapeStringBackslash(buf, s)
+func (sqlEscaper *SQLEscaper) appendSQLArgString(buf []byte, s string) []byte {
+	buf = sqlEscaper.escapeStringBackslash(buf, s)
 	return buf
 }
 
-func reflactAllTypesToString(any interface{}) (string, error) {
+func (sqlEscaper *SQLEscaper) reflactAllTypesToString(any interface{}) (string, error) {
 	buf := make([]byte, 0)
 	switch v := any.(type) {
 	case int:
@@ -159,7 +129,7 @@ func reflactAllTypesToString(any interface{}) (string, error) {
 	case float64:
 		buf = strconv.AppendFloat(buf, v, 'g', -1, 64)
 	case bool:
-		buf = appendSQLArgBool(buf, v)
+		buf = sqlEscaper.appendSQLArgBool(buf, v)
 	case time.Time:
 		if v.IsZero() {
 			buf = append(buf, "'0000-00-00'"...)
@@ -167,22 +137,22 @@ func reflactAllTypesToString(any interface{}) (string, error) {
 			buf = v.AppendFormat(buf, "2006-01-02 15:04:05.999999")
 		}
 	case json.RawMessage:
-		buf = escapeBytesBackslash(buf, v)
+		buf = sqlEscaper.escapeBytesBackslash(buf, v)
 	case []byte:
 		if v == nil {
 			buf = append(buf, "NULL"...)
 		} else {
 			buf = append(buf, "_binary'"...)
-			buf = escapeBytesBackslash(buf, v)
+			buf = sqlEscaper.escapeBytesBackslash(buf, v)
 		}
 	case string:
-		buf = appendSQLArgString(buf, v)
+		buf = sqlEscaper.appendSQLArgString(buf, v)
 	case []string:
 		for i, k := range v {
 			if i > 0 {
 				buf = append(buf, ',')
 			}
-			buf = escapeStringBackslash(buf, k)
+			buf = sqlEscaper.escapeStringBackslash(buf, k)
 		}
 	case []float32:
 		for i, k := range v {
@@ -212,9 +182,9 @@ func reflactAllTypesToString(any interface{}) (string, error) {
 		case reflect.Float64:
 			buf = strconv.AppendFloat(buf, reflect.ValueOf(any).Float(), 'g', -1, 64)
 		case reflect.Bool:
-			buf = appendSQLArgBool(buf, reflect.ValueOf(any).Bool())
+			buf = sqlEscaper.appendSQLArgBool(buf, reflect.ValueOf(any).Bool())
 		case reflect.String:
-			buf = appendSQLArgString(buf, reflect.ValueOf(any).String())
+			buf = sqlEscaper.appendSQLArgString(buf, reflect.ValueOf(any).String())
 		default:
 			return "", errors.New(fmt.Sprintf("unsupported argument: %v", any))
 		}
@@ -222,10 +192,10 @@ func reflactAllTypesToString(any interface{}) (string, error) {
 	return string(buf), nil
 }
 
-func buildEscapedArgsLookupTable(args map[string]interface{}) (map[string]string, error) {
+func (sqlEscaper *SQLEscaper) buildEscapedArgsLookupTable(args map[string]interface{}) (map[string]string, error) {
 	escapedArgs := make(map[string]string, 0)
 	for key, value := range args {
-		valueInString, errInReflact := reflactAllTypesToString(value)
+		valueInString, errInReflact := sqlEscaper.reflactAllTypesToString(value)
 		if errInReflact != nil {
 			return nil, errInReflact
 		}
@@ -234,8 +204,8 @@ func buildEscapedArgsLookupTable(args map[string]interface{}) (map[string]string
 	return escapedArgs, nil
 }
 
-func EscapeIllaSQLActionTemplate(sql string, args map[string]interface{}) (string, error) {
-	escapedArgs, errInBuildArgsLT := buildEscapedArgsLookupTable(args)
+func (sqlEscaper *SQLEscaper) EscapeIllaSQLActionTemplate(sql string, args map[string]interface{}, resourceType int) (string, error) {
+	escapedArgs, errInBuildArgsLT := sqlEscaper.buildEscapedArgsLookupTable(args)
 	if errInBuildArgsLT != nil {
 		return "", errInBuildArgsLT
 	}
