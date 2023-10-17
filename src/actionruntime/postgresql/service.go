@@ -111,6 +111,15 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		return common.RuntimeResult{Success: false}, err
 	}
 
+	// set context field
+	errInSetRawQuery := p.Action.SetRawQuery(rawActionOptions)
+	if errInSetRawQuery != nil {
+		return common.RuntimeResult{Success: false}, errInSetRawQuery
+	}
+	errInSetContext := p.Action.SetContext(rawActionOptions)
+	if errInSetContext != nil {
+		return common.RuntimeResult{Success: false}, errInSetContext
+	}
 	// run postgresql query
 	queryResult := common.RuntimeResult{
 		Success: false,
@@ -118,7 +127,7 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		Extra:   map[string]interface{}{},
 	}
 	// check if m.Action.Query is select query
-	excapedSQL, errInEscapeSQL := parser_sql.EscapeIllaSQLActionTemplate(p.Action.Query, p.Action.Context)
+	excapedSQL, errInEscapeSQL := parser_sql.EscapeIllaSQLActionTemplate(p.Action.RawQuery, p.Action.Context)
 	if errInEscapeSQL != nil {
 		return queryResult, errInEscapeSQL
 	}

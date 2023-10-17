@@ -14,6 +14,13 @@
 
 package postgresql
 
+import "errors"
+
+const (
+	FIELD_CONTEXT = "context"
+	FIELD_QUERY   = "context"
+)
+
 type Options struct {
 	Host             string `validate:"required"`
 	Port             string `validate:"required"`
@@ -31,7 +38,36 @@ type SSLOptions struct {
 }
 
 type Query struct {
-	Mode    string `validate:"required,oneof=gui sql"`
-	Query   string
-	Context map[string]interface{}
+	Mode     string `validate:"required,oneof=gui sql"`
+	Query    string
+	RawQuery string
+	Context  map[string]interface{}
+}
+
+func (q *Query) SetRawQuery(rawTemplate map[string]interface{}) error {
+	queryRaw, hit := rawTemplate[FIELD_QUERY]
+	if !hit {
+		return errors.New("missing query field for set raw query in query")
+	}
+	queryAsserted, assertPass := queryRaw.(string)
+	if !assertPass {
+		return errors.New("query field assert failed in set raw query method")
+
+	}
+	q.RawQuery = queryAsserted
+	return nil
+}
+
+func (q *Query) SetContext(rawTemplate map[string]interface{}) error {
+	contextRaw, hit := rawTemplate[FIELD_CONTEXT]
+	if !hit {
+		return errors.New("missing context field for set context in query")
+	}
+	contextAsserted, assertPass := contextRaw.(map[string]interface{})
+	if !assertPass {
+		return errors.New("context field assert failed in set context method")
+
+	}
+	q.Context = contextAsserted
+	return nil
 }
