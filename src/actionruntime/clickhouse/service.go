@@ -20,6 +20,7 @@ import (
 
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
 	parser_sql "github.com/illacloud/builder-backend/src/utils/parser/sql"
+	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
@@ -110,6 +111,12 @@ func (c *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		return common.RuntimeResult{Success: false}, err
 	}
 
+	// set context field
+	errInSetRawQuery := c.ActionOpts.SetRawQueryAndContext(rawActionOptions)
+	if errInSetRawQuery != nil {
+		return common.RuntimeResult{Success: false}, errInSetRawQuery
+	}
+
 	// run clickhouse query
 	queryResult := common.RuntimeResult{
 		Success: false,
@@ -117,8 +124,14 @@ func (c *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		Extra:   map[string]interface{}{},
 	}
 	// check if m.Action.Query is select query
-	isSelectQuery := false
+	sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_MYSQL_ID)
+	excapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(c.ActionOpts.RawQuery, c.ActionOpts.Context)
+	if errInEscapeSQL != nil {
+		return queryResult, errInEscapeSQL
+	}
 
+	// check if m.Action.Query is select query
+	isSelectQuery := false
 	lexer := parser_sql.NewLexer(c.ActionOpts.Query)
 	isSelectQuery, err = parser_sql.IsSelectSQL(lexer)
 	if err != nil {
@@ -127,7 +140,7 @@ func (c *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 
 	// fetch data
 	if isSelectQuery {
-		rows, err := db.Query(c.ActionOpts.Query)
+		rows, err := db.Query(excapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}
@@ -139,7 +152,7 @@ func (c *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else { // update, insert, delete data
-		execResult, err := db.Exec(c.ActionOpts.Query)
+		execResult, err := db.Exec(excapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}
