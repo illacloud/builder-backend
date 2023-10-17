@@ -97,7 +97,7 @@ func (c *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.
 	}, nil
 }
 
-func (c *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
+func (c *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}, rawActionOptions map[string]interface{}) (common.RuntimeResult, error) {
 	// get clickhouse connection
 	db, err := c.getConnectionWithOptions(resourceOptions)
 	if err != nil {

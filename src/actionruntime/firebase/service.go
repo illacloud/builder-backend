@@ -110,7 +110,7 @@ func (f *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.
 	}, nil
 }
 
-func (f *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
+func (f *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}, rawActionOptions map[string]interface{}) (common.RuntimeResult, error) {
 	// get firebase app
 	app, err := f.getConnectionWithOptions(resourceOptions)
 	if err != nil {

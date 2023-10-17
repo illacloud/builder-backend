@@ -86,7 +86,7 @@ func (e *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.
 	}, nil
 }
 
-func (e *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
+func (e *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}, rawActionOptions map[string]interface{}) (common.RuntimeResult, error) {
 	// get mysql connection
 	esClient, err := e.getConnectionWithOptions(resourceOptions)
 	if err != nil {

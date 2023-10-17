@@ -106,7 +106,7 @@ func (g *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.
 	}, nil
 }
 
-func (g *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
+func (g *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}, rawActionOptions map[string]interface{}) (common.RuntimeResult, error) {
 	// format resource options
 	if err := mapstructure.Decode(resourceOptions, &g.ResourceOpts); err != nil {
 		return common.RuntimeResult{Success: false}, err

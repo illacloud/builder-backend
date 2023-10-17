@@ -95,13 +95,16 @@ func (p *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.
 	}, nil
 }
 
-func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
+func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}, rawActionOptions map[string]interface{}) (common.RuntimeResult, error) {
 	// get postgresql connection
 	db, err := p.getConnectionWithOptions(resourceOptions)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, errors.New("failed to get postgresql connection")
 	}
 	defer db.Close(context.Background())
+
+	fmt.Printf("[DUMP] Run.actionOptions: %+v\n", actionOptions)
+	fmt.Printf("[DUMP] Run.rawActionOptions: %+v\n", rawActionOptions)
 
 	// format query
 	if err := mapstructure.Decode(actionOptions, &p.Action); err != nil {
@@ -115,9 +118,13 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		Extra:   map[string]interface{}{},
 	}
 	// check if m.Action.Query is select query
+	excapedSQL, errInEscapeSQL := parser_sql.EscapeIllaSQLActionTemplate(p.Action.Query, p.Action.Context)
+	if errInEscapeSQL != nil {
+		return queryResult, errInEscapeSQL
+	}
 	isSelectQuery := false
 
-	lexer := parser_sql.NewLexer(p.Action.Query)
+	lexer := parser_sql.NewLexer(excapedSQL)
 	isSelectQuery, err = parser_sql.IsSelectSQL(lexer)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
@@ -125,7 +132,7 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 
 	// fetch data
 	if isSelectQuery {
-		rows, err := db.Query(context.Background(), p.Action.Query)
+		rows, err := db.Query(context.Background(), excapedSQL)
 		if err != nil {
 			return queryResult, err
 		}
@@ -137,7 +144,7 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else { // update, insert, delete data
-		execResult, err := db.Exec(context.Background(), p.Action.Query)
+		execResult, err := db.Exec(context.Background(), excapedSQL)
 		if err != nil {
 			return queryResult, err
 		}

@@ -400,7 +400,7 @@ func (controller *Controller) RunAction(c *gin.Context) {
 	// run
 	log.Printf("[DUMP]action: %+v\n", action)
 	log.Printf("[DUMP] resource.ExportOptionsInMap(): %+v, action.ExportTemplateInMap(): %+v\n", resource.ExportOptionsInMap(), action.ExportTemplateInMap())
-	actionRunResult, errInRunAction := actionAssemblyLine.Run(resource.ExportOptionsInMap(), action.ExportTemplateInMap())
+	actionRunResult, errInRunAction := actionAssemblyLine.Run(resource.ExportOptionsInMap(), action.ExportTemplateInMap(), action.ExportRawTemplateInMap())
 	if errInRunAction != nil {
 		if strings.HasPrefix(errInRunAction.Error(), "Error 1064:") {
 			lineNumber, _ := strconv.Atoi(errInRunAction.Error()[len(errInRunAction.Error())-1:])

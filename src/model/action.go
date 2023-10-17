@@ -34,6 +34,7 @@ type Action struct {
 	TriggerMode   string    `gorm:"column:trigger_mode;type:varchar;size:16;not null"`
 	Transformer   string    `gorm:"column:transformer;type:jsonb"`
 	Template      string    `gorm:"column:template;type:jsonb"`
+	RawTemplate   string    `gorm:"-" sql:"-"`
 	Config        string    `gorm:"column:config;type:jsonb"`
 	CreatedAt     time.Time `gorm:"column:created_at;type:timestamp;not null"`
 	CreatedBy     int       `gorm:"column:created_by;type:bigint;not null"`
@@ -106,6 +107,7 @@ func NewAcitonByRunActionRequest(app *App, userID int, req *request.RunActionReq
 		Name:          req.DisplayName,
 		Type:          resourcelist.GetResourceNameMappedID(req.ActionType),
 		Template:      req.ExportTemplateInString(),
+		RawTemplate:   req.ExportTemplateInString(),
 		CreatedBy:     userID,
 		UpdatedBy:     userID,
 	}
@@ -236,6 +238,7 @@ func (action *Action) UpdateAppConfig(actionConfig *ActionConfig, userID int) {
 }
 
 func (action *Action) UpdateWithRunActionRequest(req *request.RunActionRequest, userID int) {
+	action.RawTemplate = action.Template
 	action.Template = req.ExportTemplateInString()
 	action.UpdatedBy = userID
 	action.InitUpdatedAt()
@@ -282,6 +285,12 @@ func (action *Action) ExportTransformerInMap() map[string]interface{} {
 func (action *Action) ExportTemplateInMap() map[string]interface{} {
 	var payload map[string]interface{}
 	json.Unmarshal([]byte(action.Template), &payload)
+	return payload
+}
+
+func (action *Action) ExportRawTemplateInMap() map[string]interface{} {
+	var payload map[string]interface{}
+	json.Unmarshal([]byte(action.RawTemplate), &payload)
 	return payload
 }
 

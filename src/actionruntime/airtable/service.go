@@ -27,9 +27,9 @@ type Connector struct {
 	Action   Action
 }
 
-func (a *Connector) ValidateResourceOptions(resourceOpts map[string]interface{}) (common.ValidateResult, error) {
+func (a *Connector) ValidateResourceOptions(resourceOptions map[string]interface{}) (common.ValidateResult, error) {
 	// format resource options
-	if err := mapstructure.Decode(resourceOpts, &a.Resource); err != nil {
+	if err := mapstructure.Decode(resourceOptions, &a.Resource); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 
@@ -54,9 +54,9 @@ func (a *Connector) ValidateResourceOptions(resourceOpts map[string]interface{})
 	return common.ValidateResult{Valid: true}, nil
 }
 
-func (a *Connector) ValidateActionTemplate(actionOpts map[string]interface{}) (common.ValidateResult, error) {
+func (a *Connector) ValidateActionTemplate(actionOptions map[string]interface{}) (common.ValidateResult, error) {
 	// format action options
-	if err := mapstructure.Decode(actionOpts, &a.Action); err != nil {
+	if err := mapstructure.Decode(actionOptions, &a.Action); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 
@@ -69,22 +69,22 @@ func (a *Connector) ValidateActionTemplate(actionOpts map[string]interface{}) (c
 	return common.ValidateResult{Valid: true}, nil
 }
 
-func (a *Connector) TestConnection(resourceOpts map[string]interface{}) (common.ConnectionResult, error) {
+func (a *Connector) TestConnection(resourceOptions map[string]interface{}) (common.ConnectionResult, error) {
 	return common.ConnectionResult{Success: true}, nil
 }
 
-func (a *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.MetaInfoResult, error) {
+func (a *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.MetaInfoResult, error) {
 	return common.MetaInfoResult{Success: true}, nil
 }
 
-func (a *Connector) Run(resourceOpts map[string]interface{}, actionOpts map[string]interface{}) (common.RuntimeResult, error) {
+func (a *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}, rawActionOptions map[string]interface{}) (common.RuntimeResult, error) {
 	// format resource options
-	if err := mapstructure.Decode(resourceOpts, &a.Resource); err != nil {
+	if err := mapstructure.Decode(resourceOptions, &a.Resource); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 
 	// format action options
-	if err := mapstructure.Decode(actionOpts, &a.Action); err != nil {
+	if err := mapstructure.Decode(actionOptions, &a.Action); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 

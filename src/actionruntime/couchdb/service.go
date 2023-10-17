@@ -29,43 +29,43 @@ import (
 )
 
 type Connector struct {
-	resourceOpts resource
-	actionOpts   action
+	resourceOptions resource
+	actionOptions   action
 }
 
-func (c *Connector) ValidateResourceOptions(resourceOpts map[string]interface{}) (common.ValidateResult, error) {
+func (c *Connector) ValidateResourceOptions(resourceOptions map[string]interface{}) (common.ValidateResult, error) {
 	// format resource options
-	if err := mapstructure.Decode(resourceOpts, &c.resourceOpts); err != nil {
+	if err := mapstructure.Decode(resourceOptions, &c.resourceOptions); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 
 	// validate couchdb options
 	validate := validator.New()
-	if err := validate.Struct(c.resourceOpts); err != nil {
+	if err := validate.Struct(c.resourceOptions); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 
 	return common.ValidateResult{Valid: true}, nil
 }
 
-func (c *Connector) ValidateActionTemplate(actionOpts map[string]interface{}) (common.ValidateResult, error) {
+func (c *Connector) ValidateActionTemplate(actionOptions map[string]interface{}) (common.ValidateResult, error) {
 	// format action options
-	if err := mapstructure.Decode(actionOpts, &c.actionOpts); err != nil {
+	if err := mapstructure.Decode(actionOptions, &c.actionOptions); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 
 	// validate couchdb options
 	validate := validator.New()
-	if err := validate.Struct(c.actionOpts); err != nil {
+	if err := validate.Struct(c.actionOptions); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 
 	return common.ValidateResult{Valid: true}, nil
 }
 
-func (c *Connector) TestConnection(resourceOpts map[string]interface{}) (common.ConnectionResult, error) {
+func (c *Connector) TestConnection(resourceOptions map[string]interface{}) (common.ConnectionResult, error) {
 	// get couchdb client
-	client, err := c.getClient(resourceOpts)
+	client, err := c.getClient(resourceOptions)
 	if err != nil {
 		return common.ConnectionResult{Success: false}, err
 	}
@@ -78,9 +78,9 @@ func (c *Connector) TestConnection(resourceOpts map[string]interface{}) (common.
 	return common.ConnectionResult{Success: true}, nil
 }
 
-func (c *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.MetaInfoResult, error) {
+func (c *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.MetaInfoResult, error) {
 	// get couchdb client
-	client, err := c.getClient(resourceOpts)
+	client, err := c.getClient(resourceOptions)
 	if err != nil {
 		return common.MetaInfoResult{Success: false}, err
 	}
@@ -97,20 +97,20 @@ func (c *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.Met
 	}, nil
 }
 
-func (c *Connector) Run(resourceOpts, actionOpts map[string]interface{}) (common.RuntimeResult, error) {
+func (c *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}, rawActionOptions map[string]interface{}) (common.RuntimeResult, error) {
 	// get couchdb client
-	client, err := c.getClient(resourceOpts)
+	client, err := c.getClient(resourceOptions)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 
 	// format action options
-	if err := mapstructure.Decode(actionOpts, &c.actionOpts); err != nil {
+	if err := mapstructure.Decode(actionOptions, &c.actionOptions); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 
 	// get database
-	db := client.DB(c.actionOpts.Database)
+	db := client.DB(c.actionOptions.Database)
 
 	// switch based on different method
 	res := common.RuntimeResult{
@@ -118,27 +118,27 @@ func (c *Connector) Run(resourceOpts, actionOpts map[string]interface{}) (common
 		Rows:    []map[string]interface{}{},
 		Extra:   map[string]interface{}{},
 	}
-	switch c.actionOpts.Method {
+	switch c.actionOptions.Method {
 	case LIST_METHOD:
-		limitType := reflect.TypeOf(c.actionOpts.Opts["limit"])
+		limitType := reflect.TypeOf(c.actionOptions.Opts["limit"])
 		if limitType.Kind() == reflect.Float64 {
-			floatTmp := c.actionOpts.Opts["limit"].(float64)
-			c.actionOpts.Opts["limit"] = int(floatTmp)
+			floatTmp := c.actionOptions.Opts["limit"].(float64)
+			c.actionOptions.Opts["limit"] = int(floatTmp)
 		} else {
-			delete(c.actionOpts.Opts, "limit")
+			delete(c.actionOptions.Opts, "limit")
 		}
-		skipType := reflect.TypeOf(c.actionOpts.Opts["skip"])
+		skipType := reflect.TypeOf(c.actionOptions.Opts["skip"])
 		if skipType.Kind() == reflect.Float64 {
-			floatTmp := c.actionOpts.Opts["skip"].(float64)
-			c.actionOpts.Opts["skip"] = int(floatTmp)
+			floatTmp := c.actionOptions.Opts["skip"].(float64)
+			c.actionOptions.Opts["skip"] = int(floatTmp)
 		} else {
-			delete(c.actionOpts.Opts, "skip")
+			delete(c.actionOptions.Opts, "skip")
 		}
-		c.actionOpts.Opts["include_docs"] = c.actionOpts.Opts["includeDocs"]
-		delete(c.actionOpts.Opts, "includeDocs")
-		c.actionOpts.Opts["descending_order"] = c.actionOpts.Opts["descendingOrder"]
-		delete(c.actionOpts.Opts, "descending_order")
-		resSet := db.AllDocs(context.TODO(), c.actionOpts.Opts)
+		c.actionOptions.Opts["include_docs"] = c.actionOptions.Opts["includeDocs"]
+		delete(c.actionOptions.Opts, "includeDocs")
+		c.actionOptions.Opts["descending_order"] = c.actionOptions.Opts["descendingOrder"]
+		delete(c.actionOptions.Opts, "descending_order")
+		resSet := db.AllDocs(context.TODO(), c.actionOptions.Opts)
 		rows := make([]map[string]interface{}, 0)
 		for resSet.Next() {
 			item := make(map[string]interface{}, 3)
@@ -146,7 +146,7 @@ func (c *Connector) Run(resourceOpts, actionOpts map[string]interface{}) (common
 			var rev map[string]interface{}
 			resSet.ScanValue(&rev)
 			item["_rev"] = rev["rev"]
-			if v, ok := c.actionOpts.Opts["include_docs"].(bool); ok && v {
+			if v, ok := c.actionOptions.Opts["include_docs"].(bool); ok && v {
 				var doc interface{}
 				resSet.ScanDoc(&doc)
 				item["doc"] = doc
@@ -165,7 +165,7 @@ func (c *Connector) Run(resourceOpts, actionOpts map[string]interface{}) (common
 		res.Rows = append(res.Rows, resObj)
 		res.Success = true
 	case RETRIEVE_METHOD:
-		docID, ok := c.actionOpts.Opts["_id"].(string)
+		docID, ok := c.actionOptions.Opts["_id"].(string)
 		if !ok {
 			return res, errors.New("doc id is required")
 		}
@@ -180,7 +180,7 @@ func (c *Connector) Run(resourceOpts, actionOpts map[string]interface{}) (common
 		res.Rows = append(res.Rows, doc)
 		res.Success = true
 	case CREATE_METHOD:
-		docID, rev, err := db.CreateDoc(context.TODO(), c.actionOpts.Opts["record"])
+		docID, rev, err := db.CreateDoc(context.TODO(), c.actionOptions.Opts["record"])
 		if err != nil {
 			return res, err
 		}
@@ -193,7 +193,7 @@ func (c *Connector) Run(resourceOpts, actionOpts map[string]interface{}) (common
 			Rev    string                 `mapstructure:"_rev"`
 		}
 		var opts updateOpts
-		if err := mapstructure.Decode(c.actionOpts.Opts, &opts); err != nil {
+		if err := mapstructure.Decode(c.actionOptions.Opts, &opts); err != nil {
 			return res, err
 		}
 		opts.Record["_rev"] = opts.Rev
@@ -205,11 +205,11 @@ func (c *Connector) Run(resourceOpts, actionOpts map[string]interface{}) (common
 		res.Rows = append(res.Rows, map[string]interface{}{"message": fmt.Sprintf("updated %s, new revision ID: %s", opts.ID, newRev)})
 		res.Success = true
 	case DELETE_METHOD:
-		docID, ok := c.actionOpts.Opts["_id"].(string)
+		docID, ok := c.actionOptions.Opts["_id"].(string)
 		if !ok {
 			return res, errors.New("doc id is required")
 		}
-		rev, ok := c.actionOpts.Opts["_rev"].(string)
+		rev, ok := c.actionOptions.Opts["_rev"].(string)
 		if !ok {
 			return res, errors.New("revision id is required")
 		}
@@ -219,7 +219,7 @@ func (c *Connector) Run(resourceOpts, actionOpts map[string]interface{}) (common
 		res.Rows = append(res.Rows, map[string]interface{}{"message": fmt.Sprintf("deleted %s document", docID)})
 		res.Success = true
 	case FIND_METHOD:
-		resSet := db.Find(context.TODO(), c.actionOpts.Opts["mangoQuery"])
+		resSet := db.Find(context.TODO(), c.actionOptions.Opts["mangoQuery"])
 		rows := make([]map[string]interface{}, 0)
 		for resSet.Next() {
 			var doc map[string]interface{}
@@ -247,7 +247,7 @@ func (c *Connector) Run(resourceOpts, actionOpts map[string]interface{}) (common
 			Include  bool        `mapstructure:"includeDocs"`
 		}
 		var opts getViewOpts
-		if err := mapstructure.Decode(c.actionOpts.Opts, &opts); err != nil {
+		if err := mapstructure.Decode(c.actionOptions.Opts, &opts); err != nil {
 			return res, err
 		}
 		viewURLSlice := strings.Split(opts.ViewURL, "/")

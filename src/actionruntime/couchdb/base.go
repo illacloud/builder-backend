@@ -32,18 +32,18 @@ const (
 	GET_METHOD      = "getView"
 )
 
-func (c *Connector) getClient(resourceOpts map[string]interface{}) (*kivik.Client, error) {
+func (c *Connector) getClient(resourceOptions map[string]interface{}) (*kivik.Client, error) {
 	// format resource options
-	if err := mapstructure.Decode(resourceOpts, &c.resourceOpts); err != nil {
+	if err := mapstructure.Decode(resourceOptions, &c.resourceOptions); err != nil {
 		return nil, err
 	}
 
 	protocolStr := "http"
-	if c.resourceOpts.SSL {
+	if c.resourceOptions.SSL {
 		protocolStr = "https"
 	}
-	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/", protocolStr, c.resourceOpts.Username, c.resourceOpts.Password,
-		c.resourceOpts.Host, c.resourceOpts.Port)
+	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/", protocolStr, c.resourceOptions.Username, c.resourceOptions.Password,
+		c.resourceOptions.Host, c.resourceOptions.Port)
 	client, err := kivik.New("couch", dsn)
 	if err != nil {
 		return nil, err

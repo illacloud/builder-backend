@@ -35,8 +35,8 @@ const (
 	columnsSQL = "SELECT tabs.table_name, tabs.tablespace_name, cols.column_name, cols.data_type FROM user_tables tabs JOIN user_tab_columns cols ON tabs.table_name = cols.table_name LEFT JOIN user_cons_columns col_cons ON cols.column_name = col_cons.column_name AND cols.table_name = col_cons.table_name WHERE tabs.tablespace_name IS NOT NULL"
 )
 
-func (o *Connector) getConnectionWithOptions(resourceOpts map[string]interface{}) (*sql.DB, error) {
-	if err := mapstructure.Decode(resourceOpts, &o.resourceOpts); err != nil {
+func (o *Connector) getConnectionWithOptions(resourceOptions map[string]interface{}) (*sql.DB, error) {
+	if err := mapstructure.Decode(resourceOptions, &o.resourceOptions); err != nil {
 		return nil, err
 	}
 
@@ -45,19 +45,19 @@ func (o *Connector) getConnectionWithOptions(resourceOpts map[string]interface{}
 	urlopts := map[string]string{
 		"SSL": "true",
 	}
-	if !o.resourceOpts.SSL {
+	if !o.resourceOptions.SSL {
 		urlopts["SSL"] = "false"
 	}
-	if o.resourceOpts.Type == CONNECTION_SID {
-		urlopts["SID"] = o.resourceOpts.Name
-	} else if o.resourceOpts.Type == CONNECTION_SERVICE {
-		serviceName = o.resourceOpts.Name
+	if o.resourceOptions.Type == CONNECTION_SID {
+		urlopts["SID"] = o.resourceOptions.Name
+	} else if o.resourceOptions.Type == CONNECTION_SERVICE {
+		serviceName = o.resourceOptions.Name
 	}
-	port, err := strconv.Atoi(o.resourceOpts.Port)
+	port, err := strconv.Atoi(o.resourceOptions.Port)
 	if err != nil {
 		return nil, err
 	}
-	databaseURL := go_ora.BuildUrl(o.resourceOpts.Host, port, serviceName, o.resourceOpts.Username, o.resourceOpts.Password, urlopts)
+	databaseURL := go_ora.BuildUrl(o.resourceOptions.Host, port, serviceName, o.resourceOptions.Username, o.resourceOptions.Password, urlopts)
 
 	db, err := sql.Open("oracle", databaseURL)
 	if err != nil {

@@ -92,7 +92,7 @@ func (r *RESTAPIConnector) GetMetaInfo(resourceOptions map[string]interface{}) (
 	return common.MetaInfoResult{Success: false}, errors.New("unsupported type: REST API")
 }
 
-func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
+func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}, rawActionOptions map[string]interface{}) (common.RuntimeResult, error) {
 	res := common.RuntimeResult{
 		Success: false,
 		Rows:    []map[string]interface{}{},

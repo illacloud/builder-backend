@@ -26,8 +26,8 @@ import (
 )
 
 type Connector struct {
-	ResourceOpts Resource
-	ActionOpts   Action
+	resourceOptions Resource
+	actionOptions   Action
 }
 
 type ActionRunner struct {
@@ -35,41 +35,41 @@ type ActionRunner struct {
 	service *sheets.Service
 }
 
-func (g *Connector) ValidateResourceOptions(resourceOpts map[string]interface{}) (common.ValidateResult, error) {
+func (g *Connector) ValidateResourceOptions(resourceOptions map[string]interface{}) (common.ValidateResult, error) {
 	// format resource options
-	if err := mapstructure.Decode(resourceOpts, &g.ResourceOpts); err != nil {
+	if err := mapstructure.Decode(resourceOptions, &g.resourceOptions); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 
 	// validate Google Sheets resource options
 	validate := validator.New()
-	if err := validate.Struct(g.ResourceOpts); err != nil {
+	if err := validate.Struct(g.resourceOptions); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 	return common.ValidateResult{Valid: true}, nil
 }
 
-func (g *Connector) ValidateActionTemplate(actionOpts map[string]interface{}) (common.ValidateResult, error) {
+func (g *Connector) ValidateActionTemplate(actionOptions map[string]interface{}) (common.ValidateResult, error) {
 	// format action options
-	if err := mapstructure.Decode(actionOpts, &g.ActionOpts); err != nil {
+	if err := mapstructure.Decode(actionOptions, &g.actionOptions); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 
 	// validate Google Sheets action options
 	validate := validator.New()
-	if err := validate.Struct(g.ActionOpts); err != nil {
+	if err := validate.Struct(g.actionOptions); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 	return common.ValidateResult{Valid: true}, nil
 }
 
-func (g *Connector) TestConnection(resourceOpts map[string]interface{}) (common.ConnectionResult, error) {
+func (g *Connector) TestConnection(resourceOptions map[string]interface{}) (common.ConnectionResult, error) {
 	return common.ConnectionResult{Success: true}, nil
 }
 
-func (g *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.MetaInfoResult, error) {
+func (g *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.MetaInfoResult, error) {
 	// get Google Drive service instance
-	driveService, err := g.getDriveWithOpts(resourceOpts)
+	driveService, err := g.getDriveWithOpts(resourceOptions)
 	if err != nil {
 		return common.MetaInfoResult{Success: false}, err
 	}
@@ -93,15 +93,15 @@ func (g *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.Met
 	}, nil
 }
 
-func (g *Connector) Run(resourceOpts map[string]interface{}, actionOpts map[string]interface{}) (common.RuntimeResult, error) {
+func (g *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}, rawActionOptions map[string]interface{}) (common.RuntimeResult, error) {
 	// get Google Sheets service instance
-	svc, err := g.getSheetsWithOpts(resourceOpts)
+	svc, err := g.getSheetsWithOpts(resourceOptions)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 
 	// format action options
-	if err := mapstructure.Decode(actionOpts, &g.ActionOpts); err != nil {
+	if err := mapstructure.Decode(actionOptions, &g.actionOptions); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 
@@ -114,11 +114,11 @@ func (g *Connector) Run(resourceOpts map[string]interface{}, actionOpts map[stri
 	// build ActionRunner
 	actionRunner := &ActionRunner{
 		service: svc,
-		opts:    g.ActionOpts.Opts,
+		opts:    g.actionOptions.Opts,
 	}
 
 	// different methods call different functions
-	switch g.ActionOpts.Method {
+	switch g.actionOptions.Method {
 	case READ_ACTION:
 		res, err = actionRunner.Read()
 		if err != nil {
@@ -162,7 +162,7 @@ func (g *Connector) Run(resourceOpts map[string]interface{}, actionOpts map[stri
 			return res, err
 		}
 	case LIST_ACTION:
-		driveService, err := g.getDriveWithOpts(resourceOpts)
+		driveService, err := g.getDriveWithOpts(resourceOptions)
 		if err != nil {
 			res.Success = false
 			return res, err

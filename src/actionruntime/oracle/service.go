@@ -25,43 +25,43 @@ import (
 )
 
 type Connector struct {
-	resourceOpts Resource
-	actionOpts   Action
+	resourceOptions Resource
+	actionOptions   Action
 }
 
-func (o *Connector) ValidateResourceOptions(resourceOpts map[string]interface{}) (common.ValidateResult, error) {
+func (o *Connector) ValidateResourceOptions(resourceOptions map[string]interface{}) (common.ValidateResult, error) {
 	// format resource options
-	if err := mapstructure.Decode(resourceOpts, &o.resourceOpts); err != nil {
+	if err := mapstructure.Decode(resourceOptions, &o.resourceOptions); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 
 	// validate oracle options
 	validate := validator.New()
-	if err := validate.Struct(o.resourceOpts); err != nil {
+	if err := validate.Struct(o.resourceOptions); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 
 	return common.ValidateResult{Valid: true}, nil
 }
 
-func (o *Connector) ValidateActionTemplate(actionOpts map[string]interface{}) (common.ValidateResult, error) {
+func (o *Connector) ValidateActionTemplate(actionOptions map[string]interface{}) (common.ValidateResult, error) {
 	// format action options
-	if err := mapstructure.Decode(actionOpts, &o.actionOpts); err != nil {
+	if err := mapstructure.Decode(actionOptions, &o.actionOptions); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 
 	// validate oracle options
 	validate := validator.New()
-	if err := validate.Struct(o.actionOpts); err != nil {
+	if err := validate.Struct(o.actionOptions); err != nil {
 		return common.ValidateResult{Valid: false}, err
 	}
 
 	return common.ValidateResult{Valid: true}, nil
 }
 
-func (o *Connector) TestConnection(resourceOpts map[string]interface{}) (common.ConnectionResult, error) {
+func (o *Connector) TestConnection(resourceOptions map[string]interface{}) (common.ConnectionResult, error) {
 	// get oracle connection
-	db, err := o.getConnectionWithOptions(resourceOpts)
+	db, err := o.getConnectionWithOptions(resourceOptions)
 	if err != nil {
 		return common.ConnectionResult{Success: false}, err
 	}
@@ -75,9 +75,9 @@ func (o *Connector) TestConnection(resourceOpts map[string]interface{}) (common.
 	return common.ConnectionResult{Success: true}, nil
 }
 
-func (o *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.MetaInfoResult, error) {
+func (o *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.MetaInfoResult, error) {
 	// get oracle connection
-	db, err := o.getConnectionWithOptions(resourceOpts)
+	db, err := o.getConnectionWithOptions(resourceOptions)
 	if err != nil {
 		return common.MetaInfoResult{Success: false}, err
 	}
@@ -96,15 +96,15 @@ func (o *Connector) GetMetaInfo(resourceOpts map[string]interface{}) (common.Met
 	}, nil
 }
 
-func (o *Connector) Run(resourceOpts map[string]interface{}, actionOpts map[string]interface{}) (common.RuntimeResult, error) {
+func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}, rawActionOptions map[string]interface{}) (common.RuntimeResult, error) {
 	// get Oracle connection
-	db, err := o.getConnectionWithOptions(resourceOpts)
+	db, err := o.getConnectionWithOptions(resourceOptions)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, errors.New("failed to get clickhouse connection")
 	}
 	defer db.Close()
 	// format query
-	if err := mapstructure.Decode(actionOpts, &o.actionOpts); err != nil {
+	if err := mapstructure.Decode(actionOptions, &o.actionOptions); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 
@@ -114,13 +114,13 @@ func (o *Connector) Run(resourceOpts map[string]interface{}, actionOpts map[stri
 	err = nil
 
 	// action mode switch
-	switch o.actionOpts.Mode {
+	switch o.actionOptions.Mode {
 	case ACTION_SQL_MODE:
-		// check if o.actionOpts.Opts.Raw is select query
+		// check if o.actionOptions.Opts.Raw is select query
 		isSelectQuery := false
 
 		var query SQL
-		if err := mapstructure.Decode(o.actionOpts.Opts, &query); err != nil {
+		if err := mapstructure.Decode(o.actionOptions.Opts, &query); err != nil {
 			return queryResult, errors.New("type error of action content")
 		}
 		lexer := parser_sql.NewLexer(query.Raw)

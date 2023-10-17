@@ -93,7 +93,7 @@ func (m *MySQLConnector) GetMetaInfo(resourceOptions map[string]interface{}) (co
 	}, nil
 }
 
-func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
+func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}, rawActionOptions map[string]interface{}) (common.RuntimeResult, error) {
 	// get mysql connection
 	db, err := m.getConnectionWithOptions(resourceOptions)
 	if err != nil {

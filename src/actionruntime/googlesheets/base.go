@@ -43,20 +43,20 @@ const (
 	GET_ACTION        = "get"
 )
 
-func (g *Connector) getSheetsWithOpts(resourceOpts map[string]interface{}) (*sheets.Service, error) {
-	if err := mapstructure.Decode(resourceOpts, &g.ResourceOpts); err != nil {
+func (g *Connector) getSheetsWithOpts(resourceOptions map[string]interface{}) (*sheets.Service, error) {
+	if err := mapstructure.Decode(resourceOptions, &g.resourceOptions); err != nil {
 		return nil, err
 	}
-	switch g.ResourceOpts.Authentication {
+	switch g.resourceOptions.Authentication {
 	case SERVICE_ACCOUNT_AUTH:
 		var saOpts SAOpts
-		if err := mapstructure.Decode(g.ResourceOpts.Opts, &saOpts); err != nil {
+		if err := mapstructure.Decode(g.resourceOptions.Opts, &saOpts); err != nil {
 			return nil, err
 		}
 		return getSheetsWithKey(saOpts.PrivateKey)
 	case OAUTH2_AUTH:
 		var oauth2Opts OAuth2Opts
-		if err := mapstructure.Decode(g.ResourceOpts.Opts, &oauth2Opts); err != nil {
+		if err := mapstructure.Decode(g.resourceOptions.Opts, &oauth2Opts); err != nil {
 			return nil, err
 		}
 		return getSheetsWithOAuth2(oauth2Opts)
@@ -96,20 +96,20 @@ func getSheetsWithOAuth2(opts OAuth2Opts) (*sheets.Service, error) {
 	return srv, nil
 }
 
-func (g *Connector) getDriveWithOpts(resourceOpts map[string]interface{}) (*drive.Service, error) {
-	if err := mapstructure.Decode(resourceOpts, &g.ResourceOpts); err != nil {
+func (g *Connector) getDriveWithOpts(resourceOptions map[string]interface{}) (*drive.Service, error) {
+	if err := mapstructure.Decode(resourceOptions, &g.resourceOptions); err != nil {
 		return nil, err
 	}
-	switch g.ResourceOpts.Authentication {
+	switch g.resourceOptions.Authentication {
 	case SERVICE_ACCOUNT_AUTH:
 		var saOpts SAOpts
-		if err := mapstructure.Decode(g.ResourceOpts.Opts, &saOpts); err != nil {
+		if err := mapstructure.Decode(g.resourceOptions.Opts, &saOpts); err != nil {
 			return nil, err
 		}
 		return getDriveWithKey(saOpts.PrivateKey)
 	case OAUTH2_AUTH:
 		var oauth2Opts OAuth2Opts
-		if err := mapstructure.Decode(g.ResourceOpts.Opts, &oauth2Opts); err != nil {
+		if err := mapstructure.Decode(g.resourceOptions.Opts, &oauth2Opts); err != nil {
 			return nil, err
 		}
 		return getDriveWithOAuth2(oauth2Opts)

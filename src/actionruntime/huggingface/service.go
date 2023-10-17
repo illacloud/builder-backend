@@ -69,7 +69,7 @@ func (h *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.
 	return common.MetaInfoResult{Success: false}, errors.New("unsupported type: Hugging Face")
 }
 
-func (h *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}) (common.RuntimeResult, error) {
+func (h *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}, rawActionOptions map[string]interface{}) (common.RuntimeResult, error) {
 	// format resource options
 	if err := mapstructure.Decode(resourceOptions, &h.ResourceOpts); err != nil {
 		return common.RuntimeResult{Success: false}, err

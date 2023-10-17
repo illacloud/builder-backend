@@ -101,7 +101,7 @@ func (controller *Controller) RunPublicAction(c *gin.Context) {
 	}
 
 	// run
-	actionRunResult, errInRunAction := actionAssemblyLine.Run(resource.ExportOptionsInMap(), action.ExportTemplateInMap())
+	actionRunResult, errInRunAction := actionAssemblyLine.Run(resource.ExportOptionsInMap(), action.ExportTemplateInMap(), action.ExportRawTemplateInMap())
 	if errInRunAction != nil {
 		if strings.HasPrefix(errInRunAction.Error(), "Error 1064:") {
 			lineNumber, _ := strconv.Atoi(errInRunAction.Error()[len(errInRunAction.Error())-1:])

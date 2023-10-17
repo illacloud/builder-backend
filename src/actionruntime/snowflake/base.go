@@ -34,25 +34,25 @@ const (
 	columnSQLStr = "DESCRIBE TABLE "
 )
 
-func (s *Connector) getConnectionWithOptions(resourceOpts map[string]interface{}) (*sql.DB, error) {
-	if err := mapstructure.Decode(resourceOpts, &s.resourceOpts); err != nil {
+func (s *Connector) getConnectionWithOptions(resourceOptions map[string]interface{}) (*sql.DB, error) {
+	if err := mapstructure.Decode(resourceOptions, &s.resourceOptions); err != nil {
 		return nil, err
 	}
 
 	config := sf.Config{
-		Account:   s.resourceOpts.AccountName,
-		Database:  s.resourceOpts.Database,
-		Schema:    s.resourceOpts.Schema,
-		Warehouse: s.resourceOpts.Warehouse,
-		Role:      s.resourceOpts.Role,
+		Account:   s.resourceOptions.AccountName,
+		Database:  s.resourceOptions.Database,
+		Schema:    s.resourceOptions.Schema,
+		Warehouse: s.resourceOptions.Warehouse,
+		Role:      s.resourceOptions.Role,
 	}
 
-	switch s.resourceOpts.Authentication {
+	switch s.resourceOptions.Authentication {
 	case BASIC_AUTH:
-		config.User = s.resourceOpts.AuthContent["username"]
-		config.Password = s.resourceOpts.AuthContent["password"]
+		config.User = s.resourceOptions.AuthContent["username"]
+		config.Password = s.resourceOptions.AuthContent["password"]
 	case KEY_PAIR_AUTH:
-		block, _ := pem.Decode([]byte(s.resourceOpts.AuthContent["privateKey"]))
+		block, _ := pem.Decode([]byte(s.resourceOptions.AuthContent["privateKey"]))
 		if block == nil {
 			return nil, errors.New("failed to parse PEM block containing the private key")
 		}
@@ -64,7 +64,7 @@ func (s *Connector) getConnectionWithOptions(resourceOpts map[string]interface{}
 		if !ok {
 			return nil, errors.New("failed to parse the private key")
 		}
-		config.User = s.resourceOpts.AuthContent["username"]
+		config.User = s.resourceOptions.AuthContent["username"]
 		config.Authenticator = sf.AuthTypeJwt
 		config.PrivateKey = rsaPrivateKey
 	default:

@@ -31,6 +31,7 @@ type SSLOptions struct {
 }
 
 type Query struct {
-	Mode  string `validate:"required,oneof=gui sql"`
-	Query string
+	Mode    string `validate:"required,oneof=gui sql"`
+	Query   string
+	Context map[string]interface{}
 }
