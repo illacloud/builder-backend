@@ -176,13 +176,13 @@ func reflactAllTypesToString(any interface{}) (string, error) {
 			buf = escapeBytesBackslash(buf, v)
 		}
 	case string:
-		buf = appendSQLArgString(buf, escapeSQLString(v))
+		buf = appendSQLArgString(buf, v)
 	case []string:
 		for i, k := range v {
 			if i > 0 {
 				buf = append(buf, ',')
 			}
-			buf = escapeStringBackslash(buf, escapeSQLString(k))
+			buf = escapeStringBackslash(buf, k)
 		}
 	case []float32:
 		for i, k := range v {
@@ -214,7 +214,7 @@ func reflactAllTypesToString(any interface{}) (string, error) {
 		case reflect.Bool:
 			buf = appendSQLArgBool(buf, reflect.ValueOf(any).Bool())
 		case reflect.String:
-			buf = appendSQLArgString(buf, escapeSQLString(reflect.ValueOf(any).String()))
+			buf = appendSQLArgString(buf, reflect.ValueOf(any).String())
 		default:
 			return "", errors.New(fmt.Sprintf("unsupported argument: %v", any))
 		}
