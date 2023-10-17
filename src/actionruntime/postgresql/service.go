@@ -21,6 +21,7 @@ import (
 
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
 	parser_sql "github.com/illacloud/builder-backend/src/utils/parser/sql"
+	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
@@ -127,7 +128,8 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		Extra:   map[string]interface{}{},
 	}
 	// check if m.Action.Query is select query
-	excapedSQL, errInEscapeSQL := parser_sql.EscapeIllaSQLActionTemplate(p.Action.RawQuery, p.Action.Context)
+	sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_POSTGRESQL_ID)
+	excapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(p.Action.RawQuery, p.Action.Context)
 	if errInEscapeSQL != nil {
 		return queryResult, errInEscapeSQL
 	}
@@ -143,7 +145,7 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 
 	// fetch data
 	if isSelectQuery {
-		rows, err := db.Query(context.Background(), excapedSQL)
+		rows, err := db.Query(context.Background(), excapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}
@@ -155,7 +157,7 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else { // update, insert, delete data
-		execResult, err := db.Exec(context.Background(), excapedSQL)
+		execResult, err := db.Exec(context.Background(), excapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}

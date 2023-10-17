@@ -1,16 +1,15 @@
 package parser_sql
 
 import (
-	"encoding/json"
 	"fmt"
-	"reflect"
-	"strconv"
 	"strings"
-	"time"
 
-	"github.com/illacloud/illa-resource-manager-backend/src/utils/resourcelist"
-	"github.com/pkg/errors"
+	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 )
+
+var SerlizedParameterizedSQLList = map[int]bool{
+	resourcelist.TYPE_POSTGRESQL_ID: true,
+}
 
 type SQLEscaper struct {
 	ResourceType int `json:"resourceType"`
@@ -22,198 +21,31 @@ func NewSQLEscaper(resourceType int) *SQLEscaper {
 	}
 }
 
-func (sqlEscaper *SQLEscaper) reserveBuffer(buf []byte, appendSize int) []byte {
-	newSize := len(buf) + appendSize
-	if cap(buf) < newSize {
-		newBuf := make([]byte, len(buf)*2+appendSize)
-		copy(newBuf, buf)
-		buf = newBuf
-	}
-	return buf[:newSize]
+func (sqlEscaper *SQLEscaper) IsSerlizedParameterizedSQL() bool {
+	itIs, hit := SerlizedParameterizedSQLList[sqlEscaper.ResourceType]
+	return itIs && hit
 }
 
-func (sqlEscaper *SQLEscaper) escapeBytesBackslash(buf []byte, v []byte) []byte {
-	pos := len(buf)
-	buf = sqlEscaper.reserveBuffer(buf, len(v)*2)
-
-	for _, c := range v {
-		switch c {
-		case '\x00':
-			buf[pos] = '\\'
-			buf[pos+1] = '0'
-			pos += 2
-		case '\n':
-			buf[pos] = '\\'
-			buf[pos+1] = 'n'
-			pos += 2
-		case '\r':
-			buf[pos] = '\\'
-			buf[pos+1] = 'r'
-			pos += 2
-		case '\x1a':
-			buf[pos] = '\\'
-			buf[pos+1] = 'Z'
-			pos += 2
-		case '\'':
-			switch sqlEscaper.ResourceType {
-			case resourcelist.TYPE_POSTGRESQL_ID:
-				buf[pos] = '\''
-				buf[pos+1] = '\''
-				pos += 2
-			default:
-				buf[pos] = '\\'
-				buf[pos+1] = '\''
-				pos += 2
-			}
-
-		case '"':
-			buf[pos] = '\\'
-			buf[pos+1] = '"'
-			pos += 2
-		case '\\':
-			buf[pos] = '\\'
-			buf[pos+1] = '\\'
-			pos += 2
-		default:
-			buf[pos] = c
-			pos++
-		}
-	}
-
-	return buf[:pos]
-}
-
-// @todo: this method need hack for all SQL types
-func (sqlEscaper *SQLEscaper) appendSQLArgBool(buf []byte, v bool) []byte {
-	if v {
-		return append(buf, '1')
-	}
-	return append(buf, '0')
-}
-
-// escapeStringBackslash will escape string into the buffer, with backslash.
-func (sqlEscaper *SQLEscaper) escapeStringBackslash(buf []byte, v string) []byte {
-	return sqlEscaper.escapeBytesBackslash(buf, Slice(v))
-}
-
-func (sqlEscaper *SQLEscaper) appendSQLArgString(buf []byte, s string) []byte {
-	buf = sqlEscaper.escapeStringBackslash(buf, s)
-	return buf
-}
-
-func (sqlEscaper *SQLEscaper) reflactAllTypesToString(any interface{}) (string, error) {
-	buf := make([]byte, 0)
-	switch v := any.(type) {
-	case int:
-		buf = strconv.AppendInt(buf, int64(v), 10)
-	case int8:
-		buf = strconv.AppendInt(buf, int64(v), 10)
-	case int16:
-		buf = strconv.AppendInt(buf, int64(v), 10)
-	case int32:
-		buf = strconv.AppendInt(buf, int64(v), 10)
-	case int64:
-		buf = strconv.AppendInt(buf, v, 10)
-	case uint:
-		buf = strconv.AppendUint(buf, uint64(v), 10)
-	case uint8:
-		buf = strconv.AppendUint(buf, uint64(v), 10)
-	case uint16:
-		buf = strconv.AppendUint(buf, uint64(v), 10)
-	case uint32:
-		buf = strconv.AppendUint(buf, uint64(v), 10)
-	case uint64:
-		buf = strconv.AppendUint(buf, v, 10)
-	case float32:
-		buf = strconv.AppendFloat(buf, float64(v), 'g', -1, 32)
-	case float64:
-		buf = strconv.AppendFloat(buf, v, 'g', -1, 64)
-	case bool:
-		buf = sqlEscaper.appendSQLArgBool(buf, v)
-	case time.Time:
-		if v.IsZero() {
-			buf = append(buf, "'0000-00-00'"...)
-		} else {
-			buf = v.AppendFormat(buf, "2006-01-02 15:04:05.999999")
-		}
-	case json.RawMessage:
-		buf = sqlEscaper.escapeBytesBackslash(buf, v)
-	case []byte:
-		if v == nil {
-			buf = append(buf, "NULL"...)
-		} else {
-			buf = append(buf, "_binary'"...)
-			buf = sqlEscaper.escapeBytesBackslash(buf, v)
-		}
-	case string:
-		buf = sqlEscaper.appendSQLArgString(buf, v)
-	case []string:
-		for i, k := range v {
-			if i > 0 {
-				buf = append(buf, ',')
-			}
-			buf = sqlEscaper.escapeStringBackslash(buf, k)
-		}
-	case []float32:
-		for i, k := range v {
-			if i > 0 {
-				buf = append(buf, ',')
-			}
-			buf = strconv.AppendFloat(buf, float64(k), 'g', -1, 32)
-		}
-	case []float64:
-		for i, k := range v {
-			if i > 0 {
-				buf = append(buf, ',')
-			}
-			buf = strconv.AppendFloat(buf, k, 'g', -1, 64)
-		}
-	default:
-		// slow path based on reflection
-		reflectTp := reflect.TypeOf(any)
-		kind := reflectTp.Kind()
-		switch kind {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			buf = strconv.AppendInt(buf, reflect.ValueOf(any).Int(), 10)
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			buf = strconv.AppendUint(buf, reflect.ValueOf(any).Uint(), 10)
-		case reflect.Float32:
-			buf = strconv.AppendFloat(buf, reflect.ValueOf(any).Float(), 'g', -1, 32)
-		case reflect.Float64:
-			buf = strconv.AppendFloat(buf, reflect.ValueOf(any).Float(), 'g', -1, 64)
-		case reflect.Bool:
-			buf = sqlEscaper.appendSQLArgBool(buf, reflect.ValueOf(any).Bool())
-		case reflect.String:
-			buf = sqlEscaper.appendSQLArgString(buf, reflect.ValueOf(any).String())
-		default:
-			return "", errors.New(fmt.Sprintf("unsupported argument: %v", any))
-		}
-	}
-	return string(buf), nil
-}
-
-func (sqlEscaper *SQLEscaper) buildEscapedArgsLookupTable(args map[string]interface{}) (map[string]string, error) {
-	escapedArgs := make(map[string]string, 0)
+func (sqlEscaper *SQLEscaper) buildEscapedArgsLookupTable(args map[string]interface{}) (map[string]interface{}, error) {
+	escapedArgs := make(map[string]interface{}, 0)
 	for key, value := range args {
-		valueInString, errInReflact := sqlEscaper.reflactAllTypesToString(value)
-		if errInReflact != nil {
-			return nil, errInReflact
-		}
-		escapedArgs[strings.TrimSpace(key)] = valueInString
+		escapedArgs[strings.TrimSpace(key)] = value
 	}
 	return escapedArgs, nil
 }
 
-func (sqlEscaper *SQLEscaper) EscapeIllaSQLActionTemplate(sql string, args map[string]interface{}, resourceType int) (string, error) {
+func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[string]interface{}) (string, []interface{}, error) {
 	escapedArgs, errInBuildArgsLT := sqlEscaper.buildEscapedArgsLookupTable(args)
 	if errInBuildArgsLT != nil {
-		return "", errInBuildArgsLT
+		return "", []interface{}{}, errInBuildArgsLT
 	}
 	ret := ""
 	variable := ""
 	escapedBracketWithVariable := ""
 	leftBraketCounter := 0
 	rightBraketCounter := 0
+	usedArgsSerial := 1 // serial start from 1
+	userArgs := make([]interface{}, 0)
 	leftBracketPlus := func() {
 		leftBraketCounter++
 		escapedBracketWithVariable += "{"
@@ -277,7 +109,14 @@ func (sqlEscaper *SQLEscaper) EscapeIllaSQLActionTemplate(sql string, args map[s
 			if !hitVariable {
 				ret += escapedBracketWithVariable
 			} else {
-				ret += variableMappedValue
+				// replace sql param
+				if sqlEscaper.IsSerlizedParameterizedSQL() {
+					ret += fmt.Sprintf("$%d", usedArgsSerial)
+				} else {
+					ret += "?"
+				}
+				// record param serial
+				userArgs = append(userArgs, variableMappedValue)
 			}
 			escapedBracketWithVariable = ""
 			variable = ""
@@ -302,5 +141,5 @@ func (sqlEscaper *SQLEscaper) EscapeIllaSQLActionTemplate(sql string, args map[s
 		variable = ""
 		continue
 	}
-	return ret, nil
+	return ret, userArgs, nil
 }
