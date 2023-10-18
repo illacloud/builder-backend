@@ -114,3 +114,17 @@ func TestEscapeSQLActionTemplateSingleQuoteContainDoubleQuote(t *testing.T) {
 	assert.Equal(t, usedArgs, []interface{}{"122 pan"}, "the usedArgs should be equal")
 	assert.Equal(t, escapedSQL, "SELECT * FROM actions where name like CONCAT('%\"', $1, '\"%');", "the token should be equal")
 }
+
+func TestEscapeSQLActionTemplateMixVariable(t *testing.T) {
+	sql_1 := `select *  from users join orders on users.id = orders.id where {{!input1.value}} or lower(users.name) like '%{{input1.value.toLowerCase()}}%'`
+	args := map[string]interface{}{
+		"input1.value.toLowerCase()": "122 pan",
+		"!input1.value":              "222 pan",
+		"input3":                     "333 pan",
+	}
+	sqlEscaper := NewSQLEscaper(resourcelist.TYPE_POSTGRESQL_ID)
+	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args)
+	assert.Nil(t, errInEscape)
+	assert.Equal(t, usedArgs, []interface{}{"222 pan", "122 pan"}, "the usedArgs should be equal")
+	assert.Equal(t, escapedSQL, "select *  from users join orders on users.id = orders.id where $1 or lower(users.name) like CONCAT('%', $2, '%')", "the token should be equal")
+}

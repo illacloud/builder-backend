@@ -133,7 +133,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		return false
 	}
 	getNextChar := func(serial int) (rune, error) {
-		if len(sql)-1 < serial {
+		if len(sql)-1 <= serial {
 			return rune(0), errors.New("over range")
 		}
 		return rune(sql[serial+1]), nil
