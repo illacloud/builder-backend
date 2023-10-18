@@ -189,11 +189,17 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 			variableMappedValue, hitVariable := escapedArgs[variable]
 			variableContent := ""
 			if !hitVariable {
-				variableContent = escapedBracketWithVariable
+				if singleQuoteStart {
+					variableContent = "''"
+				} else if doubleQuoteStart {
+					variableContent = "\"\""
+				} else {
+					variableContent = escapedBracketWithVariable
+				}
 			} else {
 				// replace sql param
 				if sqlEscaper.IsSerlizedParameterizedSQL() {
-					variableContent = fmt.Sprintf("$%d::text", usedArgsSerial)
+					variableContent = fmt.Sprintf("$%d", usedArgsSerial)
 					usedArgsSerial++
 				} else {
 					variableContent = "?"
@@ -203,10 +209,16 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 			}
 			if singleQuoteStart {
 				initConcatStringTargetsIndex(singleQuoteSegmentCounter)
+				if sqlEscaper.IsSerlizedParameterizedSQL() {
+					variableContent += "::text"
+				}
 				concatStringTargets[singleQuoteSegmentCounter] = newStringConcatTarget(variableContent, true)
 				singleQuoteSegPlus()
 			} else if doubleQuoteStart {
 				initConcatStringTargetsIndex(doubleQuoteSegmentCounter)
+				if sqlEscaper.IsSerlizedParameterizedSQL() {
+					variableContent += "::text"
+				}
 				concatStringTargets[doubleQuoteSegmentCounter] = newStringConcatTarget(variableContent, true)
 				doubleQuoteSegPlus()
 			} else {
