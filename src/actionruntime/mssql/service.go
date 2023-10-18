@@ -20,6 +20,7 @@ import (
 
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
 	parser_sql "github.com/illacloud/builder-backend/src/utils/parser/sql"
+	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 
 	"github.com/go-playground/validator/v10"
 	mssql "github.com/microsoft/go-mssqldb"
@@ -111,6 +112,12 @@ func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		return common.RuntimeResult{Success: false}, err
 	}
 
+	// set context field
+	errInSetRawQuery := m.ActionOpts.SetRawQueryAndContext(rawActionOptions)
+	if errInSetRawQuery != nil {
+		return common.RuntimeResult{Success: false}, errInSetRawQuery
+	}
+
 	queryResult := common.RuntimeResult{Success: false}
 	queryResult.Rows = make([]map[string]interface{}, 0, 0)
 	queryResult.Extra = make(map[string]interface{})
@@ -119,6 +126,12 @@ func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	// action mode switch
 	switch m.ActionOpts.Mode {
 	case ACTION_SQL_MODE:
+		// check if m.Action.Query is select query
+		sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_MYSQL_ID)
+		escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(m.ActionOpts.RawQuery, m.ActionOpts.Context)
+		if errInEscapeSQL != nil {
+			return queryResult, errInEscapeSQL
+		}
 		// check if m.Action.Query["sql"] is select query
 		isSelectQuery := false
 
@@ -134,7 +147,7 @@ func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 
 		// fetch data
 		if isSelectQuery {
-			rows, err := db.Query(query)
+			rows, err := db.Query(escapedSQL, sqlArgs...)
 			if err != nil {
 				return queryResult, err
 			}
@@ -146,7 +159,7 @@ func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Success = true
 			queryResult.Rows = mapRes
 		} else { // update, insert, delete data
-			execResult, err := db.Exec(query)
+			execResult, err := db.Exec(escapedSQL, sqlArgs...)
 			if err != nil {
 				return queryResult, err
 			}

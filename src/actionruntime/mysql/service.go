@@ -121,7 +121,7 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 	}
 	// check if m.Action.Query is select query
 	sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_MYSQL_ID)
-	excapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(m.Action.RawQuery, m.Action.Context)
+	escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(m.Action.RawQuery, m.Action.Context)
 	if errInEscapeSQL != nil {
 		return queryResult, errInEscapeSQL
 	}
@@ -134,7 +134,7 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 
 	// fetch data
 	if isSelectQuery {
-		rows, err := db.Query(excapedSQL, sqlArgs...)
+		rows, err := db.Query(escapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}
@@ -146,7 +146,7 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else { // update, insert, delete data
-		execResult, err := db.Exec(excapedSQL, sqlArgs...)
+		execResult, err := db.Exec(escapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}

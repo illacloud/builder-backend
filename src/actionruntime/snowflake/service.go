@@ -21,6 +21,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
 	parser_sql "github.com/illacloud/builder-backend/src/utils/parser/sql"
+	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -109,12 +110,26 @@ func (s *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		return common.RuntimeResult{Success: false}, err
 	}
 
+	// set context field
+	errInSetRawQuery := s.actionOptions.SetRawQueryAndContext(rawActionOptions)
+	if errInSetRawQuery != nil {
+		return common.RuntimeResult{Success: false}, errInSetRawQuery
+	}
+
 	// run clickhouse query
 	queryResult := common.RuntimeResult{
 		Success: false,
 		Rows:    []map[string]interface{}{},
 		Extra:   map[string]interface{}{},
 	}
+
+	// check if m.Action.Query is select query
+	sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_MYSQL_ID)
+	escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(s.actionOptions.RawQuery, s.actionOptions.Context)
+	if errInEscapeSQL != nil {
+		return queryResult, errInEscapeSQL
+	}
+
 	// check if m.Action.Query is select query
 	isSelectQuery := false
 
@@ -126,7 +141,7 @@ func (s *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 
 	// fetch data
 	if isSelectQuery {
-		rows, err := db.Query(s.actionOptions.Query)
+		rows, err := db.Query(escapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}
@@ -138,7 +153,7 @@ func (s *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else { // update, insert, delete data
-		execResult, err := db.Exec(s.actionOptions.Query)
+		execResult, err := db.Exec(escapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}

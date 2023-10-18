@@ -125,23 +125,23 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	}
 	// check if m.Action.Query is select query
 	sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_POSTGRESQL_ID)
-	excapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(p.Action.RawQuery, p.Action.Context)
+	escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(p.Action.RawQuery, p.Action.Context)
 	if errInEscapeSQL != nil {
 		return queryResult, errInEscapeSQL
 	}
 	isSelectQuery := false
 
-	lexer := parser_sql.NewLexer(excapedSQL)
+	lexer := parser_sql.NewLexer(escapedSQL)
 	isSelectQuery, err = parser_sql.IsSelectSQL(lexer)
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 
-	fmt.Printf("[DUMP] excapedSQL: %s\n", excapedSQL)
+	fmt.Printf("[DUMP] escapedSQL: %s\n", escapedSQL)
 
 	// fetch data
 	if isSelectQuery {
-		rows, err := db.Query(context.Background(), excapedSQL, sqlArgs...)
+		rows, err := db.Query(context.Background(), escapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}
@@ -153,7 +153,7 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else { // update, insert, delete data
-		execResult, err := db.Exec(context.Background(), excapedSQL, sqlArgs...)
+		execResult, err := db.Exec(context.Background(), escapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}
