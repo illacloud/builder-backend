@@ -193,7 +193,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 			} else {
 				// replace sql param
 				if sqlEscaper.IsSerlizedParameterizedSQL() {
-					variableContent = fmt.Sprintf("$%d", usedArgsSerial)
+					variableContent = fmt.Sprintf("$%d::text", usedArgsSerial)
 					usedArgsSerial++
 				} else {
 					variableContent = "?"
