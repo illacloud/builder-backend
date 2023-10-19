@@ -358,6 +358,7 @@ func (controller *Controller) RunAction(c *gin.Context) {
 
 	// update action data with run action reqeust
 	action.UpdateWithRunActionRequest(runActionRequest, userID)
+	fmt.Printf("[DUMP] action: %+v\n", action)
 
 	// assembly action
 	actionFactory := model.NewActionFactoryByAction(action)
@@ -392,7 +393,7 @@ func (controller *Controller) RunAction(c *gin.Context) {
 	// check action template
 	fmt.Printf("[DUMP] action.ExportTemplateInMap(): %+v\n", action.ExportTemplateInMap())
 	fmt.Printf("[DUMP] action.ExportRawTemplateInMap(): %+v\n", action.ExportRawTemplateInMap())
-	_, errInValidate := actionAssemblyLine.ValidateActionTemplate(action.ExportRawTemplateInMap())
+	_, errInValidate := actionAssemblyLine.ValidateActionTemplate(action.ExportTemplateInMap())
 	if errInValidate != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action template error: "+errInValidate.Error())
 		return
