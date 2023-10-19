@@ -228,6 +228,10 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		break
 	}
 
+	fmt.Printf("[DUMP] r.Action: %+v\n", r.Action)
+	fmt.Printf("[DUMP] actionOptions: %+v\n", actionOptions)
+	fmt.Printf("[DUMP] rawActionOptions: %+v\n", rawActionOptions)
+
 	switch r.Action.Method {
 	case METHOD_GET:
 		actionClient.SetBody(nil)
