@@ -140,7 +140,7 @@ func (s *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	}
 
 	// fetch data
-	if isSelectQuery {
+	if isSelectQuery && s.actionOptions.IsSafeMode() {
 		rows, err := db.Query(escapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
@@ -152,8 +152,31 @@ func (s *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		defer rows.Close()
 		queryResult.Success = true
 		queryResult.Rows = mapRes
-	} else { // update, insert, delete data
+	} else if isSelectQuery && !s.actionOptions.IsSafeMode() {
+		rows, err := db.Query(s.actionOptions.Query)
+		if err != nil {
+			return queryResult, err
+		}
+		mapRes, err := common.RetrieveToMap(rows)
+		if err != nil {
+			return queryResult, err
+		}
+		defer rows.Close()
+		queryResult.Success = true
+		queryResult.Rows = mapRes
+	} else if !isSelectQuery && s.actionOptions.IsSafeMode() {
 		execResult, err := db.Exec(escapedSQL, sqlArgs...)
+		if err != nil {
+			return queryResult, err
+		}
+		affectedRows, err := execResult.RowsAffected()
+		if err != nil {
+			return queryResult, err
+		}
+		queryResult.Success = true
+		queryResult.Extra["message"] = fmt.Sprintf("Affeted %d rows.", affectedRows)
+	} else if !isSelectQuery && !s.actionOptions.IsSafeMode() {
+		execResult, err := db.Exec(s.actionOptions.Query)
 		if err != nil {
 			return queryResult, err
 		}

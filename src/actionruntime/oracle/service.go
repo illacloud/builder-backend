@@ -21,6 +21,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
 	parser_sql "github.com/illacloud/builder-backend/src/utils/parser/sql"
+	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -107,6 +108,11 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	if err := mapstructure.Decode(actionOptions, &o.actionOptions); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
+	// set context field
+	errInSetRawQuery := o.actionOptions.SetRawQueryAndContext(rawActionOptions)
+	if errInSetRawQuery != nil {
+		return common.RuntimeResult{Success: false}, errInSetRawQuery
+	}
 
 	queryResult := common.RuntimeResult{Success: false}
 	queryResult.Rows = make([]map[string]interface{}, 0, 0)
@@ -116,6 +122,11 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	// action mode switch
 	switch o.actionOptions.Mode {
 	case ACTION_SQL_MODE:
+		sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_ORACLE_ID)
+		escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(o.actionOptions.RawQuery, o.actionOptions.Context)
+		if errInEscapeSQL != nil {
+			return queryResult, errInEscapeSQL
+		}
 		// check if o.actionOptions.Opts.Raw is select query
 		isSelectQuery := false
 
@@ -130,7 +141,19 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		}
 
 		// fetch data
-		if isSelectQuery {
+		if isSelectQuery && o.actionOptions.IsSafeMode() {
+			rows, err := db.Query(escapedSQL, sqlArgs...)
+			if err != nil {
+				return queryResult, err
+			}
+			mapRes, err := common.RetrieveToMap(rows)
+			if err != nil {
+				return queryResult, err
+			}
+			defer rows.Close()
+			queryResult.Success = true
+			queryResult.Rows = mapRes
+		} else if isSelectQuery && !o.actionOptions.IsSafeMode() {
 			rows, err := db.Query(query.Raw)
 			if err != nil {
 				return queryResult, err
@@ -142,7 +165,18 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			defer rows.Close()
 			queryResult.Success = true
 			queryResult.Rows = mapRes
-		} else { // update, insert, delete data
+		} else if !isSelectQuery && o.actionOptions.IsSafeMode() {
+			execResult, err := db.Exec(escapedSQL, sqlArgs...)
+			if err != nil {
+				return queryResult, err
+			}
+			affectedRows, err := execResult.RowsAffected()
+			if err != nil {
+				return queryResult, err
+			}
+			queryResult.Success = true
+			queryResult.Extra["message"] = fmt.Sprintf("Affeted %d rows.", affectedRows)
+		} else if !isSelectQuery && !o.actionOptions.IsSafeMode() {
 			execResult, err := db.Exec(query.Raw)
 			if err != nil {
 				return queryResult, err

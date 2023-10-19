@@ -14,7 +14,11 @@
 
 package mysql
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/illacloud/builder-backend/src/actionruntime/common"
+)
 
 const (
 	FIELD_CONTEXT = "context"
@@ -38,10 +42,14 @@ type SSLOptions struct {
 }
 
 type MySQLQuery struct {
-	Mode     string `validate:"required,oneof=gui sql"`
+	Mode     string `validate:"required,oneof=gui sql sql-safe"`
 	Query    string
 	RawQuery string
 	Context  map[string]interface{}
+}
+
+func (q *MySQLQuery) IsSafeMode() bool {
+	return q.Mode == common.MODE_SQL_SAFE
 }
 
 func (q *MySQLQuery) SetRawQueryAndContext(rawTemplate map[string]interface{}) error {

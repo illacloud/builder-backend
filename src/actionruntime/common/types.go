@@ -14,6 +14,12 @@
 
 package common
 
+const (
+	MODE_GUI      = "gui"
+	MODE_SQL      = "sql"
+	MODE_SQL_SAFE = "sql-safe"
+)
+
 type ValidateResult struct {
 	Valid bool
 	Extra map[string]interface{}

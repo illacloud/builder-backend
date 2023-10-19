@@ -14,7 +14,11 @@
 
 package clickhouse
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/illacloud/builder-backend/src/actionruntime/common"
+)
 
 const (
 	FIELD_CONTEXT = "context"
@@ -40,9 +44,13 @@ type SSLOptions struct {
 
 type Action struct {
 	Query    string
-	Mode     string `validate:"required,oneof=gui sql"`
+	Mode     string `validate:"required,oneof=gui sql sql-safe"`
 	RawQuery string
 	Context  map[string]interface{}
+}
+
+func (q *Action) IsSafeMode() bool {
+	return q.Mode == common.MODE_SQL_SAFE
 }
 
 func (q *Action) SetRawQueryAndContext(rawTemplate map[string]interface{}) error {

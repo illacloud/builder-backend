@@ -14,7 +14,11 @@
 
 package postgresql
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/illacloud/builder-backend/src/actionruntime/common"
+)
 
 const (
 	FIELD_CONTEXT = "context"
@@ -38,10 +42,14 @@ type SSLOptions struct {
 }
 
 type Query struct {
-	Mode     string `validate:"required,oneof=gui sql"`
+	Mode     string `validate:"required,oneof=gui sql sql-safe"`
 	Query    string
 	RawQuery string
 	Context  map[string]interface{}
+}
+
+func (q *Query) IsSafeMode() bool {
+	return q.Mode == common.MODE_SQL_SAFE
 }
 
 func (q *Query) SetRawQueryAndContext(rawTemplate map[string]interface{}) error {

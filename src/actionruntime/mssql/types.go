@@ -14,7 +14,11 @@
 
 package mssql
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/illacloud/builder-backend/src/actionruntime/common"
+)
 
 const (
 	FIELD_CONTEXT = "context"
@@ -41,9 +45,13 @@ type SSLOptions struct {
 
 type Action struct {
 	Query    map[string]interface{} `validate:"required"`
-	Mode     string                 `validate:"required,oneof=gui sql"`
+	Mode     string                 `validate:"required,oneof=gui sql sql-safe"`
 	RawQuery string
 	Context  map[string]interface{}
+}
+
+func (q *Action) IsSafeMode() bool {
+	return q.Mode == common.MODE_SQL_SAFE
 }
 
 type GUIQuery struct {
