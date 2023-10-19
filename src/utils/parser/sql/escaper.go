@@ -344,5 +344,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		variable = ""
 		continue
 	}
+	fmt.Printf("[DUMP] escaped SQL: %s\n", ret.String())
+	fmt.Printf("[DUMP] escaped SQL params: %+v\n", userArgs)
 	return ret.String(), userArgs, nil
 }
