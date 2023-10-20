@@ -23,6 +23,7 @@ import (
 const (
 	FIELD_CONTEXT = "context"
 	FIELD_QUERY   = "query"
+	FIELD_SQL     = "sql"
 )
 
 type Resource struct {
@@ -65,12 +66,22 @@ func (q *Action) SetRawQueryAndContext(rawTemplate map[string]interface{}) error
 	if !hit {
 		return errors.New("missing query field for SetRawQueryAndContext() in query")
 	}
-	queryAsserted, assertPass := queryRaw.(string)
+	queryAsserted, assertPass := queryRaw.(map[string]interface{})
 	if !assertPass {
 		return errors.New("query field assert failed in SetRawQueryAndContext() method")
 
 	}
-	q.RawQuery = queryAsserted
+	sqlRaw, hitSQL := queryAsserted[FIELD_SQL]
+	if !hitSQL {
+		return errors.New("missing query.sql field for SetRawQueryAndContext() in query")
+	}
+	sqlAsserted, assertPassSQL := sqlRaw.(string)
+	if !assertPassSQL {
+		return errors.New("query.sql field assert failed in SetRawQueryAndContext() method")
+
+	}
+
+	q.RawQuery = sqlAsserted
 	contextRaw, hit := rawTemplate[FIELD_CONTEXT]
 	if !hit {
 		return errors.New("missing context field SetRawQueryAndContext() in query")
