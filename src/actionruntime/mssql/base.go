@@ -28,13 +28,14 @@ import (
 )
 
 const (
-	VERIFY_FULL_MODE = "full"
-	SKIP_CA_MODE     = "skip"
-	ACTION_SQL_MODE  = "sql"
-	ACTION_GUI_MODE  = "gui"
-	ACTION_GUI_TYPE  = "bulk_insert"
-	tableSQLStr      = "SELECT TABLE_NAME tableName, TABLE_SCHEMA tableSchema FROM INFORMATION_SCHEMA.TABLES;"
-	columnSQLStr     = "SELECT COLUMN_NAME columnName, DATA_TYPE columnType FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2"
+	VERIFY_FULL_MODE     = "full"
+	SKIP_CA_MODE         = "skip"
+	ACTION_SQL_MODE      = "sql"
+	ACTION_SQL_SAFE_MODE = "sql-safe"
+	ACTION_GUI_MODE      = "gui"
+	ACTION_GUI_TYPE      = "bulk_insert"
+	tableSQLStr          = "SELECT TABLE_NAME tableName, TABLE_SCHEMA tableSchema FROM INFORMATION_SCHEMA.TABLES;"
+	columnSQLStr         = "SELECT COLUMN_NAME columnName, DATA_TYPE columnType FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @p1 AND TABLE_NAME = @p2"
 )
 
 func (m *Connector) getConnectionWithOptions(resourceOptions map[string]interface{}) (*sql.DB, error) {
