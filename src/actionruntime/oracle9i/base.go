@@ -20,9 +20,8 @@ import (
 	"fmt"
 	"strconv"
 
+	go_ora_v1 "github.com/illacloud/go-ora-v1"
 	"github.com/mitchellh/mapstructure"
-	_ "github.com/sijms/go-ora/v2"
-	go_ora "github.com/sijms/go-ora/v2"
 )
 
 const (
@@ -35,7 +34,7 @@ const (
 	columnsSQL = "SELECT tabs.table_name, tabs.tablespace_name, cols.column_name, cols.data_type FROM user_tables tabs JOIN user_tab_columns cols ON tabs.table_name = cols.table_name LEFT JOIN user_cons_columns col_cons ON cols.column_name = col_cons.column_name AND cols.table_name = col_cons.table_name WHERE tabs.tablespace_name IS NOT NULL"
 )
 
-func (o *Connector) getConnectionWithOptions(resourceOptions map[string]interface{}) (*sql.DB, error) {
+func (o *Connector) getConnectionWithOptions(resourceOptions map[string]interface{}) (*go_ora_v1.Connection, error) {
 	if err := mapstructure.Decode(resourceOptions, &o.resourceOptions); err != nil {
 		return nil, err
 	}
@@ -57,17 +56,20 @@ func (o *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 	if err != nil {
 		return nil, err
 	}
-	databaseURL := go_ora.BuildUrl(o.resourceOptions.Host, port, serviceName, o.resourceOptions.Username, o.resourceOptions.Password, urlopts)
-
-	db, err := sql.Open("oracle", databaseURL)
-	if err != nil {
-		return nil, err
+	databaseURL := go_ora_v1.BuildUrl(o.resourceOptions.Host, port, serviceName, o.resourceOptions.Username, o.resourceOptions.Password, urlopts)
+	db, errInNewConnection := go_ora_v1.NewConnection(databaseURL)
+	if errInNewConnection != nil {
+		return nil, errInNewConnection
 	}
-
+	errInOpen := db.Open()
+	if errInOpen != nil {
+		return errInOpen
+	}
+	defer conn.Close()
 	return db, nil
 }
 
-func mapColumns(db *sql.DB) map[string]interface{} {
+func mapColumns(db *go_ora_v1.Connection) map[string]interface{} {
 	columnRows, err := db.Query(columnsSQL)
 	if err != nil {
 		return nil
