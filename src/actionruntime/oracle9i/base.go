@@ -100,5 +100,17 @@ func mapColumns(db *go_ora_v1.Connection) map[string]interface{} {
 		return nil
 	}
 
+	// sample exec
+	stmt := go_ora_v1.NewStmt(columnsSQL, db)
+
+	defer stmt.Close()
+
+	result, errInExec := stmt.Exec(nil)
+	if errInExec != nil {
+		return errInExec
+	}
+	rowsAffected, _ := result.RowsAffected()
+	fmt.Println("rows affected: ", rowsAffected)
+
 	return res
 }
