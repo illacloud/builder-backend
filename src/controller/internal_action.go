@@ -2,9 +2,7 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"reflect"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -102,15 +100,11 @@ func (controller *Controller) GenerateSQL(c *gin.Context) {
 		return
 	}
 	resourceMetaInfo, errInGetMetaInfo := actionAssemblyLine.GetMetaInfo(resource.ExportOptionsInMap())
-	fmt.Printf("[DUMP] resource.ExportOptionsInMap(): %+v\n", resource.ExportOptionsInMap())
 	resourceMetaInfoJSON, _ := json.Marshal(resourceMetaInfo)
-	fmt.Printf("[DUMP] resourceMetaInfoJSON: %+v\n", string(resourceMetaInfoJSON))
-	fmt.Printf("[DUMP] errInGetMetaInfo: %+v\n", errInGetMetaInfo)
 	if errInGetMetaInfo != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE_META_INFO, "error in fetch resource meta info: "+errInGetMetaInfo.Error())
 		return
 	}
-	fmt.Printf("[DUMP] resourceMetaInfo typeOf: %+v\n", reflect.TypeOf(resourceMetaInfo))
 
 	// form request payload
 	generateSQLPeripheralRequest, errInNewReq := illacloudperipheralapisdk.NewGenerateSQLPeripheralRequest(resource.ExportTypeInString(), resourceMetaInfo.ExportSchema(), generateSQLRequest.Description, generateSQLRequest.GetActionInString())
