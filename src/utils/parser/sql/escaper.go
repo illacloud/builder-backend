@@ -72,6 +72,14 @@ func (i *stringConcatTarget) Export(singleQuoteStart bool, doubleQuoteSart bool)
 	return i.Target.String()
 }
 
+func (i *stringConcatTarget) ExportWithoutQuote() string {
+	if i.IsVariable {
+		return i.Target.String()
+	} else {
+		return i.Target.String()
+	}
+}
+
 // select * from users where name like '%{{first_name}}.{{last_name}}%'
 func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[string]interface{}) (string, []interface{}, error) {
 	escapedArgs, errInBuildArgsLT := sqlEscaper.buildEscapedArgsLookupTable(args)
@@ -273,13 +281,8 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 			}
 
 			// not escape, it is string finish quote
-			ret.WriteString("CONCAT(")
-			exportedTarget := make([]string, 0)
-			for _, target := range concatStringTargets {
-				exportedTarget = append(exportedTarget, target.Export(singleQuoteStart, doubleQuoteStart))
-			}
-			ret.WriteString(strings.Join(exportedTarget, ", "))
-			ret.WriteString(")")
+			ret.WriteString(formatConcatTarget(concatStringTargets, singleQuoteStart, doubleQuoteStart))
+
 			// clean status
 			singleQuoteStart = false
 			singleQuoteSegmentCounter = 0
@@ -296,7 +299,6 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		if c == '\\' && doubleQuoteStart && !singleQuoteStart {
 			nextChar, errInGetNextChar := getNextChar(charSerial)
 			if errInGetNextChar == nil {
-				// psotgres specified escape method
 				if nextChar == '"' {
 					initConcatStringTargetsIndex(doubleQuoteSegmentCounter)
 					concatStringTargets[doubleQuoteSegmentCounter].concat("\\\"")
@@ -307,14 +309,9 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		}
 		// double quote end, form concat function to sql
 		if c == '"' && doubleQuoteStart && !singleQuoteStart {
-			// not escape, it is string finish quote
-			ret.WriteString("CONCAT(")
-			exportedTarget := make([]string, 0)
-			for _, target := range concatStringTargets {
-				exportedTarget = append(exportedTarget, target.Export(singleQuoteStart, doubleQuoteStart))
-			}
-			ret.WriteString(strings.Join(exportedTarget, ", "))
-			ret.WriteString(")")
+			// double quete have no escape, it is string finish quote
+			ret.WriteString(formatConcatTarget(concatStringTargets, singleQuoteStart, doubleQuoteStart))
+
 			// clean status
 			doubleQuoteStart = false
 			doubleQuoteSegmentCounter = 0
@@ -347,4 +344,41 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 	fmt.Printf("[DUMP] escaped SQL: %s\n", ret.String())
 	fmt.Printf("[DUMP] escaped SQL params: %+v\n", userArgs)
 	return ret.String(), userArgs, nil
+}
+
+func formatConcatTarget(concatStringTargets []*stringConcatTarget, singleQuoteStart bool, doubleQuoteStart bool) string {
+	var ret strings.Builder
+	haveVariable := false
+	exportedTarget := make([]string, 0)
+	// check if have any variable
+	for _, target := range concatStringTargets {
+		if target.IsVariable {
+			haveVariable = true
+		}
+	}
+	// export with variable
+	if haveVariable {
+		ret.WriteString("CONCAT(")
+		for _, target := range concatStringTargets {
+			exportedTarget = append(exportedTarget, target.Export(singleQuoteStart, doubleQuoteStart))
+		}
+		ret.WriteString(strings.Join(exportedTarget, ", "))
+		ret.WriteString(")")
+	} else {
+		if singleQuoteStart {
+			ret.WriteString("'")
+		} else if doubleQuoteStart {
+			ret.WriteString("\"")
+		}
+		for _, target := range concatStringTargets {
+			ret.WriteString(target.ExportWithoutQuote())
+		}
+		if singleQuoteStart {
+			ret.WriteString("'")
+		} else if doubleQuoteStart {
+			ret.WriteString("\"")
+		}
+	}
+	return ret.String()
+
 }
