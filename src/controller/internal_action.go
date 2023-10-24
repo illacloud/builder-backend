@@ -100,7 +100,6 @@ func (controller *Controller) GenerateSQL(c *gin.Context) {
 		return
 	}
 	resourceMetaInfo, errInGetMetaInfo := actionAssemblyLine.GetMetaInfo(resource.ExportOptionsInMap())
-	resourceMetaInfoJSON, _ := json.Marshal(resourceMetaInfo)
 	if errInGetMetaInfo != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE_META_INFO, "error in fetch resource meta info: "+errInGetMetaInfo.Error())
 		return
