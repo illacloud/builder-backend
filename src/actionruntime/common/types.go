@@ -43,3 +43,7 @@ type MetaInfoResult struct {
 	Success bool
 	Schema  map[string]interface{}
 }
+
+func (metaInfoResult *MetaInfoResult) ExportSchema() map[string]interface{} {
+	return metaInfoResult.Schema
+}
