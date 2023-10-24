@@ -3,6 +3,8 @@ package illacloudperipheralapisdk
 import (
 	"errors"
 	"fmt"
+
+	"github.com/illacloud/builder-backend/src/utils/tokenvalidator"
 )
 
 // field is:
@@ -98,9 +100,15 @@ func NewGenerateSQLPeripheralRequest(resourceType string, metaInfo interface{}, 
 		}
 	}
 	prompt := fmt.Sprintf(GENERATE_SQL_DESCRIPTION_TEMPALTE, resourceType, allTableDesc, description, sqlAction)
+
+	// generate validate token
+	tokenValidator := tokenvalidator.NewRequestTokenValidator()
+	token := tokenValidator.GenerateValidateToken(prompt)
+
 	return &GenerateSQLPeripheralRequest{
-		Description: prompt,
-		SQLAction:   sqlAction,
+		Description:   prompt,
+		SQLAction:     sqlAction,
+		ValidateToken: token,
 	}, nil
 }
 
