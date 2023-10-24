@@ -102,7 +102,8 @@ func (controller *Controller) GenerateSQL(c *gin.Context) {
 	}
 	resourceMetaInfo, errInGetMetaInfo := actionAssemblyLine.GetMetaInfo(resource.ExportOptionsInMap())
 	fmt.Printf("[DUMP] resource.ExportOptionsInMap(): %+v\n", resource.ExportOptionsInMap())
-	fmt.Printf("[DUMP] resourceMetaInfo: %+v\n", resourceMetaInfo)
+	resourceMetaInfoJSON, _ := json, Marshal(resourceMetaInfo)
+	fmt.Printf("[DUMP] resourceMetaInfoJSON: %+v\n", resourceMetaInfoJSON)
 	fmt.Printf("[DUMP] errInGetMetaInfo: %+v\n", errInGetMetaInfo)
 	if errInGetMetaInfo != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE_META_INFO, "error in fetch resource meta info: "+errInGetMetaInfo.Error())

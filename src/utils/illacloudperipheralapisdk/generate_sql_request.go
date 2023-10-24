@@ -87,7 +87,7 @@ func NewGenerateSQLPeripheralRequest(resourceType string, metaInfo interface{}, 
 	// 		...
 	allTableDesc := ""
 	for k1, v1 := range metaInfoAsserted {
-		if k1 == "schema" {
+		if k1 == "schema" || k1 == "Schema" {
 			tableInfo, ok := v1.(map[string]interface{})
 			if !ok {
 				return nil, errors.New("resource meta info do not include table name and table field info. please check your resource type.")
