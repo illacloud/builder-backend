@@ -102,7 +102,7 @@ func (controller *Controller) GenerateSQL(c *gin.Context) {
 	}
 	resourceMetaInfo, errInGetMetaInfo := actionAssemblyLine.GetMetaInfo(resource.ExportOptionsInMap())
 	fmt.Printf("[DUMP] resource.ExportOptionsInMap(): %+v\n", resource.ExportOptionsInMap())
-	resourceMetaInfoJSON, _ := json, Marshal(resourceMetaInfo)
+	resourceMetaInfoJSON, _ := json.Marshal(resourceMetaInfo)
 	fmt.Printf("[DUMP] resourceMetaInfoJSON: %+v\n", resourceMetaInfoJSON)
 	fmt.Printf("[DUMP] errInGetMetaInfo: %+v\n", errInGetMetaInfo)
 	if errInGetMetaInfo != nil {
