@@ -3,7 +3,7 @@ package illacloudperipheralapisdk
 import (
 	"encoding/json"
 	"errors"
-	"log"
+	"fmt"
 	"net/http"
 
 	"github.com/go-resty/resty/v2"
@@ -26,12 +26,12 @@ func NewIllaCloudPeriphearalAPI() *IllaCloudPeriphearalAPI {
 
 func (i *IllaCloudPeriphearalAPI) GenerateSQL(m *GenerateSQLPeripheralRequest) (*GenerateSQLFeedback, error) {
 	payload := m.Export()
+	fmt.Printf("[DUMP] payload: %+v\n", payload)
 	client := resty.New()
 	resp, err := client.R().
 		SetBody(payload).
 		Post(i.Config.GetIllaPeripheralAPI() + PERIPHERAL_API_GENERATE_SQL_PATH)
 	if resp.StatusCode() != http.StatusOK || err != nil {
-		log.Printf("GenerateSQL failed: " + err.Error())
 		return nil, errors.New("failed to generate SQL")
 	}
 	res := &GenerateSQLFeedback{}
