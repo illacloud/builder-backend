@@ -106,7 +106,7 @@ func (controller *Controller) GenerateSQL(c *gin.Context) {
 	}
 
 	// form request payload
-	generateSQLPeripheralRequest, errInNewReq := illacloudperipheralapisdk.NewGenerateSQLPeripheralRequest(resource.ExportTypeInString(), resourceMetaInfo, generateSQLRequest.Description, generateSQLRequest.GetActionInString())
+	generateSQLPeripheralRequest, errInNewReq := illacloudperipheralapisdk.NewGenerateSQLPeripheralRequest(resource.ExportTypeInString(), resourceMetaInfo.ExportSchema(), generateSQLRequest.Description, generateSQLRequest.GetActionInString())
 	if errInNewReq != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_GENERATE_SQL_FAILED, "generate request failed: "+errInNewReq.Error())
 		return
