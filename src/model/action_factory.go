@@ -116,6 +116,7 @@ func (f *ActionFactory) Build() (common.DataConnector, error) {
 		return airtableAction, nil
 	case resourcelist.TYPE_ORACLE_9I_ID:
 		oracle9iAction := &oracle9i.Connector{}
+		return oracle9iAction, nil
 	default:
 		return nil, errors.New("invalid ActionType: unsupported type " + resourcelist.GetResourceIDMappedType(f.Type))
 	}

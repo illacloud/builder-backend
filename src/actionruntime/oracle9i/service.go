@@ -15,8 +15,11 @@
 package oracle9i
 
 import (
+	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
@@ -24,6 +27,10 @@ import (
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 	go_ora_v1 "github.com/illacloud/go-ora-v1"
 	"github.com/mitchellh/mapstructure"
+)
+
+const (
+	DEFAULT_CONNECTION_TIMEOUT = time.Second * 60
 )
 
 type Connector struct {
@@ -70,7 +77,9 @@ func (o *Connector) TestConnection(resourceOptions map[string]interface{}) (comm
 	defer db.Close()
 
 	// test oracle connection
-	if err := db.Ping(); err != nil {
+	connectCtx, connectCancel := context.WithTimeout(context.Background(), DEFAULT_CONNECTION_TIMEOUT)
+	defer connectCancel()
+	if err := db.Ping(connectCtx); err != nil {
 		return common.ConnectionResult{Success: false}, err
 	}
 
@@ -86,7 +95,9 @@ func (o *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.
 	defer db.Close()
 
 	// test oracle connection
-	if err := db.Ping(); err != nil {
+	connectCtx, connectCancel := context.WithTimeout(context.Background(), DEFAULT_CONNECTION_TIMEOUT)
+	defer connectCancel()
+	if err := db.Ping(connectCtx); err != nil {
 		return common.MetaInfoResult{Success: false}, err
 	}
 
@@ -148,15 +159,16 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			if errInPrepare != nil {
 				return queryResult, errInPrepare
 			}
-			rows, err := stmt.Query(sqlArgs...)
-			if err != nil {
-				return queryResult, err
-			}
-			mapRes, err := common.RetrieveToMap(rows)
-			if err != nil {
-				return queryResult, err
-			}
+			driverValues := ConvertSQlArgsToDriverValues(sqlArgs)
+			rows, err := stmt.Query(driverValues)
 			defer rows.Close()
+			if err != nil {
+				return queryResult, err
+			}
+			mapRes, err := common.RetrieveToMapByDriverRows(rows)
+			if err != nil {
+				return queryResult, err
+			}
 			queryResult.Success = true
 			queryResult.Rows = mapRes
 		} else if isSelectQuery && !o.actionOptions.IsSafeMode() {
@@ -164,14 +176,14 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			defer stmt.Close()
 
 			rows, err := stmt.Query(nil)
-			if err != nil {
-				return queryResult, err
-			}
-			mapRes, err := common.RetrieveToMap(rows)
-			if err != nil {
-				return queryResult, err
-			}
 			defer rows.Close()
+			if err != nil {
+				return queryResult, err
+			}
+			mapRes, err := common.RetrieveToMapByDriverRows(rows)
+			if err != nil {
+				return queryResult, err
+			}
 			queryResult.Success = true
 			queryResult.Rows = mapRes
 		} else if !isSelectQuery && o.actionOptions.IsSafeMode() {
@@ -180,7 +192,8 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			if errInPrepare != nil {
 				return queryResult, errInPrepare
 			}
-			execResult, err := stmt.Exec(sqlArgs...)
+			driverValues := ConvertSQlArgsToDriverValues(sqlArgs)
+			execResult, err := stmt.Exec(driverValues)
 			if err != nil {
 				return queryResult, err
 			}
@@ -210,4 +223,12 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		err = errors.New("unsupported action mode")
 	}
 	return queryResult, err
+}
+
+func ConvertSQlArgsToDriverValues(sqlArgs []interface{}) []driver.Value {
+	ret := make([]driver.Value, 0)
+	for _, value := range sqlArgs {
+		ret = append(ret, value.(driver.Value))
+	}
+	return ret
 }
