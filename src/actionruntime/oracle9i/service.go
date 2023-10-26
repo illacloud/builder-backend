@@ -22,6 +22,7 @@ import (
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
 	parser_sql "github.com/illacloud/builder-backend/src/utils/parser/sql"
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
+	go_ora_v1 "github.com/illacloud/go-ora-v1"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -142,7 +143,12 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 
 		// fetch data
 		if isSelectQuery && o.actionOptions.IsSafeMode() {
-			rows, err := db.Query(escapedSQL, sqlArgs...)
+			stmt, errInPrepare := db.Prepare(escapedSQL)
+			defer stmt.Close()
+			if errInPrepare != nil {
+				return queryResult, errInPrepare
+			}
+			rows, err := stmt.Query(sqlArgs...)
 			if err != nil {
 				return queryResult, err
 			}
@@ -154,7 +160,10 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Success = true
 			queryResult.Rows = mapRes
 		} else if isSelectQuery && !o.actionOptions.IsSafeMode() {
-			rows, err := db.Query(query.Raw)
+			stmt := go_ora_v1.NewStmt(query.Raw, db)
+			defer stmt.Close()
+
+			rows, err := stmt.Query(nil)
 			if err != nil {
 				return queryResult, err
 			}
@@ -166,7 +175,12 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Success = true
 			queryResult.Rows = mapRes
 		} else if !isSelectQuery && o.actionOptions.IsSafeMode() {
-			execResult, err := db.Exec(escapedSQL, sqlArgs...)
+			stmt, errInPrepare := db.Prepare(escapedSQL)
+			defer stmt.Close()
+			if errInPrepare != nil {
+				return queryResult, errInPrepare
+			}
+			execResult, err := stmt.Exec(sqlArgs...)
 			if err != nil {
 				return queryResult, err
 			}
@@ -177,7 +191,9 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Success = true
 			queryResult.Extra["message"] = fmt.Sprintf("Affeted %d rows.", affectedRows)
 		} else if !isSelectQuery && !o.actionOptions.IsSafeMode() {
-			execResult, err := db.Exec(query.Raw)
+			stmt := go_ora_v1.NewStmt(query.Raw, db)
+			defer stmt.Close()
+			execResult, err := stmt.Exec(nil)
 			if err != nil {
 				return queryResult, err
 			}

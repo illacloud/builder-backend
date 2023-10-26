@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oracle
+package oracle9i
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -65,7 +64,6 @@ func (o *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 	if errInOpen != nil {
 		return errInOpen
 	}
-	defer conn.Close()
 	return db, nil
 }
 

@@ -30,6 +30,7 @@ var (
 	TYPE_AIRTABLE      = "airtable"
 	TYPE_HYDRA         = "hydra"
 	TYPE_AI_AGENT      = "aiagent"
+	TYPE_ORACLE_9I     = "oracle9i"
 )
 
 var (
@@ -62,6 +63,7 @@ var (
 	TYPE_AIRTABLE_ID      = 26
 	TYPE_HYDRA_ID         = 27
 	TYPE_AI_AGENT_ID      = 28
+	TYPE_ORACLE_9I_ID     = 29
 )
 
 var type_array = []string{
@@ -94,6 +96,7 @@ var type_array = []string{
 	26: TYPE_AIRTABLE,
 	27: TYPE_HYDRA,
 	28: TYPE_AI_AGENT,
+	29: TYPE_ORACLE_9I,
 }
 
 var type_map = map[string]int{
@@ -126,6 +129,7 @@ var type_map = map[string]int{
 	TYPE_AIRTABLE:      TYPE_AIRTABLE_ID,
 	TYPE_HYDRA:         TYPE_HYDRA_ID,
 	TYPE_AI_AGENT:      TYPE_AI_AGENT_ID,
+	TYPE_ORACLE_9I:     TYPE_ORACLE_9I_ID,
 }
 
 var virtualResourceList = map[string]bool{
