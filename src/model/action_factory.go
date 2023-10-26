@@ -20,6 +20,7 @@ import (
 	"github.com/illacloud/builder-backend/src/actionruntime/mssql"
 	"github.com/illacloud/builder-backend/src/actionruntime/mysql"
 	"github.com/illacloud/builder-backend/src/actionruntime/oracle"
+	"github.com/illacloud/builder-backend/src/actionruntime/oracle9i"
 	"github.com/illacloud/builder-backend/src/actionruntime/postgresql"
 	"github.com/illacloud/builder-backend/src/actionruntime/redis"
 	"github.com/illacloud/builder-backend/src/actionruntime/restapi"
@@ -113,6 +114,8 @@ func (f *ActionFactory) Build() (common.DataConnector, error) {
 	case resourcelist.TYPE_AIRTABLE_ID:
 		airtableAction := &airtable.Connector{}
 		return airtableAction, nil
+	case resourcelist.TYPE_ORACLE_9I_ID:
+		oracle9iAction := &oracle9i.Connector{}
 	default:
 		return nil, errors.New("invalid ActionType: unsupported type " + resourcelist.GetResourceIDMappedType(f.Type))
 	}

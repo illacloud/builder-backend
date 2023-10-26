@@ -62,13 +62,16 @@ func (o *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 	}
 	errInOpen := db.Open()
 	if errInOpen != nil {
-		return errInOpen
+		return nil, errInOpen
 	}
 	return db, nil
 }
 
 func mapColumns(db *go_ora_v1.Connection) map[string]interface{} {
-	columnRows, err := db.Query(columnsSQL)
+	stmt := go_ora_v1.NewStmt(columnsSQL, db)
+	defer stmt.Close()
+
+	columnRows, err := stmt.Query(nil)
 	if err != nil {
 		return nil
 	}
@@ -97,18 +100,6 @@ func mapColumns(db *go_ora_v1.Connection) map[string]interface{} {
 	if err := json.Unmarshal(b, &res); err != nil {
 		return nil
 	}
-
-	// sample exec
-	stmt := go_ora_v1.NewStmt(columnsSQL, db)
-
-	defer stmt.Close()
-
-	result, errInExec := stmt.Exec(nil)
-	if errInExec != nil {
-		return errInExec
-	}
-	rowsAffected, _ := result.RowsAffected()
-	fmt.Println("rows affected: ", rowsAffected)
 
 	return res
 }
