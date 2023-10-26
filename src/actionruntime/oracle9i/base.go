@@ -15,6 +15,7 @@
 package oracle9i
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -75,23 +76,41 @@ func mapColumns(db *go_ora_v1.Connection) map[string]interface{} {
 	if err != nil {
 		return nil
 	}
+	defer columnRows.Close()
+
+	columns := columnRows.Columns()
+	values := make([]driver.Value, len(columns))
 
 	tables := make(map[string]map[string]map[string]string)
 
-	for columnRows.Next() {
-		var table, tablespace, column, columnType string
-		err = columnRows.Scan(&table, &tablespace, &column, &columnType)
-		if err != nil {
-			return nil
+	for {
+		errInFetchNextRows := columnRows.Next(values)
+		if errInFetchNextRows != nil {
+			break
 		}
-		tableStr := fmt.Sprintf("%s.%s", tablespace, table)
-		columnMap := map[string]string{"data_type": columnType}
-		if _, ok := tables[tableStr]; ok {
-			tables[tableStr][column] = columnMap
-			continue
-		} else {
-			tables[tableStr] = map[string]map[string]string{column: columnMap}
-			continue
+		var table, tablespace, column, columnType string
+		for serial, value := range values {
+			field := columns[serial]
+			valueInString := value.(string)
+			switch field {
+			case "TABLE_NAME", "table_name":
+				table = valueInString
+			case "TABLESPACE_NAME", "tablespace_name":
+				tablespace = valueInString
+			case "COLUMN_NAME", "column_name":
+				column = valueInString
+			case "DATA_TYPE", "data_type":
+				columnType = valueInString
+			}
+			tableStr := fmt.Sprintf("%s.%s", tablespace, table)
+			columnMap := map[string]string{"data_type": columnType}
+			if _, ok := tables[tableStr]; ok {
+				tables[tableStr][column] = columnMap
+				continue
+			} else {
+				tables[tableStr] = map[string]map[string]string{column: columnMap}
+				continue
+			}
 		}
 	}
 
