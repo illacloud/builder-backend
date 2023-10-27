@@ -124,7 +124,7 @@ func (s *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	}
 
 	// check if m.Action.Query is select query
-	sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_MYSQL_ID)
+	sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_SNOWFLAKE_ID)
 	escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(s.actionOptions.RawQuery, s.actionOptions.Context)
 	if errInEscapeSQL != nil {
 		return queryResult, errInEscapeSQL
