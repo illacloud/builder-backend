@@ -53,10 +53,6 @@ func (sqlEscaper *SQLEscaper) GetParameterTextTypeCastList() string {
 	return typeIDF
 }
 
-func (sqlEscaper *SQLEscaper) IsPostgres() bool {
-	return sqlEscaper.ResourceType == resourcelist.TYPE_POSTGRESQL_ID
-}
-
 func (sqlEscaper *SQLEscaper) buildEscapedArgsLookupTable(args map[string]interface{}) (map[string]interface{}, error) {
 	escapedArgs := make(map[string]interface{}, 0)
 	for key, value := range args {
@@ -231,6 +227,10 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					variableContent = escapedBracketWithVariable
 				}
 			} else {
+
+				fmt.Printf("[DUMP] sqlEscaper.ResourceType: %+v\n", sqlEscaper.ResourceType)
+				fmt.Printf("[DUMP] sqlEscaper.IsSerlizedParameterizedSQL(): %+v\n", sqlEscaper.IsSerlizedParameterizedSQL())
+				fmt.Printf("[DUMP] sqlEscaper.GetSerlizedParameterPrefixMap(): %+v\n", sqlEscaper.GetSerlizedParameterPrefixMap())
 				// replace sql param
 				if sqlEscaper.IsSerlizedParameterizedSQL() {
 					variableContent = fmt.Sprintf("%s%d", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
