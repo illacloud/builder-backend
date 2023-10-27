@@ -25,11 +25,12 @@ import (
 )
 
 const (
-	CONNECTION_SID     = "SID"
-	CONNECTION_SERVICE = "Service"
-	ACTION_SQL_MODE    = "sql"
-	ACTION_GUI_MODE    = "gui"
-	ACTION_GUI_TYPE    = "bulk_insert"
+	CONNECTION_SID       = "SID"
+	CONNECTION_SERVICE   = "Service"
+	ACTION_SQL_MODE      = "sql"
+	ACTION_SQL_SAFE_MODE = "sql-safe"
+	ACTION_GUI_MODE      = "gui"
+	ACTION_GUI_TYPE      = "bulk_insert"
 
 	columnsSQL = "SELECT tabs.table_name, tabs.tablespace_name, cols.column_name, cols.data_type FROM user_tables tabs JOIN user_tab_columns cols ON tabs.table_name = cols.table_name LEFT JOIN user_cons_columns col_cons ON cols.column_name = col_cons.column_name AND cols.table_name = col_cons.table_name WHERE tabs.tablespace_name IS NOT NULL"
 )
