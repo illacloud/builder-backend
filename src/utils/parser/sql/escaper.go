@@ -10,6 +10,16 @@ import (
 
 var SerlizedParameterizedSQLList = map[int]bool{
 	resourcelist.TYPE_POSTGRESQL_ID: true,
+	resourcelist.TYPE_ORACLE_9I_ID:  true,
+}
+
+var SerlizedParameterPrefixMap = map[int]string{
+	resourcelist.TYPE_POSTGRESQL_ID: "$",
+	resourcelist.TYPE_ORACLE_9I_ID:  ":",
+}
+
+var ParameterTextTypeCastList = map[int]string{
+	resourcelist.TYPE_POSTGRESQL_ID: "::text",
 }
 
 type SQLEscaper struct {
@@ -25,6 +35,22 @@ func NewSQLEscaper(resourceType int) *SQLEscaper {
 func (sqlEscaper *SQLEscaper) IsSerlizedParameterizedSQL() bool {
 	itIs, hit := SerlizedParameterizedSQLList[sqlEscaper.ResourceType]
 	return itIs && hit
+}
+
+func (sqlEscaper *SQLEscaper) GetSerlizedParameterPrefixMap() string {
+	prefix, hit := SerlizedParameterPrefixMap[sqlEscaper.ResourceType]
+	if !hit {
+		return ""
+	}
+	return prefix
+}
+
+func (sqlEscaper *SQLEscaper) GetParameterTextTypeCastList() string {
+	typeIDF, hit := ParameterTextTypeCastList[sqlEscaper.ResourceType]
+	if !hit {
+		return ""
+	}
+	return typeIDF
 }
 
 func (sqlEscaper *SQLEscaper) IsPostgres() bool {
@@ -207,7 +233,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 			} else {
 				// replace sql param
 				if sqlEscaper.IsSerlizedParameterizedSQL() {
-					variableContent = fmt.Sprintf("$%d", usedArgsSerial)
+					variableContent = fmt.Sprintf("%s%d", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
 					usedArgsSerial++
 				} else {
 					variableContent = "?"
@@ -215,18 +241,15 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 				// record param serial
 				userArgs = append(userArgs, variableMappedValue)
 			}
+			// process type cast
 			if singleQuoteStart {
 				initConcatStringTargetsIndex(singleQuoteSegmentCounter)
-				if sqlEscaper.IsSerlizedParameterizedSQL() {
-					variableContent += "::text"
-				}
+				variableContent += sqlEscaper.GetParameterTextTypeCastList()
 				concatStringTargets[singleQuoteSegmentCounter] = newStringConcatTarget(variableContent, true)
 				singleQuoteSegPlus()
 			} else if doubleQuoteStart {
 				initConcatStringTargetsIndex(doubleQuoteSegmentCounter)
-				if sqlEscaper.IsSerlizedParameterizedSQL() {
-					variableContent += "::text"
-				}
+				variableContent += sqlEscaper.GetParameterTextTypeCastList()
 				concatStringTargets[doubleQuoteSegmentCounter] = newStringConcatTarget(variableContent, true)
 				doubleQuoteSegPlus()
 			} else {
