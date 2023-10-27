@@ -134,6 +134,8 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	// action mode switch
 	switch o.actionOptions.Mode {
 	case ACTION_SQL_MODE:
+		fallthrough
+	case ACTION_SQL_SAFE_MODE:
 		sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_ORACLE_ID)
 		escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(o.actionOptions.RawQuery, o.actionOptions.Context)
 		if errInEscapeSQL != nil {
@@ -161,10 +163,10 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			}
 			driverValues := ConvertSQlArgsToDriverValues(sqlArgs)
 			rows, err := stmt.Query(driverValues)
-			defer rows.Close()
 			if err != nil {
 				return queryResult, err
 			}
+			defer rows.Close()
 			mapRes, err := common.RetrieveToMapByDriverRows(rows)
 			if err != nil {
 				return queryResult, err
@@ -174,12 +176,11 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		} else if isSelectQuery && !o.actionOptions.IsSafeMode() {
 			stmt := go_ora_v1.NewStmt(query.Raw, db)
 			defer stmt.Close()
-
 			rows, err := stmt.Query(nil)
-			defer rows.Close()
 			if err != nil {
 				return queryResult, err
 			}
+			defer rows.Close()
 			mapRes, err := common.RetrieveToMapByDriverRows(rows)
 			if err != nil {
 				return queryResult, err

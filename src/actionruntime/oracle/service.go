@@ -122,6 +122,8 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	// action mode switch
 	switch o.actionOptions.Mode {
 	case ACTION_SQL_MODE:
+		fallthrough
+	case ACTION_SQL_SAFE_MODE:
 		sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_ORACLE_ID)
 		escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(o.actionOptions.RawQuery, o.actionOptions.Context)
 		if errInEscapeSQL != nil {
