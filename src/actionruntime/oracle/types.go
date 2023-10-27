@@ -23,6 +23,8 @@ import (
 const (
 	FIELD_CONTEXT = "context"
 	FIELD_QUERY   = "query"
+	FIELD_OPTS    = "opts"
+	FIELD_RAW     = "raw"
 )
 
 type Resource struct {
@@ -47,16 +49,25 @@ func (q *Action) IsSafeMode() bool {
 }
 
 func (q *Action) SetRawQueryAndContext(rawTemplate map[string]interface{}) error {
-	queryRaw, hit := rawTemplate[FIELD_QUERY]
-	if !hit {
-		return errors.New("missing query field for SetRawQueryAndContext() in query")
+	optsRaw, hitOpts := rawTemplate[FIELD_OPTS]
+	if !hitOpts {
+		return errors.New("missing opts field for SetRawQueryAndContext() in query")
 	}
-	queryAsserted, assertPass := queryRaw.(string)
-	if !assertPass {
-		return errors.New("query field assert failed in SetRawQueryAndContext() method")
+	optsAsserted, assertOptsPass := optsRaw.(map[string]interface{})
+	if !assertOptsPass {
+		return errors.New("opts field assert failed in SetRawQueryAndContext() method")
 
 	}
-	q.RawQuery = queryAsserted
+	rawRaw, hitRaw := optsAsserted[FIELD_RAW]
+	if !hitRaw {
+		return errors.New("missing opts.raw field for SetRawQueryAndContext() in query")
+	}
+	rawAsserted, assertRawPass := rawRaw.(string)
+	if !assertRawPass {
+		return errors.New("opts.araw field assert failed in SetRawQueryAndContext() method")
+
+	}
+	q.RawQuery = rawAsserted
 	contextRaw, hit := rawTemplate[FIELD_CONTEXT]
 	if !hit {
 		return errors.New("missing context field SetRawQueryAndContext() in query")
