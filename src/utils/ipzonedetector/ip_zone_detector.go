@@ -152,7 +152,7 @@ func (r *IPZoneDetector) GetCountryCode(ipAddress string) (string, error) {
 	}
 
 	var ipData map[string]interface{}
-	errInUnMarshal := json.Unmarshal([]byte(resp.String()), &errInGet)
+	errInUnMarshal := json.Unmarshal([]byte(resp.String()), &ipData)
 	if errInUnMarshal != nil {
 		return "", errInUnMarshal
 	}
