@@ -74,7 +74,7 @@ func initServer() (*Server, error) {
 	}
 
 	// init controller
-	c := controller.NewControllerForBackend(storage, drive, validator, attrg)
+	c := controller.NewControllerForBackend(storage, nil, drive, validator, attrg)
 	router := internalrouter.NewRouter(c)
 	server := NewServer(globalConfig, engine, router, sugaredLogger)
 	return server, nil

@@ -52,9 +52,12 @@ func (controller *Controller) GetDashboardRoomConnectionAddress(c *gin.Context) 
 		return
 	}
 
+	// get user ip zone
+	ipZone := controller.getUserCountryCode(c)
+
 	// fetch data
 	websocketConnectionInfo := model.NewWebsocketConnectionInfo(config.GetInstance())
-	controller.FeedbackOK(c, response.NewWSURLResponse(websocketConnectionInfo.GetDashboardConnectionAddress(teamID)))
+	controller.FeedbackOK(c, response.NewWSURLResponse(websocketConnectionInfo.GetDashboardConnectionAddress(teamID, ipZone)))
 }
 
 func (controller *Controller) GetAppRoomConnectionAddress(c *gin.Context) {
@@ -83,9 +86,12 @@ func (controller *Controller) GetAppRoomConnectionAddress(c *gin.Context) {
 		return
 	}
 
+	// get user ip zone
+	ipZone := controller.getUserCountryCode(c)
+
 	// fetch data
 	websocketConnectionInfo := model.NewWebsocketConnectionInfo(config.GetInstance())
-	controller.FeedbackOK(c, response.NewWSURLResponse(websocketConnectionInfo.GetAppRoomConnectionAddress(teamID, appID)))
+	controller.FeedbackOK(c, response.NewWSURLResponse(websocketConnectionInfo.GetAppRoomConnectionAddress(teamID, appID, ipZone)))
 }
 
 func (controller *Controller) GetAppRoomBinaryConnectionAddress(c *gin.Context) {
@@ -114,7 +120,10 @@ func (controller *Controller) GetAppRoomBinaryConnectionAddress(c *gin.Context) 
 		return
 	}
 
+	// get user ip zone
+	ipZone := controller.getUserCountryCode(c)
+
 	// fetch data
 	websocketConnectionInfo := model.NewWebsocketConnectionInfo(config.GetInstance())
-	controller.FeedbackOK(c, response.NewWSURLResponse(websocketConnectionInfo.GetAppRoomBinaryConnectionAddress(teamID, appID)))
+	controller.FeedbackOK(c, response.NewWSURLResponse(websocketConnectionInfo.GetAppRoomBinaryConnectionAddress(teamID, appID, ipZone)))
 }
