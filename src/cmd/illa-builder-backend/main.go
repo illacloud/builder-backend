@@ -3,10 +3,12 @@ package main
 import (
 	"os"
 
+	"github.com/illacloud/builder-backend/src/cache"
 	"github.com/illacloud/builder-backend/src/controller"
 	"github.com/illacloud/builder-backend/src/drive"
 	"github.com/illacloud/builder-backend/src/driver/awss3"
 	"github.com/illacloud/builder-backend/src/driver/postgres"
+	"github.com/illacloud/builder-backend/src/driver/redis"
 	"github.com/illacloud/builder-backend/src/router"
 	"github.com/illacloud/builder-backend/src/storage"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
@@ -44,6 +46,14 @@ func initStorage(globalConfig *config.Config, logger *zap.SugaredLogger) *storag
 	return storage.NewStorage(postgresDriver, logger)
 }
 
+func initCache(globalConfig *config.Config, logger *zap.SugaredLogger) *cache.Cache {
+	redisDriver, err := redis.NewRedisConnectionByGlobalConfig(globalConfig, logger)
+	if err != nil {
+		logger.Errorw("Error in startup, cache init failed.")
+	}
+	return cache.NewCache(redisDriver, logger)
+}
+
 func initDrive(globalConfig *config.Config, logger *zap.SugaredLogger) *drive.Drive {
 	if globalConfig.IsAWSTypeDrive() {
 		teamAWSConfig := awss3.NewTeamAwsConfigByGlobalConfig(globalConfig)
@@ -65,6 +75,7 @@ func initServer() (*Server, error) {
 
 	// init driver
 	storage := initStorage(globalConfig, sugaredLogger)
+	cache := initCache(globalConfig, sugaredLogger)
 	drive := initDrive(globalConfig, sugaredLogger)
 
 	// init attribute group
@@ -74,7 +85,7 @@ func initServer() (*Server, error) {
 	}
 
 	// init controller
-	c := controller.NewControllerForBackend(storage, drive, validator, attrg)
+	c := controller.NewControllerForBackend(storage, cache, drive, validator, attrg)
 	router := router.NewRouter(c)
 	server := NewServer(globalConfig, engine, router, sugaredLogger)
 	return server, nil

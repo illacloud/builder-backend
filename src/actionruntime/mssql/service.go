@@ -129,7 +129,7 @@ func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		fallthrough
 	case ACTION_SQL_SAFE_MODE:
 		// check if m.Action.Query is select query
-		sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_MYSQL_ID)
+		sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_MSSQL_ID)
 		escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(m.ActionOpts.RawQuery, m.ActionOpts.Context)
 		if errInEscapeSQL != nil {
 			return queryResult, errInEscapeSQL

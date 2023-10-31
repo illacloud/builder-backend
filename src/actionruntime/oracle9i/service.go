@@ -12,17 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oracle
+package oracle9i
 
 import (
+	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
 	parser_sql "github.com/illacloud/builder-backend/src/utils/parser/sql"
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
+	go_ora_v1 "github.com/illacloud/go-ora-v1"
 	"github.com/mitchellh/mapstructure"
+)
+
+const (
+	DEFAULT_CONNECTION_TIMEOUT = time.Second * 60
 )
 
 type Connector struct {
@@ -69,7 +77,9 @@ func (o *Connector) TestConnection(resourceOptions map[string]interface{}) (comm
 	defer db.Close()
 
 	// test oracle connection
-	if err := db.Ping(); err != nil {
+	connectCtx, connectCancel := context.WithTimeout(context.Background(), DEFAULT_CONNECTION_TIMEOUT)
+	defer connectCancel()
+	if err := db.Ping(connectCtx); err != nil {
 		return common.ConnectionResult{Success: false}, err
 	}
 
@@ -85,7 +95,9 @@ func (o *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.
 	defer db.Close()
 
 	// test oracle connection
-	if err := db.Ping(); err != nil {
+	connectCtx, connectCancel := context.WithTimeout(context.Background(), DEFAULT_CONNECTION_TIMEOUT)
+	defer connectCancel()
+	if err := db.Ping(connectCtx); err != nil {
 		return common.MetaInfoResult{Success: false}, err
 	}
 
@@ -124,7 +136,7 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	case ACTION_SQL_MODE:
 		fallthrough
 	case ACTION_SQL_SAFE_MODE:
-		sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_ORACLE_ID)
+		sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_ORACLE_9I_ID)
 		escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(o.actionOptions.RawQuery, o.actionOptions.Context)
 		if errInEscapeSQL != nil {
 			return queryResult, errInEscapeSQL
@@ -144,31 +156,45 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 
 		// fetch data
 		if isSelectQuery && o.actionOptions.IsSafeMode() {
-			rows, err := db.Query(escapedSQL, sqlArgs...)
-			if err != nil {
-				return queryResult, err
+			stmt, errInPrepare := db.Prepare(escapedSQL)
+			defer stmt.Close()
+			if errInPrepare != nil {
+				return queryResult, errInPrepare
 			}
-			mapRes, err := common.RetrieveToMap(rows)
+			driverValues := ConvertSQlArgsToDriverValues(sqlArgs)
+			rows, err := stmt.Query(driverValues)
 			if err != nil {
 				return queryResult, err
 			}
 			defer rows.Close()
+			mapRes, err := common.RetrieveToMapByDriverRows(rows)
+			if err != nil {
+				return queryResult, err
+			}
 			queryResult.Success = true
 			queryResult.Rows = mapRes
 		} else if isSelectQuery && !o.actionOptions.IsSafeMode() {
-			rows, err := db.Query(query.Raw)
-			if err != nil {
-				return queryResult, err
-			}
-			mapRes, err := common.RetrieveToMap(rows)
+			stmt := go_ora_v1.NewStmt(query.Raw, db)
+			defer stmt.Close()
+			rows, err := stmt.Query(nil)
 			if err != nil {
 				return queryResult, err
 			}
 			defer rows.Close()
+			mapRes, err := common.RetrieveToMapByDriverRows(rows)
+			if err != nil {
+				return queryResult, err
+			}
 			queryResult.Success = true
 			queryResult.Rows = mapRes
 		} else if !isSelectQuery && o.actionOptions.IsSafeMode() {
-			execResult, err := db.Exec(escapedSQL, sqlArgs...)
+			stmt, errInPrepare := db.Prepare(escapedSQL)
+			defer stmt.Close()
+			if errInPrepare != nil {
+				return queryResult, errInPrepare
+			}
+			driverValues := ConvertSQlArgsToDriverValues(sqlArgs)
+			execResult, err := stmt.Exec(driverValues)
 			if err != nil {
 				return queryResult, err
 			}
@@ -179,7 +205,9 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Success = true
 			queryResult.Extra["message"] = fmt.Sprintf("Affeted %d rows.", affectedRows)
 		} else if !isSelectQuery && !o.actionOptions.IsSafeMode() {
-			execResult, err := db.Exec(query.Raw)
+			stmt := go_ora_v1.NewStmt(query.Raw, db)
+			defer stmt.Close()
+			execResult, err := stmt.Exec(nil)
 			if err != nil {
 				return queryResult, err
 			}
@@ -196,4 +224,12 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		err = errors.New("unsupported action mode")
 	}
 	return queryResult, err
+}
+
+func ConvertSQlArgsToDriverValues(sqlArgs []interface{}) []driver.Value {
+	ret := make([]driver.Value, 0)
+	for _, value := range sqlArgs {
+		ret = append(ret, value.(driver.Value))
+	}
+	return ret
 }

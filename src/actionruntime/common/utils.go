@@ -14,7 +14,10 @@
 
 package common
 
-import "database/sql"
+import (
+	"database/sql"
+	"database/sql/driver"
+)
 
 func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 	columns, err := rows.Columns()
@@ -38,6 +41,41 @@ func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 
 		// get query result
 		rows.Scan(valPointers...)
+
+		// value for every single row
+		entry := make(map[string]interface{})
+
+		for i, col := range columns {
+			var v interface{}
+
+			val := values[i]
+			b, ok := val.([]byte)
+			if ok {
+				// []byte to string
+				v = string(b)
+			} else {
+				v = val
+			}
+			entry[col] = v
+		}
+		mapData = append(mapData, entry)
+	}
+
+	return mapData, nil
+}
+
+func RetrieveToMapByDriverRows(rows driver.Rows) ([]map[string]interface{}, error) {
+	columns := rows.Columns()
+	mapData := make([]map[string]interface{}, 0)
+
+	// value of every row
+	values := make([]driver.Value, len(columns))
+	// get all values
+	for {
+		errInFetchNextRows := rows.Next(values)
+		if errInFetchNextRows != nil {
+			break
+		}
 
 		// value for every single row
 		entry := make(map[string]interface{})

@@ -10,6 +10,16 @@ import (
 
 var SerlizedParameterizedSQLList = map[int]bool{
 	resourcelist.TYPE_POSTGRESQL_ID: true,
+	resourcelist.TYPE_ORACLE_9I_ID:  true,
+}
+
+var SerlizedParameterPrefixMap = map[int]string{
+	resourcelist.TYPE_POSTGRESQL_ID: "$",
+	resourcelist.TYPE_ORACLE_9I_ID:  ":",
+}
+
+var ParameterTextTypeCastList = map[int]string{
+	resourcelist.TYPE_POSTGRESQL_ID: "::text",
 }
 
 type SQLEscaper struct {
@@ -27,8 +37,20 @@ func (sqlEscaper *SQLEscaper) IsSerlizedParameterizedSQL() bool {
 	return itIs && hit
 }
 
-func (sqlEscaper *SQLEscaper) IsPostgres() bool {
-	return sqlEscaper.ResourceType == resourcelist.TYPE_POSTGRESQL_ID
+func (sqlEscaper *SQLEscaper) GetSerlizedParameterPrefixMap() string {
+	prefix, hit := SerlizedParameterPrefixMap[sqlEscaper.ResourceType]
+	if !hit {
+		return ""
+	}
+	return prefix
+}
+
+func (sqlEscaper *SQLEscaper) GetParameterTextTypeCastList() string {
+	typeIDF, hit := ParameterTextTypeCastList[sqlEscaper.ResourceType]
+	if !hit {
+		return ""
+	}
+	return typeIDF
 }
 
 func (sqlEscaper *SQLEscaper) buildEscapedArgsLookupTable(args map[string]interface{}) (map[string]interface{}, error) {
@@ -205,9 +227,13 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					variableContent = escapedBracketWithVariable
 				}
 			} else {
+
+				fmt.Printf("[DUMP] sqlEscaper.ResourceType: %+v\n", sqlEscaper.ResourceType)
+				fmt.Printf("[DUMP] sqlEscaper.IsSerlizedParameterizedSQL(): %+v\n", sqlEscaper.IsSerlizedParameterizedSQL())
+				fmt.Printf("[DUMP] sqlEscaper.GetSerlizedParameterPrefixMap(): %+v\n", sqlEscaper.GetSerlizedParameterPrefixMap())
 				// replace sql param
 				if sqlEscaper.IsSerlizedParameterizedSQL() {
-					variableContent = fmt.Sprintf("$%d", usedArgsSerial)
+					variableContent = fmt.Sprintf("%s%d", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
 					usedArgsSerial++
 				} else {
 					variableContent = "?"
@@ -215,18 +241,15 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 				// record param serial
 				userArgs = append(userArgs, variableMappedValue)
 			}
+			// process type cast
 			if singleQuoteStart {
 				initConcatStringTargetsIndex(singleQuoteSegmentCounter)
-				if sqlEscaper.IsSerlizedParameterizedSQL() {
-					variableContent += "::text"
-				}
+				variableContent += sqlEscaper.GetParameterTextTypeCastList()
 				concatStringTargets[singleQuoteSegmentCounter] = newStringConcatTarget(variableContent, true)
 				singleQuoteSegPlus()
 			} else if doubleQuoteStart {
 				initConcatStringTargetsIndex(doubleQuoteSegmentCounter)
-				if sqlEscaper.IsSerlizedParameterizedSQL() {
-					variableContent += "::text"
-				}
+				variableContent += sqlEscaper.GetParameterTextTypeCastList()
 				concatStringTargets[doubleQuoteSegmentCounter] = newStringConcatTarget(variableContent, true)
 				doubleQuoteSegPlus()
 			} else {
