@@ -243,6 +243,11 @@ func (action *Action) UpdateWithRunActionRequest(req *request.RunActionRequest, 
 	action.Template = req.ExportTemplateInString()
 	action.UpdatedBy = userID
 	action.InitUpdatedAt()
+
+	// check if is onboarding action (which have no action storaged in database)
+	if len(action.Template) == 0 {
+		action.Template = action.RawTemplate
+	}
 }
 
 func (action *Action) UpdateAcitonByUpdateActionRequest(app *App, userID int, req *request.UpdateActionRequest) {
