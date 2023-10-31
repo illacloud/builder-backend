@@ -49,6 +49,8 @@ type Config struct {
 	WebsocketServerConnectionPort          string `env:"ILLA_WEBSOCKET_CONNECTION_PORT"      			envDefault:"80"`
 	WebsocketServerConnectionHostNorthAsia string `env:"ILLA_WEBSOCKET_CONNECTION_HOST_NORTH_ASIA"      envDefault:"0.0.0.0"`
 	WebsocketServerConnectionPortNorthAsia string `env:"ILLA_WEBSOCKET_CONNECTION_PORT_NORTH_ASIA"      envDefault:"80"`
+	WebsocketServerConnectionHostEastAsia  string `env:"ILLA_WEBSOCKET_CONNECTION_HOST_EAST_ASIA"       envDefault:"0.0.0.0"`
+	WebsocketServerConnectionPortEastAsia  string `env:"ILLA_WEBSOCKET_CONNECTION_PORT_EAST_ASIA"       envDefault:"80"`
 	WSSEnabled                             string `env:"ILLA_WSS_ENABLED"                    			envDefault:"false"`
 
 	// key for idconvertor
@@ -313,4 +315,8 @@ func (c *Config) GetIPZoneDetectorToken() string {
 
 func (c *Config) GetWebScoketServerConnectionAddressNorthAsia() string {
 	return c.WebsocketServerConnectionHostNorthAsia + ":" + c.WebsocketServerConnectionPortNorthAsia
+}
+
+func (c *Config) GetWebScoketServerConnectionAddressEastAsia() string {
+	return c.WebsocketServerConnectionHostEastAsia + ":" + c.WebsocketServerConnectionPortEastAsia
 }

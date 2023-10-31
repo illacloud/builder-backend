@@ -18,17 +18,20 @@ const SELF_HOST_ROOM_BINARY_WS_URL = "/builder-ws/teams/%s/room/binaryWebsocketC
 
 const (
 	CONNECTION_ZONE_NORTH_ASIA = "northAsia"
+	CONNECTION_ZONE_EAST_ASIA  = "eastAsia"
 )
 
 var CountryCodeMappedIngressAddress = map[string]string{
 	"IN": CONNECTION_ZONE_NORTH_ASIA,
-	"CN": CONNECTION_ZONE_NORTH_ASIA,
+	"CN": CONNECTION_ZONE_EAST_ASIA,
+	"JP": CONNECTION_ZONE_EAST_ASIA,
 }
 
 type WebsocketConnectionInfo struct {
 	Config                     *config.Config
 	DefaultConnectionAddress   string
 	NorthAsiaConnectionAddress string
+	EastAsiaConnectionAddress  string
 }
 
 func NewWebsocketConnectionInfo(conf *config.Config) *WebsocketConnectionInfo {
@@ -36,6 +39,7 @@ func NewWebsocketConnectionInfo(conf *config.Config) *WebsocketConnectionInfo {
 		Config:                     conf,
 		DefaultConnectionAddress:   conf.GetWebScoketServerConnectionAddress(),
 		NorthAsiaConnectionAddress: conf.GetWebScoketServerConnectionAddressNorthAsia(),
+		EastAsiaConnectionAddress:  conf.GetWebScoketServerConnectionAddressEastAsia(),
 	}
 }
 
@@ -49,6 +53,8 @@ func (i *WebsocketConnectionInfo) GetConnectionAddressByCountryCode(countryCode 
 	switch connectionZone {
 	case CONNECTION_ZONE_NORTH_ASIA:
 		return i.NorthAsiaConnectionAddress
+	case CONNECTION_ZONE_EAST_ASIA:
+		return i.EastAsiaConnectionAddress
 	default:
 		return i.DefaultConnectionAddress
 	}
