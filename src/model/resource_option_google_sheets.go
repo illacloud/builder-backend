@@ -26,13 +26,18 @@ type ResourceOptionGoogleSheets struct {
 
 func NewResourceOptionGoogleSheetsByResource(resource *Resource) (*ResourceOptionGoogleSheets, error) {
 	fmt.Printf("[DUMP] NewResourceOptionGoogleSheetsByResource().resource.Options: %+v\n", resource.Options)
-	resourceOptionGoogleSheets := &ResourceOptionGoogleSheets{
-		Options: &GoogleSheetsOAuth2Options{},
-	}
-	errInDecode := mapstructure.Decode(resource.ExportOptionsInMap(), &resourceOptionGoogleSheets)
+	resourceOptionGoogleSheets := &ResourceOptionGoogleSheets{}
+	resourceOptions := resource.ExportOptionsInMap()
+	errInDecode := mapstructure.Decode(resourceOptions, &resourceOptionGoogleSheets)
 	if errInDecode != nil {
 		return nil, errInDecode
 	}
+	opts := &GoogleSheetsOAuth2Options{}
+	errInDecodeSub := mapstructure.Decode(resourceOptions["opts"], &opts)
+	if errInDecodeSub != nil {
+		return nil, errInDecodeSub
+	}
+	resourceOptionGoogleSheets.Options = opts
 	jstr, _ := json.Marshal(resourceOptionGoogleSheets)
 	fmt.Printf("[DUMP] NewResourceOptionGoogleSheetsByResource().resourceOptionGoogleSheets: %+v\n", string(jstr))
 	return resourceOptionGoogleSheets, nil
