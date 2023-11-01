@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -20,8 +21,8 @@ type GoogleSheetsOAuth2Claims struct {
 
 const (
 	GOOGLE_SHEETS_OAUTH2_ACCESS_TYPE_INVALIED       = 0
-	GOOGLE_SHEETS_OAUTH2_ACCESS_TYPE_READ_ONLY      = 1
-	GOOGLE_SHEETS_OAUTH2_ACCESS_TYPE_READ_AND_WRITE = 2
+	GOOGLE_SHEETS_OAUTH2_ACCESS_TYPE_READ_AND_WRITE = 1
+	GOOGLE_SHEETS_OAUTH2_ACCESS_TYPE_READ_ONLY      = 2
 )
 
 const (
@@ -38,6 +39,8 @@ func NewGoogleSheetsOAuth2Claims() *GoogleSheetsOAuth2Claims {
 }
 
 func GenerateGoogleSheetsOAuth2Token(teamID int, userID int, resourceID int, createOAuthTokenRequest *request.CreateOAuthTokenRequest) (string, error) {
+	fmt.Printf("[DUMP] GenerateGoogleSheetsOAuth2Token.createOAuthTokenRequest: %+v\n", createOAuthTokenRequest)
+	fmt.Printf("[DUMP] createOAuthTokenRequest.IsReadAndWrite(): %+v\n", createOAuthTokenRequest.IsReadAndWrite())
 	accessType := GOOGLE_SHEETS_OAUTH2_ACCESS_TYPE_READ_ONLY
 	if createOAuthTokenRequest.IsReadAndWrite() {
 		accessType = GOOGLE_SHEETS_OAUTH2_ACCESS_TYPE_READ_AND_WRITE
@@ -55,10 +58,14 @@ func GenerateGoogleSheetsOAuth2Token(teamID int, userID int, resourceID int, cre
 			},
 		},
 	}
+	fmt.Printf("[DUMP] createOAuthTokenRequest.claims(): %+v\n", claims)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	conf := config.GetInstance()
 	accessToken, err := token.SignedString([]byte(conf.GetSecretKey()))
+	fmt.Printf("[DUMP] createOAuthTokenRequest.token(): %+v\n", token)
+	fmt.Printf("[DUMP] createOAuthTokenRequest.accessToken(): %+v\n", accessToken)
+
 	if err != nil {
 		return "", err
 	}
