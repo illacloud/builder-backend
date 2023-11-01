@@ -16,7 +16,7 @@ func NewGoogleSheetsOAuth2Response(accessType int, accessToken string) *GoogleSh
 	googleOAuthClientID := conf.GetIllaGoogleSheetsClientID()
 	redirectURI := conf.GetIllaGoogleSheetsRedirectURI()
 	urlObject := url.URL{}
-	if accessType == model.GOOGLE_SHEETS_OAUTH2_ACCESS_TYPE_READ_ONLY {
+	if accessType == model.GOOGLE_SHEETS_OAUTH2_ACCESS_TYPE_READ_AND_WRITE {
 		urlObject = url.URL{
 			Scheme:   "https",
 			Host:     "accounts.google.com",
