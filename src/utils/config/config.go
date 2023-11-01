@@ -37,23 +37,23 @@ func GetInstance() *Config {
 
 type Config struct {
 	// server config
-	ServerHost                                string `env:"ILLA_SERVER_HOST"                                envDefault:"0.0.0.0"`
-	ServerPort                                string `env:"ILLA_SERVER_PORT"                                envDefault:"8001"`
-	InternalServerPort                        string `env:"ILLA_SERVER_INTERNAL_PORT"                       envDefault:"9005"`
-	ServerMode                                string `env:"ILLA_SERVER_MODE"                                envDefault:"debug"`
-	DeployMode                                string `env:"ILLA_DEPLOY_MODE"                                envDefault:"self-host"`
-	SecretKey                                 string `env:"ILLA_SECRET_KEY"                                 envDefault:"8xEMrWkBARcDDYQ"`
-	WebsocketServerHost                       string `env:"ILLA_WEBSOCKET_SERVER_HOST"                      envDefault:"0.0.0.0"`
-	WebsocketServerPort                       string `env:"ILLA_WEBSOCKET_SERVER_PORT"                      envDefault:"8002"`
-	WebsocketServerConnectionHost             string `env:"ILLA_WEBSOCKET_CONNECTION_HOST"                  envDefault:"0.0.0.0"`
-	WebsocketServerConnectionPort             string `env:"ILLA_WEBSOCKET_CONNECTION_PORT"                  envDefault:"80"`
-	WebsocketServerConnectionHostSouthAsia    string `env:"ILLA_WEBSOCKET_CONNECTION_HOST_SOUTH_ASIA"       envDefault:"0.0.0.0"`
-	WebsocketServerConnectionPortSouthAsia    string `env:"ILLA_WEBSOCKET_CONNECTION_PORT_SOUTH_ASIA"       envDefault:"80"`
-	WebsocketServerConnectionHostEastAsia     string `env:"ILLA_WEBSOCKET_CONNECTION_HOST_EAST_ASIA"        envDefault:"0.0.0.0"`
-	WebsocketServerConnectionPortEastAsia     string `env:"ILLA_WEBSOCKET_CONNECTION_PORT_EAST_ASIA"        envDefault:"80"`
-	WebsocketServerConnectionHostCenterEurope string `env:"ILLA_WEBSOCKET_CONNECTION_HOST_CENTER_EUROPE"    envDefault:"0.0.0.0"`
-	WebsocketServerConnectionPortCenterEurope string `env:"ILLA_WEBSOCKET_CONNECTION_PORT_CENTER_EUROPE"    envDefault:"80"`
-	WSSEnabled                                string `env:"ILLA_WSS_ENABLED"                                envDefault:"false"`
+	ServerHost                                string `env:"ILLA_SERVER_HOST" envDefault:"0.0.0.0"`
+	ServerPort                                string `env:"ILLA_SERVER_PORT" envDefault:"8001"`
+	InternalServerPort                        string `env:"ILLA_SERVER_INTERNAL_PORT" envDefault:"9005"`
+	ServerMode                                string `env:"ILLA_SERVER_MODE" envDefault:"debug"`
+	DeployMode                                string `env:"ILLA_DEPLOY_MODE" envDefault:"self-host"`
+	SecretKey                                 string `env:"ILLA_SECRET_KEY" envDefault:"8xEMrWkBARcDDYQ"`
+	WebsocketServerHost                       string `env:"ILLA_WEBSOCKET_SERVER_HOST" envDefault:"0.0.0.0"`
+	WebsocketServerPort                       string `env:"ILLA_WEBSOCKET_SERVER_PORT" envDefault:"8002"`
+	WebsocketServerConnectionHost             string `env:"ILLA_WEBSOCKET_CONNECTION_HOST" envDefault:"0.0.0.0"`
+	WebsocketServerConnectionPort             string `env:"ILLA_WEBSOCKET_CONNECTION_PORT" envDefault:"80"`
+	WebsocketServerConnectionHostSouthAsia    string `env:"ILLA_WEBSOCKET_CONNECTION_HOST_SOUTH_ASIA" envDefault:"0.0.0.0"`
+	WebsocketServerConnectionPortSouthAsia    string `env:"ILLA_WEBSOCKET_CONNECTION_PORT_SOUTH_ASIA" envDefault:"80"`
+	WebsocketServerConnectionHostEastAsia     string `env:"ILLA_WEBSOCKET_CONNECTION_HOST_EAST_ASIA" envDefault:"0.0.0.0"`
+	WebsocketServerConnectionPortEastAsia     string `env:"ILLA_WEBSOCKET_CONNECTION_PORT_EAST_ASIA" envDefault:"80"`
+	WebsocketServerConnectionHostCenterEurope string `env:"ILLA_WEBSOCKET_CONNECTION_HOST_CENTER_EUROPE" envDefault:"0.0.0.0"`
+	WebsocketServerConnectionPortCenterEurope string `env:"ILLA_WEBSOCKET_CONNECTION_PORT_CENTER_EUROPE" envDefault:"80"`
+	WSSEnabled                                string `env:"ILLA_WSS_ENABLED" envDefault:"false"`
 
 	// key for idconvertor
 	RandomKey string `env:"ILLA_RANDOM_KEY"  envDefault:"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"`
@@ -69,33 +69,33 @@ type Config struct {
 	RedisPassword string `env:"ILLA_REDIS_PASSWORD" envDefault:"illa2022"`
 	RedisDatabase int    `env:"ILLA_REDIS_DATABASE" envDefault:"0"`
 	// drive config
-	DriveType             string `env:"ILLA_DRIVE_TYPE"               envDefault:""`
-	DriveAccessKeyID      string `env:"ILLA_DRIVE_ACCESS_KEY_ID"      envDefault:""`
-	DriveAccessKeySecret  string `env:"ILLA_DRIVE_ACCESS_KEY_SECRET"  envDefault:""`
-	DriveRegion           string `env:"ILLA_DRIVE_REGION"             envDefault:""`
-	DriveEndpoint         string `env:"ILLA_DRIVE_ENDPOINT"           envDefault:""`
+	DriveType             string `env:"ILLA_DRIVE_TYPE" envDefault:""`
+	DriveAccessKeyID      string `env:"ILLA_DRIVE_ACCESS_KEY_ID" envDefault:""`
+	DriveAccessKeySecret  string `env:"ILLA_DRIVE_ACCESS_KEY_SECRET" envDefault:""`
+	DriveRegion           string `env:"ILLA_DRIVE_REGION" envDefault:""`
+	DriveEndpoint         string `env:"ILLA_DRIVE_ENDPOINT" envDefault:""`
 	DriveSystemBucketName string `env:"ILLA_DRIVE_SYSTEM_BUCKET_NAME" envDefault:"illa-cloud"`
-	DriveTeamBucketName   string `env:"ILLA_DRIVE_TEAM_BUCKET_NAME"   envDefault:"illa-cloud-team"`
-	DriveUploadTimeoutRaw string `env:"ILLA_DRIVE_UPLOAD_TIMEOUT"     envDefault:"30s"`
+	DriveTeamBucketName   string `env:"ILLA_DRIVE_TEAM_BUCKET_NAME" envDefault:"illa-cloud-team"`
+	DriveUploadTimeoutRaw string `env:"ILLA_DRIVE_UPLOAD_TIMEOUT" envDefault:"30s"`
 	DriveUploadTimeout    time.Duration
 	// supervisor API
-	IllaSupervisorInternalRestAPI string `env:"ILLA_SUPERVISOR_INTERNAL_API"     envDefault:"http://127.0.0.1:9001/api/v1"`
+	IllaSupervisorInternalRestAPI string `env:"ILLA_SUPERVISOR_INTERNAL_API" envDefault:"http://127.0.0.1:9001/api/v1"`
 
 	// peripheral API
 	IllaPeripheralAPI string `env:"ILLA_PERIPHERAL_API" envDefault:"https://peripheral-api.illasoft.com/v1/"`
 	// resource manager API
-	IllaResourceManagerRestAPI         string `env:"ILLA_RESOURCE_MANAGER_API"     envDefault:"http://illa-resource-manager-backend:8006"`
-	IllaResourceManagerInternalRestAPI string `env:"ILLA_RESOURCE_MANAGER_INTERNAL_API"     envDefault:"http://illa-resource-manager-backend-internal:9004"`
+	IllaResourceManagerRestAPI         string `env:"ILLA_RESOURCE_MANAGER_API" envDefault:"http://illa-resource-manager-backend:8006"`
+	IllaResourceManagerInternalRestAPI string `env:"ILLA_RESOURCE_MANAGER_INTERNAL_API" envDefault:"http://illa-resource-manager-backend-internal:9004"`
 	// illa marketplace config
-	IllaMarketplaceInternalRestAPI string `env:"ILLA_MARKETPLACE_INTERNAL_API"     envDefault:"http://illa-marketplace-backend-internal:9003/api/v1"`
+	IllaMarketplaceInternalRestAPI string `env:"ILLA_MARKETPLACE_INTERNAL_API" envDefault:"http://illa-marketplace-backend-internal:9003/api/v1"`
 	// token for internal api
-	ControlToken string `env:"ILLA_CONTROL_TOKEN"     envDefault:""`
+	ControlToken string `env:"ILLA_CONTROL_TOKEN" envDefault:""`
 	// google config
-	IllaGoogleSheetsClientID     string `env:"ILLA_GS_CLIENT_ID"           envDefault:""`
-	IllaGoogleSheetsClientSecret string `env:"ILLA_GS_CLIENT_SECRET"       envDefault:""`
-	IllaGoogleSheetsRedirectURI  string `env:"ILLA_GS_REDIRECT_URI"        envDefault:""`
+	IllaGoogleSheetsClientID     string `env:"ILLA_GS_CLIENT_ID" envDefault:""`
+	IllaGoogleSheetsClientSecret string `env:"ILLA_GS_CLIENT_SECRET" envDefault:""`
+	IllaGoogleSheetsRedirectURI  string `env:"ILLA_GS_REDIRECT_URI" envDefault:""`
 	// toke for ip zone detector
-	IllaIPZoneDetectorToken string `env:"ILLA_IP_ZONE_DETECTOR_TOKEN"        envDefault:""`
+	IllaIPZoneDetectorToken string `env:"ILLA_IP_ZONE_DETECTOR_TOKEN" envDefault:""`
 }
 
 func getConfig() (*Config, error) {
