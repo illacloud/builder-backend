@@ -2,6 +2,7 @@ package oauthgoogle
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/go-resty/resty/v2"
@@ -50,7 +51,7 @@ func ExchangeOAuthToken(code string) (*ExchangeTokenResponse, error) {
 	googleOAuthRedirectURI := conf.GetIllaGoogleSheetsRedirectURI()
 	client := resty.New()
 	// request
-	resp, errInPost := client.R().
+	resp, _ := client.R().
 		SetFormData(map[string]string{
 			"client_id":     googleOAuthClientID,
 			"client_secret": googleOAuthClientSecret,
@@ -60,7 +61,7 @@ func ExchangeOAuthToken(code string) (*ExchangeTokenResponse, error) {
 		}).
 		Post(GOOGLE_OAUTH2_API)
 	if resp.IsError() {
-		return nil, errInPost
+		return nil, errors.New("ExchangeOAuthToken failed.")
 	}
 	// unmarshal
 	exchangeTokenResponse := NewExchangeTokenResponse()
@@ -77,7 +78,7 @@ func RefreshOAuthToken(refreshToken string) (*RefreshTokenResponse, error) {
 	googleOAuthClientSecret := conf.GetIllaGoogleSheetsClientSecret()
 	client := resty.New()
 	// request
-	resp, errInPost := client.R().
+	resp, _ := client.R().
 		SetFormData(map[string]string{
 			"client_id":     googleOAuthClientID,
 			"client_secret": googleOAuthClientSecret,
@@ -89,9 +90,8 @@ func RefreshOAuthToken(refreshToken string) (*RefreshTokenResponse, error) {
 	fmt.Printf("[DUMP] RefreshOAuthToken.resp:%+v\n", resp)
 	fmt.Printf("[DUMP] RefreshOAuthToken.resp.Body():%+v\n", string(resp.Body()))
 	fmt.Printf("[DUMP] RefreshOAuthToken.resp.IsError():%+v\n", resp.IsError())
-	fmt.Printf("[DUMP] RefreshOAuthToken.errInPost:%+v\n", errInPost)
 	if resp.IsError() {
-		return nil, errInPost
+		return nil, errors.New("RefreshOAuthToken failed.")
 	}
 	// unmarshal
 	refreshTokenResponse := NewRefreshTokenResponse()
