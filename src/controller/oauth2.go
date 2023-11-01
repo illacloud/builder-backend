@@ -72,13 +72,14 @@ func (controller *Controller) GoogleOAuth2Exchange(c *gin.Context) {
 
 	// exchange access token
 	exchangeTokenResponse, errInExchangeOAuthToken := oauthgoogle.ExchangeOAuthToken(code)
+	fmt.Printf("[DUMP] GoogleOAuth2Exchange.exchangeTokenResponse: %+v\n", exchangeTokenResponse)
 	if errInExchangeOAuthToken != nil {
 		fmt.Printf("[FAILED] 6\n")
 
 		controller.FeedbackRedirect(c, redirectURIForFailed)
 		return
 	}
-	resourceOptionGoogleSheets.SetAccessToken(exchangeTokenResponse.ExportAccessToken())
+	resourceOptionGoogleSheets.UpdateByExchangeTokenResponse(exchangeTokenResponse)
 	resource.UpdateGoogleSheetOAuth2Options(userID, resourceOptionGoogleSheets)
 
 	// update resource

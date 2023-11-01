@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/illacloud/builder-backend/src/utils/oauthgoogle"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -17,6 +18,8 @@ type GoogleSheetsOAuth2Options struct {
 	TokenType    string `json:"tokenType"`
 	RefreshToken string `json:"refreshToken"`
 	Status       int    `json:"status"`
+	ExpiresIn    int    `json:"expiresIn"`
+	Scope        string `json:"scope"`
 }
 
 type ResourceOptionGoogleSheets struct {
@@ -53,6 +56,14 @@ func (i *ResourceOptionGoogleSheets) SetAccessToken(accessToken string) {
 
 func (i *ResourceOptionGoogleSheets) ExportRefreshToken() string {
 	return i.Options.RefreshToken
+}
+
+func (i *ResourceOptionGoogleSheets) UpdateByExchangeTokenResponse(repo *oauthgoogle.ExchangeTokenResponse) {
+	i.Options.AccessToken = repo.AccessToken
+	i.Options.RefreshToken = repo.RefreshToken
+	i.Options.ExpiresIn = repo.Expiry
+	i.Options.Scope = repo.Scope
+	i.Options.TokenType = repo.TokenType
 }
 
 func (i *ResourceOptionGoogleSheets) ExportInString() string {

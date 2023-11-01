@@ -89,6 +89,7 @@ func RefreshOAuthToken(refreshToken string) (*RefreshTokenResponse, error) {
 	fmt.Printf("[DUMP] RefreshOAuthToken.resp:%+v\n", resp)
 	fmt.Printf("[DUMP] RefreshOAuthToken.resp.Body():%+v\n", string(resp.Body()))
 	fmt.Printf("[DUMP] RefreshOAuthToken.resp.IsError():%+v\n", resp.IsError())
+	fmt.Printf("[DUMP] RefreshOAuthToken.errInPost:%+v\n", errInPost)
 	if resp.IsError() {
 		return nil, errInPost
 	}
