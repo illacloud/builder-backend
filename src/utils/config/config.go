@@ -37,12 +37,14 @@ func GetInstance() *Config {
 
 type Config struct {
 	// server config
-	ServerHost                                string `env:"ILLA_SERVER_HOST" envDefault:"0.0.0.0"`
-	ServerPort                                string `env:"ILLA_SERVER_PORT" envDefault:"8001"`
-	InternalServerPort                        string `env:"ILLA_SERVER_INTERNAL_PORT" envDefault:"9005"`
-	ServerMode                                string `env:"ILLA_SERVER_MODE" envDefault:"debug"`
-	DeployMode                                string `env:"ILLA_DEPLOY_MODE" envDefault:"self-host"`
-	SecretKey                                 string `env:"ILLA_SECRET_KEY" envDefault:"8xEMrWkBARcDDYQ"`
+	ServerHost         string `env:"ILLA_SERVER_HOST" envDefault:"0.0.0.0"`
+	ServerPort         string `env:"ILLA_SERVER_PORT" envDefault:"8001"`
+	InternalServerPort string `env:"ILLA_SERVER_INTERNAL_PORT" envDefault:"9005"`
+	ServerMode         string `env:"ILLA_SERVER_MODE" envDefault:"debug"`
+	DeployMode         string `env:"ILLA_DEPLOY_MODE" envDefault:"self-host"`
+	SecretKey          string `env:"ILLA_SECRET_KEY" envDefault:"8xEMrWkBARcDDYQ"`
+
+	// websocket config
 	WebsocketServerHost                       string `env:"ILLA_WEBSOCKET_SERVER_HOST" envDefault:"0.0.0.0"`
 	WebsocketServerPort                       string `env:"ILLA_WEBSOCKET_SERVER_PORT" envDefault:"8002"`
 	WebsocketServerConnectionHost             string `env:"ILLA_WEBSOCKET_CONNECTION_HOST" envDefault:"0.0.0.0"`
@@ -110,8 +112,8 @@ func getConfig() (*Config, error) {
 	}
 	// ok
 	fmt.Printf("----------------\n")
-	fmt.Printf("%+v\n", cfg)
-	fmt.Printf("%+v\n", err)
+	fmt.Printf("run by following config: %+v\n", cfg)
+	fmt.Printf("parse config error info: %+v\n", err)
 
 	return cfg, err
 }
