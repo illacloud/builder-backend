@@ -86,11 +86,12 @@ func RefreshOAuthToken(refreshToken string) (*RefreshTokenResponse, error) {
 		}).
 		Post(GOOGLE_OAUTH2_API)
 
+	fmt.Printf("[DUMP] RefreshOAuthToken.resp:%+v\n", resp)
+	fmt.Printf("[DUMP] RefreshOAuthToken.resp.Body():%+v\n", string(resp.Body()))
+	fmt.Printf("[DUMP] RefreshOAuthToken.resp.IsError():%+v\n", resp.IsError())
 	if resp.IsError() {
 		return nil, errInPost
 	}
-	fmt.Printf("[DUMP] RefreshOAuthToken.resp:%+v\n", resp)
-	fmt.Printf("[DUMP] RefreshOAuthToken.resp.Body():%+v\n", string(resp.Body()))
 	// unmarshal
 	refreshTokenResponse := NewRefreshTokenResponse()
 	errInUnmarshal := json.Unmarshal(resp.Body(), &refreshTokenResponse)
