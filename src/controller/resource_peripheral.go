@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -190,6 +191,7 @@ func (controller *Controller) RefreshGoogleSheetsOAuth(c *gin.Context) {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resources error: "+errInRetrieveResource.Error())
 		return
 	}
+	fmt.Printf("[DUMP] RefreshGoogleSheetsOAuth.resource: %+v\n", resource)
 
 	// check resource type for create OAuth token
 	if !resource.CanCreateOAuthToken() {
@@ -210,12 +212,16 @@ func (controller *Controller) RefreshGoogleSheetsOAuth(c *gin.Context) {
 		return
 	}
 
+	fmt.Printf("[DUMP] RefreshGoogleSheetsOAuth.resourceOptionGoogleSheets: %+v\n", resourceOptionGoogleSheets)
+
 	// refresh access token
 	refreshTokenResponse, errInRefreshOAuthToken := oauthgoogle.RefreshOAuthToken(resourceOptionGoogleSheets.ExportRefreshToken())
 	if errInRefreshOAuthToken != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GOOGLE_SHEETS, "fresh google sheets oauth token error: "+errInRefreshOAuthToken.Error())
 		return
 	}
+	fmt.Printf("[DUMP] RefreshGoogleSheetsOAuth.resourceOptionGoogleSheets: %+v\n", refreshTokenResponse)
+
 	resourceOptionGoogleSheets.SetAccessToken(refreshTokenResponse.ExportAccessToken())
 	resource.UpdateGoogleSheetOAuth2Options(userID, resourceOptionGoogleSheets)
 
