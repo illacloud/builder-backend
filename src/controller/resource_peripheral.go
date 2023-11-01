@@ -220,7 +220,7 @@ func (controller *Controller) RefreshGoogleSheetsOAuth(c *gin.Context) {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_REFRESH_GOOGLE_SHEETS, "fresh google sheets oauth token error: "+errInRefreshOAuthToken.Error())
 		return
 	}
-	fmt.Printf("[DUMP] RefreshGoogleSheetsOAuth.resourceOptionGoogleSheets: %+v\n", refreshTokenResponse)
+	fmt.Printf("[DUMP] RefreshGoogleSheetsOAuth.refreshTokenResponse: %+v\n", refreshTokenResponse)
 
 	resourceOptionGoogleSheets.SetAccessToken(refreshTokenResponse.ExportAccessToken())
 	resource.UpdateGoogleSheetOAuth2Options(userID, resourceOptionGoogleSheets)

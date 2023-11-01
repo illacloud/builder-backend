@@ -2,6 +2,7 @@ package oauthgoogle
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/illacloud/builder-backend/src/utils/config"
@@ -88,6 +89,8 @@ func RefreshOAuthToken(refreshToken string) (*RefreshTokenResponse, error) {
 	if resp.IsError() {
 		return nil, errInPost
 	}
+	fmt.Printf("[DUMP] RefreshOAuthToken.resp:%+v\n", resp)
+	fmt.Printf("[DUMP] RefreshOAuthToken.resp.Body():%+v\n", string(resp.Body()))
 	// unmarshal
 	refreshTokenResponse := NewRefreshTokenResponse()
 	errInUnmarshal := json.Unmarshal(resp.Body(), &refreshTokenResponse)
