@@ -37,23 +37,23 @@ func GetInstance() *Config {
 
 type Config struct {
 	// server config
-	ServerHost                                string `env:"ILLA_SERVER_HOST"                    			envDefault:"0.0.0.0"`
-	ServerPort                                string `env:"ILLA_SERVER_PORT"                    			envDefault:"8001"`
-	InternalServerPort                        string `env:"ILLA_SERVER_INTERNAL_PORT"           			envDefault:"9005"`
-	ServerMode                                string `env:"ILLA_SERVER_MODE"                    			envDefault:"debug"`
-	DeployMode                                string `env:"ILLA_DEPLOY_MODE"                    			envDefault:"self-host"`
-	SecretKey                                 string `env:"ILLA_SECRET_KEY"                     			envDefault:"8xEMrWkBARcDDYQ"`
-	WebsocketServerHost                       string `env:"ILLA_WEBSOCKET_SERVER_HOST"          			envDefault:"0.0.0.0"`
-	WebsocketServerPort                       string `env:"ILLA_WEBSOCKET_SERVER_PORT"          			envDefault:"8002"`
-	WebsocketServerConnectionHost             string `env:"ILLA_WEBSOCKET_CONNECTION_HOST"      			envDefault:"0.0.0.0"`
-	WebsocketServerConnectionPort             string `env:"ILLA_WEBSOCKET_CONNECTION_PORT"      			envDefault:"80"`
+	ServerHost                                string `env:"ILLA_SERVER_HOST"                                envDefault:"0.0.0.0"`
+	ServerPort                                string `env:"ILLA_SERVER_PORT"                                envDefault:"8001"`
+	InternalServerPort                        string `env:"ILLA_SERVER_INTERNAL_PORT"                       envDefault:"9005"`
+	ServerMode                                string `env:"ILLA_SERVER_MODE"                                envDefault:"debug"`
+	DeployMode                                string `env:"ILLA_DEPLOY_MODE"                                envDefault:"self-host"`
+	SecretKey                                 string `env:"ILLA_SECRET_KEY"                                 envDefault:"8xEMrWkBARcDDYQ"`
+	WebsocketServerHost                       string `env:"ILLA_WEBSOCKET_SERVER_HOST"                      envDefault:"0.0.0.0"`
+	WebsocketServerPort                       string `env:"ILLA_WEBSOCKET_SERVER_PORT"                      envDefault:"8002"`
+	WebsocketServerConnectionHost             string `env:"ILLA_WEBSOCKET_CONNECTION_HOST"                  envDefault:"0.0.0.0"`
+	WebsocketServerConnectionPort             string `env:"ILLA_WEBSOCKET_CONNECTION_PORT"                  envDefault:"80"`
 	WebsocketServerConnectionHostSouthAsia    string `env:"ILLA_WEBSOCKET_CONNECTION_HOST_SOUTH_ASIA"       envDefault:"0.0.0.0"`
 	WebsocketServerConnectionPortSouthAsia    string `env:"ILLA_WEBSOCKET_CONNECTION_PORT_SOUTH_ASIA"       envDefault:"80"`
 	WebsocketServerConnectionHostEastAsia     string `env:"ILLA_WEBSOCKET_CONNECTION_HOST_EAST_ASIA"        envDefault:"0.0.0.0"`
 	WebsocketServerConnectionPortEastAsia     string `env:"ILLA_WEBSOCKET_CONNECTION_PORT_EAST_ASIA"        envDefault:"80"`
 	WebsocketServerConnectionHostCenterEurope string `env:"ILLA_WEBSOCKET_CONNECTION_HOST_CENTER_EUROPE"    envDefault:"0.0.0.0"`
 	WebsocketServerConnectionPortCenterEurope string `env:"ILLA_WEBSOCKET_CONNECTION_PORT_CENTER_EUROPE"    envDefault:"80"`
-	WSSEnabled                                string `env:"ILLA_WSS_ENABLED"                    			envDefault:"false"`
+	WSSEnabled                                string `env:"ILLA_WSS_ENABLED"                                envDefault:"false"`
 
 	// key for idconvertor
 	RandomKey string `env:"ILLA_RANDOM_KEY"  envDefault:"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"`
