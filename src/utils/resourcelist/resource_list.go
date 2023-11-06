@@ -31,6 +31,7 @@ var (
 	TYPE_HYDRA         = "hydra"
 	TYPE_AI_AGENT      = "aiagent"
 	TYPE_ORACLE_9I     = "oracle9i"
+	TYPE_ILLA_DRIVE    = "illadrive"
 )
 
 var (
@@ -64,6 +65,7 @@ var (
 	TYPE_HYDRA_ID         = 27
 	TYPE_AI_AGENT_ID      = 28
 	TYPE_ORACLE_9I_ID     = 29
+	TYPE_ILLA_DRIVE_ID    = 30
 )
 
 var type_array = []string{
@@ -97,6 +99,7 @@ var type_array = []string{
 	27: TYPE_HYDRA,
 	28: TYPE_AI_AGENT,
 	29: TYPE_ORACLE_9I,
+	30: TYPE_ILLA_DRIVE,
 }
 
 var type_map = map[string]int{
@@ -130,11 +133,13 @@ var type_map = map[string]int{
 	TYPE_HYDRA:         TYPE_HYDRA_ID,
 	TYPE_AI_AGENT:      TYPE_AI_AGENT_ID,
 	TYPE_ORACLE_9I:     TYPE_ORACLE_9I_ID,
+	TYPE_ILLA_DRIVE:    TYPE_ILLA_DRIVE_ID,
 }
 
 var virtualResourceList = map[string]bool{
 	TYPE_TRANSFORMER: true,
 	TYPE_AI_AGENT:    true,
+	TYPE_ILLA_DRIVE:  true,
 }
 
 var localVirtualResourceList = map[string]bool{
@@ -142,7 +147,8 @@ var localVirtualResourceList = map[string]bool{
 }
 
 var remoteVirtualResourceList = map[string]bool{
-	TYPE_AI_AGENT: true,
+	TYPE_AI_AGENT:   true,
+	TYPE_ILLA_DRIVE: true,
 }
 
 var emptyOptionResourceList = map[string]bool{

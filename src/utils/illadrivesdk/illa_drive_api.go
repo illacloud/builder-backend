@@ -10,8 +10,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/illacloud/builder-backend/src/utils/config"
-	"github.com/illacloud/builder-backend/src/utils/resourcelist"
-	"github.com/illacloud/illa-marketplace-backend/src/utils/idconvertor"
+	"github.com/illacloud/builder-backend/src/utils/idconvertor"
 )
 
 const (
@@ -37,21 +36,8 @@ func (r *IllaDriveRestAPI) OpenDebug() {
 	r.Debug = true
 }
 
-func (r *IllaDriveRestAPI) GetResource(resourceType int, resourceID int) (map[string]interface{}, error) {
-	// self-hist need skip this method.
-	if !r.Config.IsCloudMode() {
-		return nil, nil
-	}
-	switch resourceType {
-	case resourcelist.TYPE_AI_AGENT_ID:
-		return r.GetAIAgent(resourceID)
-	default:
-		return nil, errors.New("Invalied resource type: " + resourcelist.GetResourceIDMappedType(resourceType))
-	}
-}
-
-func (r *IllaDriveRestAPI) GenerateAccessJWTToken(teamID int, driveID int, usage string) (map[string]interface{}, error) {
-	token, errInGenerateToken := GenerateDriveAPIActionToken(teamID, driveID, usage)
+func (r *IllaDriveRestAPI) GenerateAccessJWTToken(teamID int, usage string) (map[string]interface{}, error) {
+	token, errInGenerateToken := GenerateDriveAPIActionToken(teamID, usage)
 	if errInGenerateToken != nil {
 		return nil, errInGenerateToken
 	}
@@ -120,7 +106,6 @@ func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, fi
 		return nil, errInUnMarshal
 	}
 	return driveFiles, nil
-
 }
 
 func (r *IllaDriveRestAPI) ReadFileProperty(driveID int) (map[string]interface{}, error) {
