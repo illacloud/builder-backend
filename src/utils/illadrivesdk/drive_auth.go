@@ -10,18 +10,20 @@ import (
 )
 
 type DriveAuthClaims struct {
-	TeamID  int `json:"teamID"`
-	DriveID int `json:"driveID"`
+	TeamID  int    `json:"teamID"`
+	DriveID int    `json:"driveID"`
+	Usage   string `json:"usage"`
 	jwt.RegisteredClaims
 }
 
 const JWT_ISSUER = "ILLA Cloud"
 const JWT_TOKEN_DEFAULT_EXIPRED_PERIOD = time.Hour * 24
 
-func GenerateAndSendVerificationCode(teamID int, driveID int) (string, error) {
+func GenerateAndSendVerificationCode(teamID int, driveID int, usage string) (string, error) {
 	claims := &DriveAuthClaims{
 		TeamID:  teamID,
 		DriveID: driveID,
+		Usage:   usage,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer: JWT_ISSUER,
 			ExpiresAt: &jwt.NumericDate{
@@ -39,7 +41,7 @@ func GenerateAndSendVerificationCode(teamID int, driveID int) (string, error) {
 	return codeToken, nil
 }
 
-func Validate(jwtToken, username, usage string) (bool, error) {
+func Validate(jwtToken string, teamID int, driveID int, usage string) (bool, error) {
 	// parse token for start with "bearer"
 	jwtTokenFinal := jwtToken
 	jwtTokenSplited := strings.Split(jwtToken, " ")
@@ -47,7 +49,7 @@ func Validate(jwtToken, username, usage string) (bool, error) {
 		jwtTokenFinal = jwtTokenSplited[1]
 	}
 	// check
-	defaultClaims := &DefaultClaims{}
+	defaultClaims := &DriveAuthClaims{}
 	token, err := jwt.ParseWithClaims(jwtTokenFinal, defaultClaims, func(token *jwt.Token) (interface{}, error) {
 		conf := config.GetInstance()
 		return []byte(conf.GetSecretKey()), nil
@@ -56,12 +58,16 @@ func Validate(jwtToken, username, usage string) (bool, error) {
 		return false, err
 	}
 
-	claims, ok := token.Claims.(*DefaultClaims)
+	claims, ok := token.Claims.(*DriveAuthClaims)
+	if !(claims.TeamID == teamID) {
+		return false, errors.New("invalied team ID")
+	}
+	if !(claims.DriveID == driveID) {
+		return false, errors.New("invalied drive ID")
+	}
 	if !(ok && claims.Usage == usage) {
 		return false, errors.New("invalied token usage")
 	}
-	if !(claims.Username == username) {
-		return false, errors.New("invalied token")
-	}
+
 	return true, nil
 }
