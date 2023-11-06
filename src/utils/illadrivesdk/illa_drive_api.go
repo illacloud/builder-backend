@@ -11,11 +11,11 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/illacloud/builder-backend/src/utils/config"
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
-	"github.com/illacloud/builder-backend/src/utils/tokenvalidator"
+	"github.com/illacloud/illa-marketplace-backend/src/utils/idconvertor"
 )
 
 const (
-	DRIVE_API_LIST = "/api/v1/teams/%s/files"
+	DRIVE_API_LIST = "/api/v1/teams/%s/files?%s"
 )
 
 type IllaDriveRestAPI struct {
@@ -51,7 +51,7 @@ func (r *IllaDriveRestAPI) GetResource(resourceType int, resourceID int) (map[st
 }
 
 func (r *IllaDriveRestAPI) GenerateAccessJWTToken(teamID int, driveID int, usage string) (map[string]interface{}, error) {
-	token, errInGenerateToken := GenerateAndSendVerificationCode(teamID, driveID, usage)
+	token, errInGenerateToken := GenerateDriveAPIActionToken(teamID, driveID, usage)
 	if errInGenerateToken != nil {
 		return nil, errInGenerateToken
 	}
@@ -60,17 +60,47 @@ func (r *IllaDriveRestAPI) GenerateAccessJWTToken(teamID int, driveID int, usage
 	}, nil
 }
 
-func (r *IllaDriveRestAPI) List(path string, page int, limit int, fileType int, search string, sortedBy string, sortedType string, fileCategory string) (map[string]interface{}, error) {
+func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, fileType int, search string, sortedBy string, sortedType string, fileCategory string) (map[string]interface{}, error) {
 	// self-hist need skip this method.
 	if !r.Config.IsCloudMode() {
 		return nil, nil
 	}
+	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_USAGE_LIST)
+	if errInGenerateToken != nil {
+		return nil, errInGenerateToken
+	}
+
+	// concat request param
+	params := ""
+	if path != "" {
+		params += "path=" + path + "&"
+	}
+	if page != 0 {
+		params += "page=" + strconv.Itoa(page) + "&"
+	}
+	if limit != 0 {
+		params += "limit=" + strconv.Itoa(limit) + "&"
+	}
+	if fileType != 0 {
+		params += "type=" + strconv.Itoa(fileType) + "&"
+	}
+	if search != "" {
+		params += "search=" + search + "&"
+	}
+	if sortedBy != "" {
+		params += "sortedBy=" + sortedBy + "&"
+	}
+	if sortedType != "" {
+		params += "sortedType=" + sortedType + "&"
+	}
+	if fileCategory != "" {
+		params += "fileCategory=" + fileCategory + "&"
+	}
 	// run
 	client := resty.New()
-	tokenValidator := tokenvalidator.NewRequestTokenValidator()
-	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(GET_AI_AGENT_INTERNAL_API, aiAgentID)
+	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(DRIVE_API_LIST, idconvertor.ConvertIntToString(teamID), params)
 	resp, errInPost := client.R().
-		SetHeader("Request-Token", tokenValidator.GenerateValidateToken(strconv.Itoa(aiAgentID))).
+		SetHeader("Action-Token", actionToken).
 		Get(uri)
 	if r.Debug {
 		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  uri: %+v \n", uri)
@@ -84,16 +114,16 @@ func (r *IllaDriveRestAPI) List(path string, page int, limit int, fileType int, 
 		return nil, errors.New(resp.String())
 	}
 
-	var aiAgent map[string]interface{}
-	errInUnMarshal := json.Unmarshal([]byte(resp.String()), &aiAgent)
+	var driveFiles map[string]interface{}
+	errInUnMarshal := json.Unmarshal([]byte(resp.String()), &driveFiles)
 	if errInUnMarshal != nil {
 		return nil, errInUnMarshal
 	}
-	return aiAgent, nil
+	return driveFiles, nil
 
 }
 
-func (r *IllaDriveRestAPI) Read(driveID int) (map[string]interface{}, error) {
+func (r *IllaDriveRestAPI) ReadFileProperty(driveID int) (map[string]interface{}, error) {
 
 }
 
