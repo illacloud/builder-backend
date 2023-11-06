@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	DRIVE_API_LIST = "/api/v1/teams/%s/files?%s"
+	DRIVE_API_LIST                    = "/api/v1/teams/%s/files?%s"
+	DRIVE_API_GET_DOWNLOAD_SIGNED_URL = "/api/v1/teams/%s/files/%s/url"
 )
 
 type IllaDriveRestAPI struct {
@@ -51,6 +52,7 @@ func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, fi
 	if !r.Config.IsCloudMode() {
 		return nil, nil
 	}
+	// calculate token
 	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_USAGE_LIST)
 	if errInGenerateToken != nil {
 		return nil, errInGenerateToken
@@ -85,16 +87,16 @@ func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, fi
 	// run
 	client := resty.New()
 	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(DRIVE_API_LIST, idconvertor.ConvertIntToString(teamID), params)
-	resp, errInPost := client.R().
+	resp, errInGet := client.R().
 		SetHeader("Action-Token", actionToken).
 		Get(uri)
 	if r.Debug {
 		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  uri: %+v \n", uri)
-		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  response: %+v, err: %+v \n", resp, errInPost)
+		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  response: %+v, err: %+v \n", resp, errInGet)
 		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  resp.StatusCode(): %+v \n", resp.StatusCode())
 	}
-	if errInPost != nil {
-		return nil, errInPost
+	if errInGet != nil {
+		return nil, errInGet
 	}
 	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
 		return nil, errors.New(resp.String())
@@ -120,8 +122,39 @@ func (r *IllaDriveRestAPI) GetMutipleUploadAddres(driveID int) (map[string]inter
 
 }
 
-func (r *IllaDriveRestAPI) GetDownloadAddres(driveID int) (map[string]interface{}, error) {
+func (r *IllaDriveRestAPI) GetDownloadAddres(teamID int, fileID string) (map[string]interface{}, error) {
+	// self-hist need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil, nil
+	}
+	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_USAGE_GET_DOWNLOAD_ADDRES)
+	if errInGenerateToken != nil {
+		return nil, errInGenerateToken
+	}
+	// run
+	client := resty.New()
+	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(DRIVE_API_GET_DOWNLOAD_SIGNED_URL, idconvertor.ConvertIntToString(teamID), fileID)
+	resp, errInGet := client.R().
+		SetHeader("Action-Token", actionToken).
+		Get(uri)
+	if r.Debug {
+		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  uri: %+v \n", uri)
+		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  response: %+v, err: %+v \n", resp, errInGet)
+		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  resp.StatusCode(): %+v \n", resp.StatusCode())
+	}
+	if errInGet != nil {
+		return nil, errInGet
+	}
+	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
+		return nil, errors.New(resp.String())
+	}
 
+	var downloadAddress map[string]interface{}
+	errInUnMarshal := json.Unmarshal([]byte(resp.String()), &downloadAddress)
+	if errInUnMarshal != nil {
+		return nil, errInUnMarshal
+	}
+	return downloadAddress, nil
 }
 
 func (r *IllaDriveRestAPI) GetMutipleDownloadAddres(driveID int) (map[string]interface{}, error) {
