@@ -98,6 +98,8 @@ type Config struct {
 	IllaGoogleSheetsRedirectURI  string `env:"ILLA_GS_REDIRECT_URI" envDefault:""`
 	// toke for ip zone detector
 	IllaIPZoneDetectorToken string `env:"ILLA_IP_ZONE_DETECTOR_TOKEN" envDefault:""`
+	// illa drive config
+	IllaDriveRestAPI string `env:"ILLA_DRIVE_API" envDefault:"http://illa-drive-backend:8004"`
 }
 
 func getConfig() (*Config, error) {
@@ -327,4 +329,8 @@ func (c *Config) GetWebScoketServerConnectionAddressEastAsia() string {
 
 func (c *Config) GetWebScoketServerConnectionAddressCenterEurope() string {
 	return c.WebsocketServerConnectionHostCenterEurope + ":" + c.WebsocketServerConnectionPortCenterEurope
+}
+
+func (c *Config) GetIllaDriveAPIForSDK() string {
+	return c.IllaDriveRestAPI
 }
