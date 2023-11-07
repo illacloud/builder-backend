@@ -103,7 +103,7 @@ func (r *IllaDriveRestAPI) generateDriveTinyURLs(teamID int, fileIDs []string, e
 	return tinyURLMaps, nil
 }
 
-func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, search string) (map[string]interface{}, error) {
+func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, search string, expirationType string, expiry string, hotlinkProtection bool) (interface{}, error) {
 	// self-hist need skip this method.
 	if !r.Config.IsCloudMode() {
 		return nil, nil
@@ -153,36 +153,32 @@ func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, se
 	if errInUnMarshal != nil {
 		return nil, errInUnMarshal
 	}
-	fileList, errInNewFileList := NewFileListByListResponse(listResponse)
+
+	rawFiles, errInExtractRawFiles := ExtractRawFilesFromListResponse(listResponse)
+	if errInExtractRawFiles != nil {
+		return nil, errInExtractRawFiles
+	}
+	fileIDs, errInExtractFileIDs := ExtractFileIDFromRawFiles(rawFiles)
+	if errInExtractFileIDs != nil {
+		return nil, errInExtractFileIDs
+	}
+
+	// get file tinyurls
+	tinyURLsMap, errInGenerateTinyURLs := r.generateDriveTinyURLs(teamID, fileIDs, expirationType, expiry, hotlinkProtection)
+	if errInGenerateTinyURLs != nil {
+		return nil, errInGenerateTinyURLs
+	}
+
+	rawFilesExtened, errInExtendRawFilesTinyURL := ExtendRawFilesTinyURL(rawFiles, tinyURLsMap)
+	if errInExtendRawFilesTinyURL != nil {
+		return nil, errInExtendRawFilesTinyURL
+	}
+	fileList, errInNewFileList := NewFileListByListResponseAndExtendedFiles(listResponse, rawFilesExtened)
 	if errInNewFileList != nil {
 		return nil, errInNewFileList
 	}
 
-	// extract file ids
-	listedFiles, hitListedFiles := listResponse["files"]
-
-	// not files, empty folder
-	if !hitListedFiles {
-		return listResponse, nil
-	}
-
-	// assert sub structure
-	listedFilesAsserted, assertListedFilesPass := listedFiles.([]interface{})
-	if !assertListedFilesPass {
-		return nil, errors.New("invalied file list returned")
-	}
-	for _, listedFile := range listedFilesAsserted {
-		listedFileAsserted, listedFileAssertePass := listedFile.(map[string]interface{})
-		if !listedFileAssertePass {
-			return nil, errors.New("invalied file list element returned")
-		}
-		listedFileAsserted
-	}
-
-	// get file tinyurls
-	r.generateDriveTinyURLs(teamID)
-
-	return driveFiles, nil
+	return fileList, nil
 }
 
 func (r *IllaDriveRestAPI) ReadFileProperty(driveID int) (map[string]interface{}, error) {

@@ -3,16 +3,16 @@ package illadrivesdk
 import "errors"
 
 type FileList struct {
-	Path            string        `json:"path"`
-	CurrentFolderID string        `json:"currentFolderID"`
-	Files           []interface{} `json:"files"`
+	Path            string                   `json:"path"`
+	CurrentFolderID string                   `json:"currentFolderID"`
+	Files           []map[string]interface{} `json:"files"`
 }
 
 func NewFileList() *FileList {
 	return &FileList{}
 }
 
-func NewFileListByListResponse(listResponse map[string]interface{}) (*FileList, error) {
+func NewFileListByListResponseAndExtendedFiles(listResponse map[string]interface{}, files []map[string]interface{}) (*FileList, error) {
 	pathRaw, hitPath := listResponse["path"]
 	currentFolderIDRaw, hitCurrentFolderID := listResponse["currentFolderID"]
 	if !hitPath || !hitCurrentFolderID {
@@ -28,6 +28,6 @@ func NewFileListByListResponse(listResponse map[string]interface{}) (*FileList, 
 	return &FileList{
 		Path:            pathAsserted,
 		CurrentFolderID: currentFolderIDAsserted,
-		Files:           make([]interface{}, 0),
+		Files:           files,
 	}, nil
 }
