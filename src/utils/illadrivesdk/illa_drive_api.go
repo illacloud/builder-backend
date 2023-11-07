@@ -19,6 +19,12 @@ const (
 	DRIVE_API_GENERATE_TINY_URL_BATCH = "/api/v1/teams/%s/links/batch"
 )
 
+const (
+	FILE_TINY_URL_PREFIX_TEST       = "https://cloud-api-test.illacloud.com/drive/f/%s"
+	FILE_TINY_URL_PREFIX_BETA       = "https://cloud-api-beta.illacloud.com/drive/f/%s"
+	FILE_TINY_URL_PREFIX_PRODUCTION = "https://cloud-api.illacloud.com/drive/f/%s"
+)
+
 type IllaDriveRestAPI struct {
 	Config *config.Config
 	Debug  bool `json:"-"`
@@ -53,6 +59,11 @@ func (r *IllaDriveRestAPI) GenerateAccessJWTToken(teamID int, usage string) (map
 // {"ids":["ILAfx4p1C7cp"],"expirationType":"persistent","hotlinkProtection":true}
 // ```
 func (r *IllaDriveRestAPI) generateDriveTinyURLs(teamID int, fileIDs []string, expirationType string, expiry string, hotlinkProtection bool) (map[string]string, error) {
+	// self-hist need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil, nil
+	}
+
 	// calculate token
 	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_ACTION_GENERATE_TINY_URLS)
 	if errInGenerateToken != nil {
@@ -80,6 +91,14 @@ func (r *IllaDriveRestAPI) generateDriveTinyURLs(teamID int, fileIDs []string, e
 	if errInUnMarshal != nil {
 		return nil, errInUnMarshal
 	}
+	// get file tiny url prefix
+	tinyURLPrefix := FILE_TINY_URL_PREFIX_TEST
+	if r.Config.IsCloudProductionMode() {
+		tinyURLPrefix = FILE_TINY_URL_PREFIX_PRODUCTION
+	} else if r.Config.IsCloudBetaMode() {
+		tinyURLPrefix = FILE_TINY_URL_PREFIX_BETA
+	}
+
 	// fill into lookup table
 	tinyURLMaps := make(map[string]string)
 	for _, tinyURL := range tinyURLs {
@@ -98,12 +117,12 @@ func (r *IllaDriveRestAPI) generateDriveTinyURLs(teamID int, fileIDs []string, e
 		if !fileIDAssertPass || !tinyURLAssertPass {
 			return nil, errors.New("assert failed in tiny url struct field")
 		}
-		tinyURLMaps[fileIDAsserted] = tinyURLStringAsserted
+		tinyURLMaps[fileIDAsserted] = fmt.Sprintf(tinyURLPrefix, tinyURLStringAsserted)
 	}
 	return tinyURLMaps, nil
 }
 
-func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, search string, expirationType string, expiry string, hotlinkProtection bool) (interface{}, error) {
+func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, fileID string, search string, expirationType string, expiry string, hotlinkProtection bool) (interface{}, error) {
 	// self-hist need skip this method.
 	if !r.Config.IsCloudMode() {
 		return nil, nil
@@ -125,6 +144,9 @@ func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, se
 	}
 	if limit != 0 {
 		params += "limit=" + strconv.Itoa(limit) + "&"
+	}
+	if fileID != "" {
+		params += "fileID=" + fileID + "&"
 	}
 	if search != "" {
 		params += "search=" + search + "&"
@@ -179,10 +201,6 @@ func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, se
 	}
 
 	return fileList, nil
-}
-
-func (r *IllaDriveRestAPI) ReadFileProperty(driveID int) (map[string]interface{}, error) {
-
 }
 
 func (r *IllaDriveRestAPI) GetUploadAddres(driveID int) (map[string]interface{}, error) {

@@ -41,7 +41,7 @@ func ExtractFileIDFromRawFiles(files []map[string]interface{}) ([]string, error)
 	return fileIDs, nil
 }
 
-func ExtendFilesTinyURL(files []map[string]interface{}, tinyURLsMap map[string]string) ([]map[string]interface{}, error) {
+func ExtendRawFilesTinyURL(files []map[string]interface{}, tinyURLsMap map[string]string) ([]map[string]interface{}, error) {
 	for serial, file := range files {
 		fileID, hitFileID := file["id"]
 		if !hitFileID {
