@@ -10,30 +10,31 @@ import (
 )
 
 const (
-	DRIVE_API_USAGE_LIST                        = "List"
-	DRIVE_API_USAGE_READ_FILE_PROPERTY          = "ReadFileProperty"
-	DRIVE_API_USAGE_GET_UPLOAD_ADDRES           = "GetUploadAddres"
-	DRIVE_API_USAGE_GET_MUTIPLE_UPLOAD_ADDRES   = "GetMutipleUploadAddres"
-	DRIVE_API_USAGE_GET_DOWNLOAD_ADDRES         = "GetDownloadAddres"
-	DRIVE_API_USAGE_GET_MUTIPLE_DOWNLOAD_ADDRES = "GetMutipleDownloadAddres"
-	DRIVE_API_USAGE_DELETE_FILE                 = "DeleteFile"
-	DRIVE_API_USAGE_DELETE_MULTIPLE_FILE        = "DeleteMultipleFile"
-	DRIVE_API_USAGE_UPDATE_FILE_PROPERTY        = "UpdateFileProperty"
+	DRIVE_API_ACTION_LIST                        = "List"
+	DRIVE_API_ACTION_READ_FILE_PROPERTY          = "ReadFileProperty"
+	DRIVE_API_ACTION_GET_UPLOAD_ADDRES           = "GetUploadAddres"
+	DRIVE_API_ACTION_GET_MUTIPLE_UPLOAD_ADDRES   = "GetMutipleUploadAddres"
+	DRIVE_API_ACTION_GET_DOWNLOAD_ADDRES         = "GetDownloadAddres"
+	DRIVE_API_ACTION_GET_MUTIPLE_DOWNLOAD_ADDRES = "GetMutipleDownloadAddres"
+	DRIVE_API_ACTION_DELETE_FILE                 = "DeleteFile"
+	DRIVE_API_ACTION_DELETE_MULTIPLE_FILE        = "DeleteMultipleFile"
+	DRIVE_API_ACTION_UPDATE_FILE_PROPERTY        = "UpdateFileProperty"
+	DRIVE_API_ACTION_GENERATE_TINY_URLS          = "generateTinyURLs"
 )
 
 type DriveAuthClaims struct {
 	TeamID int    `json:"teamID"`
-	Usage  string `json:"usage"`
+	Action string `json:"action"`
 	jwt.RegisteredClaims
 }
 
 const JWT_ISSUER = "ILLA Cloud"
 const JWT_TOKEN_DEFAULT_EXIPRED_PERIOD = time.Hour * 24
 
-func GenerateDriveAPIActionToken(teamID int, usage string) (string, error) {
+func GenerateDriveAPIActionToken(teamID int, action string) (string, error) {
 	claims := &DriveAuthClaims{
 		TeamID: teamID,
-		Usage:  usage,
+		Action: action,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer: JWT_ISSUER,
 			ExpiresAt: &jwt.NumericDate{
@@ -51,7 +52,7 @@ func GenerateDriveAPIActionToken(teamID int, usage string) (string, error) {
 	return codeToken, nil
 }
 
-func Validate(jwtToken string, teamID int, usage string) (bool, error) {
+func Validate(jwtToken string, teamID int, action string) (bool, error) {
 	// parse token for start with "bearer"
 	jwtTokenFinal := jwtToken
 	jwtTokenSplited := strings.Split(jwtToken, " ")
@@ -72,8 +73,8 @@ func Validate(jwtToken string, teamID int, usage string) (bool, error) {
 	if !(claims.TeamID == teamID) {
 		return false, errors.New("invalied team ID")
 	}
-	if !(ok && claims.Usage == usage) {
-		return false, errors.New("invalied token usage")
+	if !(ok && claims.Action == action) {
+		return false, errors.New("invalied token action")
 	}
 
 	return true, nil

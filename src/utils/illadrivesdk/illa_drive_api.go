@@ -16,6 +16,7 @@ import (
 const (
 	DRIVE_API_LIST                    = "/api/v1/teams/%s/files?%s"
 	DRIVE_API_GET_DOWNLOAD_SIGNED_URL = "/api/v1/teams/%s/files/%s/url"
+	DRIVE_API_GENERATE_TINY_URL_BATCH = "/api/v1/teams/%s/links/batch"
 )
 
 type IllaDriveRestAPI struct {
@@ -47,13 +48,69 @@ func (r *IllaDriveRestAPI) GenerateAccessJWTToken(teamID int, usage string) (map
 	}, nil
 }
 
-func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, fileType int, search string, sortedBy string, sortedType string, fileCategory string) (map[string]interface{}, error) {
+// the request like:
+// ```json
+// {"ids":["ILAfx4p1C7cp"],"expirationType":"persistent","hotlinkProtection":true}
+// ```
+func (r *IllaDriveRestAPI) generateDriveTinyURLs(teamID int, fileIDs []string, expirationType string, expiry string, hotlinkProtection bool) (map[string]string, error) {
+	// calculate token
+	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_ACTION_GENERATE_TINY_URLS)
+	if errInGenerateToken != nil {
+		return nil, errInGenerateToken
+	}
+
+	req := NewGenerateTinyURLRequestByParam(fileIDs, expirationType, expiry, hotlinkProtection)
+
+	// get file list
+	client := resty.New()
+	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(DRIVE_API_GENERATE_TINY_URL_BATCH, idconvertor.ConvertIntToString(teamID))
+	resp, errInPost := client.R().
+		SetHeader("Action-Token", actionToken).
+		SetBody(req).
+		Post(uri)
+	if errInPost != nil {
+		return nil, errInPost
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, errors.New(resp.String())
+	}
+	// unmarshal
+	var tinyURLs []interface{}
+	errInUnMarshal := json.Unmarshal([]byte(resp.String()), &tinyURLs)
+	if errInUnMarshal != nil {
+		return nil, errInUnMarshal
+	}
+	// fill into lookup table
+	tinyURLMaps := make(map[string]string)
+	for _, tinyURL := range tinyURLs {
+		tinyURLAsserted, assertPass := tinyURL.(map[string]interface{})
+		if !assertPass {
+			return nil, errors.New("assert failed in tiny url struct")
+		}
+		fileID, hitFileID := tinyURLAsserted["fileID"]
+		tinyURL, hitTinyURL := tinyURLAsserted["tinyURL"]
+		if !hitFileID || !hitTinyURL {
+			return nil, errors.New("tiny url response struct missing field")
+
+		}
+		fileIDAsserted, fileIDAssertPass := fileID.(string)
+		tinyURLStringAsserted, tinyURLAssertPass := tinyURL.(string)
+		if !fileIDAssertPass || !tinyURLAssertPass {
+			return nil, errors.New("assert failed in tiny url struct field")
+		}
+		tinyURLMaps[fileIDAsserted] = tinyURLStringAsserted
+	}
+	return tinyURLMaps, nil
+}
+
+func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, search string) (map[string]interface{}, error) {
 	// self-hist need skip this method.
 	if !r.Config.IsCloudMode() {
 		return nil, nil
 	}
+
 	// calculate token
-	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_USAGE_LIST)
+	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_ACTION_LIST)
 	if errInGenerateToken != nil {
 		return nil, errInGenerateToken
 	}
@@ -69,22 +126,11 @@ func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, fi
 	if limit != 0 {
 		params += "limit=" + strconv.Itoa(limit) + "&"
 	}
-	if fileType != 0 {
-		params += "type=" + strconv.Itoa(fileType) + "&"
-	}
 	if search != "" {
 		params += "search=" + search + "&"
 	}
-	if sortedBy != "" {
-		params += "sortedBy=" + sortedBy + "&"
-	}
-	if sortedType != "" {
-		params += "sortedType=" + sortedType + "&"
-	}
-	if fileCategory != "" {
-		params += "fileCategory=" + fileCategory + "&"
-	}
-	// run
+
+	// get file list
 	client := resty.New()
 	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(DRIVE_API_LIST, idconvertor.ConvertIntToString(teamID), params)
 	resp, errInGet := client.R().
@@ -107,6 +153,9 @@ func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, fi
 	if errInUnMarshal != nil {
 		return nil, errInUnMarshal
 	}
+
+	// get file
+
 	return driveFiles, nil
 }
 
@@ -127,7 +176,7 @@ func (r *IllaDriveRestAPI) GetDownloadAddres(teamID int, fileID string) (map[str
 	if !r.Config.IsCloudMode() {
 		return nil, nil
 	}
-	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_USAGE_GET_DOWNLOAD_ADDRES)
+	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_ACTION_GET_DOWNLOAD_ADDRES)
 	if errInGenerateToken != nil {
 		return nil, errInGenerateToken
 	}
