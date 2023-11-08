@@ -65,7 +65,7 @@ func (r *IllaDriveRestAPI) ListFiles(teamID int, path string, page int, limit in
 	}
 
 	// calculate token
-	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_ACTION_LIST)
+	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_ACTION_LIST_FILES)
 	if errInGenerateToken != nil {
 		return nil, errInGenerateToken
 	}
@@ -320,7 +320,7 @@ func (r *IllaDriveRestAPI) GetDownloadAddress(teamID int, fileID string) (map[st
 	if !r.Config.IsCloudMode() {
 		return nil, nil
 	}
-	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_ACTION_GET_DOWNLOAD_ADDRES)
+	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_ACTION_GET_DOWNLOAD_ADDRESS)
 	if errInGenerateToken != nil {
 		return nil, errInGenerateToken
 	}

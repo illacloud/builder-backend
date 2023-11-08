@@ -10,18 +10,14 @@ import (
 )
 
 const (
-	DRIVE_API_ACTION_LIST                        = "List"
-	DRIVE_API_ACTION_READ_FILE_PROPERTY          = "ReadFileProperty"
-	DRIVE_API_ACTION_GET_UPLOAD_ADDRES           = "GetUploadAddres"
-	DRIVE_API_ACTION_GET_MUTIPLE_UPLOAD_ADDRES   = "GetMutipleUploadAddres"
-	DRIVE_API_ACTION_GET_DOWNLOAD_ADDRES         = "GetDownloadAddres"
-	DRIVE_API_ACTION_GET_MUTIPLE_DOWNLOAD_ADDRES = "GetMutipleDownloadAddres"
-	DRIVE_API_ACTION_DELETE_FILE                 = "DeleteFile"
-	DRIVE_API_ACTION_DELETE_MULTIPLE_FILE        = "DeleteMultipleFile"
-	DRIVE_API_ACTION_UPDATE_FILE_PROPERTY        = "UpdateFileProperty"
-	DRIVE_API_ACTION_GENERATE_TINY_URLS          = "GenerateTinyURLs"
-	DRIVE_API_ACTION_GET_DOLDER_ID_BY_PATH       = "GetFolderIDByPath"
-	DRIVE_API_ACTION_UPDATE_FILE_STATUS          = "UpdateFileStatus"
+	DRIVE_API_ACTION_GENERATE_TINY_URLS    = "GenerateTinyURLs"
+	DRIVE_API_ACTION_GET_FOLDER_ID_BY_PATH = "GetFolderIDByPath"
+	DRIVE_API_ACTION_LIST_FILES            = "ListFiles"
+	DRIVE_API_ACTION_GET_UPLOAD_ADDRES     = "GetUploadAddres"
+	DRIVE_API_ACTION_UPDATE_FILE_STATUS    = "UpdateFileStatus"
+	DRIVE_API_ACTION_GET_DOWNLOAD_ADDRESS  = "GetDownloadAddress"
+	DRIVE_API_ACTION_DELETE_FILES          = "DeleteFiles"
+	DRIVE_API_ACTION_RENAME_FILE           = "RenameFiles"
 )
 
 type DriveAuthClaims struct {
