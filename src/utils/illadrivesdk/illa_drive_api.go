@@ -303,7 +303,7 @@ func (r *IllaDriveRestAPI) UpdateFileStatus(teamID int, fileID string, status st
 	return updateStatusResponse, nil
 }
 
-func (r *IllaDriveRestAPI) GetMutipleUploadAddres(teamID int, overwriteDuplicate bool, path string, fileNames []string, fileSize int64, contentType string) (map[string]interface{}, error) {
+func (r *IllaDriveRestAPI) GetMutipleUploadAddress(teamID int, overwriteDuplicate bool, path string, fileNames []string, fileSize int64, contentType string) (map[string]interface{}, error) {
 	ret := make([]map[string]interface{}, 0)
 	for _, fileName := range fileNames {
 		uploadAddressInfo, errInGetUploadAddress := r.GetUploadAddres(teamID, overwriteDuplicate, path, fileName, fileSize, contentType)
@@ -422,7 +422,7 @@ func (r *IllaDriveRestAPI) DeleteMultipleFile(teamID int, fileIDs []string) (map
 	return map[string]string{"deleted": true}, nil
 }
 
-func (r *IllaDriveRestAPI) ModifyFileName(teamID int, fileID string, fileName string) (map[string]interface{}, error) {
+func (r *IllaDriveRestAPI) RenameFile(teamID int, fileID string, fileName string) (map[string]interface{}, error) {
 	// self-host need skip this method.
 	if !r.Config.IsCloudMode() {
 		return nil, nil
@@ -451,9 +451,9 @@ func (r *IllaDriveRestAPI) ModifyFileName(teamID int, fileID string, fileName st
 		SetBody(req).
 		Put(uri)
 	if r.Debug {
-		log.Printf("[DUMP] IllaDriveSDK.ModifyFileName() uri: %+v \n", uri)
-		log.Printf("[DUMP] IllaDriveSDK.ModifyFileName() response: %+v, err: %+v \n", resp, errInGet)
-		log.Printf("[DUMP] IllaDriveSDK.ModifyFileName() resp.StatusCode(): %+v \n", resp.StatusCode())
+		log.Printf("[DUMP] IllaDriveSDK.RenameFile() uri: %+v \n", uri)
+		log.Printf("[DUMP] IllaDriveSDK.RenameFile() response: %+v, err: %+v \n", resp, errInGet)
+		log.Printf("[DUMP] IllaDriveSDK.RenameFile() resp.StatusCode(): %+v \n", resp.StatusCode())
 	}
 	if errInDelete != nil {
 		return nil, errInGet
