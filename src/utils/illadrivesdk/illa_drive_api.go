@@ -15,9 +15,9 @@ import (
 
 const (
 	DRIVE_API_LIST                    = "/api/v1/teams/%s/illaAction/files?%s"
-	DRIVE_API_GET_DOWNLOAD_SIGNED_URL = "/api/v1/teams/%s/illaAction/files/%s/url"
 	DRIVE_API_GET_UPLOAD_ADDRESS      = "/api/v1/teams/%s/illaAction/files"
 	DRIVE_API_UPDATE_FILE_STATUS      = "/api/v1/teams/%s/illaAction/files/%s/status"
+	DRIVE_API_GET_DOWNLOAD_SIGNED_URL = "/api/v1/teams/%s/illaAction/files/%s/url"
 )
 
 // duplication strategies
@@ -57,7 +57,7 @@ func (r *IllaDriveRestAPI) GenerateAccessJWTToken(teamID int, usage string) (map
 }
 
 func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, fileID string, search string, expirationType string, expiry string, hotlinkProtection bool) (interface{}, error) {
-	// self-hist need skip this method.
+	// self-host need skip this method.
 	if !r.Config.IsCloudMode() {
 		return nil, nil
 	}
@@ -174,7 +174,7 @@ func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, fi
 }
 
 func (r *IllaDriveRestAPI) GetUploadAddres(teamID int, overwriteDuplicate bool, path string, fileName string, fileSize int64, contentType string) (map[string]interface{}, error) {
-	// self-hist need skip this method.
+	// self-host need skip this method.
 	if !r.Config.IsCloudMode() {
 		return nil, nil
 	}
@@ -241,7 +241,7 @@ func (r *IllaDriveRestAPI) GetUploadAddres(teamID int, overwriteDuplicate bool, 
 // The request like:
 
 func (r *IllaDriveRestAPI) UpdateFileStatus(teamID int, fileID string, status string) (map[string]interface{}, error) {
-	// self-hist need skip this method.
+	// self-host need skip this method.
 	if !r.Config.IsCloudMode() {
 		return nil, nil
 	}
@@ -309,7 +309,7 @@ func (r *IllaDriveRestAPI) GetMutipleUploadAddres(teamID int, overwriteDuplicate
 }
 
 func (r *IllaDriveRestAPI) GetDownloadAddres(teamID int, fileID string) (map[string]interface{}, error) {
-	// self-hist need skip this method.
+	// self-host need skip this method.
 	if !r.Config.IsCloudMode() {
 		return nil, nil
 	}
@@ -317,7 +317,22 @@ func (r *IllaDriveRestAPI) GetDownloadAddres(teamID int, fileID string) (map[str
 	if errInGenerateToken != nil {
 		return nil, errInGenerateToken
 	}
-	// run
+	// get file download link, the request like:
+	// ```
+	// [GET] https://cloud-api-test.illacloud.com/drive/api/v1/teams/ILAfx4p1C7ey/files/ILAfx4p1C7cp/url
+	// ```
+	// and response like:
+	// ```json
+	// {
+	//     "id": "ILAfx4p1C7cp",
+	//     "name": "007Y7SRMly1gvn2ydkciqj611a0m77a802.jpg",
+	//     "contentType": "image/jpeg",
+	//     "size": 103564,
+	//     "downloadURL": "https://storage.googleapis.com/drive_34_49653013-6cdd-11ee-91ee-e25d6f70d4d8/175_b9fa8e7a-2586-4974-a195-1175ff86a68d.jpg?X-Goog-Algorithm=GOOG4-RSA-SHA256\u0026X-Goog-Credential=illa-drive-dev%40illa-drive.iam.gserviceaccount.com%2F20231108%2Fauto%2Fstorage%2Fgoog4_request\u0026X-Goog-Date=20231108T184657Z\u0026X-Goog-Expires=179\u0026X-Goog-Signature=1aaaddc7f389e2d2c179661835276ee1f71ed7d65119216978050f999034c13c251f3480e71651ea77ac34ef851298c15ef5118224deb8d74f58ec61bb15cf8df769b66f61dbdb446a480122dd257e0333ea16939648a9fb9ce39d4646dd549df1776613763aa6dadc01bb7bc5c695cac6588b7a3fdbfafac50a85a5bf47f5176de420269812f2fa04d8eab712a2e5434913deb2bdf3cd9b22061eea759a4a57a864e0be46e316cb0908d885889c2d7ebad8a8f5b2506b54a0d40a6322293de3391a66aaa004ff883894d7bfccc6b6982ed561e31e7a0445a2960a4672260d966d0acbf304ce4f0f7458271ae60b36b34bbda66d0f379fb52b87ecd26a97445c\u0026X-Goog-SignedHeaders=host",
+	//     "createdAt": "2023-11-02T13:15:49.053259Z",
+	//     "lastModifiedAt": "2023-11-02T13:15:50.571428Z"
+	// }
+	// ```
 	client := resty.New()
 	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(DRIVE_API_GET_DOWNLOAD_SIGNED_URL, idconvertor.ConvertIntToString(teamID), fileID)
 	resp, errInGet := client.R().
@@ -343,8 +358,16 @@ func (r *IllaDriveRestAPI) GetDownloadAddres(teamID int, fileID string) (map[str
 	return downloadAddress, nil
 }
 
-func (r *IllaDriveRestAPI) GetMutipleDownloadAddres(driveID int) (map[string]interface{}, error) {
-
+func (r *IllaDriveRestAPI) GetMutipleDownloadAddres(teamID int, fileIDs []string) (map[string]interface{}, error) {
+	ret := make([]map[string]interface{}, 0)
+	for _, fileID := range fileIDs {
+		fileDownloadAddressInfo, errInGetDownloadAddress := r.GetDownloadAddres(teamID, fileID)
+		if errInGetDownloadAddress != nil {
+			return nil, errInGetDownloadAddress
+		}
+		ret = append(ret, fileDownloadAddressInfo)
+	}
+	return ret, nil
 }
 
 func (r *IllaDriveRestAPI) DeleteFile(driveID int) (map[string]interface{}, error) {
