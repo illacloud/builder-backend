@@ -14,11 +14,12 @@ import (
 )
 
 const (
-	DRIVE_API_LIST                    = "/api/v1/teams/%s/illaAction/files?%s"
+	DRIVE_API_LIST_FILES              = "/api/v1/teams/%s/illaAction/files?%s"
 	DRIVE_API_GET_UPLOAD_ADDRESS      = "/api/v1/teams/%s/illaAction/files"
 	DRIVE_API_UPDATE_FILE_STATUS      = "/api/v1/teams/%s/illaAction/files/%s/status"
 	DRIVE_API_GET_DOWNLOAD_SIGNED_URL = "/api/v1/teams/%s/illaAction/files/%s/url"
 	DRIVE_API_DELETE_FILES            = "/api/v1/teams/%s/files"
+	DRIVE_API_RENAME_FILE             = "/api/v1/teams/%s/files/%s/name"
 )
 
 // duplication strategies
@@ -57,7 +58,7 @@ func (r *IllaDriveRestAPI) GenerateAccessJWTToken(teamID int, usage string) (map
 	}, nil
 }
 
-func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, fileID string, search string, expirationType string, expiry string, hotlinkProtection bool) (interface{}, error) {
+func (r *IllaDriveRestAPI) ListFiles(teamID int, path string, page int, limit int, fileID string, search string, expirationType string, expiry string, hotlinkProtection bool) (interface{}, error) {
 	// self-host need skip this method.
 	if !r.Config.IsCloudMode() {
 		return nil, nil
@@ -125,14 +126,14 @@ func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, fi
 	//	}
 	// ```
 	client := resty.New()
-	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(DRIVE_API_LIST, idconvertor.ConvertIntToString(teamID), params)
+	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(DRIVE_API_LIST_FILES, idconvertor.ConvertIntToString(teamID), params)
 	resp, errInGet := client.R().
 		SetHeader("Action-Token", actionToken).
 		Get(uri)
 	if r.Debug {
-		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  uri: %+v \n", uri)
-		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  response: %+v, err: %+v \n", resp, errInGet)
-		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  resp.StatusCode(): %+v \n", resp.StatusCode())
+		log.Printf("[DUMP] IllaDriveSDK.ListFiles()  uri: %+v \n", uri)
+		log.Printf("[DUMP] IllaDriveSDK.ListFiles()  response: %+v, err: %+v \n", resp, errInGet)
+		log.Printf("[DUMP] IllaDriveSDK.ListFiles()  resp.StatusCode(): %+v \n", resp.StatusCode())
 	}
 	if errInGet != nil {
 		return nil, errInGet
@@ -223,6 +224,11 @@ func (r *IllaDriveRestAPI) GetUploadAddres(teamID int, overwriteDuplicate bool, 
 		SetHeader("Action-Token", actionToken).
 		SetBody(req).
 		Post(uri)
+	if r.Debug {
+		log.Printf("[DUMP] IllaDriveSDK.GetUploadAddres()  uri: %+v \n", uri)
+		log.Printf("[DUMP] IllaDriveSDK.GetUploadAddres()  response: %+v, err: %+v \n", resp, errInGet)
+		log.Printf("[DUMP] IllaDriveSDK.GetUploadAddres()  resp.StatusCode(): %+v \n", resp.StatusCode())
+	}
 	if errInPost != nil {
 		return nil, errInPost
 	}
@@ -309,7 +315,7 @@ func (r *IllaDriveRestAPI) GetMutipleUploadAddres(teamID int, overwriteDuplicate
 	return ret, nil
 }
 
-func (r *IllaDriveRestAPI) GetDownloadAddres(teamID int, fileID string) (map[string]interface{}, error) {
+func (r *IllaDriveRestAPI) GetDownloadAddress(teamID int, fileID string) (map[string]interface{}, error) {
 	// self-host need skip this method.
 	if !r.Config.IsCloudMode() {
 		return nil, nil
@@ -340,9 +346,9 @@ func (r *IllaDriveRestAPI) GetDownloadAddres(teamID int, fileID string) (map[str
 		SetHeader("Action-Token", actionToken).
 		Get(uri)
 	if r.Debug {
-		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  uri: %+v \n", uri)
-		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  response: %+v, err: %+v \n", resp, errInGet)
-		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  resp.StatusCode(): %+v \n", resp.StatusCode())
+		log.Printf("[DUMP] IllaDriveSDK.GetDownloadAddress()  uri: %+v \n", uri)
+		log.Printf("[DUMP] IllaDriveSDK.GetDownloadAddress()  response: %+v, err: %+v \n", resp, errInGet)
+		log.Printf("[DUMP] IllaDriveSDK.GetDownloadAddress()  resp.StatusCode(): %+v \n", resp.StatusCode())
 	}
 	if errInGet != nil {
 		return nil, errInGet
@@ -362,7 +368,7 @@ func (r *IllaDriveRestAPI) GetDownloadAddres(teamID int, fileID string) (map[str
 func (r *IllaDriveRestAPI) GetMutipleDownloadAddres(teamID int, fileIDs []string) (map[string]interface{}, error) {
 	ret := make([]map[string]interface{}, 0)
 	for _, fileID := range fileIDs {
-		fileDownloadAddressInfo, errInGetDownloadAddress := r.GetDownloadAddres(teamID, fileID)
+		fileDownloadAddressInfo, errInGetDownloadAddress := r.GetDownloadAddress(teamID, fileID)
 		if errInGetDownloadAddress != nil {
 			return nil, errInGetDownloadAddress
 		}
@@ -403,9 +409,9 @@ func (r *IllaDriveRestAPI) DeleteMultipleFile(teamID int, fileIDs []string) (map
 		SetBody(req).
 		Delete(uri)
 	if r.Debug {
-		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  uri: %+v \n", uri)
-		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  response: %+v, err: %+v \n", resp, errInGet)
-		log.Printf("[IllaResourceManagerRestAPI.GetAiAgent()]  resp.StatusCode(): %+v \n", resp.StatusCode())
+		log.Printf("[DUMP] IllaDriveSDK.DeleteMultipleFile()  uri: %+v \n", uri)
+		log.Printf("[DUMP] IllaDriveSDK.DeleteMultipleFile()  response: %+v, err: %+v \n", resp, errInGet)
+		log.Printf("[DUMP] IllaDriveSDK.DeleteMultipleFile()  resp.StatusCode(): %+v \n", resp.StatusCode())
 	}
 	if errInDelete != nil {
 		return nil, errInGet
@@ -414,9 +420,46 @@ func (r *IllaDriveRestAPI) DeleteMultipleFile(teamID int, fileIDs []string) (map
 		return nil, errors.New(resp.String())
 	}
 	return map[string]string{"deleted": true}, nil
-
 }
 
-func (r *IllaDriveRestAPI) UpdateFileProperty(driveID int) (map[string]interface{}, error) {
+func (r *IllaDriveRestAPI) ModifyFileName(teamID int, fileID string, fileName string) (map[string]interface{}, error) {
+	// self-host need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil, nil
+	}
+	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_ACTION_RENAME_FILE)
+	if errInGenerateToken != nil {
+		return nil, errInGenerateToken
+	}
 
+	// init request body
+	req := NewRenameFileRequestByParam(fileName)
+
+	// rename file, the request like:
+	// ```
+	// [PUT] https://cloud-api-test.illacloud.com/drive/api/v1/teams/ILAfx4p1C7ey/files/ILAex4p1C74v/name
+	// {"name":"222.exe"}
+	// ```
+	// and response like:
+	// ```
+	// HTTP 200
+	// ```
+	client := resty.New()
+	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(DRIVE_API_RENAME_FILE, idconvertor.ConvertIntToString(teamID), fileID)
+	resp, errInDelete := client.R().
+		SetHeader("Action-Token", actionToken).
+		SetBody(req).
+		Put(uri)
+	if r.Debug {
+		log.Printf("[DUMP] IllaDriveSDK.ModifyFileName() uri: %+v \n", uri)
+		log.Printf("[DUMP] IllaDriveSDK.ModifyFileName() response: %+v, err: %+v \n", resp, errInGet)
+		log.Printf("[DUMP] IllaDriveSDK.ModifyFileName() resp.StatusCode(): %+v \n", resp.StatusCode())
+	}
+	if errInDelete != nil {
+		return nil, errInGet
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, errors.New(resp.String())
+	}
+	return map[string]string{"renamed": true}, nil
 }
