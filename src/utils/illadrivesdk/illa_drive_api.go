@@ -14,9 +14,10 @@ import (
 )
 
 const (
-	DRIVE_API_LIST                    = "/api/v1/teams/%s/files?%s"
-	DRIVE_API_GET_DOWNLOAD_SIGNED_URL = "/api/v1/teams/%s/files/%s/url"
-	DRIVE_API_GENERATE_TINY_URL_BATCH = "/api/v1/teams/%s/links/batch"
+	DRIVE_API_LIST                    = "/api/v1/teams/%s/illaAction/files?%s"
+	DRIVE_API_GET_DOWNLOAD_SIGNED_URL = "/api/v1/teams/%s/illaAction/files/%s/url"
+	DRIVE_API_GENERATE_TINY_URL_BATCH = "/api/v1/teams/%s/illaAction/links/batch"
+	DRIVE_API_GET_UPLOAD_ADDRESS      = "/api/v1/teams/%s/illaAction/files"
 )
 
 const (
@@ -203,8 +204,45 @@ func (r *IllaDriveRestAPI) List(teamID int, path string, page int, limit int, fi
 	return fileList, nil
 }
 
-func (r *IllaDriveRestAPI) GetUploadAddres(driveID int) (map[string]interface{}, error) {
+// the http request like:
+// ```
+// [POST] https://cloud-api-test.illacloud.com/drive/api/v1/teams/ILAfx4p1C7ey/files
+// {"resumable":true,"name":"lemmy.hjson","folderID":"ILAfx4p1C7cX","type":"file","size":590,"duplicationHandler":"manual","contentType":""}
+// ````
+func (r *IllaDriveRestAPI) GetUploadAddres(teamID int, overwriteDuplicate bool, path string, fileName string) (map[string]interface{}, error) {
+	// self-hist need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil, nil
+	}
 
+	// calculate token
+	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_ACTION_GET_UPLOAD_ADDRES)
+	if errInGenerateToken != nil {
+		return nil, errInGenerateToken
+	}
+
+	// init request
+	req := NewUploadFileRequestByParam(true, fileName, path, expirationType, expiry, hotlinkProtection)
+
+	// get file upload address
+	client := resty.New()
+	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(DRIVE_API_GET_UPLOAD_ADDRESS, idconvertor.ConvertIntToString(teamID))
+	resp, errInPost := client.R().
+		SetHeader("Action-Token", actionToken).
+		SetBody(req).
+		Post(uri)
+	if errInPost != nil {
+		return nil, errInPost
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, errors.New(resp.String())
+	}
+	// unmarshal
+	var tinyURLs []interface{}
+	errInUnMarshal := json.Unmarshal([]byte(resp.String()), &tinyURLs)
+	if errInUnMarshal != nil {
+		return nil, errInUnMarshal
+	}
 }
 
 func (r *IllaDriveRestAPI) GetMutipleUploadAddres(driveID int) (map[string]interface{}, error) {
@@ -259,5 +297,14 @@ func (r *IllaDriveRestAPI) DeleteMultipleFile(driveID int) (map[string]interface
 }
 
 func (r *IllaDriveRestAPI) UpdateFileProperty(driveID int) (map[string]interface{}, error) {
+
+}
+
+// The request like:
+// ```
+// [PUT] https://cloud-api-test.illacloud.com/drive/api/v1/teams/ILAfx4p1C7ey/files/ILAfx4p1C7al/status
+// {"status":"complete"}
+// ````
+func (r *IllaDriveRestAPI) UpdateFileStatus(driveID int, fileID string, status string) (map[string]interface{}, error) {
 
 }

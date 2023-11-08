@@ -19,7 +19,8 @@ const (
 	DRIVE_API_ACTION_DELETE_FILE                 = "DeleteFile"
 	DRIVE_API_ACTION_DELETE_MULTIPLE_FILE        = "DeleteMultipleFile"
 	DRIVE_API_ACTION_UPDATE_FILE_PROPERTY        = "UpdateFileProperty"
-	DRIVE_API_ACTION_GENERATE_TINY_URLS          = "generateTinyURLs"
+	DRIVE_API_ACTION_GENERATE_TINY_URLS          = "GenerateTinyURLs"
+	DRIVE_API_ACTION_GET_DOLDER_ID_BY_PATH       = "GetFolderIDByPath"
 )
 
 type DriveAuthClaims struct {
