@@ -296,8 +296,16 @@ func (r *IllaDriveRestAPI) UpdateFileStatus(teamID int, fileID string, status st
 	return updateStatusResponse, nil
 }
 
-func (r *IllaDriveRestAPI) GetMutipleUploadAddres(driveID int) (map[string]interface{}, error) {
-
+func (r *IllaDriveRestAPI) GetMutipleUploadAddres(teamID int, overwriteDuplicate bool, path string, fileNames []string, fileSize int64, contentType string) (map[string]interface{}, error) {
+	ret := make([]map[string]interface{}, 0)
+	for _, fileName := range fileNames {
+		uploadAddressInfo, errInGetUploadAddress := r.GetUploadAddres(teamID, overwriteDuplicate, path, fileName, fileSize, contentType)
+		if errInGetUploadAddress != nil {
+			return nil, errInGetUploadAddress
+		}
+		ret = append(ret, uploadAddressInfo)
+	}
+	return ret, nil
 }
 
 func (r *IllaDriveRestAPI) GetDownloadAddres(teamID int, fileID string) (map[string]interface{}, error) {
