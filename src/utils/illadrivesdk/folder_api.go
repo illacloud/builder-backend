@@ -15,16 +15,16 @@ const (
 	DRIVE_API_GET_DOLDER_ID_BY_PATH = "/api/v1/teams/%s/illaAction/folder?%s"
 )
 
-func (r *IllaDriveRestAPI) GetFolderIDByPath(teamID int, path string) (int, error) {
+func (r *IllaDriveRestAPI) getFolderIDByPath(teamID int, path string) (string, error) {
 	// self-hist need skip this method.
 	if !r.Config.IsCloudMode() {
-		return 0, nil
+		return "", nil
 	}
 
 	// calculate token
 	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_ACTION_GET_DOLDER_ID_BY_PATH)
 	if errInGenerateToken != nil {
-		return 0, errInGenerateToken
+		return "", errInGenerateToken
 	}
 
 	// concat request param
@@ -51,26 +51,26 @@ func (r *IllaDriveRestAPI) GetFolderIDByPath(teamID int, path string) (int, erro
 		log.Printf("[DUMP] IllaDriveSDK.GetFolderIDByPath() resp.StatusCode(): %+v \n", resp.StatusCode())
 	}
 	if errInGet != nil {
-		return 0, errInGet
+		return "", errInGet
 	}
 	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
-		return 0, errors.New(resp.String())
+		return "", errors.New(resp.String())
 	}
 
 	var getFolderIDResponse map[string]interface{}
 	errInUnMarshal := json.Unmarshal([]byte(resp.String()), &getFolderIDResponse)
 	if errInUnMarshal != nil {
-		return 0, errInUnMarshal
+		return "", errInUnMarshal
 	}
 
 	folderIDRaw, hitFolderID := getFolderIDResponse["id"]
 	if !hitFolderID {
-		return 0, errors.New("invalied response, missing id field")
+		return "", errors.New("invalied response, missing id field")
 	}
 
-	folderID, folderIDAssertPass := folderIDRaw.(int)
+	folderID, folderIDAssertPass := folderIDRaw.(string)
 	if !folderIDAssertPass {
-		return 0, errors.New("invalied id type, assert failed")
+		return "", errors.New("invalied id type, assert failed")
 	}
 	return folderID, nil
 }

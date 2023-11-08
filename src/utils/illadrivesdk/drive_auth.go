@@ -21,6 +21,7 @@ const (
 	DRIVE_API_ACTION_UPDATE_FILE_PROPERTY        = "UpdateFileProperty"
 	DRIVE_API_ACTION_GENERATE_TINY_URLS          = "GenerateTinyURLs"
 	DRIVE_API_ACTION_GET_DOLDER_ID_BY_PATH       = "GetFolderIDByPath"
+	DRIVE_API_ACTION_UPDATE_FILE_STATUS          = "UpdateFileStatus"
 )
 
 type DriveAuthClaims struct {
