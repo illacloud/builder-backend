@@ -64,6 +64,8 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 		Extra:   map[string]interface{}{},
 	}
 
+	fmt.Printf("[DUMP] illadrive.Run() actionOptions: %+v\n", actionOptions)
+
 	// resolve actionOptions
 	teamIDRaw, hitTeamID := actionOptions[DRIVE_ACTION_OPTION_FIELD_TEAM_ID]
 	if !hitTeamID {
@@ -72,7 +74,7 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 	}
 	teamID, teamIDAssertPass := teamIDRaw.(int)
 	if !teamIDAssertPass {
-		return res, errors.New("teamID field which in resource options assert failed")
+		return res, errors.New("teamID field which in action options assert failed")
 
 	}
 	operation, hitOperation := actionOptions[DRIVE_ACTION_OPTIONS_FIELD_OPERATION]
