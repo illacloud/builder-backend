@@ -72,7 +72,8 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 		return res, errors.New("missing teamID field")
 
 	}
-	teamID, teamIDAssertPass := teamIDRaw.(int)
+	teamIDFloat, teamIDAssertPass := teamIDRaw.(float64)
+	teamID := int(teamIDFloat)
 	if !teamIDAssertPass {
 		return res, errors.New("teamID field which in action options assert failed")
 
@@ -216,17 +217,17 @@ func extractListFileOperationParams(actionOptions map[string]interface{}) (strin
 			}
 			path = valueAsserted
 		case "page":
-			valueAsserted, ValueAssertPass := value.(int)
+			valueAsserted, ValueAssertPass := value.(float64)
 			if !ValueAssertPass {
 				return "", 0, 0, "", "", "", "", false, errors.New("field page assert failed")
 			}
-			page = valueAsserted
+			page = int(valueAsserted)
 		case "limit":
-			valueAsserted, ValueAssertPass := value.(int)
+			valueAsserted, ValueAssertPass := value.(float64)
 			if !ValueAssertPass {
 				return "", 0, 0, "", "", "", "", false, errors.New("field limit assert failed")
 			}
-			limit = valueAsserted
+			limit = int(valueAsserted)
 		case "fileID":
 			valueAsserted, ValueAssertPass := value.(string)
 			if !ValueAssertPass {
@@ -289,11 +290,11 @@ func extractGetUploadAddressOperationParams(actionOptions map[string]interface{}
 			}
 			fileName = valueAsserted
 		case "fileSize":
-			valueAsserted, ValueAssertPass := value.(int64)
+			valueAsserted, ValueAssertPass := value.(float64)
 			if !ValueAssertPass {
 				return false, "", "", 0, "", errors.New("field path assert failed")
 			}
-			fileSize = valueAsserted
+			fileSize = int64(valueAsserted)
 		case "contentType":
 			valueAsserted, ValueAssertPass := value.(string)
 			if !ValueAssertPass {
@@ -363,11 +364,11 @@ func extractGetMutipleUploadAddressOperationParams(actionOptions map[string]inte
 					}
 					fileNames = append(fileNames, subValueAsserted)
 				case "fileSize":
-					subValueAsserted, subValueAssertPass := subValue.(int64)
+					subValueAsserted, subValueAssertPass := subValue.(float64)
 					if !subValueAssertPass {
 						return false, "", []string{}, []int64{}, []string{}, errors.New("field fileSize assert failed")
 					}
-					fileSizes = append(fileSizes, subValueAsserted)
+					fileSizes = append(fileSizes, int64(subValueAsserted))
 				case "contentType":
 					subValueAsserted, subValueAssertPass := subValue.(string)
 					if !subValueAssertPass {
