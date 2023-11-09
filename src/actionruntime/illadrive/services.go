@@ -441,7 +441,7 @@ func extractRenameFileOperationParams(actionOptions map[string]interface{}) (str
 			if !ValueAssertPass {
 				return "", "", errors.New("field fileName assert failed")
 			}
-			fileID = valueAsserted
+			fileName = valueAsserted
 		}
 	}
 	return fileID, fileName, nil
