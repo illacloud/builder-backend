@@ -70,11 +70,10 @@ func ExtendRawFilesTinyURL(files []map[string]interface{}, tinyURLsMap map[strin
 		}
 		tinyURL, hitTinyURL := tinyURLsMap[fileIDString]
 		if !hitTinyURL {
-			return nil, errors.New("missing field id mapped tiny URL")
-
+			files[serial]["tinyURL"] = ""
+		} else {
+			files[serial]["tinyURL"] = tinyURL
 		}
-		files[serial]["tinyURL"] = tinyURL
-
 	}
 	return files, nil
 }
