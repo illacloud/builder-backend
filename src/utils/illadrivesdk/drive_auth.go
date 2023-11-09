@@ -15,7 +15,7 @@ const (
 	DRIVE_API_ACTION_LIST_FILES                    = "ListFiles"
 	DRIVE_API_ACTION_GET_UPLOAD_ADDRESS            = "GetUploadAddress"
 	DRIVE_API_ACTION_UPDATE_FILE_STATUS            = "UpdateFileStatus"
-	DRIVE_API_ACTION_GET_MULTIPLE_UPLOAD_ADDRESS   = "GetMultipleUploadAddres"
+	DRIVE_API_ACTION_GET_MULTIPLE_UPLOAD_ADDRESS   = "GetMultipleUploadAddress"
 	DRIVE_API_ACTION_GET_DOWNLOAD_ADDRESS          = "GetDownloadAddress"
 	DRIVE_API_ACTION_GET_MULTIPLE_DOWNLOAD_ADDRESS = "GetMultipleDownloadAddress"
 	DRIVE_API_ACTION_DELETE_FILES                  = "DeleteFiles"
