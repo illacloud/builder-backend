@@ -16,6 +16,7 @@ import (
 	"github.com/illacloud/builder-backend/src/actionruntime/graphql"
 	"github.com/illacloud/builder-backend/src/actionruntime/hfendpoint"
 	"github.com/illacloud/builder-backend/src/actionruntime/huggingface"
+	"github.com/illacloud/builder-backend/src/actionruntime/illadrive"
 	"github.com/illacloud/builder-backend/src/actionruntime/mongodb"
 	"github.com/illacloud/builder-backend/src/actionruntime/mssql"
 	"github.com/illacloud/builder-backend/src/actionruntime/mysql"
@@ -117,6 +118,9 @@ func (f *ActionFactory) Build() (common.DataConnector, error) {
 	case resourcelist.TYPE_ORACLE_9I_ID:
 		oracle9iAction := &oracle9i.Connector{}
 		return oracle9iAction, nil
+	case resourcelist.TYPE_ILLA_DRIVE_ID:
+		illadriveAction := &illadrive.IllaDriveConnector{}
+		return illadriveAction, nil
 	default:
 		return nil, errors.New("invalid ActionType: unsupported type " + resourcelist.GetResourceIDMappedType(f.Type))
 	}
