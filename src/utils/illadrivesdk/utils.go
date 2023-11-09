@@ -1,6 +1,9 @@
 package illadrivesdk
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 func ExtractRawFilesFromListResponse(listResponse map[string]interface{}) ([]map[string]interface{}, error) {
 	// extract file ids
@@ -9,16 +12,12 @@ func ExtractRawFilesFromListResponse(listResponse map[string]interface{}) ([]map
 		return nil, errors.New("mossing files field in list response")
 	}
 
-	// test if it is nil
-	_, assertListedFilesAsNil := listedFiles.(interface{})
-	if assertListedFilesAsNil {
-		return []map[string]interface{}{}, nil
-	}
+	fmt.Printf("[DUMP] ExtractRawFilesFromListResponse() listedFiles: %+v\n", listedFiles)
 
 	// assert sub structure
 	listedFilesAsserted, assertListedFilesPass := listedFiles.([]interface{})
 	if !assertListedFilesPass {
-		return nil, errors.New("invalied file list returned")
+		return []map[string]interface{}{}, nil
 	}
 	files := make([]map[string]interface{}, 0)
 	for _, listedFile := range listedFilesAsserted {
