@@ -38,7 +38,7 @@ func ExtractFileIDFromRawFiles(files []map[string]interface{}) ([]string, error)
 			return nil, errors.New("missing field type from files data")
 		}
 		fileTypeString, fileTypeAssertPass := fileType.(string)
-		if !fileIDAssertPass {
+		if !fileTypeAssertPass {
 			return nil, errors.New("invalied file type data type")
 		}
 		// we should only download file, not folder
