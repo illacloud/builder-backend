@@ -143,6 +143,8 @@ func (r *IllaDriveRestAPI) ListFiles(teamID int, path string, page int, limit in
 		return nil, errors.New(resp.String())
 	}
 
+	fmt.Printf("[DUMP] ListFiles raw response: %+v\n", resp.String())
+
 	var listResponse map[string]interface{}
 	errInUnMarshal := json.Unmarshal([]byte(resp.String()), &listResponse)
 	if errInUnMarshal != nil {
@@ -245,6 +247,8 @@ func (r *IllaDriveRestAPI) GetUploadAddres(teamID int, overwriteDuplicate bool, 
 	if resp.StatusCode() != http.StatusOK {
 		return nil, errors.New(resp.String())
 	}
+	fmt.Printf("[DUMP] GetUploadAddres raw response: %+v\n", resp.String())
+
 	// unmarshal
 	var uploadResponse map[string]interface{}
 	errInUnMarshal := json.Unmarshal([]byte(resp.String()), &uploadResponse)
@@ -303,6 +307,8 @@ func (r *IllaDriveRestAPI) UpdateFileStatus(teamID int, fileID string, status st
 	if resp.StatusCode() != http.StatusOK {
 		return nil, errors.New(resp.String())
 	}
+	fmt.Printf("[DUMP] UpdateFileStatus raw response: %+v\n", resp.String())
+
 	// unmarshal
 	var updateStatusResponse map[string]interface{}
 	errInUnMarshal := json.Unmarshal([]byte(resp.String()), &updateStatusResponse)
@@ -366,6 +372,7 @@ func (r *IllaDriveRestAPI) GetDownloadAddress(teamID int, fileID string) (map[st
 	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
 		return nil, errors.New(resp.String())
 	}
+	fmt.Printf("[DUMP] GetDownloadAddress raw response: %+v\n", resp.String())
 
 	var downloadAddress map[string]interface{}
 	errInUnMarshal := json.Unmarshal([]byte(resp.String()), &downloadAddress)
@@ -429,6 +436,8 @@ func (r *IllaDriveRestAPI) DeleteMultipleFile(teamID int, fileIDs []string) (map
 	if resp.StatusCode() != http.StatusOK {
 		return nil, errors.New(resp.String())
 	}
+	fmt.Printf("[DUMP] DeleteMultipleFile raw response: %+v\n", resp.String())
+
 	return map[string]interface{}{"deleted": true}, nil
 }
 
@@ -471,5 +480,7 @@ func (r *IllaDriveRestAPI) RenameFile(teamID int, fileID string, fileName string
 	if resp.StatusCode() != http.StatusOK {
 		return nil, errors.New(resp.String())
 	}
+	fmt.Printf("[DUMP] RenameFile raw response: %+v\n", resp.String())
+
 	return map[string]interface{}{"renamed": true}, nil
 }
