@@ -13,7 +13,7 @@ const (
 	DRIVE_API_ACTION_GENERATE_TINY_URLS           = "GenerateTinyURLs"
 	DRIVE_API_ACTION_GET_FOLDER_ID_BY_PATH        = "GetFolderIDByPath"
 	DRIVE_API_ACTION_LIST_FILES                   = "ListFiles"
-	DRIVE_API_ACTION_GET_UPLOAD_ADDRES            = "GetUploadAddres"
+	DRIVE_API_ACTION_GET_UPLOAD_ADDRESS           = "GetUploadAddress"
 	DRIVE_API_ACTION_UPDATE_FILE_STATUS           = "UpdateFileStatus"
 	DRIVE_API_ACTION_GET_MUTIPLE_UPLOAD_ADDRESS   = "GetMutipleUploadAddres"
 	DRIVE_API_ACTION_GET_DOWNLOAD_ADDRESS         = "GetDownloadAddress"
