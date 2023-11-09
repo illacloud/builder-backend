@@ -22,6 +22,11 @@ import (
 	illadrivesdk "github.com/illacloud/builder-backend/src/utils/illadrivesdk"
 )
 
+const (
+	DRIVE_ACTION_OPTIONS_FIELD_OPERATION = "operation"
+	DRIVE_RESOURCE_OPTION_FIELD_TEAM_ID  = "teamID"
+)
+
 type IllaDriveConnector struct {
 	Action IllaDriveTemplate
 }
@@ -33,11 +38,12 @@ func (r *IllaDriveConnector) ValidateResourceOptions(resourceOptions map[string]
 
 func (r *IllaDriveConnector) ValidateActionTemplate(actionOptions map[string]interface{}) (common.ValidateResult, error) {
 	fmt.Printf("[DUMP] actionOptions: %+v \n", actionOptions)
-	_, errorInNewRequest := resourcemanager.NewRunIllaDriveRequest(actionOptions)
-	if errorInNewRequest != nil {
-		return common.ValidateResult{Valid: false}, errorInNewRequest
-	}
+	// check action options common field
+	_, hitOperation := actionOptions[DRIVE_ACTION_OPTIONS_FIELD_OPERATION]
+	if !hitOperation {
+		return common.ValidateResult{Valid: false}, errors.New("missing operation field")
 
+	}
 	return common.ValidateResult{Valid: true}, nil
 }
 
@@ -58,23 +64,379 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 		Extra:   map[string]interface{}{},
 	}
 
-	// call api
-	api, errInNewAPI := illadrivesdk.NewIllaDriveRestAPI()
-	if errInNewAPI != nil {
-		return res, errInNewAPI
-	}
-	api.OpenDebug()
-	runIllaDriveResult, errInRunIllaDrive := api.ListFiles(actionOptions)
-	fmt.Printf("[DUMP] runIllaDriveResult: %+v\n", runIllaDriveResult)
-	fmt.Printf("[DUMP] errInRunIllaDrive: %+v\n", errInRunIllaDrive)
+	// resolve resourceOptions
+	teamIDRaw, hitTeamID := resourceOptions[DRIVE_RESOURCE_OPTION_FIELD_TEAM_ID]
+	if !hitTeamID {
+		return res, errors.New("missing teamID field")
 
-	if errInRunIllaDrive != nil {
-		return res, errInRunIllaDrive
+	}
+	teamID, teamIDAssertPass := teamIDRaw.(int)
+	if !teamIDAssertPass {
+		return res, errors.New("teamID field which in resource options assert failed")
+
+	}
+
+	// resolve actionOptions
+	operation, hitOperation := actionOptions[DRIVE_ACTION_OPTIONS_FIELD_OPERATION]
+	if !hitOperation {
+		return res, errors.New("missing operation field")
+
+	}
+
+	// init
+	driveAPI := illadrivesdk.NewIllaDriveRestAPI()
+	driveAPI.OpenDebug()
+
+	// operation filter for illa drive sdk function call
+	switch operation {
+	case illadrivesdk.DRIVE_API_ACTION_LIST_FILES:
+		// list files require field "path", "page", "limit", "fileID", "search", "expirationType", "expiry", "hotlinkProtection"
+		path, page, limit, fileID, search, expirationType, expiry, hotlinkProtection, errInExtractParam := extractListFileOperationParams(actionOptions)
+		if errInExtractParam != nil {
+			return res, errInExtractParam
+		}
+		ret, errInCallAPI := driveAPI.ListFiles(teamID, path, page, limit, fileID, search, expirationType, expiry, hotlinkProtection)
+		if errInCallAPI != nil {
+			return res, errInCallAPI
+		}
+		res.Rows = append(res.Rows, ret)
+	case illadrivesdk.DRIVE_API_ACTION_GET_UPLOAD_ADDRES:
+		// get upload address require field teamID int, overwriteDuplicate bool, path string, fileName string, fileSize int64, contentType string
+		overwriteDuplicate, path, fileName, fileSize, contentType, errInExtractParam := extractGetUploadAddressOperationParams(actionOptions)
+		if errInExtractParam != nil {
+			return res, errInExtractParam
+		}
+		ret, errInCallAPI := driveAPI.GetUploadAddres(teamID, overwriteDuplicate, path, fileName, fileSize, contentType)
+		if errInCallAPI != nil {
+			return res, errInCallAPI
+		}
+		res.Rows = append(res.Rows, ret)
+	case illadrivesdk.DRIVE_API_ACTION_UPDATE_FILE_STATUS:
+		// get upload address require field fileID string, status string
+		fileID, status, errInExtractParam := extractUpdateFileStatusOperationParams(actionOptions)
+		if errInExtractParam != nil {
+			return res, errInExtractParam
+		}
+		ret, errInCallAPI := driveAPI.UpdateFileStatus(teamID, fileID, status)
+		if errInCallAPI != nil {
+			return res, errInCallAPI
+		}
+		res.Rows = append(res.Rows, ret)
+	case illadrivesdk.DRIVE_API_ACTION_GET_MUTIPLE_UPLOAD_ADDRESS:
+		// get mutiple upload address require field: teamID int, overwriteDuplicate bool, path string, fileNames []string, fileSizes []int64, contentTypes []string
+		overwriteDuplicate, path, fileNames, fileSizes, contentTypes, errInExtractParam := extractGetMutipleUploadAddressOperationParams(actionOptions)
+		if errInExtractParam != nil {
+			return res, errInExtractParam
+		}
+		ret, errInCallAPI := driveAPI.GetMutipleUploadAddress(teamID, overwriteDuplicate, path, fileNames, fileSizes, contentTypes)
+		if errInCallAPI != nil {
+			return res, errInCallAPI
+		}
+		res.Rows = ret
+	case illadrivesdk.DRIVE_API_ACTION_GET_DOWNLOAD_ADDRESS:
+		// get mutiple upload address require field: teamID int, fileID string
+		fileID, errInExtractParam := extractFileIDFromOperationParams(actionOptions)
+		if errInExtractParam != nil {
+			return res, errInExtractParam
+		}
+		ret, errInCallAPI := driveAPI.GetDownloadAddress(teamID, fileID)
+		if errInCallAPI != nil {
+			return res, errInCallAPI
+		}
+		res.Rows = append(res.Rows, ret)
+	case illadrivesdk.DRIVE_API_ACTION_GET_MUTIPLE_DOWNLOAD_ADDRESS:
+		// get mutiple upload address require field: teamID int, fileIDs []string
+		fileIDs, errInExtractParam := extractFileIDsFromOperationParams(actionOptions)
+		if errInExtractParam != nil {
+			return res, errInExtractParam
+		}
+		ret, errInCallAPI := driveAPI.GetMutipleDownloadAddres(teamID, fileIDs)
+		if errInCallAPI != nil {
+			return res, errInCallAPI
+		}
+		res.Rows = ret
+
+	case illadrivesdk.DRIVE_API_ACTION_DELETE_FILE:
+		// delete field require field: teamID int, fileID string
+		fileID, errInExtractParam := extractFileIDFromOperationParams(actionOptions)
+		if errInExtractParam != nil {
+			return res, errInExtractParam
+		}
+		ret, errInCallAPI := driveAPI.DeleteFile(teamID, fileID)
+		if errInCallAPI != nil {
+			return res, errInCallAPI
+		}
+		res.Rows = append(res.Rows, ret)
+	case illadrivesdk.DRIVE_API_ACTION_DELETE_MUTIPLE_FILE:
+		// delete mutiple file require field: teamID int, fileIDs []string
+		fileIDs, errInExtractParam := extractFileIDsFromOperationParams(actionOptions)
+		if errInExtractParam != nil {
+			return res, errInExtractParam
+		}
+		ret, errInCallAPI := driveAPI.DeleteMultipleFile(teamID, fileIDs)
+		if errInCallAPI != nil {
+			return res, errInCallAPI
+		}
+		res.Rows = append(res.Rows, ret)
+	case illadrivesdk.DRIVE_API_ACTION_RENAME_FILE:
+		// / get mutiple upload address require field: teamID int, fileID string
+		fileID, fileName, errInExtractParam := extractRenameFileOperationParams(actionOptions)
+		if errInExtractParam != nil {
+			return res, errInExtractParam
+		}
+		ret, errInCallAPI := driveAPI.RenameFile(teamID, fileID, fileName)
+		if errInCallAPI != nil {
+			return res, errInCallAPI
+		}
+		res.Rows = append(res.Rows, ret)
+
 	}
 
 	// feedback
 	res.SetSuccess()
-	res.Rows = append(res.Rows, runIllaDriveResult.ExportAsContent())
 	fmt.Printf("[DUMP] res: %+v\n", res)
 	return res, nil
+}
+
+func extractListFileOperationParams(actionOptions map[string]interface{}) (string, int, int, string, string, string, string, bool, error) {
+	path := "/root"
+	page := 1
+	limit := 20
+	fileID := "" // [OPTIONAL], if fileID given will not use "search" field.
+	search := "" // [OPTIONAL], search for file name contains
+	expirationType := "persistent"
+	expiry := "300s"
+	hotlinkProtection := true
+	for key, value := range actionOptions {
+		switch key {
+		case "path":
+			valueAsserted, ValueAssertPass := value.(string)
+			if !ValueAssertPass {
+				return "", 0, 0, "", "", "", "", false, errors.New("field path assert failed")
+			}
+			path = valueAsserted
+		case "page":
+			valueAsserted, ValueAssertPass := value.(int)
+			if !ValueAssertPass {
+				return "", 0, 0, "", "", "", "", false, errors.New("field page assert failed")
+			}
+			page = valueAsserted
+		case "limit":
+			valueAsserted, ValueAssertPass := value.(int)
+			if !ValueAssertPass {
+				return "", 0, 0, "", "", "", "", false, errors.New("field limit assert failed")
+			}
+			limit = valueAsserted
+		case "fileID":
+			valueAsserted, ValueAssertPass := value.(string)
+			if !ValueAssertPass {
+				return "", 0, 0, "", "", "", "", false, errors.New("field fileID assert failed")
+			}
+			fileID = valueAsserted
+		case "search":
+			valueAsserted, ValueAssertPass := value.(string)
+			if !ValueAssertPass {
+				return "", 0, 0, "", "", "", "", false, errors.New("field search assert failed")
+			}
+			search = valueAsserted
+		case "expirationType":
+			valueAsserted, ValueAssertPass := value.(string)
+			if !ValueAssertPass {
+				return "", 0, 0, "", "", "", "", false, errors.New("field expirationType assert failed")
+			}
+			expirationType = valueAsserted
+		case "expiry":
+			valueAsserted, ValueAssertPass := value.(string)
+			if !ValueAssertPass {
+				return "", 0, 0, "", "", "", "", false, errors.New("field expiry assert failed")
+			}
+			expiry = valueAsserted
+		case "hotlinkProtection":
+			valueAsserted, ValueAssertPass := value.(bool)
+			if !ValueAssertPass {
+				return "", 0, 0, "", "", "", "", false, errors.New("field hotlinkProtection assert failed")
+			}
+			hotlinkProtection = valueAsserted
+		}
+	}
+	return path, page, limit, fileID, search, expirationType, expiry, hotlinkProtection, nil
+}
+
+func extractGetUploadAddressOperationParams(actionOptions map[string]interface{}) (bool, string, string, int64, string, error) {
+	overwriteDuplicate := false
+	path := "/root"
+	fileName := ""
+	var fileSize int64
+	contentType := ""
+	for key, value := range actionOptions {
+		switch key {
+		case "overwriteDuplicate":
+			valueAsserted, ValueAssertPass := value.(bool)
+			if !ValueAssertPass {
+				return false, "", "", 0, "", errors.New("field path assert failed")
+			}
+			overwriteDuplicate = valueAsserted
+		case "path":
+			valueAsserted, ValueAssertPass := value.(string)
+			if !ValueAssertPass {
+				return false, "", "", 0, "", errors.New("field path assert failed")
+			}
+			path = valueAsserted
+		case "fileName":
+			valueAsserted, ValueAssertPass := value.(string)
+			if !ValueAssertPass {
+				return false, "", "", 0, "", errors.New("field path assert failed")
+			}
+			fileName = valueAsserted
+		case "fileSize":
+			valueAsserted, ValueAssertPass := value.(int64)
+			if !ValueAssertPass {
+				return false, "", "", 0, "", errors.New("field path assert failed")
+			}
+			fileSize = valueAsserted
+		case "contentType":
+			valueAsserted, ValueAssertPass := value.(string)
+			if !ValueAssertPass {
+				return false, "", "", 0, "", errors.New("field path assert failed")
+			}
+			contentType = valueAsserted
+		}
+	}
+	return overwriteDuplicate, path, fileName, fileSize, contentType, nil
+
+}
+
+func extractUpdateFileStatusOperationParams(actionOptions map[string]interface{}) (string, string, error) {
+	fileID := ""
+	status := ""
+	for key, value := range actionOptions {
+		switch key {
+		case "fileID":
+			valueAsserted, ValueAssertPass := value.(string)
+			if !ValueAssertPass {
+				return "", "", errors.New("field fileID assert failed")
+			}
+			fileID = valueAsserted
+		case "status":
+			valueAsserted, ValueAssertPass := value.(string)
+			if !ValueAssertPass {
+				return "", "", errors.New("field status assert failed")
+			}
+			status = valueAsserted
+		}
+	}
+	return fileID, status, nil
+
+}
+
+func extractGetMutipleUploadAddressOperationParams(actionOptions map[string]interface{}) (bool, string, []string, []int64, []string, error) {
+	overwriteDuplicate := false
+	path := "/root"
+	fileNames := make([]string, 0)
+	fileSizes := make([]int64, 0)
+	contentTypes := make([]string, 0)
+	for key, value := range actionOptions {
+		switch key {
+		case "overwriteDuplicate":
+			valueAsserted, ValueAssertPass := value.(bool)
+			if !ValueAssertPass {
+				return false, "", []string{}, []int64{}, []string{}, errors.New("field overwriteDuplicate assert failed")
+			}
+			overwriteDuplicate = valueAsserted
+		case "path":
+			valueAsserted, ValueAssertPass := value.(string)
+			if !ValueAssertPass {
+				return false, "", []string{}, []int64{}, []string{}, errors.New("field path assert failed")
+			}
+			path = valueAsserted
+		case "files":
+			filesAsserted, filesAssertPass := value.(map[string]interface{})
+			if !filesAssertPass {
+				return false, "", []string{}, []int64{}, []string{}, errors.New("field files assert failed")
+			}
+			for subKey, subValue := range filesAsserted {
+				switch subKey {
+				case "fileName":
+					subValueAsserted, subValueAssertPass := subValue.(string)
+					if !subValueAssertPass {
+						return false, "", []string{}, []int64{}, []string{}, errors.New("field fileName assert failed")
+					}
+					fileNames = append(fileNames, subValueAsserted)
+				case "fileSize":
+					subValueAsserted, subValueAssertPass := subValue.(int64)
+					if !subValueAssertPass {
+						return false, "", []string{}, []int64{}, []string{}, errors.New("field fileSize assert failed")
+					}
+					fileSizes = append(fileSizes, subValueAsserted)
+				case "contentType":
+					subValueAsserted, subValueAssertPass := subValue.(string)
+					if !subValueAssertPass {
+						return false, "", []string{}, []int64{}, []string{}, errors.New("field fileSize assert failed")
+					}
+					contentTypes = append(contentTypes, subValueAsserted)
+				}
+			}
+		}
+	}
+	return overwriteDuplicate, path, fileNames, fileSizes, contentTypes, nil
+}
+
+func extractFileIDFromOperationParams(actionOptions map[string]interface{}) (string, error) {
+	fileID := ""
+	for key, value := range actionOptions {
+		switch key {
+		case "fileID":
+			valueAsserted, ValueAssertPass := value.(string)
+			if !ValueAssertPass {
+				return "", errors.New("field fileID assert failed")
+			}
+			fileID = valueAsserted
+		}
+	}
+	return fileID, nil
+
+}
+
+func extractFileIDsFromOperationParams(actionOptions map[string]interface{}) ([]string, error) {
+	fileIDs := make([]string, 0)
+	for key, value := range actionOptions {
+		switch key {
+		case "fileIDs":
+			fileIDsAsserted, fileIDsAssertPass := value.([]interface{})
+			if !fileIDsAssertPass {
+				return []string{}, errors.New("field fileIDs assert failed")
+			}
+			for _, subValue := range fileIDsAsserted {
+				subValueAsserted, subValueAssertPass := subValue.(string)
+				if !subValueAssertPass {
+					return []string{}, errors.New("field fileIDs values assert failed")
+				}
+				fileIDs = append(fileIDs, subValueAsserted)
+			}
+		}
+	}
+	return fileIDs, nil
+}
+
+func extractRenameFileOperationParams(actionOptions map[string]interface{}) (string, string, error) {
+	fileID := ""
+	fileName := ""
+	for key, value := range actionOptions {
+		switch key {
+		case "fileID":
+			valueAsserted, ValueAssertPass := value.(string)
+			if !ValueAssertPass {
+				return "", "", errors.New("field fileID assert failed")
+			}
+			fileID = valueAsserted
+		case "fileName":
+			valueAsserted, ValueAssertPass := value.(string)
+			if !ValueAssertPass {
+				return "", "", errors.New("field fileName assert failed")
+			}
+			fileID = valueAsserted
+		}
+	}
+	return fileID, fileName, nil
+
 }

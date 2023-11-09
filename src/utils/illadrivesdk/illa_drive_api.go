@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/fatih/structs"
 	"github.com/go-resty/resty/v2"
 	"github.com/illacloud/builder-backend/src/utils/config"
 	"github.com/illacloud/builder-backend/src/utils/idconvertor"
@@ -34,10 +35,10 @@ type IllaDriveRestAPI struct {
 	Debug  bool `json:"-"`
 }
 
-func NewIllaDriveRestAPI() (*IllaDriveRestAPI, error) {
+func NewIllaDriveRestAPI() *IllaDriveRestAPI {
 	return &IllaDriveRestAPI{
 		Config: config.GetInstance(),
-	}, nil
+	}
 }
 
 func (r *IllaDriveRestAPI) CloseDebug() {
@@ -58,7 +59,7 @@ func (r *IllaDriveRestAPI) GenerateAccessJWTToken(teamID int, usage string) (map
 	}, nil
 }
 
-func (r *IllaDriveRestAPI) ListFiles(teamID int, path string, page int, limit int, fileID string, search string, expirationType string, expiry string, hotlinkProtection bool) (interface{}, error) {
+func (r *IllaDriveRestAPI) ListFiles(teamID int, path string, page int, limit int, fileID string, search string, expirationType string, expiry string, hotlinkProtection bool) (map[string]interface{}, error) {
 	// self-host need skip this method.
 	if !r.Config.IsCloudMode() {
 		return nil, nil
@@ -172,7 +173,7 @@ func (r *IllaDriveRestAPI) ListFiles(teamID int, path string, page int, limit in
 		return nil, errInNewFileList
 	}
 
-	return fileList, nil
+	return structs.Map(fileList), nil
 }
 
 func (r *IllaDriveRestAPI) GetUploadAddres(teamID int, overwriteDuplicate bool, path string, fileName string, fileSize int64, contentType string) (map[string]interface{}, error) {
@@ -303,10 +304,10 @@ func (r *IllaDriveRestAPI) UpdateFileStatus(teamID int, fileID string, status st
 	return updateStatusResponse, nil
 }
 
-func (r *IllaDriveRestAPI) GetMutipleUploadAddress(teamID int, overwriteDuplicate bool, path string, fileNames []string, fileSize int64, contentType string) ([]map[string]interface{}, error) {
+func (r *IllaDriveRestAPI) GetMutipleUploadAddress(teamID int, overwriteDuplicate bool, path string, fileNames []string, fileSizes []int64, contentTypes []string) ([]map[string]interface{}, error) {
 	ret := make([]map[string]interface{}, 0)
-	for _, fileName := range fileNames {
-		uploadAddressInfo, errInGetUploadAddress := r.GetUploadAddres(teamID, overwriteDuplicate, path, fileName, fileSize, contentType)
+	for serial, fileName := range fileNames {
+		uploadAddressInfo, errInGetUploadAddress := r.GetUploadAddres(teamID, overwriteDuplicate, path, fileName, fileSizes[serial], contentTypes[serial])
 		if errInGetUploadAddress != nil {
 			return nil, errInGetUploadAddress
 		}
