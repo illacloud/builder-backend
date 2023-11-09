@@ -101,7 +101,7 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 			return res, errInCallAPI
 		}
 		res.Rows = append(res.Rows, ret)
-	case illadrivesdk.DRIVE_API_ACTION_GET_UPLOAD_ADDRES:
+	case illadrivesdk.DRIVE_API_ACTION_GET_UPLOAD_ADDRESS:
 		// get upload address require field teamID int, overwriteDuplicate bool, path string, fileName string, fileSize int64, contentType string
 		overwriteDuplicate, path, fileName, fileSize, contentType, errInExtractParam := extractGetUploadAddressOperationParams(actionOptions)
 		if errInExtractParam != nil {

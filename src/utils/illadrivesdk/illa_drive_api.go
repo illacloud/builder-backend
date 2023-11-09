@@ -158,6 +158,15 @@ func (r *IllaDriveRestAPI) ListFiles(teamID int, path string, page int, limit in
 		return nil, errInExtractFileIDs
 	}
 
+	// no files hit
+	if len(fileIDs) == 0 {
+		fileList, errInNewFileList := NewFileListByListResponseAndExtendedFiles(listResponse, nil)
+		if errInNewFileList != nil {
+			return nil, errInNewFileList
+		}
+		return structs.Map(fileList), nil
+	}
+
 	// get file tinyurls
 	tinyURLsMap, errInGenerateTinyURLs := r.generateDriveTinyURLs(teamID, fileIDs, expirationType, expiry, hotlinkProtection)
 	if errInGenerateTinyURLs != nil {
