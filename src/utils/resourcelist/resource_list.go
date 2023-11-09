@@ -159,6 +159,10 @@ var canCreateOAuthTokenResourceList = map[string]bool{
 	TYPE_GOOGLESHEETS: true,
 }
 
+var needFetchResourceInfoFromSourceManagerList = map[string]bool{
+	TYPE_AI_AGENT: true,
+}
+
 func GetResourceIDMappedType(id int) string {
 	return type_array[id]
 }
@@ -211,4 +215,9 @@ func CanCreateOAuthToken(resourceType int) bool {
 	resourceTypeString := GetResourceIDMappedType(resourceType)
 	canDo, hit := canCreateOAuthTokenResourceList[resourceTypeString]
 	return canDo && hit
+}
+
+func NeedFetchResourceInfoFromSourceManager(resourceType string) bool {
+	itIs, hit := needFetchResourceInfoFromSourceManagerList[resourceType]
+	return itIs && hit
 }

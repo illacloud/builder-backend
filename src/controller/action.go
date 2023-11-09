@@ -54,17 +54,20 @@ func (controller *Controller) CreateAction(c *gin.Context) {
 
 	// append remote virtual resource (like aiagent, but the transformet is local virtual resource)
 	if createActionRequest.IsRemoteVirtualAction() {
-		api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
-		if errInNewAPI != nil {
-			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
-			return
+		// the AI_Agent need fetch resource info from resource manager, but illa drive does not need that
+		if createActionRequest.NeedFetchResourceInfoFromSourceManager() {
+			api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
+			if errInNewAPI != nil {
+				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
+				return
+			}
+			virtualResource, errInGetVirtualResource := api.GetResource(createActionRequest.ExportActionTypeInInt(), createActionRequest.ExportResourceIDInInt())
+			if errInGetVirtualResource != nil {
+				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetVirtualResource.Error())
+				return
+			}
+			createActionRequest.AppendVirtualResourceToTemplate(virtualResource)
 		}
-		virtualResource, errInGetVirtualResource := api.GetResource(createActionRequest.ExportActionTypeInInt(), createActionRequest.ExportResourceIDInInt())
-		if errInGetVirtualResource != nil {
-			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetVirtualResource.Error())
-			return
-		}
-		createActionRequest.AppendVirtualResourceToTemplate(virtualResource)
 	}
 
 	// get action mapped app
