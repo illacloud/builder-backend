@@ -33,6 +33,18 @@ func ExtractRawFilesFromListResponse(listResponse map[string]interface{}) ([]map
 func ExtractFileIDFromRawFiles(files []map[string]interface{}) ([]string, error) {
 	fileIDs := make([]string, 0)
 	for _, file := range files {
+		fileType, hitFileType := file["type"]
+		if !hitFileType {
+			return nil, errors.New("missing field type from files data")
+		}
+		fileTypeString, fileTypeAssertPass := fileType.(string)
+		if !fileIDAssertPass {
+			return nil, errors.New("invalied file type data type")
+		}
+		// we should only download file, not folder
+		if fileTypeString != "file" {
+			continue
+		}
 		fileID, hitFileID := file["id"]
 		if !hitFileID {
 			return nil, errors.New("missing field id from files data")
