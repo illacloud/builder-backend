@@ -24,7 +24,7 @@ import (
 
 const (
 	DRIVE_ACTION_OPTIONS_FIELD_OPERATION = "operation"
-	DRIVE_RESOURCE_OPTION_FIELD_TEAM_ID  = "teamID"
+	DRIVE_ACTION_OPTION_FIELD_TEAM_ID    = "teamID"
 )
 
 type IllaDriveConnector struct {
@@ -64,8 +64,8 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 		Extra:   map[string]interface{}{},
 	}
 
-	// resolve resourceOptions
-	teamIDRaw, hitTeamID := resourceOptions[DRIVE_RESOURCE_OPTION_FIELD_TEAM_ID]
+	// resolve actionOptions
+	teamIDRaw, hitTeamID := actionOptions[DRIVE_ACTION_OPTION_FIELD_TEAM_ID]
 	if !hitTeamID {
 		return res, errors.New("missing teamID field")
 
@@ -75,8 +75,6 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 		return res, errors.New("teamID field which in resource options assert failed")
 
 	}
-
-	// resolve actionOptions
 	operation, hitOperation := actionOptions[DRIVE_ACTION_OPTIONS_FIELD_OPERATION]
 	if !hitOperation {
 		return res, errors.New("missing operation field")
