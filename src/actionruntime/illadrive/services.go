@@ -274,7 +274,7 @@ func extractGetUploadAddressOperationParams(actionOptions map[string]interface{}
 		case "overwriteDuplicate":
 			valueAsserted, ValueAssertPass := value.(bool)
 			if !ValueAssertPass {
-				return false, "", "", 0, "", errors.New("field path assert failed")
+				return false, "", "", 0, "", errors.New("field overwriteDuplicate assert failed")
 			}
 			overwriteDuplicate = valueAsserted
 		case "path":
@@ -286,19 +286,19 @@ func extractGetUploadAddressOperationParams(actionOptions map[string]interface{}
 		case "fileName":
 			valueAsserted, ValueAssertPass := value.(string)
 			if !ValueAssertPass {
-				return false, "", "", 0, "", errors.New("field path assert failed")
+				return false, "", "", 0, "", errors.New("field fileName assert failed")
 			}
 			fileName = valueAsserted
 		case "fileSize":
 			valueAsserted, ValueAssertPass := value.(float64)
 			if !ValueAssertPass {
-				return false, "", "", 0, "", errors.New("field path assert failed")
+				return false, "", "", 0, "", errors.New("field fileSize assert failed")
 			}
 			fileSize = int64(valueAsserted)
 		case "contentType":
 			valueAsserted, ValueAssertPass := value.(string)
 			if !ValueAssertPass {
-				return false, "", "", 0, "", errors.New("field path assert failed")
+				return false, "", "", 0, "", errors.New("field contentType assert failed")
 			}
 			contentType = valueAsserted
 		}
@@ -351,30 +351,36 @@ func extractGetMutipleUploadAddressOperationParams(actionOptions map[string]inte
 			}
 			path = valueAsserted
 		case "files":
-			filesAsserted, filesAssertPass := value.(map[string]interface{})
+			filesAsserted, filesAssertPass := value.([]interface{})
 			if !filesAssertPass {
 				return false, "", []string{}, []int64{}, []string{}, errors.New("field files assert failed")
 			}
-			for subKey, subValue := range filesAsserted {
-				switch subKey {
-				case "fileName":
-					subValueAsserted, subValueAssertPass := subValue.(string)
-					if !subValueAssertPass {
-						return false, "", []string{}, []int64{}, []string{}, errors.New("field fileName assert failed")
+			for _, file := range filesAsserted {
+				fileAsserted, fileAssertPass := file.(map[string]interface{})
+				if !fileAssertPass {
+					return false, "", []string{}, []int64{}, []string{}, errors.New("field file in files assert failed")
+				}
+				for subKey, subValue := range fileAsserted {
+					switch subKey {
+					case "fileName":
+						subValueAsserted, subValueAssertPass := subValue.(string)
+						if !subValueAssertPass {
+							return false, "", []string{}, []int64{}, []string{}, errors.New("field fileName assert failed")
+						}
+						fileNames = append(fileNames, subValueAsserted)
+					case "fileSize":
+						subValueAsserted, subValueAssertPass := subValue.(float64)
+						if !subValueAssertPass {
+							return false, "", []string{}, []int64{}, []string{}, errors.New("field fileSize assert failed")
+						}
+						fileSizes = append(fileSizes, int64(subValueAsserted))
+					case "contentType":
+						subValueAsserted, subValueAssertPass := subValue.(string)
+						if !subValueAssertPass {
+							return false, "", []string{}, []int64{}, []string{}, errors.New("field contentType assert failed")
+						}
+						contentTypes = append(contentTypes, subValueAsserted)
 					}
-					fileNames = append(fileNames, subValueAsserted)
-				case "fileSize":
-					subValueAsserted, subValueAssertPass := subValue.(float64)
-					if !subValueAssertPass {
-						return false, "", []string{}, []int64{}, []string{}, errors.New("field fileSize assert failed")
-					}
-					fileSizes = append(fileSizes, int64(subValueAsserted))
-				case "contentType":
-					subValueAsserted, subValueAssertPass := subValue.(string)
-					if !subValueAssertPass {
-						return false, "", []string{}, []int64{}, []string{}, errors.New("field fileSize assert failed")
-					}
-					contentTypes = append(contentTypes, subValueAsserted)
 				}
 			}
 		}

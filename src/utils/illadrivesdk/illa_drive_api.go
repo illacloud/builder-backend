@@ -321,8 +321,10 @@ func (r *IllaDriveRestAPI) UpdateFileStatus(teamID int, fileID string, status st
 
 func (r *IllaDriveRestAPI) GetMultipleUploadAddress(teamID int, overwriteDuplicate bool, path string, fileNames []string, fileSizes []int64, contentTypes []string) ([]map[string]interface{}, error) {
 	ret := make([]map[string]interface{}, 0)
+	fmt.Printf("[DUMP] GetMultipleUploadAddress() fileName: %+v, fileSizes: %+v, contentTypes: %+v\n ", fileNames, fileSizes, contentTypes)
 	for serial, fileName := range fileNames {
 		uploadAddressInfo, errInGetUploadAddress := r.GetUploadAddres(teamID, overwriteDuplicate, path, fileName, fileSizes[serial], contentTypes[serial])
+		fmt.Printf("[DUMP] uploadAddressInfo[%d]: %+v\n", serial, uploadAddressInfo)
 		if errInGetUploadAddress != nil {
 			return nil, errInGetUploadAddress
 		}
