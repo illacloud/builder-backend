@@ -1,7 +1,7 @@
 package illadrivesdk
 
 type RenameFileRequest struct {
-	name string `json:"name"`
+	Name string `json:"name"`
 }
 
 func NewRenameFileRequest() *RenameFileRequest {

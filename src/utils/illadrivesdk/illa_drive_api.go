@@ -226,7 +226,7 @@ func (r *IllaDriveRestAPI) GetUploadAddres(teamID int, overwriteDuplicate bool, 
 		Post(uri)
 	if r.Debug {
 		log.Printf("[DUMP] IllaDriveSDK.GetUploadAddres()  uri: %+v \n", uri)
-		log.Printf("[DUMP] IllaDriveSDK.GetUploadAddres()  response: %+v, err: %+v \n", resp, errInGet)
+		log.Printf("[DUMP] IllaDriveSDK.GetUploadAddres()  response: %+v, err: %+v \n", resp, errInPost)
 		log.Printf("[DUMP] IllaDriveSDK.GetUploadAddres()  resp.StatusCode(): %+v \n", resp.StatusCode())
 	}
 	if errInPost != nil {
@@ -303,7 +303,7 @@ func (r *IllaDriveRestAPI) UpdateFileStatus(teamID int, fileID string, status st
 	return updateStatusResponse, nil
 }
 
-func (r *IllaDriveRestAPI) GetMutipleUploadAddress(teamID int, overwriteDuplicate bool, path string, fileNames []string, fileSize int64, contentType string) (map[string]interface{}, error) {
+func (r *IllaDriveRestAPI) GetMutipleUploadAddress(teamID int, overwriteDuplicate bool, path string, fileNames []string, fileSize int64, contentType string) ([]map[string]interface{}, error) {
 	ret := make([]map[string]interface{}, 0)
 	for _, fileName := range fileNames {
 		uploadAddressInfo, errInGetUploadAddress := r.GetUploadAddres(teamID, overwriteDuplicate, path, fileName, fileSize, contentType)
@@ -365,7 +365,7 @@ func (r *IllaDriveRestAPI) GetDownloadAddress(teamID int, fileID string) (map[st
 	return downloadAddress, nil
 }
 
-func (r *IllaDriveRestAPI) GetMutipleDownloadAddres(teamID int, fileIDs []string) (map[string]interface{}, error) {
+func (r *IllaDriveRestAPI) GetMutipleDownloadAddres(teamID int, fileIDs []string) ([]map[string]interface{}, error) {
 	ret := make([]map[string]interface{}, 0)
 	for _, fileID := range fileIDs {
 		fileDownloadAddressInfo, errInGetDownloadAddress := r.GetDownloadAddress(teamID, fileID)
@@ -391,7 +391,7 @@ func (r *IllaDriveRestAPI) DeleteMultipleFile(teamID int, fileIDs []string) (map
 		return nil, errInGenerateToken
 	}
 	// init request body
-	req := NewDeleteFilesRequestByParam(fileIDs)
+	req := NewDeleteFileRequestByParam(fileIDs)
 
 	// delete file, the request like:
 	// ```
@@ -410,16 +410,16 @@ func (r *IllaDriveRestAPI) DeleteMultipleFile(teamID int, fileIDs []string) (map
 		Delete(uri)
 	if r.Debug {
 		log.Printf("[DUMP] IllaDriveSDK.DeleteMultipleFile()  uri: %+v \n", uri)
-		log.Printf("[DUMP] IllaDriveSDK.DeleteMultipleFile()  response: %+v, err: %+v \n", resp, errInGet)
+		log.Printf("[DUMP] IllaDriveSDK.DeleteMultipleFile()  response: %+v, err: %+v \n", resp, errInDelete)
 		log.Printf("[DUMP] IllaDriveSDK.DeleteMultipleFile()  resp.StatusCode(): %+v \n", resp.StatusCode())
 	}
 	if errInDelete != nil {
-		return nil, errInGet
+		return nil, errInDelete
 	}
 	if resp.StatusCode() != http.StatusOK {
 		return nil, errors.New(resp.String())
 	}
-	return map[string]string{"deleted": true}, nil
+	return map[string]interface{}{"deleted": true}, nil
 }
 
 func (r *IllaDriveRestAPI) RenameFile(teamID int, fileID string, fileName string) (map[string]interface{}, error) {
@@ -446,20 +446,20 @@ func (r *IllaDriveRestAPI) RenameFile(teamID int, fileID string, fileName string
 	// ```
 	client := resty.New()
 	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(DRIVE_API_RENAME_FILE, idconvertor.ConvertIntToString(teamID), fileID)
-	resp, errInDelete := client.R().
+	resp, errInPut := client.R().
 		SetHeader("Action-Token", actionToken).
 		SetBody(req).
 		Put(uri)
 	if r.Debug {
 		log.Printf("[DUMP] IllaDriveSDK.RenameFile() uri: %+v \n", uri)
-		log.Printf("[DUMP] IllaDriveSDK.RenameFile() response: %+v, err: %+v \n", resp, errInGet)
+		log.Printf("[DUMP] IllaDriveSDK.RenameFile() response: %+v, err: %+v \n", resp, errInPut)
 		log.Printf("[DUMP] IllaDriveSDK.RenameFile() resp.StatusCode(): %+v \n", resp.StatusCode())
 	}
-	if errInDelete != nil {
-		return nil, errInGet
+	if errInPut != nil {
+		return nil, errInPut
 	}
 	if resp.StatusCode() != http.StatusOK {
 		return nil, errors.New(resp.String())
 	}
-	return map[string]string{"renamed": true}, nil
+	return map[string]interface{}{"renamed": true}, nil
 }
