@@ -183,7 +183,7 @@ func (r *IllaDriveRestAPI) GetUploadAddres(teamID int, overwriteDuplicate bool, 
 	}
 
 	// calculate token
-	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_ACTION_GET_UPLOAD_ADDRES)
+	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_ACTION_GET_UPLOAD_ADDRESS)
 	if errInGenerateToken != nil {
 		return nil, errInGenerateToken
 	}
