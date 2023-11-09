@@ -319,7 +319,7 @@ func (r *IllaDriveRestAPI) UpdateFileStatus(teamID int, fileID string, status st
 	return updateStatusResponse, nil
 }
 
-func (r *IllaDriveRestAPI) GetMutipleUploadAddress(teamID int, overwriteDuplicate bool, path string, fileNames []string, fileSizes []int64, contentTypes []string) ([]map[string]interface{}, error) {
+func (r *IllaDriveRestAPI) GetMultipleUploadAddress(teamID int, overwriteDuplicate bool, path string, fileNames []string, fileSizes []int64, contentTypes []string) ([]map[string]interface{}, error) {
 	ret := make([]map[string]interface{}, 0)
 	for serial, fileName := range fileNames {
 		uploadAddressInfo, errInGetUploadAddress := r.GetUploadAddres(teamID, overwriteDuplicate, path, fileName, fileSizes[serial], contentTypes[serial])
@@ -382,7 +382,7 @@ func (r *IllaDriveRestAPI) GetDownloadAddress(teamID int, fileID string) (map[st
 	return downloadAddress, nil
 }
 
-func (r *IllaDriveRestAPI) GetMutipleDownloadAddres(teamID int, fileIDs []string) ([]map[string]interface{}, error) {
+func (r *IllaDriveRestAPI) GetMultipleDownloadAddres(teamID int, fileIDs []string) ([]map[string]interface{}, error) {
 	ret := make([]map[string]interface{}, 0)
 	for _, fileID := range fileIDs {
 		fileDownloadAddressInfo, errInGetDownloadAddress := r.GetDownloadAddress(teamID, fileID)
