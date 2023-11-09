@@ -9,6 +9,12 @@ func ExtractRawFilesFromListResponse(listResponse map[string]interface{}) ([]map
 		return nil, errors.New("mossing files field in list response")
 	}
 
+	// test if it is nil
+	_, assertListedFilesAsNil := listedFiles.(interface{})
+	if assertListedFilesAsNil {
+		return []map[string]interface{}{}, nil
+	}
+
 	// assert sub structure
 	listedFilesAsserted, assertListedFilesPass := listedFiles.([]interface{})
 	if !assertListedFilesPass {

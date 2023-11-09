@@ -21,7 +21,7 @@ const (
 	DRIVE_API_ACTION_DELETE_FILES                 = "DeleteFiles"
 	DRIVE_API_ACTION_DELETE_FILE                  = "DeleteFile"
 	DRIVE_API_ACTION_DELETE_MUTIPLE_FILE          = "DeleteMutipleFile"
-	DRIVE_API_ACTION_RENAME_FILE                  = "RenameFiles"
+	DRIVE_API_ACTION_RENAME_FILE                  = "RenameFile"
 )
 
 type DriveAuthClaims struct {
