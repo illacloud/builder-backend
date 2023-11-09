@@ -123,13 +123,13 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 			return res, errInCallAPI
 		}
 		res.Rows = append(res.Rows, ret)
-	case illadrivesdk.DRIVE_API_ACTION_GET_MUTIPLE_UPLOAD_ADDRESS:
+	case illadrivesdk.DRIVE_API_ACTION_GET_MULTIPLE_UPLOAD_ADDRESS:
 		// get mutiple upload address require field: teamID int, overwriteDuplicate bool, path string, fileNames []string, fileSizes []int64, contentTypes []string
 		overwriteDuplicate, path, fileNames, fileSizes, contentTypes, errInExtractParam := extractGetMutipleUploadAddressOperationParams(actionOptions)
 		if errInExtractParam != nil {
 			return res, errInExtractParam
 		}
-		ret, errInCallAPI := driveAPI.GetMutipleUploadAddress(teamID, overwriteDuplicate, path, fileNames, fileSizes, contentTypes)
+		ret, errInCallAPI := driveAPI.GetMultipleUploadAddress(teamID, overwriteDuplicate, path, fileNames, fileSizes, contentTypes)
 		if errInCallAPI != nil {
 			return res, errInCallAPI
 		}
@@ -145,13 +145,13 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 			return res, errInCallAPI
 		}
 		res.Rows = append(res.Rows, ret)
-	case illadrivesdk.DRIVE_API_ACTION_GET_MUTIPLE_DOWNLOAD_ADDRESS:
+	case illadrivesdk.DRIVE_API_ACTION_GET_MULTIPLE_DOWNLOAD_ADDRESS:
 		// get mutiple upload address require field: teamID int, fileIDs []string
 		fileIDs, errInExtractParam := extractFileIDsFromOperationParams(actionOptions)
 		if errInExtractParam != nil {
 			return res, errInExtractParam
 		}
-		ret, errInCallAPI := driveAPI.GetMutipleDownloadAddres(teamID, fileIDs)
+		ret, errInCallAPI := driveAPI.GetMultipleDownloadAddres(teamID, fileIDs)
 		if errInCallAPI != nil {
 			return res, errInCallAPI
 		}
@@ -168,7 +168,7 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 			return res, errInCallAPI
 		}
 		res.Rows = append(res.Rows, ret)
-	case illadrivesdk.DRIVE_API_ACTION_DELETE_MUTIPLE_FILE:
+	case illadrivesdk.DRIVE_API_ACTION_DELETE_MULTIPLE_FILE:
 		// delete mutiple file require field: teamID int, fileIDs []string
 		fileIDs, errInExtractParam := extractFileIDsFromOperationParams(actionOptions)
 		if errInExtractParam != nil {
