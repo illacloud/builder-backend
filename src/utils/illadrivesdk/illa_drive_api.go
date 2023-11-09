@@ -19,8 +19,8 @@ const (
 	DRIVE_API_GET_UPLOAD_ADDRESS      = "/api/v1/teams/%s/illaAction/files"
 	DRIVE_API_UPDATE_FILE_STATUS      = "/api/v1/teams/%s/illaAction/files/%s/status"
 	DRIVE_API_GET_DOWNLOAD_SIGNED_URL = "/api/v1/teams/%s/illaAction/files/%s/url"
-	DRIVE_API_DELETE_FILES            = "/api/v1/teams/%s/files"
-	DRIVE_API_RENAME_FILE             = "/api/v1/teams/%s/files/%s/name"
+	DRIVE_API_DELETE_FILES            = "/api/v1/teams/%s/illaAction/files"
+	DRIVE_API_RENAME_FILE             = "/api/v1/teams/%s/illaAction/files/%s/name"
 )
 
 // duplication strategies
