@@ -98,3 +98,7 @@ func (req *UpdateActionRequest) IsLocalVirtualAction() bool {
 func (req *UpdateActionRequest) IsRemoteVirtualAction() bool {
 	return resourcelist.IsRemoteVirtualResource(req.ActionType)
 }
+
+func (req *UpdateActionRequest) NeedFetchResourceInfoFromSourceManager() bool {
+	return resourcelist.NeedFetchResourceInfoFromSourceManager(req.ActionType)
+}
