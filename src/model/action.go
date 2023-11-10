@@ -12,6 +12,7 @@ import (
 
 const (
 	ACTION_RUNTIME_INFO_FIELD_TEAM_ID          = "teamID"
+	ACTION_RUNTIME_INFO_FIELD_APP_ID           = "appID"
 	ACTION_RUNTIME_INFO_FIELD_RESOURCE_ID      = "resourceID"
 	ACTION_RUNTIME_INFO_FIELD_ACTION_ID        = "actionID"
 	ACTION_RUNTIME_INFO_FIELD_AUTHORIZATION    = "authorization"
@@ -307,9 +308,10 @@ func (action *Action) ExportConfigInMap() map[string]interface{} {
 }
 
 // the action runtime does not pass the env info for virtual resource, so add them.
-func (action *Action) AppendRuntimeInfoForVirtualResource(authorization string) {
+func (action *Action) AppendRuntimeInfoForVirtualResource(authorization string, teamID int) {
 	template := action.ExportTemplateInMap()
-	template[ACTION_RUNTIME_INFO_FIELD_TEAM_ID] = action.TeamID
+	template[ACTION_RUNTIME_INFO_FIELD_TEAM_ID] = teamID // the action.TeamID will invalied when onboarding
+	template[ACTION_RUNTIME_INFO_FIELD_APP_ID] = action.AppRefID
 	template[ACTION_RUNTIME_INFO_FIELD_RESOURCE_ID] = action.ResourceRefID
 	template[ACTION_RUNTIME_INFO_FIELD_ACTION_ID] = action.ID
 	template[ACTION_RUNTIME_INFO_FIELD_AUTHORIZATION] = authorization

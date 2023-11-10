@@ -90,7 +90,7 @@ func (controller *Controller) RunPublicAction(c *gin.Context) {
 		}
 	} else {
 		// process virtual resource action
-		action.AppendRuntimeInfoForVirtualResource(userAuthToken)
+		action.AppendRuntimeInfoForVirtualResource(userAuthToken, teamID)
 	}
 
 	// check action template

@@ -345,7 +345,7 @@ func (controller *Controller) RunAction(c *gin.Context) {
 
 	// actionID has not been created (like actionID is 0 'ILAfx4p1C7d0'), but we still can run it (onboarding case)
 	if !model.DoesActionHasBeenCreated(actionID) {
-		// ok, action was not created, fetch app and build a temporary acion.
+		// ok, action was not created, fetch app and build a temporary action.
 		app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
 		if errInRetrieveApp != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
@@ -393,7 +393,7 @@ func (controller *Controller) RunAction(c *gin.Context) {
 		}
 	} else {
 		// process virtual resource action
-		action.AppendRuntimeInfoForVirtualResource(userAuthToken)
+		action.AppendRuntimeInfoForVirtualResource(userAuthToken, teamID)
 	}
 
 	// check action template
