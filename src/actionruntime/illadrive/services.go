@@ -23,8 +23,11 @@ import (
 )
 
 const (
-	DRIVE_ACTION_OPTIONS_FIELD_OPERATION = "operation"
-	DRIVE_ACTION_OPTION_FIELD_TEAM_ID    = "teamID"
+	DRIVE_ACTION_OPTIONS_FIELD_OPERATION     = "operation"
+	DRIVE_ACTION_OPTIONS_FIELD_TEAM_ID       = "teamID"
+	DRIVE_ACTION_OPTIONS_FIELD_USER_ID       = "userID"
+	DRIVE_ACTION_OPTIONS_FIELD_INSTANCE_TYPE = "instanceType"
+	DRIVE_ACTION_OPTIONS_FIELD_INSTANCE_ID   = "instanceID"
 )
 
 type IllaDriveConnector struct {
@@ -67,17 +70,10 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 	fmt.Printf("[DUMP] illadrive.Run() actionOptions: %+v\n", actionOptions)
 
 	// resolve actionOptions
-	teamIDRaw, hitTeamID := actionOptions[DRIVE_ACTION_OPTION_FIELD_TEAM_ID]
-	if !hitTeamID {
-		return res, errors.New("missing teamID field")
-
-	}
-	teamIDFloat, teamIDAssertPass := teamIDRaw.(float64)
-	teamID := int(teamIDFloat)
-	if !teamIDAssertPass {
-		return res, errors.New("teamID field which in action options assert failed")
-
-	}
+	teamID, _ := resolveIntFieldsFromActionOptions(actionOptions, DRIVE_ACTION_OPTIONS_FIELD_TEAM_ID)
+	userID, _ := resolveIntFieldsFromActionOptions(actionOptions, DRIVE_ACTION_OPTIONS_FIELD_USER_ID)
+	instanceType, _ := resolveIntFieldsFromActionOptions(actionOptions, DRIVE_ACTION_OPTIONS_FIELD_INSTANCE_TYPE)
+	instanceID, _ := resolveIntFieldsFromActionOptions(actionOptions, DRIVE_ACTION_OPTIONS_FIELD_INSTANCE_ID)
 	operation, hitOperation := actionOptions[DRIVE_ACTION_OPTIONS_FIELD_OPERATION]
 	if !hitOperation {
 		return res, errors.New("missing operation field")
@@ -85,7 +81,7 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 	}
 
 	// init
-	driveAPI := illadrivesdk.NewIllaDriveRestAPI()
+	driveAPI := illadrivesdk.NewIllaDriveRestAPI(teamID, userID, instanceType, instanceID)
 	driveAPI.OpenDebug()
 
 	// operation filter for illa drive sdk function call
@@ -96,7 +92,7 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 		if errInExtractParam != nil {
 			return res, errInExtractParam
 		}
-		ret, errInCallAPI := driveAPI.ListFiles(teamID, path, page, limit, fileID, search, expirationType, expiry, hotlinkProtection)
+		ret, errInCallAPI := driveAPI.ListFiles(path, page, limit, fileID, search, expirationType, expiry, hotlinkProtection)
 		if errInCallAPI != nil {
 			return res, errInCallAPI
 		}
@@ -107,7 +103,7 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 		if errInExtractParam != nil {
 			return res, errInExtractParam
 		}
-		ret, errInCallAPI := driveAPI.GetUploadAddres(teamID, overwriteDuplicate, path, fileName, fileSize, contentType)
+		ret, errInCallAPI := driveAPI.GetUploadAddres(overwriteDuplicate, path, fileName, fileSize, contentType)
 		if errInCallAPI != nil {
 			return res, errInCallAPI
 		}
@@ -118,7 +114,7 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 		if errInExtractParam != nil {
 			return res, errInExtractParam
 		}
-		ret, errInCallAPI := driveAPI.UpdateFileStatus(teamID, fileID, status)
+		ret, errInCallAPI := driveAPI.UpdateFileStatus(fileID, status)
 		if errInCallAPI != nil {
 			return res, errInCallAPI
 		}
@@ -129,7 +125,7 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 		if errInExtractParam != nil {
 			return res, errInExtractParam
 		}
-		ret, errInCallAPI := driveAPI.GetMultipleUploadAddress(teamID, overwriteDuplicate, path, fileNames, fileSizes, contentTypes)
+		ret, errInCallAPI := driveAPI.GetMultipleUploadAddress(overwriteDuplicate, path, fileNames, fileSizes, contentTypes)
 		if errInCallAPI != nil {
 			return res, errInCallAPI
 		}
@@ -140,7 +136,7 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 		if errInExtractParam != nil {
 			return res, errInExtractParam
 		}
-		ret, errInCallAPI := driveAPI.GetDownloadAddress(teamID, fileID)
+		ret, errInCallAPI := driveAPI.GetDownloadAddress(fileID)
 		if errInCallAPI != nil {
 			return res, errInCallAPI
 		}
@@ -151,7 +147,7 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 		if errInExtractParam != nil {
 			return res, errInExtractParam
 		}
-		ret, errInCallAPI := driveAPI.GetMultipleDownloadAddres(teamID, fileIDs)
+		ret, errInCallAPI := driveAPI.GetMultipleDownloadAddres(fileIDs)
 		if errInCallAPI != nil {
 			return res, errInCallAPI
 		}
@@ -163,7 +159,7 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 		if errInExtractParam != nil {
 			return res, errInExtractParam
 		}
-		ret, errInCallAPI := driveAPI.DeleteFile(teamID, fileID)
+		ret, errInCallAPI := driveAPI.DeleteFile(fileID)
 		if errInCallAPI != nil {
 			return res, errInCallAPI
 		}
@@ -174,7 +170,7 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 		if errInExtractParam != nil {
 			return res, errInExtractParam
 		}
-		ret, errInCallAPI := driveAPI.DeleteMultipleFile(teamID, fileIDs)
+		ret, errInCallAPI := driveAPI.DeleteMultipleFile(fileIDs)
 		if errInCallAPI != nil {
 			return res, errInCallAPI
 		}
@@ -185,7 +181,7 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 		if errInExtractParam != nil {
 			return res, errInExtractParam
 		}
-		ret, errInCallAPI := driveAPI.RenameFile(teamID, fileID, fileName)
+		ret, errInCallAPI := driveAPI.RenameFile(fileID, fileName)
 		if errInCallAPI != nil {
 			return res, errInCallAPI
 		}

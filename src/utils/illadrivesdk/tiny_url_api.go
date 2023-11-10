@@ -21,14 +21,14 @@ const (
 )
 
 // the function response are fileID => fileTinyURL lookup map.
-func (r *IllaDriveRestAPI) generateDriveTinyURLs(teamID int, fileIDs []string, expirationType string, expiry string, hotlinkProtection bool) (map[string]string, error) {
+func (r *IllaDriveRestAPI) generateDriveTinyURLs(fileIDs []string, expirationType string, expiry string, hotlinkProtection bool) (map[string]string, error) {
 	// self-hist need skip this method.
 	if !r.Config.IsCloudMode() {
 		return nil, nil
 	}
 
 	// calculate token
-	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_ACTION_GENERATE_TINY_URLS)
+	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(r, DRIVE_API_ACTION_GENERATE_TINY_URLS)
 	if errInGenerateToken != nil {
 		return nil, errInGenerateToken
 	}
@@ -40,7 +40,7 @@ func (r *IllaDriveRestAPI) generateDriveTinyURLs(teamID int, fileIDs []string, e
 	// {"ids":["ILAfx4p1C7cp"],"expirationType":"persistent","hotlinkProtection":true}
 	// ```
 	client := resty.New()
-	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(DRIVE_API_GENERATE_TINY_URL_BATCH, idconvertor.ConvertIntToString(teamID))
+	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(DRIVE_API_GENERATE_TINY_URL_BATCH, idconvertor.ConvertIntToString(r.TeamID))
 	resp, errInPost := client.R().
 		SetHeader("Action-Token", actionToken).
 		SetBody(req).

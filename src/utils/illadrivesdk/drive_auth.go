@@ -25,18 +25,24 @@ const (
 )
 
 type DriveAuthClaims struct {
-	TeamID int    `json:"teamID"`
-	Action string `json:"action"`
+	TeamID       int    `json:"teamID"`
+	Action       string `json:"action"`
+	UserID       int    `json:"userID"`
+	InstanceType int    `json:"instanceType"`
+	InstanceID   int    `json:"instanceID"`
 	jwt.RegisteredClaims
 }
 
 const JWT_ISSUER = "ILLA Cloud"
 const JWT_TOKEN_DEFAULT_EXIPRED_PERIOD = time.Hour * 24
 
-func GenerateDriveAPIActionToken(teamID int, action string) (string, error) {
+func GenerateDriveAPIActionToken(api *IllaDriveRestAPI, action string) (string, error) {
 	claims := &DriveAuthClaims{
-		TeamID: teamID,
-		Action: action,
+		TeamID:       api.TeamID,
+		Action:       action,
+		UserID:       api.UserID,
+		InstanceType: api.InstanceType,
+		InstanceID:   api.InstanceID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer: JWT_ISSUER,
 			ExpiresAt: &jwt.NumericDate{

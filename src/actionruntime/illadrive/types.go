@@ -14,6 +14,8 @@
 
 package illadrive
 
+import "errors"
+
 type IllaDriveTemplate struct {
 	URL       string
 	Method    string `validate:"oneof=GET POST PUT PATCH DELETE HEAD OPTIONS"`
@@ -41,4 +43,19 @@ func (t *IllaDriveTemplate) ReflectBodyToRaw() *RawBody {
 		}
 	}
 	return rbd
+}
+
+func resolveIntFieldsFromActionOptions(actionOptions map[string]interface{}, fieldName string) (int, error) {
+	raw, hit := actionOptions[fieldName]
+	if !hit {
+		return 0, errors.New("missing " + fieldName + " field")
+
+	}
+	numberInFloat, numberAssertPass := raw.(float64)
+	number := int(numberInFloat)
+	if !numberAssertPass {
+		return 0, errors.New(fieldName + " field which in action options assert failed")
+
+	}
+	return number, nil
 }

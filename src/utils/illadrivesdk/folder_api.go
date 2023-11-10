@@ -15,14 +15,14 @@ const (
 	DRIVE_API_GET_FOLDER_ID_BY_PATH = "/api/v1/teams/%s/illaAction/folder?%s"
 )
 
-func (r *IllaDriveRestAPI) getFolderIDByPath(teamID int, path string) (string, error) {
+func (r *IllaDriveRestAPI) getFolderIDByPath(path string) (string, error) {
 	// self-hist need skip this method.
 	if !r.Config.IsCloudMode() {
 		return "", nil
 	}
 
 	// calculate token
-	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(teamID, DRIVE_API_ACTION_GET_FOLDER_ID_BY_PATH)
+	actionToken, errInGenerateToken := GenerateDriveAPIActionToken(r, DRIVE_API_ACTION_GET_FOLDER_ID_BY_PATH)
 	if errInGenerateToken != nil {
 		return "", errInGenerateToken
 	}
@@ -41,7 +41,7 @@ func (r *IllaDriveRestAPI) getFolderIDByPath(teamID int, path string) (string, e
 	// {"id":"ILAfx4p1C7dB"}
 	// ```
 	client := resty.New()
-	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(DRIVE_API_GET_FOLDER_ID_BY_PATH, idconvertor.ConvertIntToString(teamID), params)
+	uri := r.Config.GetIllaDriveAPIForSDK() + fmt.Sprintf(DRIVE_API_GET_FOLDER_ID_BY_PATH, idconvertor.ConvertIntToString(r.TeamID), params)
 	resp, errInGet := client.R().
 		SetHeader("Action-Token", actionToken).
 		Get(uri)
