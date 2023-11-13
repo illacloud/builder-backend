@@ -11,11 +11,13 @@ import (
 var SerlizedParameterizedSQLList = map[int]bool{
 	resourcelist.TYPE_POSTGRESQL_ID: true,
 	resourcelist.TYPE_ORACLE_9I_ID:  true,
+	resourcelist.TYPE_ORACLE_ID:     true,
 }
 
 var SerlizedParameterPrefixMap = map[int]string{
 	resourcelist.TYPE_POSTGRESQL_ID: "$",
 	resourcelist.TYPE_ORACLE_9I_ID:  ":",
+	resourcelist.TYPE_ORACLE_ID:     ":",
 }
 
 var ParameterTextTypeCastList = map[int]string{
