@@ -64,14 +64,25 @@ func (sqlEscaper *SQLEscaper) buildEscapedArgsLookupTable(args map[string]interf
 type stringConcatTarget struct {
 	Target     strings.Builder
 	IsVariable bool
+	IsEmpty    bool
 }
 
 func newStringConcatTarget(targetString string, isVariable bool) *stringConcatTarget {
 	ret := &stringConcatTarget{
 		Target:     strings.Builder{},
 		IsVariable: isVariable,
+		IsEmpty:    false,
 	}
 	ret.Target.WriteString(targetString)
+	return ret
+}
+
+func newEmptyStringConcatTarget() *stringConcatTarget {
+	ret := &stringConcatTarget{
+		Target:     strings.Builder{},
+		IsVariable: false,
+		IsEmpty:    true,
+	}
 	return ret
 }
 
@@ -104,6 +115,8 @@ func (i *stringConcatTarget) ExportWithoutQuote() string {
 
 // select * from users where name like '%{{first_name}}.{{last_name}}%'
 func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[string]interface{}) (string, []interface{}, error) {
+	fmt.Printf("\n\n-- [CALL] EscapeSQLActionTemplate()\n")
+	fmt.Printf("    -- [CALL] sql string: %s\n", sql)
 	escapedArgs, errInBuildArgsLT := sqlEscaper.buildEscapedArgsLookupTable(args)
 	if errInBuildArgsLT != nil {
 		return "", []interface{}{}, errInBuildArgsLT
@@ -120,10 +133,12 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 	usedArgsSerial := 1 // serial start from 1
 	userArgs := make([]interface{}, 0)
 	concatStringTargets := make([]*stringConcatTarget, 0)
+	fmt.Printf("-- [DUMP] first len(concatStringTargets): %d\n", len(concatStringTargets))
+
 	initConcatStringTargetsIndex := func(index int) {
 		for {
 			if len(concatStringTargets)-1 < index {
-				concatStringTargets = append(concatStringTargets, newStringConcatTarget("", false))
+				concatStringTargets = append(concatStringTargets, newEmptyStringConcatTarget())
 			} else {
 				break
 			}
@@ -203,11 +218,13 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		}
 		// '{{' + '}}', hit!
 		if c == '}' && leftBraketCounter == 2 && rightBraketCounter == 1 {
-			// process quoute counter
-			if singleQuoteStart {
+			// process quoute counter, only bump quoute segment counter when having leading character
+			fmt.Printf("-- [DUMP] doubleQuoteSegmentCounter: %d\n", doubleQuoteSegmentCounter)
+			fmt.Printf("-- [DUMP] len(concatStringTargets): %d\n", len(concatStringTargets))
+			if singleQuoteStart && !concatStringTargets[singleQuoteSegmentCounter].IsEmpty {
 				singleQuoteSegPlus()
 			}
-			if doubleQuoteStart {
+			if doubleQuoteStart && !concatStringTargets[doubleQuoteSegmentCounter].IsEmpty {
 				doubleQuoteSegPlus()
 			}
 
@@ -228,9 +245,9 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 				}
 			} else {
 
-				fmt.Printf("[DUMP] sqlEscaper.ResourceType: %+v\n", sqlEscaper.ResourceType)
-				fmt.Printf("[DUMP] sqlEscaper.IsSerlizedParameterizedSQL(): %+v\n", sqlEscaper.IsSerlizedParameterizedSQL())
-				fmt.Printf("[DUMP] sqlEscaper.GetSerlizedParameterPrefixMap(): %+v\n", sqlEscaper.GetSerlizedParameterPrefixMap())
+				fmt.Printf("-- [DUMP] sqlEscaper.ResourceType: %+v\n", sqlEscaper.ResourceType)
+				fmt.Printf("-- [DUMP] sqlEscaper.IsSerlizedParameterizedSQL(): %+v\n", sqlEscaper.IsSerlizedParameterizedSQL())
+				fmt.Printf("-- [DUMP] sqlEscaper.GetSerlizedParameterPrefixMap(): %+v\n", sqlEscaper.GetSerlizedParameterPrefixMap())
 				// replace sql param
 				if sqlEscaper.IsSerlizedParameterizedSQL() {
 					variableContent = fmt.Sprintf("%s%d", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
@@ -245,6 +262,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 			if singleQuoteStart {
 				initConcatStringTargetsIndex(singleQuoteSegmentCounter)
 				variableContent += sqlEscaper.GetParameterTextTypeCastList()
+				fmt.Printf("-- [DUMP] fill in concatStringTargets[%d]: %s\n", singleQuoteSegmentCounter, newStringConcatTarget(variableContent, true).Target.String())
 				concatStringTargets[singleQuoteSegmentCounter] = newStringConcatTarget(variableContent, true)
 				singleQuoteSegPlus()
 			} else if doubleQuoteStart {
@@ -255,6 +273,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 			} else {
 				ret.WriteString(variableContent)
 			}
+			fmt.Printf("---[DUMP] variableContent: %+v\n", variableContent)
 			escapedBracketWithVariable = ""
 			variable = ""
 			continue
@@ -350,11 +369,13 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		if singleQuoteStart {
 			initConcatStringTargetsIndex(singleQuoteSegmentCounter)
 			concatStringTargets[singleQuoteSegmentCounter].concat(string(c))
+			concatStringTargets[singleQuoteSegmentCounter].IsEmpty = false
 			continue
 		}
 		if doubleQuoteStart {
 			initConcatStringTargetsIndex(doubleQuoteSegmentCounter)
 			concatStringTargets[doubleQuoteSegmentCounter].concat(string(c))
+			concatStringTargets[doubleQuoteSegmentCounter].IsEmpty = false
 			continue
 		}
 		// process other utf-8 character
@@ -369,7 +390,11 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 	return ret.String(), userArgs, nil
 }
 
+var formatConcatTargetCalls = 0
+
 func formatConcatTarget(concatStringTargets []*stringConcatTarget, singleQuoteStart bool, doubleQuoteStart bool) string {
+	formatConcatTargetCalls++
+	fmt.Printf("-- [DUMP] formatConcatTargetCalls: %+v\n", formatConcatTargetCalls)
 	var ret strings.Builder
 	haveVariable := false
 	exportedTarget := make([]string, 0)
@@ -381,12 +406,19 @@ func formatConcatTarget(concatStringTargets []*stringConcatTarget, singleQuoteSt
 	}
 	// export with variable
 	if haveVariable {
-		ret.WriteString("CONCAT(")
-		for _, target := range concatStringTargets {
-			exportedTarget = append(exportedTarget, target.Export(singleQuoteStart, doubleQuoteStart))
+		// only have single valiable
+		if len(concatStringTargets) == 1 {
+			ret.WriteString(concatStringTargets[0].Export(singleQuoteStart, doubleQuoteStart))
+		} else {
+			// multi variable
+			ret.WriteString("CONCAT(")
+			for _, target := range concatStringTargets {
+				fmt.Printf("----- [DUMP] target: %+v\n", string(target.Target.String()))
+				exportedTarget = append(exportedTarget, target.Export(singleQuoteStart, doubleQuoteStart))
+			}
+			ret.WriteString(strings.Join(exportedTarget, ", "))
+			ret.WriteString(")")
 		}
-		ret.WriteString(strings.Join(exportedTarget, ", "))
-		ret.WriteString(")")
 	} else {
 		if singleQuoteStart {
 			ret.WriteString("'")
