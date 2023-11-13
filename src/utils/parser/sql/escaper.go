@@ -250,10 +250,22 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 				fmt.Printf("-- [DUMP] sqlEscaper.GetSerlizedParameterPrefixMap(): %+v\n", sqlEscaper.GetSerlizedParameterPrefixMap())
 				// replace sql param
 				if sqlEscaper.IsSerlizedParameterizedSQL() {
-					variableContent = fmt.Sprintf("%s%d", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
+					if singleQuoteStart {
+						variableContent = fmt.Sprintf("'%s%d'", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
+					} else if doubleQuoteStart {
+						variableContent = fmt.Sprintf("\"%s%d\"", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
+					} else {
+						variableContent = fmt.Sprintf("%s%d", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
+					}
 					usedArgsSerial++
 				} else {
-					variableContent = "?"
+					if singleQuoteStart {
+						variableContent = "'?'"
+					} else if doubleQuoteStart {
+						variableContent = "\"?\""
+					} else {
+						variableContent = "?"
+					}
 				}
 				// record param serial
 				userArgs = append(userArgs, variableMappedValue)
