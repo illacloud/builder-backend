@@ -125,7 +125,7 @@ func (s *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 
 	// check if m.Action.Query is select query
 	sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_SNOWFLAKE_ID)
-	escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(s.actionOptions.RawQuery, s.actionOptions.Context)
+	escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(s.actionOptions.RawQuery, s.actionOptions.Context, s.actionOptions.IsSafeMode())
 	if errInEscapeSQL != nil {
 		return queryResult, errInEscapeSQL
 	}
@@ -153,7 +153,7 @@ func (s *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else if isSelectQuery && !s.actionOptions.IsSafeMode() {
-		rows, err := db.Query(s.actionOptions.Query)
+		rows, err := db.Query(escapedSQL)
 		if err != nil {
 			return queryResult, err
 		}
@@ -176,7 +176,7 @@ func (s *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		queryResult.Success = true
 		queryResult.Extra["message"] = fmt.Sprintf("Affeted %d rows.", affectedRows)
 	} else if !isSelectQuery && !s.actionOptions.IsSafeMode() {
-		execResult, err := db.Exec(s.actionOptions.Query)
+		execResult, err := db.Exec(escapedSQL)
 		if err != nil {
 			return queryResult, err
 		}

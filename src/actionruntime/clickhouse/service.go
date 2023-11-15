@@ -125,7 +125,7 @@ func (c *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	}
 	// check if m.Action.Query is select query
 	sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_MYSQL_ID)
-	escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(c.ActionOpts.RawQuery, c.ActionOpts.Context)
+	escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(c.ActionOpts.RawQuery, c.ActionOpts.Context, c.ActionOpts.IsSafeMode())
 	if errInEscapeSQL != nil {
 		return queryResult, errInEscapeSQL
 	}
@@ -152,7 +152,7 @@ func (c *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else if isSelectQuery && !c.ActionOpts.IsSafeMode() {
-		rows, err := db.Query(c.ActionOpts.Query)
+		rows, err := db.Query(escapedSQL)
 		if err != nil {
 			return queryResult, err
 		}
@@ -175,7 +175,7 @@ func (c *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		queryResult.Success = true
 		queryResult.Extra["message"] = fmt.Sprintf("Affeted %d rows.", affectedRows)
 	} else if !isSelectQuery && !c.ActionOpts.IsSafeMode() { // update, insert, delete data
-		execResult, err := db.Exec(c.ActionOpts.Query)
+		execResult, err := db.Exec(escapedSQL)
 		if err != nil {
 			return queryResult, err
 		}

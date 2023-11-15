@@ -116,7 +116,8 @@ func (i *stringConcatTarget) ExportWithoutQuote() string {
 }
 
 // select * from users where name like '%{{first_name}}.{{last_name}}%'
-func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[string]interface{}) (string, []interface{}, error) {
+// safeMode for varibale mode, unsafeMode for variable replace mode.
+func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[string]interface{}, safeMode bool) (string, []interface{}, error) {
 	fmt.Printf("\n\n-- [CALL] EscapeSQLActionTemplate()\n")
 	fmt.Printf("    -- [CALL] sql string: %s\n", sql)
 	escapedArgs, errInBuildArgsLT := sqlEscaper.buildEscapedArgsLookupTable(args)
@@ -246,12 +247,17 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					variableContent = escapedBracketWithVariable
 				}
 			} else {
-
 				fmt.Printf("-- [DUMP] sqlEscaper.ResourceType: %+v\n", sqlEscaper.ResourceType)
 				fmt.Printf("-- [DUMP] sqlEscaper.IsSerlizedParameterizedSQL(): %+v\n", sqlEscaper.IsSerlizedParameterizedSQL())
 				fmt.Printf("-- [DUMP] sqlEscaper.GetSerlizedParameterPrefixMap(): %+v\n", sqlEscaper.GetSerlizedParameterPrefixMap())
 				// replace sql param
-				if sqlEscaper.IsSerlizedParameterizedSQL() {
+				if !safeMode {
+					variableMappedValueAsserted, variableMappedValueAssertPass := variableMappedValue.(string)
+					if !variableMappedValueAssertPass {
+						return "", nil, errors.New("provided variables assert to string failed")
+					}
+					variableContent = variableMappedValueAsserted
+				} else if sqlEscaper.IsSerlizedParameterizedSQL() {
 					if singleQuoteStart {
 						variableContent = fmt.Sprintf("'%s%d'", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
 					} else if doubleQuoteStart {

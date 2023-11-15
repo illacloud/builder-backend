@@ -125,7 +125,7 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		fallthrough
 	case ACTION_SQL_SAFE_MODE:
 		sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_ORACLE_ID)
-		escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(o.actionOptions.RawQuery, o.actionOptions.Context)
+		escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(o.actionOptions.RawQuery, o.actionOptions.Context, o.actionOptions.IsSafeMode())
 		if errInEscapeSQL != nil {
 			return queryResult, errInEscapeSQL
 		}
@@ -158,7 +158,7 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Rows = mapRes
 		} else if isSelectQuery && !o.actionOptions.IsSafeMode() {
 			fmt.Printf("[oracle] [RUN] isSelectQuery, !IsSafeMode, query.Raw: %s\n", query.Raw)
-			rows, err := db.Query(query.Raw)
+			rows, err := db.Query(escapedSQL)
 			if err != nil {
 				return queryResult, err
 			}
@@ -183,7 +183,7 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Extra["message"] = fmt.Sprintf("Affeted %d rows.", affectedRows)
 		} else if !isSelectQuery && !o.actionOptions.IsSafeMode() {
 			fmt.Printf("[oracle] [RUN] !isSelectQuery, !IsSafeMode, query.Raw: %s\n", query.Raw)
-			execResult, err := db.Exec(query.Raw)
+			execResult, err := db.Exec(escapedSQL)
 			if err != nil {
 				return queryResult, err
 			}

@@ -125,7 +125,7 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	}
 	// check if m.Action.Query is select query
 	sqlEscaper := parser_sql.NewSQLEscaper(resourcelist.TYPE_POSTGRESQL_ID)
-	escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(p.Action.RawQuery, p.Action.Context)
+	escapedSQL, sqlArgs, errInEscapeSQL := sqlEscaper.EscapeSQLActionTemplate(p.Action.RawQuery, p.Action.Context, p.Action.IsSafeMode())
 	if errInEscapeSQL != nil {
 		return queryResult, errInEscapeSQL
 	}
@@ -153,7 +153,7 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else if isSelectQuery && !p.Action.IsSafeMode() {
-		rows, err := db.Query(context.Background(), p.Action.Query)
+		rows, err := db.Query(context.Background(), escapedSQL)
 		if err != nil {
 			return queryResult, err
 		}
@@ -173,7 +173,7 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		queryResult.Success = true
 		queryResult.Extra["message"] = fmt.Sprintf("Affeted %d rows.", affectedRows)
 	} else if !isSelectQuery && !p.Action.IsSafeMode() {
-		execResult, err := db.Exec(context.Background(), p.Action.Query)
+		execResult, err := db.Exec(context.Background(), escapedSQL)
 		if err != nil {
 			return queryResult, err
 		}
