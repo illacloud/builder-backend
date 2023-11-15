@@ -144,6 +144,7 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 
 		// fetch data
 		if isSelectQuery && o.actionOptions.IsSafeMode() {
+			fmt.Printf("[oracle] [RUN] isSelectQuery, IsSafeMode, escapedSQL: %s\n", escapedSQL)
 			rows, err := db.Query(escapedSQL, sqlArgs...)
 			if err != nil {
 				return queryResult, err
@@ -156,6 +157,7 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Success = true
 			queryResult.Rows = mapRes
 		} else if isSelectQuery && !o.actionOptions.IsSafeMode() {
+			fmt.Printf("[oracle] [RUN] isSelectQuery, !IsSafeMode, query.Raw: %s\n", query.Raw)
 			rows, err := db.Query(query.Raw)
 			if err != nil {
 				return queryResult, err
@@ -168,6 +170,7 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Success = true
 			queryResult.Rows = mapRes
 		} else if !isSelectQuery && o.actionOptions.IsSafeMode() {
+			fmt.Printf("[oracle] [RUN] !isSelectQuery, IsSafeMode, escapedSQL: %s\n", escapedSQL)
 			execResult, err := db.Exec(escapedSQL, sqlArgs...)
 			if err != nil {
 				return queryResult, err
@@ -179,6 +182,7 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Success = true
 			queryResult.Extra["message"] = fmt.Sprintf("Affeted %d rows.", affectedRows)
 		} else if !isSelectQuery && !o.actionOptions.IsSafeMode() {
+			fmt.Printf("[oracle] [RUN] !isSelectQuery, !IsSafeMode, query.Raw: %s\n", query.Raw)
 			execResult, err := db.Exec(query.Raw)
 			if err != nil {
 				return queryResult, err
