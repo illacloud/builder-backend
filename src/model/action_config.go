@@ -28,6 +28,7 @@ type ActionConfig struct {
 	Public            bool            `json:"public"` // switch for public action (which can view by anonymous user)
 	IsVirtualResource bool            `json:"isVirtualResource"`
 	AdvancedConfig    *AdvancedConfig `json:"advancedConfig"` // 2023_4_20: add advanced config for action
+	MockConfig        *MockConfig     `json:"mockConfig"`
 }
 
 type AdvancedConfig struct {
@@ -37,6 +38,7 @@ type AdvancedConfig struct {
 	DisplayLoadingPage bool     `json:"displayLoadingPage"`
 	IsPeriodically     bool     `json:"isPeriodically"`
 	PeriodInterval     string   `json:"periodInterval"`
+	Mock               string   `json:"mock"`
 }
 
 func NewActionConfig() *ActionConfig {
@@ -49,6 +51,11 @@ func NewActionConfig() *ActionConfig {
 			DisplayLoadingPage: false,
 			IsPeriodically:     false,
 			PeriodInterval:     "",
+		},
+		MockConfig: &MockConfig{
+			Enabled:              false,
+			MockData:             "",
+			EnableForReleasedApp: false,
 		},
 	}
 }
@@ -82,7 +89,7 @@ func NewActionConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*Actio
 		case ACTION_CONFIG_FIELD_PUBLIC:
 			actionConfig.Public, assertPass = value.(bool)
 			if !assertPass {
-				return nil, errors.New("update action config failed due to assert failed.")
+				return nil, errors.New("update action config failed due to assert failed")
 			}
 		default:
 		}
@@ -98,7 +105,7 @@ func NewActionConfigByConfigActionRawRequest(rawReq map[string]interface{}) (*Ac
 		case ACTION_CONFIG_FIELD_PUBLIC:
 			actionConfig.Public, assertPass = value.(bool)
 			if !assertPass {
-				return nil, errors.New("update action config failed due to assert failed.")
+				return nil, errors.New("update action config failed due to assert failed")
 			}
 		default:
 		}
