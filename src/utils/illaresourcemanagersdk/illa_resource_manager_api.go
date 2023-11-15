@@ -173,7 +173,7 @@ func (r *IllaResourceManagerRestAPI) DeleteTeamAllAIAgent(teamID int) error {
 	return nil
 }
 
-func (r *IllaResourceManagerRestAPI) ForkMarketplaceAIAgent(aiAgentID int, toTeamID int, userID int) (map[string]interface{}, error) {
+func (r *IllaResourceManagerRestAPI) ForkMarketplaceAIAgent(aiAgentID int, toTeamID int, userID int) (*AIAgentForExport, error) {
 	// self-hist need skip this method.
 	if !r.Config.IsCloudMode() {
 		return nil, nil
@@ -196,7 +196,7 @@ func (r *IllaResourceManagerRestAPI) ForkMarketplaceAIAgent(aiAgentID int, toTea
 		return nil, errors.New(resp.String())
 	}
 
-	var aiAgent map[string]interface{}
+	aiAgent := &AIAgentForExport{}
 	errInUnMarshal := json.Unmarshal([]byte(resp.String()), &aiAgent)
 	if errInUnMarshal != nil {
 		return nil, errInUnMarshal

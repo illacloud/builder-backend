@@ -137,10 +137,19 @@ func (controller *Controller) DuplicateActionByVersion(c *gin.Context, fromTeamI
 	}
 
 	// and put them to the database as duplicate
+	resourceManagerSDK, errInNewResourceManagerSDK := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
+	if errInNewResourceManagerSDK != nil {
+		return errInNewResourceManagerSDK
+	}
 	for _, action := range actions {
 		// check if action is ai-agent, and if ai-agent is public, fork it automatically
 		if action.Type == resourcelist.TYPE_AI_AGENT_ID {
 			// call resource manager for for ai-agent
+			forkedAIAgent, errInForkAiAgent := resourceManagerSDK.ForkMarketplaceAIAgent(action.ExportResourceID(), toTeamID, modifierID)
+			if errInForkAiAgent != nil {
+				return errInForkAiAgent
+			}
+			action.SetResourceIDByAiAgent(forkedAIAgent)
 		}
 		// create action
 		_, errInCreateAction := controller.Storage.ActionStorage.Create(action)
@@ -148,9 +157,7 @@ func (controller *Controller) DuplicateActionByVersion(c *gin.Context, fromTeamI
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "create action failed: "+errInCreateAction.Error())
 			return errInCreateAction
 		}
-
 	}
-
 	return nil
 }
 

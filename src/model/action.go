@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/illacloud/builder-backend/src/request"
 	"github.com/illacloud/builder-backend/src/utils/idconvertor"
+	"github.com/illacloud/builder-backend/src/utils/illaresourcemanagersdk"
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 )
 
@@ -325,6 +326,10 @@ func (action *Action) MergeRunActionContextToRawTemplate(context map[string]inte
 	template[ACTION_RUNTIME_INFO_FIELD_CONTEXT] = context
 	templateJsonByte, _ := json.Marshal(template)
 	action.RawTemplate = string(templateJsonByte)
+}
+
+func (action *Action) SetResourceIDByAiAgent(aiAgent *illaresourcemanagersdk.AIAgentForExport) {
+	action.ResourceRefID = aiAgent.ExportIDInInt()
 }
 
 func ExportAllActionASActionSummary(actions []*Action) []*ActionSummaryForExport {
