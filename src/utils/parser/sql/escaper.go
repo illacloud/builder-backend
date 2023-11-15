@@ -256,7 +256,13 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					if !variableMappedValueAssertPass {
 						return "", nil, errors.New("provided variables assert to string failed")
 					}
-					variableContent = variableMappedValueAsserted
+					if singleQuoteStart {
+						variableContent = fmt.Sprintf("'%s'", variableMappedValueAsserted)
+					} else if doubleQuoteStart {
+						variableContent = fmt.Sprintf("\"%s\"", variableMappedValueAsserted)
+					} else {
+						variableContent = variableMappedValueAsserted
+					}
 				} else if sqlEscaper.IsSerlizedParameterizedSQL() {
 					if singleQuoteStart {
 						variableContent = fmt.Sprintf("'%s%d'", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
