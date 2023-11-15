@@ -17,9 +17,10 @@ import (
 const (
 	BASEURL = "http://127.0.0.1:8008/api/v1"
 	// api route part
-	GET_AI_AGENT_INTERNAL_API             = "/api/v1/aiAgent/%d"
-	RUN_AI_AGENT_INTERNAL_API             = "/api/v1/aiAgent/%d/run"
-	DELETE_TEAM_ALL_AI_AGENT_INTERNAL_API = "/api/v1/teams/%d/aiAgent/all"
+	GET_AI_AGENT_INTERNAL_API              = "/api/v1/aiAgent/%d"
+	RUN_AI_AGENT_INTERNAL_API              = "/api/v1/aiAgent/%d/run"
+	DELETE_TEAM_ALL_AI_AGENT_INTERNAL_API  = "/api/v1/teams/%d/aiAgent/all"
+	FORK_MARKETPLACE_AI_AGENT_INTERNAL_API = "/api/v1/aiAgent/%d/forkTo/teams/%d/by/users/%d"
 )
 
 const (
@@ -170,4 +171,35 @@ func (r *IllaResourceManagerRestAPI) DeleteTeamAllAIAgent(teamID int) error {
 	}
 
 	return nil
+}
+
+func (r *IllaResourceManagerRestAPI) ForkMarketplaceAIAgent(aiAgentID int, toTeamID int, userID int) (map[string]interface{}, error) {
+	// self-hist need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil, nil
+	}
+	client := resty.New()
+	tokenValidator := tokenvalidator.NewRequestTokenValidator()
+	uri := r.Config.GetIllaResourceManagerInternalRestAPI() + fmt.Sprintf(FORK_MARKETPLACE_AI_AGENT_INTERNAL_API, aiAgentID, toTeamID, userID)
+	resp, errInDelete := client.R().
+		SetHeader("Request-Token", tokenValidator.GenerateValidateToken(strconv.Itoa(aiAgentID), strconv.Itoa(toTeamID), strconv.Itoa(userID))).
+		Delete(uri)
+	if r.Debug {
+		log.Printf("[IllaResourceManagerRestAPI.ForkMarketplaceAIAgent()]  uri: %+v \n", uri)
+		log.Printf("[IllaResourceManagerRestAPI.ForkMarketplaceAIAgent()]  response: %+v, err: %+v \n", resp, errInDelete)
+		log.Printf("[IllaResourceManagerRestAPI.ForkMarketplaceAIAgent()]  resp.StatusCode(): %+v \n", resp.StatusCode())
+	}
+	if errInDelete != nil {
+		return nil, errInDelete
+	}
+	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
+		return nil, errors.New(resp.String())
+	}
+
+	var aiAgent map[string]interface{}
+	errInUnMarshal := json.Unmarshal([]byte(resp.String()), &aiAgent)
+	if errInUnMarshal != nil {
+		return nil, errInUnMarshal
+	}
+	return aiAgent, nil
 }
