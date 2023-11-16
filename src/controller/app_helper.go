@@ -146,10 +146,9 @@ func (controller *Controller) DuplicateActionByVersion(c *gin.Context, fromTeamI
 		if action.Type == resourcelist.TYPE_AI_AGENT_ID {
 			// call resource manager for for ai-agent
 			forkedAIAgent, errInForkAiAgent := resourceManagerSDK.ForkMarketplaceAIAgent(action.ExportResourceID(), toTeamID, modifierID)
-			if errInForkAiAgent != nil {
-				return errInForkAiAgent
+			if errInForkAiAgent == nil {
+				action.SetResourceIDByAiAgent(forkedAIAgent)
 			}
-			action.SetResourceIDByAiAgent(forkedAIAgent)
 		}
 		// create action
 		_, errInCreateAction := controller.Storage.ActionStorage.Create(action)
