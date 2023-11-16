@@ -183,7 +183,7 @@ func (r *IllaResourceManagerRestAPI) ForkMarketplaceAIAgent(aiAgentID int, toTea
 	uri := r.Config.GetIllaResourceManagerInternalRestAPI() + fmt.Sprintf(FORK_MARKETPLACE_AI_AGENT_INTERNAL_API, aiAgentID, toTeamID, userID)
 	resp, errInDelete := client.R().
 		SetHeader("Request-Token", tokenValidator.GenerateValidateToken(strconv.Itoa(aiAgentID), strconv.Itoa(toTeamID), strconv.Itoa(userID))).
-		Delete(uri)
+		Post(uri)
 	if r.Debug {
 		log.Printf("[IllaResourceManagerRestAPI.ForkMarketplaceAIAgent()]  uri: %+v \n", uri)
 		log.Printf("[IllaResourceManagerRestAPI.ForkMarketplaceAIAgent()]  response: %+v, err: %+v \n", resp, errInDelete)
