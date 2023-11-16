@@ -175,6 +175,11 @@ func (app *App) IsPublishedToMarketplace() bool {
 	return ac.PublishedToMarketplace
 }
 
+func (app *App) IsPublishWithAIAgent() bool {
+	ac := app.ExportConfig()
+	return ac.PublishWithAIAgent
+}
+
 func (app *App) SetNotPublishedToMarketplace(userID int) {
 	appConfig := app.ExportConfig()
 	appConfig.SetNotPublishedToMarketplace()

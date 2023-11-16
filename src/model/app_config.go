@@ -28,6 +28,7 @@ type AppConfig struct {
 	WaterMark              bool   `json:"waterMark"`
 	Description            string `json:"description"`
 	PublishedToMarketplace bool   `json:"publishedToMarketplace"`
+	PublishWithAIAgent     bool   `json:"publishWithAIAgent"`
 	Cover                  string `json:"cover"`
 }
 
@@ -64,6 +65,14 @@ func (appConfig *AppConfig) SetNotPublishedToMarketplace() {
 	appConfig.PublishedToMarketplace = false
 }
 
+func (appConfig *AppConfig) SetPublishWithAIAgent() {
+	appConfig.PublishWithAIAgent = true
+}
+
+func (appConfig *AppConfig) SetNotPublishWithAIAgent() {
+	appConfig.PublishWithAIAgent = false
+}
+
 func (appConfig *AppConfig) SetCover(cover string) {
 	appConfig.Cover = cover
 }
@@ -75,17 +84,17 @@ func (appConfig *AppConfig) UpdateAppConfigByConfigAppRawRequest(rawReq map[stri
 		case APP_CONFIG_FIELD_PUBLIC:
 			appConfig.Public, assertPass = value.(bool)
 			if !assertPass {
-				return errors.New("update app config failed due to assert failed.")
+				return errors.New("update app config failed due to assert failed")
 			}
 		case APP_CONFIG_FIELD_WATER_MARK:
 			appConfig.WaterMark, assertPass = value.(bool)
 			if !assertPass {
-				return errors.New("update app config failed due to assert failed.")
+				return errors.New("update app config failed due to assert failed")
 			}
 		case APP_CONFIG_FIELD_DESCRIPTION:
 			appConfig.Description, assertPass = value.(string)
 			if !assertPass {
-				return errors.New("update app config failed due to assert failed.")
+				return errors.New("update app config failed due to assert failed")
 			}
 		default:
 		}
