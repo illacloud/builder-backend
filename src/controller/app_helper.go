@@ -144,12 +144,17 @@ func (controller *Controller) DuplicateActionByVersion(c *gin.Context, fromTeamI
 	for _, action := range actions {
 		// check if action is ai-agent, and if ai-agent is public, fork it automatically
 		if action.Type == resourcelist.TYPE_AI_AGENT_ID {
+			fmt.Printf("[DUMP] DuplicateActionByVersion: hit AI_AGENT ation\n")
 			// call resource manager for for ai-agent
 			forkedAIAgent, errInForkAiAgent := resourceManagerSDK.ForkMarketplaceAIAgent(action.ExportResourceID(), toTeamID, modifierID)
+			fmt.Printf("[DUMP] DuplicateActionByVersion() forkedAIAgent: %+v\n", forkedAIAgent)
+			fmt.Printf("[DUMP] DuplicateActionByVersion() errInForkAiAgent: %+v\n", errInForkAiAgent)
 			if errInForkAiAgent == nil {
 				action.SetResourceIDByAiAgent(forkedAIAgent)
 			}
 		}
+		fmt.Printf("[DUMP] DuplicateActionByVersion() action: %+v\n", action)
+
 		// create action
 		_, errInCreateAction := controller.Storage.ActionStorage.Create(action)
 		if errInCreateAction != nil {
