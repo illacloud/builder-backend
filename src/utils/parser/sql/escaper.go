@@ -3,6 +3,8 @@ package parser_sql
 import (
 	"errors"
 	"fmt"
+	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
@@ -115,6 +117,43 @@ func (i *stringConcatTarget) ExportWithoutQuote() string {
 	}
 }
 
+func reflectVariableToString(variable interface{}) (string, error) {
+	// check type of variable value
+	typeOfVariableMappedValue := reflect.TypeOf(variable)
+	switch typeOfVariableMappedValue.Kind() {
+	case reflect.String:
+		variableAsserted, variableMappedValueAssertPass := variable.(string)
+		if !variableMappedValueAssertPass {
+			return "", errors.New("provided variables assert to string failed")
+		}
+		return variableAsserted, nil
+	case reflect.Int:
+		variableAsserted, variableMappedValueAssertPass := variable.(int)
+		if !variableMappedValueAssertPass {
+			return "", errors.New("provided variables assert to int failed")
+		}
+		return strconv.Itoa(variableAsserted), nil
+	case reflect.Float64:
+		variableAsserted, variableMappedValueAssertPass := variable.(float64)
+		if !variableMappedValueAssertPass {
+			return "", errors.New("provided variables assert to float64 failed")
+		}
+		return strconv.FormatFloat(variableAsserted, 'f', -1, 64), nil
+	case reflect.Bool:
+		variableAsserted, variableMappedValueAssertPass := variable.(bool)
+		if !variableMappedValueAssertPass {
+			return "", errors.New("provided variables assert to float64 failed")
+		}
+		if variableAsserted {
+			return "TRUE", nil
+		} else {
+			return "FALSE", nil
+		}
+	default:
+		return "", nil
+	}
+}
+
 // select * from users where name like '%{{first_name}}.{{last_name}}%'
 // safeMode for varibale mode, unsafeMode for variable replace mode.
 func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[string]interface{}, safeMode bool) (string, []interface{}, error) {
@@ -186,6 +225,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		}
 		return rune(sql[serial+1]), nil
 	}
+
 	charSerial := -1
 	for {
 		charSerial++
@@ -252,16 +292,17 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 				fmt.Printf("-- [DUMP] sqlEscaper.GetSerlizedParameterPrefixMap(): %+v\n", sqlEscaper.GetSerlizedParameterPrefixMap())
 				// replace sql param
 				if !safeMode {
-					variableMappedValueAsserted, variableMappedValueAssertPass := variableMappedValue.(string)
-					if !variableMappedValueAssertPass {
-						return "", nil, errors.New("provided variables assert to string failed")
+					// check type of variable value
+					variableMappedValueInString, errInReflect := reflectVariableToString(variableMappedValue)
+					if errInReflect != nil {
+						return "", nil, errInReflect
 					}
 					if singleQuoteStart {
-						variableContent = fmt.Sprintf("'%s'", variableMappedValueAsserted)
+						variableContent = fmt.Sprintf("'%s'", variableMappedValueInString)
 					} else if doubleQuoteStart {
-						variableContent = fmt.Sprintf("\"%s\"", variableMappedValueAsserted)
+						variableContent = fmt.Sprintf("\"%s\"", variableMappedValueInString)
 					} else {
-						variableContent = variableMappedValueAsserted
+						variableContent = variableMappedValueInString
 					}
 				} else if sqlEscaper.IsSerlizedParameterizedSQL() {
 					if singleQuoteStart {
