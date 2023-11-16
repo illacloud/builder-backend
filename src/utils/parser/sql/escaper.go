@@ -323,7 +323,17 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					}
 				}
 				// record param serial
-				userArgs = append(userArgs, variableMappedValue)
+				if sqlEscaper.ResourceType == resourcelist.TYPE_MYSQL_ID {
+					// hack for mysql, according to this link: https://github.com/sidorares/node-mysql2/issues/1239#issuecomment-718471799
+					// the MysQL 8.0.22 above version only accept string type valiable, so convert all varable to string
+					variableMappedValueInString, errInReflect := reflectVariableToString(variableMappedValue)
+					if errInReflect != nil {
+						return "", nil, errInReflect
+					}
+					userArgs = append(userArgs, variableMappedValueInString)
+				} else {
+					userArgs = append(userArgs, variableMappedValue)
+				}
 			}
 			// process type cast
 			if singleQuoteStart {
@@ -457,11 +467,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 	return ret.String(), userArgs, nil
 }
 
-var formatConcatTargetCalls = 0
-
 func formatConcatTarget(concatStringTargets []*stringConcatTarget, singleQuoteStart bool, doubleQuoteStart bool) string {
-	formatConcatTargetCalls++
-	fmt.Printf("-- [DUMP] formatConcatTargetCalls: %+v\n", formatConcatTargetCalls)
 	var ret strings.Builder
 	haveVariable := false
 	exportedTarget := make([]string, 0)
