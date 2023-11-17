@@ -103,8 +103,11 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "new resource manager sdk error: "+errInNewResourceManagerAPI.Error())
 				return
 			}
-			for _, aiAgentAction := range aiAgentActions {
+			for serial, aiAgentAction := range aiAgentActions {
+				fmt.Printf("[DUMP] aiAgentAction [%s]: %+v\n", serial, aiAgentAction)
 				errInPublishAIAgent := resourceManagerAPI.PublishAIAgentToMarketplace(aiAgentAction.ResourceRefID, teamID, userID)
+				fmt.Printf("[DUMP] aiAgentAction.ResourceRefID:%d, teamID:%d, userID:%d\n", aiAgentAction.ResourceRefID, teamID, userID)
+				fmt.Printf("[DUMP] errInPublishAIAgent: %+v\n", errInPublishAIAgent)
 				if errInPublishAIAgent != nil {
 					controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "contribute with AI-Agent error: "+errInPublishAIAgent.Error())
 					return
