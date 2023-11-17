@@ -62,8 +62,40 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 	// - unpublish will set app.Config.Public to false
 	app.SetPublishedToMarketplace(req.PublishedToMarketplace, userID)
 
+	// publish app related AI-Agent
 	// release app, publish to marketplace alwasy deploy a new version of app
 	if req.PublishedToMarketplace {
+		// check if action related resource is AI-Agent and if AI-Agent alos need publish
+		fmt.Printf("\n\n[DUMP] app.IsPublishWithAIAgent(): %+v\n", app.IsPublishWithAIAgent())
+		if app.IsPublishWithAIAgent() {
+			// get AI-Agent type actoins
+			aiAgentActions, errInGetAIAgentActions := controller.Storage.ActionStorage.RetrieveActionsByTeamIDAppIDVersionAndType(teamID, appID, model.APP_EDIT_VERSION, resourcelist.TYPE_AI_AGENT_ID)
+			fmt.Printf("[DUMP] aiAgentActions: %+v\n", aiAgentActions)
+			if !errors.Is(errInGetAIAgentActions, gorm.ErrRecordNotFound) && errInGetAIAgentActions != nil {
+				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "update App error: "+errInGetAIAgentActions.Error())
+				return
+			}
+			// publish AI-Agent
+			if !errors.Is(errInGetAIAgentActions, gorm.ErrRecordNotFound) {
+				resourceManagerAPI, errInNewResourceManagerAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
+				if errInNewResourceManagerAPI != nil {
+					controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "new resource manager sdk error: "+errInNewResourceManagerAPI.Error())
+					return
+				}
+				for serial, aiAgentAction := range aiAgentActions {
+					fmt.Printf("[DUMP] aiAgentAction [%d]: %+v\n", serial, aiAgentAction)
+					errInPublishAIAgent := resourceManagerAPI.PublishAIAgentToMarketplace(aiAgentAction.ResourceRefID, teamID, userID)
+					fmt.Printf("[DUMP] aiAgentAction.ResourceRefID:%d, teamID:%d, userID:%d\n", aiAgentAction.ResourceRefID, teamID, userID)
+					fmt.Printf("[DUMP] errInPublishAIAgent: %+v\n", errInPublishAIAgent)
+					if errInPublishAIAgent != nil {
+						controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "contribute with AI-Agent error: "+errInPublishAIAgent.Error())
+						return
+					}
+				}
+			}
+		}
+
+		// release app
 		treeStateLatestVersion, _ := controller.Storage.TreeStateStorage.RetrieveTreeStatesLatestVersion(teamID, appID)
 		app.SyncMainlineVersionWithTreeStateLatestVersion(treeStateLatestVersion)
 		app.Release()
@@ -74,36 +106,6 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 	if errInUpdateAppByID != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "update App error: "+errInUpdateAppByID.Error())
 		return
-	}
-
-	// check if action related resource is AI-Agent and if AI-Agent alos need publish
-	fmt.Printf("[DUMP] app.IsPublishWithAIAgent(): %+v\n", app.IsPublishWithAIAgent())
-	if app.IsPublishWithAIAgent() {
-		// get AI-Agent type actoins
-		aiAgentActions, errInGetAIAgentActions := controller.Storage.ActionStorage.RetrieveActionsByTeamIDAppIDVersionAndType(teamID, appID, model.APP_EDIT_VERSION, resourcelist.TYPE_AI_AGENT_ID)
-		fmt.Printf("[DUMP] aiAgentActions: %+v\n", aiAgentActions)
-		if !errors.Is(errInGetAIAgentActions, gorm.ErrRecordNotFound) && errInGetAIAgentActions != nil {
-			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "update App error: "+errInUpdateAppByID.Error())
-			return
-		}
-		// publish AI-Agent
-		if !errors.Is(errInGetAIAgentActions, gorm.ErrRecordNotFound) {
-			resourceManagerAPI, errInNewResourceManagerAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
-			if errInNewResourceManagerAPI != nil {
-				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "new resource manager sdk error: "+errInNewResourceManagerAPI.Error())
-				return
-			}
-			for serial, aiAgentAction := range aiAgentActions {
-				fmt.Printf("[DUMP] aiAgentAction [%d]: %+v\n", serial, aiAgentAction)
-				errInPublishAIAgent := resourceManagerAPI.PublishAIAgentToMarketplace(aiAgentAction.ResourceRefID, teamID, userID)
-				fmt.Printf("[DUMP] aiAgentAction.ResourceRefID:%d, teamID:%d, userID:%d\n", aiAgentAction.ResourceRefID, teamID, userID)
-				fmt.Printf("[DUMP] errInPublishAIAgent: %+v\n", errInPublishAIAgent)
-				if errInPublishAIAgent != nil {
-					controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "contribute with AI-Agent error: "+errInPublishAIAgent.Error())
-					return
-				}
-			}
-		}
 	}
 
 	// deploy app, publish an app need deploy it
