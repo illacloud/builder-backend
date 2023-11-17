@@ -22,6 +22,8 @@ import (
 const APP_CONFIG_FIELD_PUBLIC = "public"
 const APP_CONFIG_FIELD_WATER_MARK = "waterMark"
 const APP_CONFIG_FIELD_DESCRIPTION = "description"
+const APP_CONFIG_FIELD_PUBLISHED_TO_MARKETPLACE = "publishedToMarketplace"
+const APP_CONFIG_FIELD_PUBLISH_WITH_AI_AGENT = "publishWithAIAgent"
 
 type AppConfig struct {
 	Public                 bool   `json:"public"` // switch for public app (which can view by anonymous user)
@@ -93,6 +95,16 @@ func (appConfig *AppConfig) UpdateAppConfigByConfigAppRawRequest(rawReq map[stri
 			}
 		case APP_CONFIG_FIELD_DESCRIPTION:
 			appConfig.Description, assertPass = value.(string)
+			if !assertPass {
+				return errors.New("update app config failed due to assert failed")
+			}
+		case APP_CONFIG_FIELD_PUBLISHED_TO_MARKETPLACE:
+			appConfig.PublishedToMarketplace, assertPass = value.(bool)
+			if !assertPass {
+				return errors.New("update app config failed due to assert failed")
+			}
+		case APP_CONFIG_FIELD_PUBLISH_WITH_AI_AGENT:
+			appConfig.PublishWithAIAgent, assertPass = value.(bool)
 			if !assertPass {
 				return errors.New("update app config failed due to assert failed")
 			}
