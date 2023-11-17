@@ -18,9 +18,9 @@ const (
 	// api route part
 	FORK_COUNTER_API                             = "/products/%s/%d/fork"
 	RUN_COUNTER_API                              = "/products/%s/%d/run"
-	DELETE_TEAM_ALL_PRODUCTS                     = "/products/byTeam/%d"
 	DELETE_PRODUCT                               = "/products/%s/%d"
 	UPDATE_PRODUCTS                              = "/products/%s/%d"
+	DELETE_TEAM_ALL_PRODUCTS                     = "/products/byTeam/%d"
 	PUBLISH_AI_AGENT_TO_MARKETPLACE_INTERNAL_API = "/products/byTeam/%d/aiAgents/%d/byUser/%d"
 )
 

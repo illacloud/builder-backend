@@ -78,6 +78,7 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 			// publish AI-Agent
 			if !errors.Is(errInGetAIAgentActions, gorm.ErrRecordNotFound) {
 				marketplaceAPI := illamarketplacesdk.NewIllaMarketplaceRestAPI()
+				marketplaceAPI.OpenDebug()
 				for serial, aiAgentAction := range aiAgentActions {
 					fmt.Printf("[DUMP] aiAgentAction [%d]: %+v\n", serial, aiAgentAction)
 					errInPublishAIAgent := marketplaceAPI.PublishAIAgentToMarketplace(aiAgentAction.ResourceRefID, teamID, userID)
@@ -111,7 +112,7 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 		controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 		controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 		controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-		controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), true, userID)
+		controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), true, userID, false)
 	}
 
 	// feedback

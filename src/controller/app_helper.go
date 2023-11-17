@@ -118,7 +118,7 @@ func (controller *Controller) DuplicateSetStateByVersion(c *gin.Context, fromTea
 	return nil
 }
 
-func (controller *Controller) DuplicateActionByVersion(c *gin.Context, fromTeamID int, toTeamID int, fromAppID int, toAppID int, fromVersion int, toVersion int, makeItPublic bool, modifierID int) error {
+func (controller *Controller) DuplicateActionByVersion(c *gin.Context, fromTeamID int, toTeamID int, fromAppID int, toAppID int, fromVersion int, toVersion int, makeItPublic bool, modifierID int, isForkApp bool) error {
 	// get target version action from database
 	actions, errinRetrieveAction := controller.Storage.ActionStorage.RetrieveActionsByTeamIDAppIDAndVersion(fromTeamID, fromAppID, fromVersion)
 	if errinRetrieveAction != nil {
@@ -142,9 +142,9 @@ func (controller *Controller) DuplicateActionByVersion(c *gin.Context, fromTeamI
 		return errInNewResourceManagerSDK
 	}
 	for _, action := range actions {
-		// check if action is ai-agent, and if ai-agent is public, fork it automatically
-		if action.Type == resourcelist.TYPE_AI_AGENT_ID {
-			fmt.Printf("[DUMP] DuplicateActionByVersion: hit AI_AGENT ation\n")
+		// check if action is ai-agent, and if ai-agent is public, and we are forking app from marketplace (not publish app to marketplace) fork it automatically
+		if action.Type == resourcelist.TYPE_AI_AGENT_ID && isForkApp {
+			fmt.Printf("[DUMP] DuplicateActionByVersion: hit AI_AGENT action\n")
 			// call resource manager for for ai-agent
 			forkedAIAgent, errInForkAiAgent := resourceManagerSDK.ForkMarketplaceAIAgent(action.ExportResourceID(), toTeamID, modifierID)
 			fmt.Printf("[DUMP] DuplicateActionByVersion() forkedAIAgent: %+v\n", forkedAIAgent)
