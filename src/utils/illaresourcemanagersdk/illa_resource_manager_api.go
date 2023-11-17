@@ -17,10 +17,11 @@ import (
 const (
 	BASEURL = "http://127.0.0.1:8008/api/v1"
 	// api route part
-	GET_AI_AGENT_INTERNAL_API              = "/api/v1/aiAgent/%d"
-	RUN_AI_AGENT_INTERNAL_API              = "/api/v1/aiAgent/%d/run"
-	DELETE_TEAM_ALL_AI_AGENT_INTERNAL_API  = "/api/v1/teams/%d/aiAgent/all"
-	FORK_MARKETPLACE_AI_AGENT_INTERNAL_API = "/api/v1/aiAgent/%d/forkTo/teams/%d/by/users/%d"
+	GET_AI_AGENT_INTERNAL_API                    = "/api/v1/aiAgent/%d"
+	RUN_AI_AGENT_INTERNAL_API                    = "/api/v1/aiAgent/%d/run"
+	DELETE_TEAM_ALL_AI_AGENT_INTERNAL_API        = "/api/v1/teams/%d/aiAgent/all"
+	FORK_MARKETPLACE_AI_AGENT_INTERNAL_API       = "/api/v1/aiAgent/%d/forkTo/teams/%d/by/users/%d"
+	PUBLISH_AI_AGENT_TO_MARKETPLACE_INTERNAL_API = "/api/v1/teams/%d/aiAgent/%d"
 )
 
 const (
@@ -181,16 +182,16 @@ func (r *IllaResourceManagerRestAPI) ForkMarketplaceAIAgent(aiAgentID int, toTea
 	client := resty.New()
 	tokenValidator := tokenvalidator.NewRequestTokenValidator()
 	uri := r.Config.GetIllaResourceManagerInternalRestAPI() + fmt.Sprintf(FORK_MARKETPLACE_AI_AGENT_INTERNAL_API, aiAgentID, toTeamID, userID)
-	resp, errInDelete := client.R().
+	resp, errInPost := client.R().
 		SetHeader("Request-Token", tokenValidator.GenerateValidateToken(strconv.Itoa(aiAgentID), strconv.Itoa(toTeamID), strconv.Itoa(userID))).
 		Post(uri)
 	if r.Debug {
 		log.Printf("[IllaResourceManagerRestAPI.ForkMarketplaceAIAgent()]  uri: %+v \n", uri)
-		log.Printf("[IllaResourceManagerRestAPI.ForkMarketplaceAIAgent()]  response: %+v, err: %+v \n", resp, errInDelete)
+		log.Printf("[IllaResourceManagerRestAPI.ForkMarketplaceAIAgent()]  response: %+v, err: %+v \n", resp, errInPost)
 		log.Printf("[IllaResourceManagerRestAPI.ForkMarketplaceAIAgent()]  resp.StatusCode(): %+v \n", resp.StatusCode())
 	}
-	if errInDelete != nil {
-		return nil, errInDelete
+	if errInPost != nil {
+		return nil, errInPost
 	}
 	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
 		return nil, errors.New(resp.String())
@@ -202,4 +203,32 @@ func (r *IllaResourceManagerRestAPI) ForkMarketplaceAIAgent(aiAgentID int, toTea
 		return nil, errInUnMarshal
 	}
 	return aiAgent, nil
+}
+
+func (r *IllaResourceManagerRestAPI) PublishAIAgentToMarketplace(aiAgentID int, teamID int, userID int) error {
+	// self-hist need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil
+	}
+	req := NewPublishAIAgentToMarketplaceInternalRequestWithParam(true, userID)
+	client := resty.New()
+	tokenValidator := tokenvalidator.NewRequestTokenValidator()
+	uri := r.Config.GetIllaResourceManagerInternalRestAPI() + fmt.Sprintf(PUBLISH_AI_AGENT_TO_MARKETPLACE_INTERNAL_API, teamID, aiAgentID)
+	resp, errInPatch := client.R().
+		SetHeader("Request-Token", tokenValidator.GenerateValidateToken(strconv.Itoa(teamID), strconv.Itoa(aiAgentID), req.ExportInJSONString())).
+		SetBody(req).
+		Patch(uri)
+	if r.Debug {
+		log.Printf("[IllaResourceManagerRestAPI.ForkMarketplaceAIAgent()]  uri: %+v \n", uri)
+		log.Printf("[IllaResourceManagerRestAPI.ForkMarketplaceAIAgent()]  response: %+v, err: %+v \n", resp, errInPatch)
+		log.Printf("[IllaResourceManagerRestAPI.ForkMarketplaceAIAgent()]  resp.StatusCode(): %+v \n", resp.StatusCode())
+	}
+	if errInPatch != nil {
+		return errInPatch
+	}
+	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
+		return errors.New(resp.String())
+	}
+
+	return nil
 }

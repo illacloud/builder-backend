@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -10,6 +11,9 @@ import (
 	"github.com/illacloud/builder-backend/src/request"
 	"github.com/illacloud/builder-backend/src/response"
 	"github.com/illacloud/builder-backend/src/utils/datacontrol"
+	"github.com/illacloud/builder-backend/src/utils/illaresourcemanagersdk"
+	"github.com/illacloud/builder-backend/src/utils/resourcelist"
+	"gorm.io/gorm"
 )
 
 // hold publish or remove from marketplace
@@ -79,6 +83,28 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 		controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 		controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
 		controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), true, userID)
+	}
+
+	// check if action related resource is AI-Agent and if AI-Agent alos need publish
+	if app.IsPublishWithAIAgent() {
+		// get AI-Agent type actoins
+		aiAgentActions, errInGetAIAgentActions := controller.Storage.ActionStorage.RetrieveActionsByTeamIDAppIDVersionAndType(teamID, appID, model.APP_EDIT_VERSION, resourcelist.TYPE_AI_AGENT_ID)
+		if !errors.Is(errInGetAIAgentActions, gorm.ErrRecordNotFound) && errInGetAIAgentActions != nil {
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "update App error: "+errInUpdateAppByID.Error())
+			return
+		}
+		// publish AI-Agent
+		if !errors.Is(errInGetAIAgentActions, gorm.ErrRecordNotFound) {
+			resourceManagerAPI, errInNewResourceManagerAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
+			if errInNewResourceManagerAPI != nil {
+				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "new resource manager sdk error: "+errInNewResourceManagerAPI.Error())
+				return
+			}
+			for _, aiAgentAction := range aiAgentActions {
+				resourceManagerAPI.PublishAIAgentToMarketplace(aiAgentAction.ResourceRefID, teamID, userID)
+			}
+		}
+
 	}
 
 	// feedback
