@@ -12,7 +12,7 @@ import (
 	"github.com/illacloud/builder-backend/src/request"
 	"github.com/illacloud/builder-backend/src/response"
 	"github.com/illacloud/builder-backend/src/utils/datacontrol"
-	"github.com/illacloud/builder-backend/src/utils/illaresourcemanagersdk"
+	"github.com/illacloud/builder-backend/src/utils/illamarketplacesdk"
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 	"gorm.io/gorm"
 )
@@ -77,14 +77,10 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 			}
 			// publish AI-Agent
 			if !errors.Is(errInGetAIAgentActions, gorm.ErrRecordNotFound) {
-				resourceManagerAPI, errInNewResourceManagerAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
-				if errInNewResourceManagerAPI != nil {
-					controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "new resource manager sdk error: "+errInNewResourceManagerAPI.Error())
-					return
-				}
+				marketplaceAPI := illamarketplacesdk.NewIllaMarketplaceRestAPI()
 				for serial, aiAgentAction := range aiAgentActions {
 					fmt.Printf("[DUMP] aiAgentAction [%d]: %+v\n", serial, aiAgentAction)
-					errInPublishAIAgent := resourceManagerAPI.PublishAIAgentToMarketplace(aiAgentAction.ResourceRefID, teamID, userID)
+					errInPublishAIAgent := marketplaceAPI.PublishAIAgentToMarketplace(aiAgentAction.ResourceRefID, teamID, userID)
 					fmt.Printf("[DUMP] aiAgentAction.ResourceRefID:%d, teamID:%d, userID:%d\n", aiAgentAction.ResourceRefID, teamID, userID)
 					fmt.Printf("[DUMP] errInPublishAIAgent: %+v\n", errInPublishAIAgent)
 					if errInPublishAIAgent != nil {

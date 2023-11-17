@@ -204,31 +204,3 @@ func (r *IllaResourceManagerRestAPI) ForkMarketplaceAIAgent(aiAgentID int, toTea
 	}
 	return aiAgent, nil
 }
-
-func (r *IllaResourceManagerRestAPI) PublishAIAgentToMarketplace(aiAgentID int, teamID int, userID int) error {
-	// self-hist need skip this method.
-	if !r.Config.IsCloudMode() {
-		return nil
-	}
-	req := NewPublishAIAgentToMarketplaceInternalRequestWithParam(true, userID)
-	client := resty.New()
-	tokenValidator := tokenvalidator.NewRequestTokenValidator()
-	uri := r.Config.GetIllaResourceManagerInternalRestAPI() + fmt.Sprintf(PUBLISH_AI_AGENT_TO_MARKETPLACE_INTERNAL_API, teamID, aiAgentID)
-	resp, errInPatch := client.R().
-		SetHeader("Request-Token", tokenValidator.GenerateValidateToken(strconv.Itoa(teamID), strconv.Itoa(aiAgentID), req.ExportInJSONString())).
-		SetBody(req).
-		Patch(uri)
-	if r.Debug {
-		log.Printf("[IllaResourceManagerRestAPI.ForkMarketplaceAIAgent()]  uri: %+v \n", uri)
-		log.Printf("[IllaResourceManagerRestAPI.ForkMarketplaceAIAgent()]  response: %+v, err: %+v \n", resp, errInPatch)
-		log.Printf("[IllaResourceManagerRestAPI.ForkMarketplaceAIAgent()]  resp.StatusCode(): %+v \n", resp.StatusCode())
-	}
-	if errInPatch != nil {
-		return errInPatch
-	}
-	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
-		return errors.New(resp.String())
-	}
-
-	return nil
-}

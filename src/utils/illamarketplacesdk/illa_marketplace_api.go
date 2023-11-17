@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/illacloud/builder-backend/src/utils/config"
@@ -15,11 +16,12 @@ import (
 const (
 	BASEURL = "http://127.0.0.1:9001/api/v1"
 	// api route part
-	FORK_COUNTER_API         = "/products/%s/%d/fork"
-	RUN_COUNTER_API          = "/products/%s/%d/run"
-	DELETE_TEAM_ALL_PRODUCTS = "/products/byTeam/%d"
-	DELETE_PRODUCT           = "/products/%s/%d"
-	UPDATE_PRODUCTS          = "/products/%s/%d"
+	FORK_COUNTER_API                             = "/products/%s/%d/fork"
+	RUN_COUNTER_API                              = "/products/%s/%d/run"
+	DELETE_TEAM_ALL_PRODUCTS                     = "/products/byTeam/%d"
+	DELETE_PRODUCT                               = "/products/%s/%d"
+	UPDATE_PRODUCTS                              = "/products/%s/%d"
+	PUBLISH_AI_AGENT_TO_MARKETPLACE_INTERNAL_API = "/products/byTeam/%d/aiAgents/%d/byUser/%d"
 )
 
 const (
@@ -138,5 +140,31 @@ func (r *IllaMarketplaceRestAPI) UpdateProduct(productType string, productID int
 		}
 		return errors.New(resp.String())
 	}
+	return nil
+}
+
+func (r *IllaMarketplaceRestAPI) PublishAIAgentToMarketplace(aiAgentID int, teamID int, userID int) error {
+	// self-hist need skip this method.
+	if !r.Config.IsCloudMode() {
+		return nil
+	}
+	client := resty.New()
+	tokenValidator := tokenvalidator.NewRequestTokenValidator()
+	uri := r.Config.GetIllaResourceManagerInternalRestAPI() + fmt.Sprintf(PUBLISH_AI_AGENT_TO_MARKETPLACE_INTERNAL_API, teamID, aiAgentID, userID)
+	resp, errInPatch := client.R().
+		SetHeader("Request-Token", tokenValidator.GenerateValidateToken(strconv.Itoa(teamID), strconv.Itoa(aiAgentID), strconv.Itoa(userID))).
+		Patch(uri)
+	if r.Debug {
+		log.Printf("[IllaMarketplaceRestAPI.PublishAIAgentToMarketplace()]  uri: %+v \n", uri)
+		log.Printf("[IllaMarketplaceRestAPI.PublishAIAgentToMarketplace()]  response: %+v, err: %+v \n", resp, errInPatch)
+		log.Printf("[IllaMarketplaceRestAPI.PublishAIAgentToMarketplace()]  resp.StatusCode(): %+v \n", resp.StatusCode())
+	}
+	if errInPatch != nil {
+		return errInPatch
+	}
+	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
+		return errors.New(resp.String())
+	}
+
 	return nil
 }
