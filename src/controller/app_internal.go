@@ -80,7 +80,7 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 	fmt.Printf("[DUMP] app.IsPublishWithAIAgent(): %+v\n", app.IsPublishWithAIAgent())
 	if app.IsPublishWithAIAgent() {
 		// get AI-Agent type actoins
-		aiAgentActions, errInGetAIAgentActions := controller.Storage.ActionStorage.RetrieveActionsByTeamIDAppIDVersionAndType(teamID, appID, app.ExportMainlineVersion(), resourcelist.TYPE_AI_AGENT_ID)
+		aiAgentActions, errInGetAIAgentActions := controller.Storage.ActionStorage.RetrieveActionsByTeamIDAppIDVersionAndType(teamID, appID, model.APP_EDIT_VERSION, resourcelist.TYPE_AI_AGENT_ID)
 		fmt.Printf("[DUMP] aiAgentActions: %+v\n", aiAgentActions)
 		if !errors.Is(errInGetAIAgentActions, gorm.ErrRecordNotFound) && errInGetAIAgentActions != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "update App error: "+errInUpdateAppByID.Error())
