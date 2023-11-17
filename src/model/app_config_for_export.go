@@ -5,6 +5,7 @@ type AppConfigForExport struct {
 	WaterMark              bool                      `json:"waterMark"`
 	Description            string                    `json:"description"`
 	PublishedToMarketplace bool                      `json:"publishedToMarketplace"`
+	PublishWithAIAgent     bool                      `json:"publishWithAIAgent"`
 	Cover                  string                    `json:"cover"`
 	Components             []string                  `json:"components"`
 	Actions                []*ActionSummaryForExport `json:"actions"`
@@ -16,6 +17,7 @@ func NewAppConfigForExport(appConfig *AppConfig, treeStates []*TreeState, action
 		WaterMark:              appConfig.WaterMark,
 		Description:            appConfig.Description,
 		PublishedToMarketplace: appConfig.PublishedToMarketplace,
+		PublishWithAIAgent:     appConfig.PublishWithAIAgent,
 		Cover:                  appConfig.Cover,
 		Components:             ExtractComponentsNameList(treeStates),
 		Actions:                ExportAllActionASActionSummary(actions),
@@ -28,6 +30,7 @@ func NewAppConfigForExportWithoutComponentsAndActions(appConfig *AppConfig) *App
 		WaterMark:              appConfig.WaterMark,
 		Description:            appConfig.Description,
 		PublishedToMarketplace: appConfig.PublishedToMarketplace,
+		PublishWithAIAgent:     appConfig.PublishWithAIAgent,
 		Cover:                  appConfig.Cover,
 		Components:             make([]string, 0),
 		Actions:                make([]*ActionSummaryForExport, 0),

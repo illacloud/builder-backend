@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -86,9 +87,11 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 	}
 
 	// check if action related resource is AI-Agent and if AI-Agent alos need publish
+	fmt.Printf("[DUMP] app.IsPublishWithAIAgent(): %+v\n", app.IsPublishWithAIAgent())
 	if app.IsPublishWithAIAgent() {
 		// get AI-Agent type actoins
 		aiAgentActions, errInGetAIAgentActions := controller.Storage.ActionStorage.RetrieveActionsByTeamIDAppIDVersionAndType(teamID, appID, model.APP_EDIT_VERSION, resourcelist.TYPE_AI_AGENT_ID)
+		fmt.Printf("[DUMP] aiAgentActions: %+v\n", aiAgentActions)
 		if !errors.Is(errInGetAIAgentActions, gorm.ErrRecordNotFound) && errInGetAIAgentActions != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "update App error: "+errInUpdateAppByID.Error())
 			return
@@ -101,10 +104,13 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 				return
 			}
 			for _, aiAgentAction := range aiAgentActions {
-				resourceManagerAPI.PublishAIAgentToMarketplace(aiAgentAction.ResourceRefID, teamID, userID)
+				errInPublishAIAgent := resourceManagerAPI.PublishAIAgentToMarketplace(aiAgentAction.ResourceRefID, teamID, userID)
+				if errInPublishAIAgent != nil {
+					controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "contribute with AI-Agent error: "+errInPublishAIAgent.Error())
+					return
+				}
 			}
 		}
-
 	}
 
 	// feedback
