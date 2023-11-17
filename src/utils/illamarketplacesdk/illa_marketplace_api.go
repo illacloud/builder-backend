@@ -153,7 +153,7 @@ func (r *IllaMarketplaceRestAPI) PublishAIAgentToMarketplace(aiAgentID int, team
 	uri := r.Config.GetIllaResourceManagerInternalRestAPI() + fmt.Sprintf(PUBLISH_AI_AGENT_TO_MARKETPLACE_INTERNAL_API, teamID, aiAgentID, userID)
 	resp, errInPatch := client.R().
 		SetHeader("Request-Token", tokenValidator.GenerateValidateToken(strconv.Itoa(teamID), strconv.Itoa(aiAgentID), strconv.Itoa(userID))).
-		Patch(uri)
+		Post(uri)
 	if r.Debug {
 		log.Printf("[IllaMarketplaceRestAPI.PublishAIAgentToMarketplace()]  uri: %+v \n", uri)
 		log.Printf("[IllaMarketplaceRestAPI.PublishAIAgentToMarketplace()]  response: %+v, err: %+v \n", resp, errInPatch)
