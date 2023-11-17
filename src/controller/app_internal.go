@@ -76,21 +76,11 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 		return
 	}
 
-	// deploy app, publish an app need deploy it
-	if req.PublishedToMarketplace {
-		// release app following components & actions
-		// release will copy following units from edit version to app mainline version
-		controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-		controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-		controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-		controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), true, userID)
-	}
-
 	// check if action related resource is AI-Agent and if AI-Agent alos need publish
 	fmt.Printf("[DUMP] app.IsPublishWithAIAgent(): %+v\n", app.IsPublishWithAIAgent())
 	if app.IsPublishWithAIAgent() {
 		// get AI-Agent type actoins
-		aiAgentActions, errInGetAIAgentActions := controller.Storage.ActionStorage.RetrieveActionsByTeamIDAppIDVersionAndType(teamID, appID, model.APP_EDIT_VERSION, resourcelist.TYPE_AI_AGENT_ID)
+		aiAgentActions, errInGetAIAgentActions := controller.Storage.ActionStorage.RetrieveActionsByTeamIDAppIDVersionAndType(teamID, appID, app.ExportMainlineVersion(), resourcelist.TYPE_AI_AGENT_ID)
 		fmt.Printf("[DUMP] aiAgentActions: %+v\n", aiAgentActions)
 		if !errors.Is(errInGetAIAgentActions, gorm.ErrRecordNotFound) && errInGetAIAgentActions != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PUBLISH_APP_TO_MARKETPLACE, "update App error: "+errInUpdateAppByID.Error())
@@ -104,7 +94,7 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 				return
 			}
 			for serial, aiAgentAction := range aiAgentActions {
-				fmt.Printf("[DUMP] aiAgentAction [%s]: %+v\n", serial, aiAgentAction)
+				fmt.Printf("[DUMP] aiAgentAction [%d]: %+v\n", serial, aiAgentAction)
 				errInPublishAIAgent := resourceManagerAPI.PublishAIAgentToMarketplace(aiAgentAction.ResourceRefID, teamID, userID)
 				fmt.Printf("[DUMP] aiAgentAction.ResourceRefID:%d, teamID:%d, userID:%d\n", aiAgentAction.ResourceRefID, teamID, userID)
 				fmt.Printf("[DUMP] errInPublishAIAgent: %+v\n", errInPublishAIAgent)
@@ -114,6 +104,16 @@ func (controller *Controller) PublishAppToMarketplaceInternal(c *gin.Context) {
 				}
 			}
 		}
+	}
+
+	// deploy app, publish an app need deploy it
+	if req.PublishedToMarketplace {
+		// release app following components & actions
+		// release will copy following units from edit version to app mainline version
+		controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+		controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+		controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+		controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), true, userID)
 	}
 
 	// feedback
