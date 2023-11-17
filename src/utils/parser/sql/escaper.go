@@ -226,13 +226,19 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		return rune(sql[serial+1]), nil
 	}
 
+	// convert to rune slice
+	sqlRuneList := make([]rune, 0)
+	for _, j := range sql {
+		sqlRuneList = append(sqlRuneList, j)
+	}
+
 	charSerial := -1
 	for {
 		charSerial++
-		if charSerial > len(sql)-1 {
+		if charSerial > len(sqlRuneList)-1 {
 			break
 		}
-		c := rune(sql[charSerial])
+		c := rune(sqlRuneList[charSerial])
 		// process bracket
 		// '' + '{' or '{' + '{'
 		if c == '{' && leftBraketCounter <= 1 {

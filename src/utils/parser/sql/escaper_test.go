@@ -178,3 +178,15 @@ func TestEscapeSQLActionTemplateSingleValueWithoutQuote(t *testing.T) {
 	assert.Equal(t, usedArgs, []interface{}{"122 pan"}, "the usedArgs should be equal")
 	assert.Equal(t, "select * from users where created_at >= :1", escapedSQL, "the token should be equal")
 }
+
+func TestEscapeSQLWithChinese(t *testing.T) {
+	sql_1 := `select id as '序列号' from users where created_at >= {{input1.value}}`
+	args := map[string]interface{}{
+		"input1.value": "122 pan",
+	}
+	sqlEscaper := NewSQLEscaper(resourcelist.TYPE_ORACLE_ID)
+	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, true)
+	assert.Nil(t, errInEscape)
+	assert.Equal(t, usedArgs, []interface{}{"122 pan"}, "the usedArgs should be equal")
+	assert.Equal(t, "select id as '序列号' from users where created_at >= :1", escapedSQL, "the token should be equal")
+}
