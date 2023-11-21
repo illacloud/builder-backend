@@ -1,0 +1,104 @@
+name: Deploy to k8s
+
+on:
+  push:
+    branches:
+      - main
+      - beta
+      - develop
+
+env:
+  DO_CLUSTER: ${{ secrets.DO_CLUSTER }}
+  DOCKER_LOGIN: ${{ secrets.DOCKER_LOGIN }}
+  DOCKER_PWD: ${{ secrets.DOCKER_PWD }}
+
+jobs:
+  build:
+    name: Build server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build application Docker image
+        run: |
+          docker build --cache-from=illa-builder-backend -f illa-builder-backend.dockerfile -t illa-builder-backend .
+
+      - name: Push application Docker image
+        run: |
+          docker login -u $DOCKER_LOGIN -p $DOCKER_PWD
+          docker tag illa-builder-backend "illasoft/illa-builder-backend:${GITHUB_REF_NAME}"
+          docker push "illasoft/illa-builder-backend:${GITHUB_REF_NAME}"
+
+  build-ws:
+    name: Build ws server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build application Docker image
+        run: |
+          docker build --cache-from=illa-builder-backend-ws -f illa-builder-backend-websocket.dockerfile -t illa-builder-backend-ws .
+
+      - name: Push application Docker image
+        run: |
+          docker login -u $DOCKER_LOGIN -p $DOCKER_PWD
+          docker tag illa-builder-backend-ws "illasoft/illa-builder-backend-ws:${GITHUB_REF_NAME}"
+          docker push "illasoft/illa-builder-backend-ws:${GITHUB_REF_NAME}"
+
+  build-internal:
+    name: Build internal server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build application Docker image
+        run: |
+          docker build --cache-from=illa-builder-backend-internal -f illa-builder-backend-internal.dockerfile -t illa-builder-backend-internal .
+
+      - name: Push application Docker image
+        run: |
+          docker login -u $DOCKER_LOGIN -p $DOCKER_PWD
+          docker tag illa-builder-backend-internal "illasoft/illa-builder-backend-internal:${GITHUB_REF_NAME}"
+          docker push "illasoft/illa-builder-backend-internal:${GITHUB_REF_NAME}"
+
+  deploy:
+    name: 'Deploy'
+    needs: [build, build-ws, build-internal]
+    runs-on: ubuntu-latest
+    environment:
+      name:
+        ${{ (github.ref == 'refs/heads/main') && 'production' || (github.ref ==
+        'refs/heads/develop') && 'test' || (github.ref == 'refs/heads/beta') &&
+        'beta' }}
+    env:
+      ILLA_APP_ENV: ${{ vars.ILLA_APP_ENV }}
+    steps:
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DO_TOKEN }}
+
+      - name: Install kubectl
+        run: |
+          sudo snap install kubectl --classic
+
+      - name: Setup kubectl
+        run: |
+          doctl kubernetes cluster kubeconfig save $DO_CLUSTER
+          kubectl version
+
+      - uses: actions/checkout@v4
+        with:
+          repository: illacloud/k8s-application-do
+          token: ${{ secrets.ILLA_BOT_TOKEN }}
+          path: k8s-application-do
+
+      - name: Deploy to Kubernetes
+        run: |
+          cd k8s-application-do/namespace-$ILLA_APP_ENV
+          kubectl delete pod -n $ILLA_APP_ENV -l repo=illa-builder-backend
+          kubectl delete pod -n $ILLA_APP_ENV -l repo=illa-builder-backend-ws
+          kubectl delete pod -n $ILLA_APP_ENV -l repo=illa-builder-backend-internal
+          kubectl apply -f ./illa-builder-backend/ -n $ILLA_APP_ENV
+          kubectl apply -f ./illa-builder-backend-ws/ -n $ILLA_APP_ENV
+          kubectl apply -f ./illa-builder-backend-internal/ -n $ILLA_APP_ENV
