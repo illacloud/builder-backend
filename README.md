@@ -43,4 +43,4 @@ Please visit [ILLA Cloud](https://www.illacloud.com/docs/about-illa).
 
 ## License
 
-This project is [Apache License 2.0](LICENSE)
+This project is [Apache License 2.0](LICENSE).
