@@ -303,30 +303,12 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					if errInReflect != nil {
 						return "", nil, errInReflect
 					}
-					if singleQuoteStart {
-						variableContent = fmt.Sprintf("'%s'", variableMappedValueInString)
-					} else if doubleQuoteStart {
-						variableContent = fmt.Sprintf("\"%s\"", variableMappedValueInString)
-					} else {
-						variableContent = variableMappedValueInString
-					}
+					variableContent = variableMappedValueInString
 				} else if sqlEscaper.IsSerlizedParameterizedSQL() {
-					if singleQuoteStart {
-						variableContent = fmt.Sprintf("'%s%d'", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
-					} else if doubleQuoteStart {
-						variableContent = fmt.Sprintf("\"%s%d\"", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
-					} else {
-						variableContent = fmt.Sprintf("%s%d", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
-					}
+					variableContent = fmt.Sprintf("%s%d", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
 					usedArgsSerial++
 				} else {
-					if singleQuoteStart {
-						variableContent = "'?'"
-					} else if doubleQuoteStart {
-						variableContent = "\"?\""
-					} else {
-						variableContent = "?"
-					}
+					variableContent = "?"
 				}
 				// record param serial
 				if sqlEscaper.ResourceType == resourcelist.TYPE_MYSQL_ID {
