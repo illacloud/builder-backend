@@ -341,13 +341,11 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 			// process bracket
 			if singleQuoteStart {
 				initConcatStringTargetsIndex(singleQuoteSegmentCounter)
-				variableContent += sqlEscaper.GetParameterTextTypeCastList()
 				fmt.Printf("-- [DUMP] fill in concatStringTargets[%d]: %s\n", singleQuoteSegmentCounter, newStringConcatTarget(variableContent, true).Target.String())
 				concatStringTargets[singleQuoteSegmentCounter] = newStringConcatTarget(variableContent, true)
 				singleQuoteSegPlus()
 			} else if doubleQuoteStart {
 				initConcatStringTargetsIndex(doubleQuoteSegmentCounter)
-				variableContent += sqlEscaper.GetParameterTextTypeCastList()
 				concatStringTargets[doubleQuoteSegmentCounter] = newStringConcatTarget(variableContent, true)
 				doubleQuoteSegPlus()
 			} else {
@@ -403,7 +401,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 			}
 
 			// not escape, it is string finish quote
-			ret.WriteString(formatConcatTarget(concatStringTargets, singleQuoteStart, doubleQuoteStart))
+			ret.WriteString(formatConcatTarget(sqlEscaper, concatStringTargets, singleQuoteStart, doubleQuoteStart))
 
 			// clean status
 			singleQuoteStart = false
@@ -432,7 +430,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		// double quote end, form concat function to sql
 		if c == '"' && doubleQuoteStart && !singleQuoteStart {
 			// double quete have no escape, it is string finish quote
-			ret.WriteString(formatConcatTarget(concatStringTargets, singleQuoteStart, doubleQuoteStart))
+			ret.WriteString(formatConcatTarget(sqlEscaper, concatStringTargets, singleQuoteStart, doubleQuoteStart))
 
 			// clean status
 			doubleQuoteStart = false
@@ -470,7 +468,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 	return ret.String(), userArgs, nil
 }
 
-func formatConcatTarget(concatStringTargets []*stringConcatTarget, singleQuoteStart bool, doubleQuoteStart bool) string {
+func formatConcatTarget(sqlEscaper *SQLEscaper, concatStringTargets []*stringConcatTarget, singleQuoteStart bool, doubleQuoteStart bool) string {
 	var ret strings.Builder
 	haveVariable := false
 	exportedTarget := make([]string, 0)
@@ -490,6 +488,10 @@ func formatConcatTarget(concatStringTargets []*stringConcatTarget, singleQuoteSt
 			ret.WriteString("CONCAT(")
 			for _, target := range concatStringTargets {
 				fmt.Printf("----- [DUMP] target: %+v\n", string(target.Target.String()))
+				// process variable type cast
+				if target.IsVariable {
+					target.concat(sqlEscaper.GetParameterTextTypeCastList())
+				}
 				exportedTarget = append(exportedTarget, target.Export(singleQuoteStart, doubleQuoteStart))
 			}
 			ret.WriteString(strings.Join(exportedTarget, ", "))

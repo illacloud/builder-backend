@@ -197,11 +197,11 @@ func TestEscapePostgresSQLWithDate(t *testing.T) {
 		"date1.value": "2000-01-01",
 		"date2.value": "2020-01-01",
 	}
-	sqlEscaper := NewSQLEscaper(resourcelist.TYPE_ORACLE_ID)
+	sqlEscaper := NewSQLEscaper(resourcelist.TYPE_POSTGRESQL_ID)
 	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, true)
 	assert.Nil(t, errInEscape)
 	assert.Equal(t, usedArgs, []interface{}{"2000-01-01", "2020-01-01"}, "the usedArgs should be equal")
-	assert.Equal(t, "select count(distinct email) from users where DATE_TRUNC('day', created_at) >= :1::timestamp and DATE_TRUNC('day', created_at) <= :2::timestamp and email like '%.edu.%'", escapedSQL, "the token should be equal")
+	assert.Equal(t, "select count(distinct email) from users where DATE_TRUNC('day', created_at) >= $1::timestamp and DATE_TRUNC('day', created_at) <= $2::timestamp and email like '%.edu.%'", escapedSQL, "the token should be equal")
 }
 
 func TestEscapePostgresSQLWithDateUnsafe(t *testing.T) {
@@ -210,7 +210,7 @@ func TestEscapePostgresSQLWithDateUnsafe(t *testing.T) {
 		"date1.value": "2000-01-01",
 		"date2.value": "2020-01-01",
 	}
-	sqlEscaper := NewSQLEscaper(resourcelist.TYPE_ORACLE_ID)
+	sqlEscaper := NewSQLEscaper(resourcelist.TYPE_POSTGRESQL_ID)
 	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, false)
 	assert.Nil(t, errInEscape)
 	assert.Equal(t, usedArgs, []interface{}{"2000-01-01", "2020-01-01"}, "the usedArgs should be equal")
