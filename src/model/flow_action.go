@@ -56,10 +56,10 @@ func NewFlowAcitonByCreateFlowActionRequest(teamID int, workflowID int, userID i
 	return action, nil
 }
 
-func NewAcitonByUpdateFlowActionRequest(app *App, userID int, req *request.UpdateFlowActionRequest) (*FlowAction, error) {
+func NewFlowAcitonByUpdateFlowActionRequest(teamID int, workflowID int, userID int, req *request.UpdateFlowActionRequest) (*FlowAction, error) {
 	action := &FlowAction{
-		TeamID:      app.ExportTeamID(),
-		WorkflowID:  app.ExportID(),
+		TeamID:      teamID,
+		WorkflowID:  workflowID,
 		Version:     APP_EDIT_VERSION, // new action always created in builder edit mode, and it is edit version.
 		ResourceID:  idconvertor.ConvertStringToInt(req.ResourceID),
 		Name:        req.DisplayName,
@@ -77,10 +77,10 @@ func NewAcitonByUpdateFlowActionRequest(app *App, userID int, req *request.Updat
 	return action, nil
 }
 
-func NewAcitonByRunFlowActionRequest(app *App, userID int, req *request.RunFlowActionRequest) *FlowAction {
+func NewFlowAcitonByRunFlowActionRequest(teamID int, workflowID int, userID int, req *request.RunFlowActionRequest) *FlowAction {
 	action := &FlowAction{
-		TeamID:      app.ExportTeamID(),
-		WorkflowID:  app.ExportID(),
+		TeamID:      teamID,
+		WorkflowID:  workflowID,
 		Version:     APP_EDIT_VERSION, // new action always created in builder edit mode, and it is edit version.
 		ResourceID:  idconvertor.ConvertStringToInt(req.ResourceID),
 		Name:        req.DisplayName,
@@ -195,9 +195,9 @@ func (action *FlowAction) UpdateWithRunFlowActionRequest(req *request.RunFlowAct
 	}
 }
 
-func (action *FlowAction) UpdateAcitonByUpdateFlowActionRequest(app *App, userID int, req *request.UpdateFlowActionRequest) {
-	action.TeamID = app.ExportTeamID()
-	action.WorkflowID = app.ExportID()
+func (action *FlowAction) UpdateFlowAcitonByUpdateFlowActionRequest(teamID int, workflowID int, userID int, req *request.UpdateFlowActionRequest) {
+	action.TeamID = teamID
+	action.WorkflowID = workflowID
 	action.Version = APP_EDIT_VERSION // new action always created in builder edit mode, and it is edit version.
 	action.ResourceID = idconvertor.ConvertStringToInt(req.ResourceID)
 	action.Name = req.DisplayName

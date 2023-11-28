@@ -34,7 +34,7 @@ func (controller *Controller) ValidateFlowActionTemplate(c *gin.Context, flowAct
 	}
 
 	// check build
-	actionFactory := model.NewActionFactoryByFlowAction(flowAction)
+	actionFactory := model.NewFlowActionFactoryByFlowAction(flowAction)
 	actionAssemblyLine, errInBuild := actionFactory.Build()
 	if errInBuild != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action type error: "+errInBuild.Error())

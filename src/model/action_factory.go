@@ -41,7 +41,7 @@ func NewActionFactoryByAction(action *Action) *ActionFactory {
 	}
 }
 
-func NewActionFactoryByFlowAction(flowAction *FlowAction) *ActionFactory {
+func NewFlowActionFactoryByFlowAction(flowAction *FlowAction) *ActionFactory {
 	return &ActionFactory{
 		Type: flowAction.Type,
 	}

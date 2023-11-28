@@ -10,7 +10,7 @@ import (
 )
 
 type CreateFlowActionResponse struct {
-	ActionID          string                 `json:"flowActionID"`
+	FlowActionID      string                 `json:"flowActionID"`
 	UID               uuid.UUID              `json:"uid"`
 	TeamID            string                 `json:"teamID"`
 	WorkflowID        string                 `json:"workflowID"`
@@ -32,7 +32,7 @@ type CreateFlowActionResponse struct {
 func NewCreateFlowActionResponse(flowAction *model.FlowAction) *CreateFlowActionResponse {
 	flowActionConfig := flowAction.ExportConfig()
 	resp := &CreateFlowActionResponse{
-		ActionID:          idconvertor.ConvertIntToString(flowAction.ID),
+		FlowActionID:      idconvertor.ConvertIntToString(flowAction.ID),
 		UID:               flowAction.UID,
 		TeamID:            idconvertor.ConvertIntToString(flowAction.TeamID),
 		WorkflowID:        idconvertor.ConvertIntToString(flowAction.WorkflowID),
