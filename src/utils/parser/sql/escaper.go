@@ -10,13 +10,13 @@ import (
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 )
 
-var SerlizedParameterizedSQLList = map[int]bool{
+var SerializedParameterizedSQLList = map[int]bool{
 	resourcelist.TYPE_POSTGRESQL_ID: true,
 	resourcelist.TYPE_ORACLE_9I_ID:  true,
 	resourcelist.TYPE_ORACLE_ID:     true,
 }
 
-var SerlizedParameterPrefixMap = map[int]string{
+var SerializedParameterPrefixMap = map[int]string{
 	resourcelist.TYPE_POSTGRESQL_ID: "$",
 	resourcelist.TYPE_ORACLE_9I_ID:  ":",
 	resourcelist.TYPE_ORACLE_ID:     ":",
@@ -36,13 +36,13 @@ func NewSQLEscaper(resourceType int) *SQLEscaper {
 	}
 }
 
-func (sqlEscaper *SQLEscaper) IsSerlizedParameterizedSQL() bool {
-	itIs, hit := SerlizedParameterizedSQLList[sqlEscaper.ResourceType]
+func (sqlEscaper *SQLEscaper) IsSerializedParameterizedSQL() bool {
+	itIs, hit := SerializedParameterizedSQLList[sqlEscaper.ResourceType]
 	return itIs && hit
 }
 
-func (sqlEscaper *SQLEscaper) GetSerlizedParameterPrefixMap() string {
-	prefix, hit := SerlizedParameterPrefixMap[sqlEscaper.ResourceType]
+func (sqlEscaper *SQLEscaper) GetSerializedParameterPrefixMap() string {
+	prefix, hit := SerializedParameterPrefixMap[sqlEscaper.ResourceType]
 	if !hit {
 		return ""
 	}
@@ -285,6 +285,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 			variableMappedValue, hitVariable := escapedArgs[variable]
 			variableContent := ""
 			if !hitVariable {
+				// missing variable
 				if singleQuoteStart {
 					variableContent = "''"
 				} else if doubleQuoteStart {
@@ -293,24 +294,37 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					variableContent = escapedBracketWithVariable
 				}
 			} else {
+				// hit variable
 				fmt.Printf("-- [DUMP] sqlEscaper.ResourceType: %+v\n", sqlEscaper.ResourceType)
-				fmt.Printf("-- [DUMP] sqlEscaper.IsSerlizedParameterizedSQL(): %+v\n", sqlEscaper.IsSerlizedParameterizedSQL())
-				fmt.Printf("-- [DUMP] sqlEscaper.GetSerlizedParameterPrefixMap(): %+v\n", sqlEscaper.GetSerlizedParameterPrefixMap())
+				fmt.Printf("-- [DUMP] sqlEscaper.SafeMode(): %+v\n", safeMode)
+				fmt.Printf("-- [DUMP] sqlEscaper.IsSerializedParameterizedSQL(): %+v\n", sqlEscaper.IsSerializedParameterizedSQL())
+				fmt.Printf("-- [DUMP] sqlEscaper.GetSerializedParameterPrefixMap(): %+v\n", sqlEscaper.GetSerializedParameterPrefixMap())
+
 				// replace sql param
 				if !safeMode {
+					// unsafe mode
 					// check type of variable value
 					variableMappedValueInString, errInReflect := reflectVariableToString(variableMappedValue)
 					if errInReflect != nil {
 						return "", nil, errInReflect
 					}
-					variableContent = variableMappedValueInString
-				} else if sqlEscaper.IsSerlizedParameterizedSQL() {
-					variableContent = fmt.Sprintf("%s%d", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
+					if singleQuoteStart {
+						variableContent = fmt.Sprintf("'%s'", variableMappedValueInString)
+					} else if doubleQuoteStart {
+						variableContent = fmt.Sprintf("\"%s\"", variableMappedValueInString)
+					} else {
+						variableContent = variableMappedValueInString
+					}
+				} else if sqlEscaper.IsSerializedParameterizedSQL() {
+					// safe mode, with serialized param
+					variableContent = fmt.Sprintf("%s%d", sqlEscaper.GetSerializedParameterPrefixMap(), usedArgsSerial)
 					usedArgsSerial++
 				} else {
+					// safe mode, with "?" as param
 					variableContent = "?"
 				}
-				// record param serial
+
+				// record sql param serial
 				if sqlEscaper.ResourceType == resourcelist.TYPE_MYSQL_ID {
 					// hack for mysql, according to this link: https://github.com/sidorares/node-mysql2/issues/1239#issuecomment-718471799
 					// the MysQL 8.0.22 above version only accept string type valiable, so convert all varable to string
@@ -323,16 +337,15 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					userArgs = append(userArgs, variableMappedValue)
 				}
 			}
-			// process type cast
+
+			// process bracket
 			if singleQuoteStart {
 				initConcatStringTargetsIndex(singleQuoteSegmentCounter)
-				variableContent += sqlEscaper.GetParameterTextTypeCastList()
 				fmt.Printf("-- [DUMP] fill in concatStringTargets[%d]: %s\n", singleQuoteSegmentCounter, newStringConcatTarget(variableContent, true).Target.String())
 				concatStringTargets[singleQuoteSegmentCounter] = newStringConcatTarget(variableContent, true)
 				singleQuoteSegPlus()
 			} else if doubleQuoteStart {
 				initConcatStringTargetsIndex(doubleQuoteSegmentCounter)
-				variableContent += sqlEscaper.GetParameterTextTypeCastList()
 				concatStringTargets[doubleQuoteSegmentCounter] = newStringConcatTarget(variableContent, true)
 				doubleQuoteSegPlus()
 			} else {
@@ -388,7 +401,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 			}
 
 			// not escape, it is string finish quote
-			ret.WriteString(formatConcatTarget(concatStringTargets, singleQuoteStart, doubleQuoteStart))
+			ret.WriteString(formatConcatTarget(sqlEscaper, concatStringTargets, singleQuoteStart, doubleQuoteStart))
 
 			// clean status
 			singleQuoteStart = false
@@ -417,7 +430,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		// double quote end, form concat function to sql
 		if c == '"' && doubleQuoteStart && !singleQuoteStart {
 			// double quete have no escape, it is string finish quote
-			ret.WriteString(formatConcatTarget(concatStringTargets, singleQuoteStart, doubleQuoteStart))
+			ret.WriteString(formatConcatTarget(sqlEscaper, concatStringTargets, singleQuoteStart, doubleQuoteStart))
 
 			// clean status
 			doubleQuoteStart = false
@@ -455,7 +468,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 	return ret.String(), userArgs, nil
 }
 
-func formatConcatTarget(concatStringTargets []*stringConcatTarget, singleQuoteStart bool, doubleQuoteStart bool) string {
+func formatConcatTarget(sqlEscaper *SQLEscaper, concatStringTargets []*stringConcatTarget, singleQuoteStart bool, doubleQuoteStart bool) string {
 	var ret strings.Builder
 	haveVariable := false
 	exportedTarget := make([]string, 0)
@@ -475,6 +488,10 @@ func formatConcatTarget(concatStringTargets []*stringConcatTarget, singleQuoteSt
 			ret.WriteString("CONCAT(")
 			for _, target := range concatStringTargets {
 				fmt.Printf("----- [DUMP] target: %+v\n", string(target.Target.String()))
+				// process variable type cast
+				if target.IsVariable {
+					target.concat(sqlEscaper.GetParameterTextTypeCastList())
+				}
 				exportedTarget = append(exportedTarget, target.Export(singleQuoteStart, doubleQuoteStart))
 			}
 			ret.WriteString(strings.Join(exportedTarget, ", "))
