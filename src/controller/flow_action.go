@@ -32,9 +32,9 @@ func (controller *Controller) CreateFlowAction(c *gin.Context) {
 	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
 		teamID,
 		userAuthToken,
-		accesscontrol.UNIT_TYPE_ACTION,
+		accesscontrol.UNIT_TYPE_FLOW_ACTION,
 		accesscontrol.DEFAULT_UNIT_ID,
-		accesscontrol.ACTION_MANAGE_CREATE_ACTION,
+		accesscontrol.FLOW_ACTION_MANAGE_CREATE_FLOW_ACTION,
 	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
@@ -46,67 +46,52 @@ func (controller *Controller) CreateFlowAction(c *gin.Context) {
 	}
 
 	// fetch payload
-	createActionRequest := request.NewCreateActionRequest()
-	if err := json.NewDecoder(c.Request.Body).Decode(&createActionRequest); err != nil {
+	createFlowActionRequest := request.NewCreateFlowActionRequest()
+	if err := json.NewDecoder(c.Request.Body).Decode(&createFlowActionRequest); err != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// append remote virtual resource (like aiagent, but the transformet is local virtual resource)
-	if createActionRequest.IsRemoteVirtualAction() {
+	if createFlowActionRequest.IsRemoteVirtualAction() {
 		// the AI_Agent need fetch resource info from resource manager, but illa drive does not need that
-		if createActionRequest.NeedFetchResourceInfoFromSourceManager() {
+		if createFlowActionRequest.NeedFetchResourceInfoFromSourceManager() {
 			api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
 			if errInNewAPI != nil {
-				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
+				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInNewAPI.Error())
 				return
 			}
-			virtualResource, errInGetVirtualResource := api.GetResource(createActionRequest.ExportActionTypeInInt(), createActionRequest.ExportResourceIDInInt())
+			virtualResource, errInGetVirtualResource := api.GetResource(createFlowActionRequest.ExportActionTypeInInt(), createFlowActionRequest.ExportResourceIDInInt())
 			if errInGetVirtualResource != nil {
-				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetVirtualResource.Error())
+				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInGetVirtualResource.Error())
 				return
 			}
-			createActionRequest.AppendVirtualResourceToTemplate(virtualResource)
+			createFlowActionRequest.AppendVirtualResourceToTemplate(virtualResource)
 		}
 	}
 
-	// get action mapped app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, workflowID)
-	if errInRetrieveApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_WORKFLOW, "get app failed: "+errInRetrieveApp.Error())
-		return
-	}
-
-	// init action instace
-	action, errorInNewAction := model.NewAcitonByCreateActionRequest(app, userID, createActionRequest)
+	// init flowAction instace
+	flowAction, errorInNewAction := model.NewFlowAcitonByCreateFlowActionRequest(teamID, workflowID, userID, createFlowActionRequest)
 	if errorInNewAction != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in create action instance: "+errorInNewAction.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_FLOW_ACTION, "error in create flowAction instance: "+errorInNewAction.Error())
 		return
 	}
 
-	// validate action options
-	errInValidateActionOptions := controller.ValidateActionTemplate(c, action)
+	// validate flowAction options
+	errInValidateActionOptions := controller.ValidateFlowActionTemplate(c, flowAction)
 	if errInValidateActionOptions != nil {
 		return
 	}
 
-	// create action
-	_, errInCreateAction := controller.Storage.ActionStorage.Create(action)
+	// create flowAction
+	_, errInCreateAction := controller.Storage.FlowActionStorage.Create(flowAction)
 	if errInCreateAction != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "create action error: "+errInCreateAction.Error())
-		return
-	}
-
-	// update app updatedAt, updatedBy, editedBy field
-	app.Modify(userID)
-	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
-	if errInUpdateApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_WORKFLOW, "update app modify info error: "+errInUpdateApp.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_FLOW_ACTION, "create flowAction error: "+errInCreateAction.Error())
 		return
 	}
 
 	// feedback
-	controller.FeedbackOK(c, response.NewCreateActionResponse(action))
+	controller.FeedbackOK(c, response.NewCreateFlowActionResponse(flowAction))
 }
 
 func (controller *Controller) UpdateFlowAction(c *gin.Context) {
@@ -114,7 +99,7 @@ func (controller *Controller) UpdateFlowAction(c *gin.Context) {
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	workflowID, errInGetWORKFLOWID := controller.GetMagicIntParamFromRequest(c, PARAM_WORKFLOW_ID)
 	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
-	actionID, errInGetActionID := controller.GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
+	flowActionID, errInGetActionID := controller.GetMagicIntParamFromRequest(c, PARAM_FLOW_ACTION_ID)
 	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetWORKFLOWID != nil || errInGetUserID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
 		return
@@ -124,9 +109,9 @@ func (controller *Controller) UpdateFlowAction(c *gin.Context) {
 	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
 		teamID,
 		userAuthToken,
-		accesscontrol.UNIT_TYPE_ACTION,
-		actionID,
-		accesscontrol.ACTION_MANAGE_EDIT_ACTION,
+		accesscontrol.UNIT_TYPE_FLOW_ACTION,
+		flowActionID,
+		accesscontrol.FLOW_ACTION_MANAGE_EDIT_FLOW_ACTION,
 	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
@@ -138,57 +123,50 @@ func (controller *Controller) UpdateFlowAction(c *gin.Context) {
 	}
 
 	// fetch payload
-	updateActionRequest := request.NewUpdateActionRequest()
-	if err := json.NewDecoder(c.Request.Body).Decode(&updateActionRequest); err != nil {
+	updateFlowActionRequest := request.NewUpdateFlowActionRequest()
+	if err := json.NewDecoder(c.Request.Body).Decode(&updateFlowActionRequest); err != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
 
 	// append remote virtual resource (like aiagent, but the transformet is local virtual resource)
-	if updateActionRequest.IsRemoteVirtualAction() {
+	if updateFlowActionRequest.IsRemoteVirtualAction() {
 		// the AI_Agent need fetch resource info from resource manager, but illa drive does not need that
-		if updateActionRequest.NeedFetchResourceInfoFromSourceManager() {
+		if updateFlowActionRequest.NeedFetchResourceInfoFromSourceManager() {
 			api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
 			if errInNewAPI != nil {
-				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
+				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInNewAPI.Error())
 				return
 			}
-			virtualResource, errInGetVirtualResource := api.GetResource(updateActionRequest.ExportActionTypeInInt(), updateActionRequest.ExportResourceIDInInt())
+			virtualResource, errInGetVirtualResource := api.GetResource(updateFlowActionRequest.ExportActionTypeInInt(), updateFlowActionRequest.ExportResourceIDInInt())
 			if errInGetVirtualResource != nil {
-				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetVirtualResource.Error())
+				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInGetVirtualResource.Error())
 				return
 			}
-			updateActionRequest.AppendVirtualResourceToTemplate(virtualResource)
+			updateFlowActionRequest.AppendVirtualResourceToTemplate(virtualResource)
 		}
 	}
 
-	// get action mapped app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, workflowID)
-	if errInRetrieveApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_WORKFLOW, "get app failed: "+errInRetrieveApp.Error())
+	// get flowAction
+	inDatabaseFlowAction, errInRetrieveFlowAction := controller.Storage.FlowActionStorage.RetrieveFlowActionByTeamIDFlowActionID(teamID, flowActionID)
+	if errInRetrieveFlowAction != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_FLOW_ACTION, "get app failed: "+errInRetrieveFlowAction.Error())
 		return
 	}
 
-	// get action
-	inDatabaseAction, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionByTeamIDActionID(teamID, actionID)
-	if errInRetrieveAction != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_WORKFLOW, "get app failed: "+errInRetrieveAction.Error())
-		return
-	}
+	// update inDatabaseFlowAction instance
+	inDatabaseFlowAction.UpdateAcitonByUpdateActionRequest(app, userID, updateFlowActionRequest)
 
-	// update inDatabaseAction instance
-	inDatabaseAction.UpdateAcitonByUpdateActionRequest(app, userID, updateActionRequest)
-
-	// validate action options
-	errInValidateActionOptions := controller.ValidateActionTemplate(c, inDatabaseAction)
+	// validate flowAction options
+	errInValidateActionOptions := controller.ValidateFlowActionTemplate(c, inDatabaseFlowAction)
 	if errInValidateActionOptions != nil {
 		return
 	}
 
-	// update action
-	errInUpdateAction := controller.Storage.ActionStorage.UpdateWholeAction(inDatabaseAction)
+	// update flowAction
+	errInUpdateAction := controller.Storage.FlowActionStorage.UpdateWholeAction(inDatabaseFlowAction)
 	if errInUpdateAction != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "update action error: "+errInUpdateAction.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "update flowAction error: "+errInUpdateAction.Error())
 		return
 	}
 
@@ -201,13 +179,13 @@ func (controller *Controller) UpdateFlowAction(c *gin.Context) {
 	}
 
 	// feedback
-	controller.FeedbackOK(c, response.NewUpdateActionResponse(inDatabaseAction))
+	controller.FeedbackOK(c, response.NewUpdateActionResponse(inDatabaseFlowAction))
 }
 
 func (controller *Controller) DeleteFlowAction(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	actionID, errInGetActionID := controller.GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
+	flowActionID, errInGetActionID := controller.GetMagicIntParamFromRequest(c, PARAM_FLOW_ACTION_ID)
 	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
 		return
@@ -217,9 +195,9 @@ func (controller *Controller) DeleteFlowAction(c *gin.Context) {
 	canManage, errInCheckAttr := controller.AttributeGroup.CanDelete(
 		teamID,
 		userAuthToken,
-		accesscontrol.UNIT_TYPE_ACTION,
-		actionID,
-		accesscontrol.ACTION_DELETE,
+		accesscontrol.UNIT_TYPE_FLOW_ACTION,
+		flowActionID,
+		accesscontrol.FLOW_ACTION_DELETE,
 	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
@@ -231,21 +209,21 @@ func (controller *Controller) DeleteFlowAction(c *gin.Context) {
 	}
 
 	// delete
-	errInDelete := controller.Storage.ActionStorage.DeleteActionByTeamIDAndActionID(teamID, actionID)
+	errInDelete := controller.Storage.FlowActionStorage.DeleteActionByTeamIDAndActionID(teamID, flowActionID)
 	if errInDelete != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_DELETE_ACTION, "delete action error: "+errInDelete.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_DELETE_FLOW_ACTION, "delete flowAction error: "+errInDelete.Error())
 		return
 	}
 
 	// feedback
-	controller.FeedbackOK(c, response.NewDeleteActionResponse(actionID))
+	controller.FeedbackOK(c, response.NewDeleteActionResponse(flowActionID))
 	return
 }
 
 func (controller *Controller) GetFlowAction(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	actionID, errInGetActionID := controller.GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
+	flowActionID, errInGetActionID := controller.GetMagicIntParamFromRequest(c, PARAM_FLOW_ACTION_ID)
 	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetActionID != nil || errInGetAuthToken != nil {
 		return
@@ -255,9 +233,9 @@ func (controller *Controller) GetFlowAction(c *gin.Context) {
 	canAccess, errInCheckAttr := controller.AttributeGroup.CanAccess(
 		teamID,
 		userAuthToken,
-		accesscontrol.UNIT_TYPE_ACTION,
-		actionID,
-		accesscontrol.ACTION_ACCESS_VIEW,
+		accesscontrol.UNIT_TYPE_FLOW_ACTION,
+		flowActionID,
+		accesscontrol.FLOW_ACTION_ACCESS_VIEW,
 	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
@@ -269,25 +247,25 @@ func (controller *Controller) GetFlowAction(c *gin.Context) {
 	}
 
 	// fetch data
-	action, errInGetAction := controller.Storage.ActionStorage.RetrieveActionByTeamIDAndID(teamID, actionID)
+	flowAction, errInGetAction := controller.Storage.FlowActionStorage.RetrieveActionByTeamIDAndID(teamID, flowActionID)
 	if errInGetAction != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action error: "+errInGetAction.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_FLOW_ACTION, "get flowAction error: "+errInGetAction.Error())
 		return
 	}
 
 	// new response
-	getActionResponse := response.NewGetActionResponse(action)
+	getActionResponse := response.NewGetActionResponse(flowAction)
 
 	// append remote virtual resource
-	if action.IsRemoteVirtualAction() {
+	if flowAction.IsRemoteVirtualAction() {
 		api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
 		if errInNewAPI != nil {
-			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInNewAPI.Error())
 			return
 		}
-		virtualResource, errInGetVirtualResource := api.GetResource(action.ExportType(), action.ExportResourceID())
+		virtualResource, errInGetVirtualResource := api.GetResource(flowAction.ExportType(), flowAction.ExportResourceID())
 		if errInGetVirtualResource != nil {
-			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetVirtualResource.Error())
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInGetVirtualResource.Error())
 			return
 		}
 		getActionResponse.AppendVirtualResourceToTemplate(virtualResource)
@@ -302,7 +280,7 @@ func (controller *Controller) RunFlowAction(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	workflowID, errInGetAppID := controller.GetMagicIntParamFromRequest(c, PARAM_WORKFLOW_ID)
-	actionID, errInGetActionID := controller.GetMagicIntParamFromRequest(c, PARAM_ACTION_ID)
+	flowActionID, errInGetActionID := controller.GetMagicIntParamFromRequest(c, PARAM_FLOW_ACTION_ID)
 	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
 	if errInGetTeamID != nil || errInGetAppID != nil || errInGetActionID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
@@ -313,9 +291,9 @@ func (controller *Controller) RunFlowAction(c *gin.Context) {
 	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
 		teamID,
 		userAuthToken,
-		accesscontrol.UNIT_TYPE_ACTION,
-		actionID,
-		accesscontrol.ACTION_MANAGE_RUN_ACTION,
+		accesscontrol.UNIT_TYPE_FLOW_ACTION,
+		flowActionID,
+		accesscontrol.FLOW_ACTION_MANAGE_RUN_FLOW_ACTION,
 	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
@@ -339,76 +317,76 @@ func (controller *Controller) RunFlowAction(c *gin.Context) {
 		return
 	}
 
-	// get action
-	action := model.NewAction()
-	fmt.Printf("[RetrieveActionsByTeamIDActionID] teamID: %d, actionID: %d\n", teamID, actionID)
+	// get flowAction
+	flowAction := model.NewAction()
+	fmt.Printf("[RetrieveActionsByTeamIDActionID] teamID: %d, flowActionID: %d\n", teamID, flowActionID)
 
-	// actionID has not been created (like actionID is 0 'ILAfx4p1C7d0'), but we still can run it (onboarding case)
-	if !model.DoesActionHasBeenCreated(actionID) {
-		// ok, action was not created, fetch app and build a temporary action.
+	// flowActionID has not been created (like flowActionID is 0 'ILAfx4p1C7d0'), but we still can run it (onboarding case)
+	if !model.DoesActionHasBeenCreated(flowActionID) {
+		// ok, flowAction was not created, fetch app and build a temporary flowAction.
 		app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, workflowID)
 		if errInRetrieveApp != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_WORKFLOW, "get app failed: "+errInRetrieveApp.Error())
 			return
 		}
-		action = model.NewAcitonByRunActionRequest(app, userID, runActionRequest)
+		flowAction = model.NewAcitonByRunActionRequest(app, userID, runActionRequest)
 	} else {
-		// ok, we retrieve action from database
+		// ok, we retrieve flowAction from database
 		var errInRetrieveAction error
-		action, errInRetrieveAction = controller.Storage.ActionStorage.RetrieveActionByTeamIDActionID(teamID, actionID)
+		flowAction, errInRetrieveAction = controller.Storage.FlowActionStorage.RetrieveActionByTeamIDActionID(teamID, flowActionID)
 		if errInRetrieveAction != nil {
-			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_ACTION, "get action failed: "+errInRetrieveAction.Error())
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_FLOW_ACTION, "get flowAction failed: "+errInRetrieveAction.Error())
 			return
 		}
 	}
 
-	// update action data with run action reqeust
-	action.UpdateWithRunActionRequest(runActionRequest, userID)
-	fmt.Printf("[DUMP] action: %+v\n", action)
+	// update flowAction data with run flowAction reqeust
+	flowAction.UpdateWithRunActionRequest(runActionRequest, userID)
+	fmt.Printf("[DUMP] flowAction: %+v\n", flowAction)
 
-	// assembly action
-	actionFactory := model.NewActionFactoryByAction(action)
-	actionAssemblyLine, errInBuild := actionFactory.Build()
+	// assembly flowAction
+	flowActionFactory := model.NewActionFactoryByAction(flowAction)
+	flowActionAssemblyLine, errInBuild := flowActionFactory.Build()
 	if errInBuild != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action type error: "+errInBuild.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate flowAction type error: "+errInBuild.Error())
 		return
 	}
 
 	// get resource
 	resource := model.NewResource()
-	if !action.IsVirtualAction() {
-		// process normal resource action
+	if !flowAction.IsVirtualAction() {
+		// process normal resource flowAction
 		var errInRetrieveResource error
-		resource, errInRetrieveResource = controller.Storage.ResourceStorage.RetrieveByTeamIDAndResourceID(teamID, action.ExportResourceID())
+		resource, errInRetrieveResource = controller.Storage.ResourceStorage.RetrieveByTeamIDAndResourceID(teamID, flowAction.ExportResourceID())
 		if errInRetrieveResource != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_RESOURCE, "get resource failed: "+errInRetrieveResource.Error())
 			return
 		}
 		// resource option validate only happend in create or update phrase
-		// note that validate will set resprce options to actionAssemblyLine
-		_, errInValidateResourceOptions := actionAssemblyLine.ValidateResourceOptions(resource.ExportOptionsInMap())
+		// note that validate will set resprce options to flowActionAssemblyLine
+		_, errInValidateResourceOptions := flowActionAssemblyLine.ValidateResourceOptions(resource.ExportOptionsInMap())
 		if errInValidateResourceOptions != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_RESOURCE_FAILED, "validate resource failed: "+errInValidateResourceOptions.Error())
 			return
 		}
 	} else {
-		// process virtual resource action
-		action.AppendRuntimeInfoForVirtualResource(userAuthToken, teamID)
+		// process virtual resource flowAction
+		flowAction.AppendRuntimeInfoForVirtualResource(userAuthToken, teamID)
 	}
 
-	// check action template
-	fmt.Printf("[DUMP] action.ExportTemplateInMap(): %+v\n", action.ExportTemplateInMap())
-	fmt.Printf("[DUMP] action.ExportRawTemplateInMap(): %+v\n", action.ExportRawTemplateInMap())
-	_, errInValidate := actionAssemblyLine.ValidateActionTemplate(action.ExportTemplateInMap())
+	// check flowAction template
+	fmt.Printf("[DUMP] flowAction.ExportTemplateInMap(): %+v\n", flowAction.ExportTemplateInMap())
+	fmt.Printf("[DUMP] flowAction.ExportRawTemplateInMap(): %+v\n", flowAction.ExportRawTemplateInMap())
+	_, errInValidate := flowActionAssemblyLine.ValidateFlowActionTemplate(flowAction.ExportTemplateInMap())
 	if errInValidate != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action template error: "+errInValidate.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate flowAction template error: "+errInValidate.Error())
 		return
 	}
 
 	// run
-	log.Printf("[DUMP]action: %+v\n", action)
-	log.Printf("[DUMP] resource.ExportOptionsInMap(): %+v, action.ExportTemplateInMap(): %+v\n", resource.ExportOptionsInMap(), action.ExportTemplateInMap())
-	actionRunResult, errInRunAction := actionAssemblyLine.Run(resource.ExportOptionsInMap(), action.ExportTemplateInMap(), action.ExportRawTemplateInMap())
+	log.Printf("[DUMP]flowAction: %+v\n", flowAction)
+	log.Printf("[DUMP] resource.ExportOptionsInMap(): %+v, flowAction.ExportTemplateInMap(): %+v\n", resource.ExportOptionsInMap(), flowAction.ExportTemplateInMap())
+	flowActionRunResult, errInRunAction := flowActionAssemblyLine.Run(resource.ExportOptionsInMap(), flowAction.ExportTemplateInMap(), flowAction.ExportRawTemplateInMap())
 	if errInRunAction != nil {
 		if strings.HasPrefix(errInRunAction.Error(), "Error 1064:") {
 			lineNumber, _ := strconv.Atoi(errInRunAction.Error()[len(errInRunAction.Error())-1:])
@@ -420,7 +398,7 @@ func (controller *Controller) RunFlowAction(c *gin.Context) {
 			}
 			c.JSON(http.StatusBadRequest, gin.H{
 				"errorCode":    400,
-				"errorFlag":    ERROR_FLAG_EXECUTE_ACTION_FAILED,
+				"errorFlag":    ERROR_FLAG_EXECUTE_FLOW_ACTION_FAILED,
 				"errorMessage": errors.New("SQL syntax error").Error(),
 				"errorData": map[string]interface{}{
 					"lineNumber": lineNumber,
@@ -429,10 +407,10 @@ func (controller *Controller) RunFlowAction(c *gin.Context) {
 			})
 			return
 		}
-		controller.FeedbackBadRequest(c, ERROR_FLAG_EXECUTE_ACTION_FAILED, "run action error: "+errInRunAction.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_EXECUTE_FLOW_ACTION_FAILED, "run flowAction error: "+errInRunAction.Error())
 		return
 	}
 
 	// feedback
-	c.JSON(http.StatusOK, actionRunResult)
+	c.JSON(http.StatusOK, flowActionRunResult)
 }

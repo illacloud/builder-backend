@@ -41,6 +41,12 @@ func NewActionFactoryByAction(action *Action) *ActionFactory {
 	}
 }
 
+func NewActionFactoryByFlowAction(flowAction *FlowAction) *ActionFactory {
+	return &ActionFactory{
+		Type: flowAction.Type,
+	}
+}
+
 func NewActionFactoryByResource(resource *Resource) *ActionFactory {
 	return &ActionFactory{
 		Type: resource.Type,

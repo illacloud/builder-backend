@@ -35,5 +35,5 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	flowActionRouter.GET("/:actionID", r.Controller.GetFlowAction)
 	flowActionRouter.PUT("/:actionID", r.Controller.UpdateFlowAction)
 	flowActionRouter.DELETE("/:actionID", r.Controller.DeleteFlowAction)
-	flowActionRouter.POST("/:actionID/run", r.Controller.RunFlowAction)
+	flowActionRouter.POST("/:actionID/run", r.Controller.RunFlowActionInternal)
 }

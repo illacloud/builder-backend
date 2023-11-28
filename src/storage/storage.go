@@ -8,6 +8,7 @@ import (
 type Storage struct {
 	AppStorage         *AppStorage
 	ActionStorage      *ActionStorage
+	FlowActionStorage  *FlowActionStorage
 	AppSnapshotStorage *AppSnapshotStorage
 	KVStateStorage     *KVStateStorage
 	ResourceStorage    *ResourceStorage
@@ -19,6 +20,7 @@ func NewStorage(postgresDriver *gorm.DB, logger *zap.SugaredLogger) *Storage {
 	return &Storage{
 		AppStorage:         NewAppStorage(logger, postgresDriver),
 		ActionStorage:      NewActionStorage(logger, postgresDriver),
+		FlowActionStorage:  NewFlowActionStorage(logger, postgresDriver),
 		AppSnapshotStorage: NewAppSnapshotStorage(logger, postgresDriver),
 		KVStateStorage:     NewKVStateStorage(logger, postgresDriver),
 		ResourceStorage:    NewResourceStorage(logger, postgresDriver),

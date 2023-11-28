@@ -27,3 +27,25 @@ func (controller *Controller) ValidateActionTemplate(c *gin.Context, action *mod
 	}
 	return nil
 }
+
+func (controller *Controller) ValidateFlowActionTemplate(c *gin.Context, flowAction *model.FlowAction) error {
+	if resourcelist.IsVirtualResourceHaveNoOption(flowAction.ExportType()) {
+		return nil
+	}
+
+	// check build
+	actionFactory := model.NewActionFactoryByFlowAction(flowAction)
+	actionAssemblyLine, errInBuild := actionFactory.Build()
+	if errInBuild != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action type error: "+errInBuild.Error())
+		return errInBuild
+	}
+
+	// check template
+	_, errInValidate := actionAssemblyLine.ValidateActionTemplate(flowAction.ExportTemplateInMap())
+	if errInValidate != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate action template error: "+errInValidate.Error())
+		return errInValidate
+	}
+	return nil
+}

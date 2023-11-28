@@ -35,10 +35,10 @@ func NewFlowAction() *FlowAction {
 	return &FlowAction{}
 }
 
-func NewAcitonByCreateFlowActionRequest(app *App, userID int, req *request.CreateFlowActionRequest) (*FlowAction, error) {
+func NewFlowAcitonByCreateFlowActionRequest(teamID int, workflowID int, userID int, req *request.CreateFlowActionRequest) (*FlowAction, error) {
 	action := &FlowAction{
-		TeamID:      app.ExportTeamID(),
-		WorkflowID:  app.ExportID(),
+		TeamID:      teamID,
+		WorkflowID:  workflowID,
 		Version:     APP_EDIT_VERSION, // new action always created in builder edit mode, and it is edit version.
 		ResourceID:  idconvertor.ConvertStringToInt(req.ResourceID),
 		Name:        req.DisplayName,
