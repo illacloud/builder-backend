@@ -285,6 +285,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 			variableMappedValue, hitVariable := escapedArgs[variable]
 			variableContent := ""
 			if !hitVariable {
+				// missing variable
 				if singleQuoteStart {
 					variableContent = "''"
 				} else if doubleQuoteStart {
@@ -293,9 +294,12 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					variableContent = escapedBracketWithVariable
 				}
 			} else {
+				// hit variable
 				fmt.Printf("-- [DUMP] sqlEscaper.ResourceType: %+v\n", sqlEscaper.ResourceType)
+				fmt.Printf("-- [DUMP] sqlEscaper.SafeMode(): %+v\n", safeMode)
 				fmt.Printf("-- [DUMP] sqlEscaper.IsSerializedParameterizedSQL(): %+v\n", sqlEscaper.IsSerializedParameterizedSQL())
 				fmt.Printf("-- [DUMP] sqlEscaper.GetSerializedParameterPrefixMap(): %+v\n", sqlEscaper.GetSerializedParameterPrefixMap())
+
 				// replace sql param
 				if !safeMode {
 					// unsafe mode
@@ -319,7 +323,8 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					// safe mode, with "?" as param
 					variableContent = "?"
 				}
-				// record param serial
+
+				// record sql param serial
 				if sqlEscaper.ResourceType == resourcelist.TYPE_MYSQL_ID {
 					// hack for mysql, according to this link: https://github.com/sidorares/node-mysql2/issues/1239#issuecomment-718471799
 					// the MysQL 8.0.22 above version only accept string type valiable, so convert all varable to string
@@ -332,8 +337,22 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					userArgs = append(userArgs, variableMappedValue)
 				}
 			}
-			// done
-			ret.WriteString(variableContent)
+
+			// process bracket
+			if singleQuoteStart {
+				initConcatStringTargetsIndex(singleQuoteSegmentCounter)
+				variableContent += sqlEscaper.GetParameterTextTypeCastList()
+				fmt.Printf("-- [DUMP] fill in concatStringTargets[%d]: %s\n", singleQuoteSegmentCounter, newStringConcatTarget(variableContent, true).Target.String())
+				concatStringTargets[singleQuoteSegmentCounter] = newStringConcatTarget(variableContent, true)
+				singleQuoteSegPlus()
+			} else if doubleQuoteStart {
+				initConcatStringTargetsIndex(doubleQuoteSegmentCounter)
+				variableContent += sqlEscaper.GetParameterTextTypeCastList()
+				concatStringTargets[doubleQuoteSegmentCounter] = newStringConcatTarget(variableContent, true)
+				doubleQuoteSegPlus()
+			} else {
+				ret.WriteString(variableContent)
+			}
 			fmt.Printf("---[DUMP] variableContent: %+v\n", variableContent)
 			escapedBracketWithVariable = ""
 			variable = ""
