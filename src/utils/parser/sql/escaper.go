@@ -10,13 +10,13 @@ import (
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 )
 
-var SerlizedParameterizedSQLList = map[int]bool{
+var SerializedParameterizedSQLList = map[int]bool{
 	resourcelist.TYPE_POSTGRESQL_ID: true,
 	resourcelist.TYPE_ORACLE_9I_ID:  true,
 	resourcelist.TYPE_ORACLE_ID:     true,
 }
 
-var SerlizedParameterPrefixMap = map[int]string{
+var SerializedParameterPrefixMap = map[int]string{
 	resourcelist.TYPE_POSTGRESQL_ID: "$",
 	resourcelist.TYPE_ORACLE_9I_ID:  ":",
 	resourcelist.TYPE_ORACLE_ID:     ":",
@@ -36,13 +36,13 @@ func NewSQLEscaper(resourceType int) *SQLEscaper {
 	}
 }
 
-func (sqlEscaper *SQLEscaper) IsSerlizedParameterizedSQL() bool {
-	itIs, hit := SerlizedParameterizedSQLList[sqlEscaper.ResourceType]
+func (sqlEscaper *SQLEscaper) IsSerializedParameterizedSQL() bool {
+	itIs, hit := SerializedParameterizedSQLList[sqlEscaper.ResourceType]
 	return itIs && hit
 }
 
-func (sqlEscaper *SQLEscaper) GetSerlizedParameterPrefixMap() string {
-	prefix, hit := SerlizedParameterPrefixMap[sqlEscaper.ResourceType]
+func (sqlEscaper *SQLEscaper) GetSerializedParameterPrefixMap() string {
+	prefix, hit := SerializedParameterPrefixMap[sqlEscaper.ResourceType]
 	if !hit {
 		return ""
 	}
@@ -294,20 +294,29 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 				}
 			} else {
 				fmt.Printf("-- [DUMP] sqlEscaper.ResourceType: %+v\n", sqlEscaper.ResourceType)
-				fmt.Printf("-- [DUMP] sqlEscaper.IsSerlizedParameterizedSQL(): %+v\n", sqlEscaper.IsSerlizedParameterizedSQL())
-				fmt.Printf("-- [DUMP] sqlEscaper.GetSerlizedParameterPrefixMap(): %+v\n", sqlEscaper.GetSerlizedParameterPrefixMap())
+				fmt.Printf("-- [DUMP] sqlEscaper.IsSerializedParameterizedSQL(): %+v\n", sqlEscaper.IsSerializedParameterizedSQL())
+				fmt.Printf("-- [DUMP] sqlEscaper.GetSerializedParameterPrefixMap(): %+v\n", sqlEscaper.GetSerializedParameterPrefixMap())
 				// replace sql param
 				if !safeMode {
+					// unsafe mode
 					// check type of variable value
 					variableMappedValueInString, errInReflect := reflectVariableToString(variableMappedValue)
 					if errInReflect != nil {
 						return "", nil, errInReflect
 					}
-					variableContent = variableMappedValueInString
-				} else if sqlEscaper.IsSerlizedParameterizedSQL() {
-					variableContent = fmt.Sprintf("%s%d", sqlEscaper.GetSerlizedParameterPrefixMap(), usedArgsSerial)
+					if singleQuoteStart {
+						variableContent = fmt.Sprintf("'%s'", variableMappedValueInString)
+					} else if doubleQuoteStart {
+						variableContent = fmt.Sprintf("\"%s\"", variableMappedValueInString)
+					} else {
+						variableContent = variableMappedValueInString
+					}
+				} else if sqlEscaper.IsSerializedParameterizedSQL() {
+					// safe mode, with serialized param
+					variableContent = fmt.Sprintf("%s%d", sqlEscaper.GetSerializedParameterPrefixMap(), usedArgsSerial)
 					usedArgsSerial++
 				} else {
+					// safe mode, with "?" as param
 					variableContent = "?"
 				}
 				// record param serial
@@ -323,21 +332,8 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					userArgs = append(userArgs, variableMappedValue)
 				}
 			}
-			// process type cast
-			if singleQuoteStart {
-				initConcatStringTargetsIndex(singleQuoteSegmentCounter)
-				variableContent += sqlEscaper.GetParameterTextTypeCastList()
-				fmt.Printf("-- [DUMP] fill in concatStringTargets[%d]: %s\n", singleQuoteSegmentCounter, newStringConcatTarget(variableContent, true).Target.String())
-				concatStringTargets[singleQuoteSegmentCounter] = newStringConcatTarget(variableContent, true)
-				singleQuoteSegPlus()
-			} else if doubleQuoteStart {
-				initConcatStringTargetsIndex(doubleQuoteSegmentCounter)
-				variableContent += sqlEscaper.GetParameterTextTypeCastList()
-				concatStringTargets[doubleQuoteSegmentCounter] = newStringConcatTarget(variableContent, true)
-				doubleQuoteSegPlus()
-			} else {
-				ret.WriteString(variableContent)
-			}
+			// done
+			ret.WriteString(variableContent)
 			fmt.Printf("---[DUMP] variableContent: %+v\n", variableContent)
 			escapedBracketWithVariable = ""
 			variable = ""
