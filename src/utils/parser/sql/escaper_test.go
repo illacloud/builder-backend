@@ -42,7 +42,7 @@ func TestEscapeSQLActionTemplateSingleQuoteStringTemplatePostgres(t *testing.T) 
 	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, true)
 	assert.Nil(t, errInEscape)
 	assert.Equal(t, usedArgs, []interface{}{"122 pan", "222 pan", "333 pan"}, "the usedArgs should be equal")
-	assert.Equal(t, "SELECT * FROM actions where name like CONCAT('%', '$1'::text, '.', '$2'::text, ' sir%') or name like CONCAT('%', '$3'::text, '%');", escapedSQL, "the token should be equal")
+	assert.Equal(t, "SELECT * FROM actions where name like CONCAT('%', $1::text, '.', $2::text, ' sir%') or name like CONCAT('%', $3::text, '%');", escapedSQL, "the token should be equal")
 }
 
 func TestEscapeSQLActionTemplateSingleQuoteStringTemplateMySQL(t *testing.T) {
@@ -56,7 +56,7 @@ func TestEscapeSQLActionTemplateSingleQuoteStringTemplateMySQL(t *testing.T) {
 	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, true)
 	assert.Nil(t, errInEscape)
 	assert.Equal(t, usedArgs, []interface{}{"122 pan", "222 pan", "333 pan"}, "the usedArgs should be equal")
-	assert.Equal(t, "SELECT * FROM actions where name like CONCAT('%', '?', '.', '?', ' sir%') or name like CONCAT('%', '?', '%');", escapedSQL, "the token should be equal")
+	assert.Equal(t, "SELECT * FROM actions where name like CONCAT('%', ?, '.', ?, ' sir%') or name like CONCAT('%', ?, '%');", escapedSQL, "the token should be equal")
 }
 
 func TestEscapeSQLActionTemplateSingleQuoteEscape(t *testing.T) {
@@ -70,7 +70,7 @@ func TestEscapeSQLActionTemplateSingleQuoteEscape(t *testing.T) {
 	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, true)
 	assert.Nil(t, errInEscape)
 	assert.Equal(t, usedArgs, []interface{}{"122 pan"}, "the usedArgs should be equal")
-	assert.Equal(t, "SELECT * FROM actions where name like CONCAT('%''', '$1'::text, '''%');", escapedSQL, "the token should be equal")
+	assert.Equal(t, "SELECT * FROM actions where name like CONCAT('%''', $1::text, '''%');", escapedSQL, "the token should be equal")
 }
 
 func TestEscapeSQLActionTemplateSingleQuoteEscapeSlash(t *testing.T) {
@@ -84,7 +84,7 @@ func TestEscapeSQLActionTemplateSingleQuoteEscapeSlash(t *testing.T) {
 	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, true)
 	assert.Nil(t, errInEscape)
 	assert.Equal(t, usedArgs, []interface{}{"122 pan"}, "the usedArgs should be equal")
-	assert.Equal(t, "SELECT * FROM actions where name like CONCAT('%\\'', '$1'::text, '\\'%');", escapedSQL, "the token should be equal")
+	assert.Equal(t, "SELECT * FROM actions where name like CONCAT('%\\'', $1::text, '\\'%');", escapedSQL, "the token should be equal")
 }
 
 func TestEscapeSQLActionTemplateDoubleQuoteContainSingleQuote(t *testing.T) {
@@ -98,7 +98,7 @@ func TestEscapeSQLActionTemplateDoubleQuoteContainSingleQuote(t *testing.T) {
 	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, true)
 	assert.Nil(t, errInEscape)
 	assert.Equal(t, usedArgs, []interface{}{"122 pan"}, "the usedArgs should be equal")
-	assert.Equal(t, "SELECT * FROM actions where name like CONCAT(\"%'\", \"$1\"::text, \"'%\");", escapedSQL, "the token should be equal")
+	assert.Equal(t, "SELECT * FROM actions where name like CONCAT(\"%'\", $1::text, \"'%\");", escapedSQL, "the token should be equal")
 }
 
 func TestEscapeSQLActionTemplateSingleQuoteContainDoubleQuote(t *testing.T) {
@@ -112,7 +112,7 @@ func TestEscapeSQLActionTemplateSingleQuoteContainDoubleQuote(t *testing.T) {
 	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, true)
 	assert.Nil(t, errInEscape)
 	assert.Equal(t, usedArgs, []interface{}{"122 pan"}, "the usedArgs should be equal")
-	assert.Equal(t, "SELECT * FROM actions where name like CONCAT('%\"', '$1'::text, '\"%');", escapedSQL, "the token should be equal")
+	assert.Equal(t, "SELECT * FROM actions where name like CONCAT('%\"', $1::text, '\"%');", escapedSQL, "the token should be equal")
 }
 
 func TestEscapeSQLActionTemplateMixVariable(t *testing.T) {
@@ -126,7 +126,7 @@ func TestEscapeSQLActionTemplateMixVariable(t *testing.T) {
 	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, true)
 	assert.Nil(t, errInEscape)
 	assert.Equal(t, usedArgs, []interface{}{"222 pan", "122 pan"}, "the usedArgs should be equal")
-	assert.Equal(t, "select *  from users join orders on users.id = orders.id where $1 or lower(users.name) like CONCAT('%', '$2'::text, '%')", escapedSQL, "the token should be equal")
+	assert.Equal(t, "select *  from users join orders on users.id = orders.id where $1 or lower(users.name) like CONCAT('%', $2::text, '%')", escapedSQL, "the token should be equal")
 }
 
 func TestEscapeSQLActionTemplateMixVariableMissingParam(t *testing.T) {
@@ -164,7 +164,7 @@ func TestEscapeSQLActionTemplateSingleValue(t *testing.T) {
 	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, true)
 	assert.Nil(t, errInEscape)
 	assert.Equal(t, usedArgs, []interface{}{"122 pan"}, "the usedArgs should be equal")
-	assert.Equal(t, "select *  from users where created_at >= ':1'", escapedSQL, "the token should be equal")
+	assert.Equal(t, "select *  from users where created_at >= :1", escapedSQL, "the token should be equal")
 }
 
 func TestEscapeSQLActionTemplateSingleValueWithoutQuote(t *testing.T) {
@@ -189,4 +189,30 @@ func TestEscapeSQLWithChinese(t *testing.T) {
 	assert.Nil(t, errInEscape)
 	assert.Equal(t, usedArgs, []interface{}{"122 pan"}, "the usedArgs should be equal")
 	assert.Equal(t, "select id as '序列号' from users where created_at >= :1", escapedSQL, "the token should be equal")
+}
+
+func TestEscapePostgresSQLWithDate(t *testing.T) {
+	sql_1 := `select count(distinct email) from users where DATE_TRUNC('day', created_at) >= '{{date1.value}}'::timestamp and DATE_TRUNC('day', created_at) <= '{{date2.value}}'::timestamp and email like '%.edu.%'`
+	args := map[string]interface{}{
+		"date1.value": "2000-01-01",
+		"date2.value": "2020-01-01",
+	}
+	sqlEscaper := NewSQLEscaper(resourcelist.TYPE_POSTGRESQL_ID)
+	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, true)
+	assert.Nil(t, errInEscape)
+	assert.Equal(t, usedArgs, []interface{}{"2000-01-01", "2020-01-01"}, "the usedArgs should be equal")
+	assert.Equal(t, "select count(distinct email) from users where DATE_TRUNC('day', created_at) >= $1::timestamp and DATE_TRUNC('day', created_at) <= $2::timestamp and email like '%.edu.%'", escapedSQL, "the token should be equal")
+}
+
+func TestEscapePostgresSQLWithDateUnsafe(t *testing.T) {
+	sql_1 := `select count(distinct email) from users where DATE_TRUNC('day', created_at) >= '{{date1.value}}'::timestamp and DATE_TRUNC('day', created_at) <= '{{date2.value}}'::timestamp and email like '%.edu.%'`
+	args := map[string]interface{}{
+		"date1.value": "2000-01-01",
+		"date2.value": "2020-01-01",
+	}
+	sqlEscaper := NewSQLEscaper(resourcelist.TYPE_POSTGRESQL_ID)
+	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, false)
+	assert.Nil(t, errInEscape)
+	assert.Equal(t, usedArgs, []interface{}{"2000-01-01", "2020-01-01"}, "the usedArgs should be equal")
+	assert.Equal(t, "select count(distinct email) from users where DATE_TRUNC('day', created_at) >= '2000-01-01'::timestamp and DATE_TRUNC('day', created_at) <= '2020-01-01'::timestamp and email like '%.edu.%'", escapedSQL, "the token should be equal")
 }
