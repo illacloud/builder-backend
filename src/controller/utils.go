@@ -41,6 +41,7 @@ const (
 	PARAM_KEYWORDS         = "keywords"
 	PARAM_TO_TEAM_ID       = "toTeamID"
 	PARAM_FORK_TO          = "forkTo"
+	PARAM_WORKFLOW_ID      = "workflowID"
 )
 
 const (
