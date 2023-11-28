@@ -34,7 +34,7 @@ func (controller *Controller) CreateFlowAction(c *gin.Context) {
 		userAuthToken,
 		accesscontrol.UNIT_TYPE_FLOW_ACTION,
 		accesscontrol.DEFAULT_UNIT_ID,
-		accesscontrol.FLOW_ACTION_MANAGE_CREATE_FLOW_ACTION,
+		accesscontrol.ACTION_MANAGE_CREATE_FLOW_ACTION,
 	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
@@ -111,7 +111,7 @@ func (controller *Controller) UpdateFlowAction(c *gin.Context) {
 		userAuthToken,
 		accesscontrol.UNIT_TYPE_FLOW_ACTION,
 		flowActionID,
-		accesscontrol.FLOW_ACTION_MANAGE_EDIT_FLOW_ACTION,
+		accesscontrol.ACTION_MANAGE_EDIT_FLOW_ACTION,
 	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
@@ -197,7 +197,7 @@ func (controller *Controller) DeleteFlowAction(c *gin.Context) {
 		userAuthToken,
 		accesscontrol.UNIT_TYPE_FLOW_ACTION,
 		flowActionID,
-		accesscontrol.FLOW_ACTION_DELETE,
+		accesscontrol.ACTION_DELETE,
 	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
@@ -235,7 +235,7 @@ func (controller *Controller) GetFlowAction(c *gin.Context) {
 		userAuthToken,
 		accesscontrol.UNIT_TYPE_FLOW_ACTION,
 		flowActionID,
-		accesscontrol.FLOW_ACTION_ACCESS_VIEW,
+		accesscontrol.ACTION_ACCESS_VIEW,
 	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
@@ -293,7 +293,7 @@ func (controller *Controller) RunFlowAction(c *gin.Context) {
 		userAuthToken,
 		accesscontrol.UNIT_TYPE_FLOW_ACTION,
 		flowActionID,
-		accesscontrol.FLOW_ACTION_MANAGE_RUN_FLOW_ACTION,
+		accesscontrol.ACTION_MANAGE_RUN_FLOW_ACTION,
 	)
 	if errInCheckAttr != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())

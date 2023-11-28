@@ -85,7 +85,7 @@ var MadifyRoleToAttributeMap = map[int]int{
 // action access
 const (
 	// Basic Attribute
-	ACTION_ACCESS_VIEW = iota + 1 // 访问 Attribute
+	ACTION_ACCESS_VIEW = iota + 1 // access Attribute
 	// Invite Attribute
 	ACTION_ACCESS_INVITE_BY_LINK  // invite team member by link
 	ACTION_ACCESS_INVITE_BY_EMAIL // invite team member by email
