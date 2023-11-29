@@ -208,7 +208,7 @@ func (controller *Controller) DeleteFlowAction(c *gin.Context) {
 	}
 
 	// feedback
-	controller.FeedbackOK(c, response.NewDeleteActionResponse(flowActionID))
+	controller.FeedbackOK(c, response.NewDeleteFlowActionResponse(flowActionID))
 	return
 }
 
