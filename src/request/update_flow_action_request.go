@@ -46,7 +46,7 @@ import (
 //
 // ```
 type UpdateFlowActionRequest struct {
-	ActionType        string                 `json:"actionType"         validate:"required"`
+	FlowActionType    string                 `json:"flowActionType"         validate:"required"`
 	DisplayName       string                 `json:"displayName"        validate:"required"`
 	ResourceID        string                 `json:"resourceID,omitempty"`
 	IsVirtualResource bool                   `json:"isVirtualResource"`
@@ -70,7 +70,7 @@ func (req *UpdateFlowActionRequest) ExportResourceIDInInt() int {
 }
 
 func (req *UpdateFlowActionRequest) ExportActionTypeInInt() int {
-	return resourcelist.GetResourceNameMappedID(req.ActionType)
+	return resourcelist.GetResourceNameMappedID(req.FlowActionType)
 }
 
 func (req *UpdateFlowActionRequest) ExportTemplateInString() string {
@@ -88,17 +88,17 @@ func (req *UpdateFlowActionRequest) AppendVirtualResourceToTemplate(value interf
 }
 
 func (req *UpdateFlowActionRequest) IsVirtualAction() bool {
-	return resourcelist.IsVirtualResource(req.ActionType)
+	return resourcelist.IsVirtualResource(req.FlowActionType)
 }
 
 func (req *UpdateFlowActionRequest) IsLocalVirtualAction() bool {
-	return resourcelist.IsLocalVirtualResource(req.ActionType)
+	return resourcelist.IsLocalVirtualResource(req.FlowActionType)
 }
 
 func (req *UpdateFlowActionRequest) IsRemoteVirtualAction() bool {
-	return resourcelist.IsRemoteVirtualResource(req.ActionType)
+	return resourcelist.IsRemoteVirtualResource(req.FlowActionType)
 }
 
 func (req *UpdateFlowActionRequest) NeedFetchResourceInfoFromSourceManager() bool {
-	return resourcelist.NeedFetchResourceInfoFromSourceManager(req.ActionType)
+	return resourcelist.NeedFetchResourceInfoFromSourceManager(req.FlowActionType)
 }

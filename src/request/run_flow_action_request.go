@@ -30,11 +30,11 @@ const (
 )
 
 type RunFlowActionRequest struct {
-	ResourceID  string                 `json:"resourceID,omitempty"`
-	ActionType  string                 `json:"actionType"         validate:"required"`
-	DisplayName string                 `json:"displayName"        validate:"required"`
-	Content     map[string]interface{} `json:"content"            validate:"required"`
-	Context     map[string]interface{} `json:"context"            validate:"required"` // for action content raw param
+	ResourceID     string                 `json:"resourceID,omitempty"`
+	FlowActionType string                 `json:"flowActionType" validate:"required"`
+	DisplayName    string                 `json:"displayName" validate:"required"`
+	Content        map[string]interface{} `json:"content" validate:"required"`
+	Context        map[string]interface{} `json:"context" validate:"required"` // for action content raw param
 }
 
 func NewRunFlowActionRequest() *RunFlowActionRequest {
@@ -42,7 +42,7 @@ func NewRunFlowActionRequest() *RunFlowActionRequest {
 }
 
 func (req *RunFlowActionRequest) ExportActionTypeInInt() int {
-	return resourcelist.GetResourceNameMappedID(req.ActionType)
+	return resourcelist.GetResourceNameMappedID(req.FlowActionType)
 }
 
 func (req *RunFlowActionRequest) ExportResourceIDInInt() int {
@@ -71,5 +71,5 @@ func (req *RunFlowActionRequest) ExportContext() map[string]interface{} {
 }
 
 func (req *RunFlowActionRequest) IsVirtualAction() bool {
-	return resourcelist.IsVirtualResource(req.ActionType)
+	return resourcelist.IsVirtualResource(req.FlowActionType)
 }

@@ -17,7 +17,7 @@ type GetFlowActionResponse struct {
 	Version           int                    `json:"version"`
 	ResourceID        string                 `json:"resourceID,omitempty"`
 	DisplayName       string                 `json:"displayName"`
-	FlowActionType    string                 `json:"actionType"`
+	FlowActionType    string                 `json:"flowActionType"`
 	IsVirtualResource bool                   `json:"isVirtualResource"`
 	Content           map[string]interface{} `json:"content"`
 	Transformer       map[string]interface{} `json:"transformer"`
@@ -29,26 +29,26 @@ type GetFlowActionResponse struct {
 	UpdatedBy         string                 `json:"updatedBy,omitempty"`
 }
 
-func NewGetFlowActionResponse(action *model.FlowAction) *GetFlowActionResponse {
-	actionConfig := action.ExportConfig()
+func NewGetFlowActionResponse(flowAction *model.FlowAction) *GetFlowActionResponse {
+	flowActionConfig := flowAction.ExportConfig()
 	resp := &GetFlowActionResponse{
-		FlowActionID:      idconvertor.ConvertIntToString(action.ID),
-		UID:               action.UID,
-		TeamID:            idconvertor.ConvertIntToString(action.TeamID),
-		WorkflowID:        idconvertor.ConvertIntToString(action.WorkflowID),
-		Version:           action.Version,
-		ResourceID:        idconvertor.ConvertIntToString(action.ResourceID),
-		DisplayName:       action.Name,
-		FlowActionType:    resourcelist.GetResourceIDMappedType(action.Type),
-		IsVirtualResource: actionConfig.IsVirtualResource,
-		Content:           action.ExportTemplateInMap(),
-		Transformer:       action.ExportTransformerInMap(),
-		TriggerMode:       action.TriggerMode,
-		Config:            action.ExportConfigInMap(),
-		CreatedAt:         action.CreatedAt,
-		CreatedBy:         idconvertor.ConvertIntToString(action.CreatedBy),
-		UpdatedAt:         action.UpdatedAt,
-		UpdatedBy:         idconvertor.ConvertIntToString(action.UpdatedBy),
+		FlowActionID:      idconvertor.ConvertIntToString(flowAction.ID),
+		UID:               flowAction.UID,
+		TeamID:            idconvertor.ConvertIntToString(flowAction.TeamID),
+		WorkflowID:        idconvertor.ConvertIntToString(flowAction.WorkflowID),
+		Version:           flowAction.Version,
+		ResourceID:        idconvertor.ConvertIntToString(flowAction.ResourceID),
+		DisplayName:       flowAction.Name,
+		FlowActionType:    resourcelist.GetResourceIDMappedType(flowAction.Type),
+		IsVirtualResource: flowActionConfig.IsVirtualResource,
+		Content:           flowAction.ExportTemplateInMap(),
+		Transformer:       flowAction.ExportTransformerInMap(),
+		TriggerMode:       flowAction.TriggerMode,
+		Config:            flowAction.ExportConfigInMap(),
+		CreatedAt:         flowAction.CreatedAt,
+		CreatedBy:         idconvertor.ConvertIntToString(flowAction.CreatedBy),
+		UpdatedAt:         flowAction.UpdatedAt,
+		UpdatedBy:         idconvertor.ConvertIntToString(flowAction.UpdatedBy),
 	}
 	return resp
 }

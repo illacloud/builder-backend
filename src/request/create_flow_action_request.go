@@ -39,13 +39,13 @@ import (
 //
 // ```
 type CreateFlowActionRequest struct {
-	ActionType        string                 `json:"actionType"         validate:"required"`
-	DisplayName       string                 `json:"displayName"        validate:"required"`
+	FlowActionType    string                 `json:"flowActionType" validate:"required"`
+	DisplayName       string                 `json:"displayName" validate:"required"`
 	ResourceID        string                 `json:"resourceID,omitempty"`
 	IsVirtualResource bool                   `json:"isVirtualResource"`
-	Content           map[string]interface{} `json:"content"            validate:"required"`
-	Transformer       map[string]interface{} `json:"transformer"        validate:"required"`
-	TriggerMode       string                 `json:"triggerMode"        validate:"oneof=manually automate"`
+	Content           map[string]interface{} `json:"content" validate:"required"`
+	Transformer       map[string]interface{} `json:"transformer" validate:"required"`
+	TriggerMode       string                 `json:"triggerMode" validate:"oneof=manually automate"`
 	Config            map[string]interface{} `json:"config"`
 }
 
@@ -59,7 +59,7 @@ func (req *CreateFlowActionRequest) ExportTransformerInString() string {
 }
 
 func (req *CreateFlowActionRequest) ExportActionTypeInInt() int {
-	return resourcelist.GetResourceNameMappedID(req.ActionType)
+	return resourcelist.GetResourceNameMappedID(req.FlowActionType)
 }
 
 func (req *CreateFlowActionRequest) ExportResourceIDInInt() int {
@@ -81,17 +81,17 @@ func (req *CreateFlowActionRequest) AppendVirtualResourceToTemplate(value interf
 }
 
 func (req *CreateFlowActionRequest) IsVirtualAction() bool {
-	return resourcelist.IsVirtualResource(req.ActionType)
+	return resourcelist.IsVirtualResource(req.FlowActionType)
 }
 
 func (req *CreateFlowActionRequest) IsLocalVirtualAction() bool {
-	return resourcelist.IsLocalVirtualResource(req.ActionType)
+	return resourcelist.IsLocalVirtualResource(req.FlowActionType)
 }
 
 func (req *CreateFlowActionRequest) IsRemoteVirtualAction() bool {
-	return resourcelist.IsRemoteVirtualResource(req.ActionType)
+	return resourcelist.IsRemoteVirtualResource(req.FlowActionType)
 }
 
 func (req *CreateFlowActionRequest) NeedFetchResourceInfoFromSourceManager() bool {
-	return resourcelist.NeedFetchResourceInfoFromSourceManager(req.ActionType)
+	return resourcelist.NeedFetchResourceInfoFromSourceManager(req.FlowActionType)
 }
