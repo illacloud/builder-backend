@@ -5,7 +5,7 @@ import (
 )
 
 type GetWorkflowAllFlowActionsResponse struct {
-	AllFlowActions []*GetFlowActionResponse
+	AllFlowActions []*GetFlowActionResponse `json:"allFlowActions"`
 }
 
 func NewGetWorkflowAllFlowActionsResponse(flowActions []*model.FlowAction, virtualResourceLT map[int]map[string]interface{}) *GetWorkflowAllFlowActionsResponse {
