@@ -22,8 +22,8 @@ func (controller *Controller) GetWorkflowAllFlowActionsInternal(c *gin.Context) 
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	teamIDInString, errInGetTeamIDInString := controller.GetStringParamFromRequest(c, PARAM_TEAM_ID)
 	workflowID, errInGetWorkflowID := controller.GetMagicIntParamFromRequest(c, PARAM_WORKFLOW_ID)
-	workflowIDInString, errInGetworkflowIDInString := controller.GetStringParamFromRequest(c, PARAM_WORKFLOW_ID)
-	if errInGetTeamID != nil || errInGetWorkflowID != nil || errInGetTeamIDInString != nil || errInGetworkflowIDInString != nil {
+	workflowIDInString, errInGetWorkflowIDInString := controller.GetStringParamFromRequest(c, PARAM_WORKFLOW_ID)
+	if errInGetTeamID != nil || errInGetWorkflowID != nil || errInGetTeamIDInString != nil || errInGetWorkflowIDInString != nil {
 		return
 	}
 
@@ -69,9 +69,18 @@ func (controller *Controller) GetWorkflowAllFlowActionsInternal(c *gin.Context) 
 func (controller *Controller) RunFlowActionInternal(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	workflowID, errInGetAppID := controller.GetMagicIntParamFromRequest(c, PARAM_WORKFLOW_ID)
+	teamIDInString, errInGetTeamIDInString := controller.GetStringParamFromRequest(c, PARAM_TEAM_ID)
+	_, errInGetAppID := controller.GetMagicIntParamFromRequest(c, PARAM_WORKFLOW_ID)
+	workflowIDInString, errInGetWorkflowIDInString := controller.GetStringParamFromRequest(c, PARAM_WORKFLOW_ID)
 	flowActionID, errInGetActionID := controller.GetMagicIntParamFromRequest(c, PARAM_FLOW_ACTION_ID)
-	if errInGetTeamID != nil || errInGetAppID != nil || errInGetActionID != nil {
+	flowActionIDInString, errInGetFlowActionIDInString := controller.GetStringParamFromRequest(c, PARAM_FLOW_ACTION_ID)
+	if errInGetTeamID != nil || errInGetAppID != nil || errInGetActionID != nil || errInGetTeamIDInString != nil || errInGetWorkflowIDInString != nil || errInGetFlowActionIDInString != nil {
+		return
+	}
+
+	// validate request data
+	validated, errInValidate := controller.ValidateRequestTokenFromHeader(c, teamIDInString, workflowIDInString, flowActionIDInString)
+	if !validated && errInValidate != nil {
 		return
 	}
 
@@ -122,14 +131,15 @@ func (controller *Controller) RunFlowActionInternal(c *gin.Context) {
 		}
 	} else {
 		// process virtual resource flowAction
-		flowAction.AppendRuntimeInfoForVirtualResource(userAuthToken, teamID)
+		// @todo: add resource manager auth method for illa-flow
+		// flowAction.AppendRuntimeInfoForVirtualResource(userAuthToken, teamID)
 	}
 
 	// check flowAction template
 	fmt.Printf("[DUMP] flowAction.ExportTemplateInMap(): %+v\n", flowAction.ExportTemplateInMap())
 	fmt.Printf("[DUMP] flowAction.ExportRawTemplateInMap(): %+v\n", flowAction.ExportRawTemplateInMap())
-	_, errInValidate := flowActionAssemblyLine.ValidateActionTemplate(flowAction.ExportTemplateInMap())
-	if errInValidate != nil {
+	_, errInValidateActionTemplate := flowActionAssemblyLine.ValidateActionTemplate(flowAction.ExportTemplateInMap())
+	if errInValidateActionTemplate != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate flowAction template error: "+errInValidate.Error())
 		return
 	}
