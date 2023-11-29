@@ -69,7 +69,7 @@ func (req *UpdateFlowActionRequest) ExportResourceIDInInt() int {
 	return idconvertor.ConvertStringToInt(req.ResourceID)
 }
 
-func (req *UpdateFlowActionRequest) ExportActionTypeInInt() int {
+func (req *UpdateFlowActionRequest) ExportFlowActionTypeInInt() int {
 	return resourcelist.GetResourceNameMappedID(req.FlowActionType)
 }
 

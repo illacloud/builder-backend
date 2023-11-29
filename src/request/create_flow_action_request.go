@@ -58,7 +58,7 @@ func (req *CreateFlowActionRequest) ExportTransformerInString() string {
 	return string(jsonByte)
 }
 
-func (req *CreateFlowActionRequest) ExportActionTypeInInt() int {
+func (req *CreateFlowActionRequest) ExportFlowActionTypeInInt() int {
 	return resourcelist.GetResourceNameMappedID(req.FlowActionType)
 }
 

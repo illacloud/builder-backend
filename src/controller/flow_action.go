@@ -61,7 +61,7 @@ func (controller *Controller) CreateFlowAction(c *gin.Context) {
 				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInNewAPI.Error())
 				return
 			}
-			virtualResource, errInGetVirtualResource := api.GetResource(createFlowActionRequest.ExportActionTypeInInt(), createFlowActionRequest.ExportResourceIDInInt())
+			virtualResource, errInGetVirtualResource := api.GetResource(createFlowActionRequest.ExportFlowActionTypeInInt(), createFlowActionRequest.ExportResourceIDInInt())
 			if errInGetVirtualResource != nil {
 				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInGetVirtualResource.Error())
 				return
@@ -138,7 +138,7 @@ func (controller *Controller) UpdateFlowAction(c *gin.Context) {
 				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInNewAPI.Error())
 				return
 			}
-			virtualResource, errInGetVirtualResource := api.GetResource(updateFlowActionRequest.ExportActionTypeInInt(), updateFlowActionRequest.ExportResourceIDInInt())
+			virtualResource, errInGetVirtualResource := api.GetResource(updateFlowActionRequest.ExportFlowActionTypeInInt(), updateFlowActionRequest.ExportResourceIDInInt())
 			if errInGetVirtualResource != nil {
 				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInGetVirtualResource.Error())
 				return

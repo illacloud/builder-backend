@@ -41,7 +41,7 @@ func NewRunFlowActionRequest() *RunFlowActionRequest {
 	return &RunFlowActionRequest{}
 }
 
-func (req *RunFlowActionRequest) ExportActionTypeInInt() int {
+func (req *RunFlowActionRequest) ExportFlowActionTypeInInt() int {
 	return resourcelist.GetResourceNameMappedID(req.FlowActionType)
 }
 
