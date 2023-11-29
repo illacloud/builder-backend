@@ -268,7 +268,7 @@ func (controller *Controller) GetFlowAction(c *gin.Context) {
 	return
 }
 
-func (controller *Controller) GetFlowActionsByTeamIDAndWorkflowIDInternal(c *gin.Context) {
+func (controller *Controller) GetWorkflowAllFlowActionsInternal(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	workflowID, errInGetWorkflowID := controller.GetMagicIntParamFromRequest(c, PARAM_WORKFLOW_ID)
@@ -277,32 +277,35 @@ func (controller *Controller) GetFlowActionsByTeamIDAndWorkflowIDInternal(c *gin
 	}
 
 	// fetch data
-	flowAction, errInGetAction := controller.Storage.FlowActionStorage.RetrieveAll(teamID, workflowID)
-	if errInGetAction != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_FLOW_ACTION, "get flowAction error: "+errInGetAction.Error())
+	flowActions, errInGetActions := controller.Storage.FlowActionStorage.RetrieveAll(teamID, workflowID)
+	if errInGetActions != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_FLOW_ACTION, "get workflow all flowActions error: "+errInGetActions.Error())
 		return
 	}
 
-	// new response
-	getActionResponse := response.NewGetFlowActionResponse(flowAction)
-
-	// append remote virtual resource
-	if flowAction.IsRemoteVirtualFlowAction() {
-		api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
-		if errInNewAPI != nil {
-			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInNewAPI.Error())
-			return
+	// build remote virtual resource lookup table
+	virtualResourceLT := make(map[int]map[string]interface{}, 0)
+	api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
+	if errInNewAPI != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInNewAPI.Error())
+		return
+	}
+	for _, flowAction := range flowActions {
+		if flowAction.IsRemoteVirtualFlowAction() {
+			virtualResource, errInGetVirtualResource := api.GetResource(flowAction.ExportType(), flowAction.ExportResourceID())
+			if errInGetVirtualResource != nil {
+				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInGetVirtualResource.Error())
+				return
+			}
+			virtualResourceLT[flowAction.ExportID()] = virtualResource
 		}
-		virtualResource, errInGetVirtualResource := api.GetResource(flowAction.ExportType(), flowAction.ExportResourceID())
-		if errInGetVirtualResource != nil {
-			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInGetVirtualResource.Error())
-			return
-		}
-		getActionResponse.AppendVirtualResourceToTemplate(virtualResource)
 	}
 
+	// new response
+	getAllFlowActionResponse := response.NewGetWorkflowAllFlowActionsResponse(flowActions, virtualResourceLT)
+
 	// feedback
-	controller.FeedbackOK(c, getActionResponse)
+	controller.FeedbackOK(c, getAllFlowActionResponse)
 	return
 }
 
