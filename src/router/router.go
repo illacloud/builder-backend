@@ -106,11 +106,11 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	oauth2Router.GET("/authorize", r.Controller.GoogleOAuth2Exchange)
 
 	// flow action routers
-	flowActionRouter.POST("", r.Controller.CreateAction)
-	flowActionRouter.GET("/:flowActionID", r.Controller.GetAction)
-	flowActionRouter.PUT("/:flowActionID", r.Controller.UpdateAction)
-	flowActionRouter.DELETE("/:flowActionID", r.Controller.DeleteAction)
-	flowActionRouter.POST("/:flowActionID/run", r.Controller.RunAction)
+	flowActionRouter.POST("", r.Controller.CreateFlowAction)
+	flowActionRouter.GET("/:flowActionID", r.Controller.GetFlowAction)
+	flowActionRouter.PUT("/:flowActionID", r.Controller.UpdateFlowAction)
+	flowActionRouter.DELETE("/:flowActionID", r.Controller.DeleteFlowAction)
+	flowActionRouter.POST("/:flowActionID/run", r.Controller.RunFlowAction)
 
 	// status router
 	statusRouter.GET("", r.Controller.GetStatus)
