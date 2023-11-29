@@ -42,7 +42,7 @@ func NewFlowAcitonByCreateFlowActionRequest(teamID int, workflowID int, userID i
 		Version:     APP_EDIT_VERSION, // new action always created in builder edit mode, and it is edit version.
 		ResourceID:  idconvertor.ConvertStringToInt(req.ResourceID),
 		Name:        req.DisplayName,
-		Type:        resourcelist.GetResourceNameMappedID(req.ActionType),
+		Type:        resourcelist.GetResourceNameMappedID(req.FlowActionType),
 		TriggerMode: req.TriggerMode,
 		Transformer: req.ExportTransformerInString(),
 		Template:    req.ExportTemplateInString(),
@@ -63,7 +63,7 @@ func NewFlowAcitonByUpdateFlowActionRequest(teamID int, workflowID int, userID i
 		Version:     APP_EDIT_VERSION, // new action always created in builder edit mode, and it is edit version.
 		ResourceID:  idconvertor.ConvertStringToInt(req.ResourceID),
 		Name:        req.DisplayName,
-		Type:        resourcelist.GetResourceNameMappedID(req.ActionType),
+		Type:        resourcelist.GetResourceNameMappedID(req.FlowActionType),
 		TriggerMode: req.TriggerMode,
 		Transformer: req.ExportTransformerInString(),
 		Template:    req.ExportTemplateInString(),
@@ -84,7 +84,7 @@ func NewFlowAcitonByRunFlowActionRequest(teamID int, workflowID int, userID int,
 		Version:     APP_EDIT_VERSION, // new action always created in builder edit mode, and it is edit version.
 		ResourceID:  idconvertor.ConvertStringToInt(req.ResourceID),
 		Name:        req.DisplayName,
-		Type:        resourcelist.GetResourceNameMappedID(req.ActionType),
+		Type:        resourcelist.GetResourceNameMappedID(req.FlowActionType),
 		Template:    req.ExportTemplateInString(),
 		RawTemplate: req.ExportTemplateWithContextInString(),
 		CreatedBy:   userID,
@@ -201,7 +201,7 @@ func (action *FlowAction) UpdateFlowAcitonByUpdateFlowActionRequest(teamID int, 
 	action.Version = APP_EDIT_VERSION // new action always created in builder edit mode, and it is edit version.
 	action.ResourceID = idconvertor.ConvertStringToInt(req.ResourceID)
 	action.Name = req.DisplayName
-	action.Type = resourcelist.GetResourceNameMappedID(req.ActionType)
+	action.Type = resourcelist.GetResourceNameMappedID(req.FlowActionType)
 	action.TriggerMode = req.TriggerMode
 	action.Transformer = req.ExportTransformerInString()
 	action.Template = req.ExportTemplateInString()
