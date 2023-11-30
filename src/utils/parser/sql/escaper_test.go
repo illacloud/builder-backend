@@ -216,3 +216,28 @@ func TestEscapePostgresSQLWithDateUnsafe(t *testing.T) {
 	assert.Equal(t, usedArgs, []interface{}{"2000-01-01", "2020-01-01"}, "the usedArgs should be equal")
 	assert.Equal(t, "select count(distinct email) from users where DATE_TRUNC('day', created_at) >= '2000-01-01'::timestamp and DATE_TRUNC('day', created_at) <= '2020-01-01'::timestamp and email like '%.edu.%'", escapedSQL, "the token should be equal")
 }
+
+func TestEscapePostgresSQLOnboarding(t *testing.T) {
+	sql_1 := `select * from users join orders on users.id = orders.id where {{!input1.value}} or lower(users.name) like '%{{input1.value.toLowerCase()}}%'`
+	args := map[string]interface{}{
+		"!input1.value":              "true",
+		"input1.value.toLowerCase()": "james",
+	}
+	sqlEscaper := NewSQLEscaper(resourcelist.TYPE_POSTGRESQL_ID)
+	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, false)
+	assert.Nil(t, errInEscape)
+	assert.Equal(t, usedArgs, []interface{}{"true", "james"}, "the usedArgs should be equal")
+	assert.Equal(t, "select * from users join orders on users.id = orders.id where true or lower(users.name) like CONCAT('%', 'james'::text, '%')", escapedSQL, "the token should be equal")
+}
+
+func TestEscapePostgresSQLIssue3463(t *testing.T) {
+	sql_1 := `select count(1) as CNT from TMP_OPTION_CLOSE where TASK_ID like 'EO_MID_{{date2.value}}%'`
+	args := map[string]interface{}{
+		"date2.value": "11",
+	}
+	sqlEscaper := NewSQLEscaper(resourcelist.TYPE_ORACLE_ID)
+	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, true)
+	assert.Nil(t, errInEscape)
+	assert.Equal(t, usedArgs, []interface{}{"11"}, "the usedArgs should be equal")
+	assert.Equal(t, "select count(1) as CNT from TMP_OPTION_CLOSE where TASK_ID like CONCAT('EO_MID_', :1, '%')", escapedSQL, "the token should be equal")
+}
