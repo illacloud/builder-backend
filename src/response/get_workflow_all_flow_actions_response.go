@@ -25,3 +25,9 @@ func NewGetWorkflowAllFlowActionsResponse(flowActions []*model.FlowAction, virtu
 func (resp *GetWorkflowAllFlowActionsResponse) ExportForFeedback() interface{} {
 	return resp
 }
+
+func NewEmptyGetWorkflowAllFlowActionsResponse() *GetWorkflowAllFlowActionsResponse {
+	flowActionsRet := make([]*GetFlowActionResponse, 0)
+	ret := &GetWorkflowAllFlowActionsResponse{AllFlowActions: flowActionsRet}
+	return ret
+}

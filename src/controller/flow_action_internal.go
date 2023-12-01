@@ -15,6 +15,7 @@ import (
 	"github.com/illacloud/builder-backend/src/request"
 	"github.com/illacloud/builder-backend/src/response"
 	"github.com/illacloud/builder-backend/src/utils/illaresourcemanagersdk"
+	"gorm.io/gorm"
 )
 
 func (controller *Controller) GetWorkflowAllFlowActionsInternal(c *gin.Context) {
@@ -35,7 +36,11 @@ func (controller *Controller) GetWorkflowAllFlowActionsInternal(c *gin.Context) 
 
 	// fetch data
 	flowActions, errInGetActions := controller.Storage.FlowActionStorage.RetrieveAll(teamID, workflowID)
-	if errInGetActions != nil {
+	if errors.Is(errInGetActions, gorm.ErrRecordNotFound) {
+		// no data
+		controller.FeedbackOK(c, response.NewEmptyGetWorkflowAllFlowActionsResponse())
+		return
+	} else if errInGetActions != nil {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_FLOW_ACTION, "get workflow all flowActions error: "+errInGetActions.Error())
 		return
 	}
