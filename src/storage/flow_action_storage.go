@@ -15,8 +15,6 @@
 package storage
 
 import (
-	"time"
-
 	"github.com/illacloud/builder-backend/src/model"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -101,14 +99,6 @@ func (impl *FlowActionStorage) RetrieveFlowActionByTeamIDFlowActionID(teamID int
 		return nil, err
 	}
 	return action, nil
-}
-
-func (impl *FlowActionStorage) RetrieveAllNearExpiredTriggerAction(expireAt time.Time) ([]*model.FlowAction, error) {
-	var actions []*model.FlowAction
-	if err := impl.db.Where("next_execute_time <= ?", expireAt).Find(&actions).Error; err != nil {
-		return nil, err
-	}
-	return actions, nil
 }
 
 func (impl *FlowActionStorage) DeleteFlowActionsByApp(teamID int, workflowID int) error {

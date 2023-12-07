@@ -12,24 +12,23 @@ import (
 )
 
 type FlowAction struct {
-	ID              int       `gorm:"column:id;type:bigserial;primary_key"`
-	UID             uuid.UUID `gorm:"column:uid;type:uuid;not null"`
-	TeamID          int       `gorm:"column:team_id;type:bigserial"`
-	WorkflowID      int       `gorm:"column:workflow_id;type:bigint;not null"`
-	Version         int       `gorm:"column:version;type:bigint;not null"`
-	ResourceID      int       `gorm:"column:resource_id;type:bigint;not null"`
-	Name            string    `gorm:"column:name;type:varchar;size:255;not null"`
-	Type            int       `gorm:"column:type;type:smallint;not null"`
-	TriggerMode     string    `gorm:"column:trigger_mode;type:varchar;size:16;not null"`
-	Transformer     string    `gorm:"column:transformer;type:jsonb"`
-	Template        string    `gorm:"column:template;type:jsonb"`
-	RawTemplate     string    `gorm:"-" sql:"-"`
-	Config          string    `gorm:"column:config;type:jsonb"`
-	CreatedAt       time.Time `gorm:"column:created_at;type:timestamp;not null"`
-	CreatedBy       int       `gorm:"column:created_by;type:bigint;not null"`
-	UpdatedAt       time.Time `gorm:"column:updated_at;type:timestamp;not null"`
-	UpdatedBy       int       `gorm:"column:updated_by;type:bigint;not null"`
-	NextExecuteTime time.Time `gorm:"column:next_execute_time;type:timestamp;not null"`
+	ID          int       `gorm:"column:id;type:bigserial;primary_key"`
+	UID         uuid.UUID `gorm:"column:uid;type:uuid;not null"`
+	TeamID      int       `gorm:"column:team_id;type:bigserial"`
+	WorkflowID  int       `gorm:"column:workflow_id;type:bigint;not null"`
+	Version     int       `gorm:"column:version;type:bigint;not null"`
+	ResourceID  int       `gorm:"column:resource_id;type:bigint;not null"`
+	Name        string    `gorm:"column:name;type:varchar;size:255;not null"`
+	Type        int       `gorm:"column:type;type:smallint;not null"`
+	TriggerMode string    `gorm:"column:trigger_mode;type:varchar;size:16;not null"`
+	Transformer string    `gorm:"column:transformer;type:jsonb"`
+	Template    string    `gorm:"column:template;type:jsonb"`
+	RawTemplate string    `gorm:"-" sql:"-"`
+	Config      string    `gorm:"column:config;type:jsonb"`
+	CreatedAt   time.Time `gorm:"column:created_at;type:timestamp;not null"`
+	CreatedBy   int       `gorm:"column:created_by;type:bigint;not null"`
+	UpdatedAt   time.Time `gorm:"column:updated_at;type:timestamp;not null"`
+	UpdatedBy   int       `gorm:"column:updated_by;type:bigint;not null"`
 }
 
 func NewFlowAction() *FlowAction {
@@ -54,7 +53,6 @@ func NewFlowAcitonByCreateFlowActionRequest(teamID int, workflowID int, userID i
 	action.InitUID()
 	action.InitCreatedAt()
 	action.InitUpdatedAt()
-	action.InitNextExecuteTime()
 	return action, nil
 }
 
@@ -76,7 +74,6 @@ func NewFlowAcitonByUpdateFlowActionRequest(teamID int, workflowID int, userID i
 	action.InitUID()
 	action.InitCreatedAt()
 	action.InitUpdatedAt()
-	action.InitNextExecuteTime()
 	return action, nil
 }
 
@@ -96,7 +93,6 @@ func NewFlowAcitonByRunFlowActionRequest(teamID int, workflowID int, userID int,
 	action.InitUID()
 	action.InitCreatedAt()
 	action.InitUpdatedAt()
-	action.InitNextExecuteTime()
 	return action
 }
 
@@ -116,10 +112,6 @@ func (action *FlowAction) InitUpdatedAt() {
 	action.UpdatedAt = time.Now().UTC()
 }
 
-func (action *FlowAction) InitNextExecuteTime() {
-	action.NextExecuteTime = time.Now().UTC()
-}
-
 func (action *FlowAction) InitForFork(teamID int, appID int, version int, userID int) {
 	action.TeamID = teamID
 	action.WorkflowID = appID
@@ -130,7 +122,6 @@ func (action *FlowAction) InitForFork(teamID int, appID int, version int, userID
 	action.InitUID()
 	action.InitCreatedAt()
 	action.InitUpdatedAt()
-	action.InitNextExecuteTime()
 }
 
 func (action *FlowAction) AppendNewVersion(newVersion int) {
