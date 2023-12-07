@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/illacloud/builder-backend/src/model"
@@ -179,4 +180,61 @@ func (controller *Controller) RunFlowActionInternal(c *gin.Context) {
 
 	// feedback
 	c.JSON(http.StatusOK, flowActionRunResult)
+}
+
+func (controller *Controller) GetAllNearExpiredFlowActionsInternal(c *gin.Context) {
+	// fetch needed param
+	expireAt, errInGetExpireAt := controller.GetFirstStringParamValueFromURI(c, PARAM_EXPIRE_AT)
+	if errInGetExpireAt != nil {
+		return
+	}
+
+	// validate request data
+	validated, errInValidate := controller.ValidateRequestTokenFromHeader(c, expireAt)
+	if !validated && errInValidate != nil {
+		return
+	}
+
+	// transform date type
+	expireAtInISO8601, errInParseTime := time.Parse("2006-01-02T15:04:05.000Z", expireAt)
+	if errInParseTime != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PARSE_EXPIRE_AT_TIME, "parse expire at error: "+errInParseTime.Error())
+		return
+	}
+
+	// fetch data
+	flowActions, errInGetActions := controller.Storage.FlowActionStorage.RetrieveAllNearExpiredTriggerAction(expireAtInISO8601)
+	if errors.Is(errInGetActions, gorm.ErrRecordNotFound) {
+		// no data
+		controller.FeedbackOK(c, response.NewEmptyGetWorkflowAllFlowActionsResponse())
+		return
+	} else if errInGetActions != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_FLOW_ACTION, "get workflow all flowActions error: "+errInGetActions.Error())
+		return
+	}
+
+	// build remote virtual resource lookup table
+	virtualResourceLT := make(map[int]map[string]interface{}, 0)
+	api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
+	if errInNewAPI != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInNewAPI.Error())
+		return
+	}
+	for _, flowAction := range flowActions {
+		if flowAction.IsRemoteVirtualFlowAction() {
+			virtualResource, errInGetVirtualResource := api.GetResource(flowAction.ExportType(), flowAction.ExportResourceID())
+			if errInGetVirtualResource != nil {
+				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInGetVirtualResource.Error())
+				return
+			}
+			virtualResourceLT[flowAction.ExportID()] = virtualResource
+		}
+	}
+
+	// new response
+	getAllFlowActionResponse := response.NewGetWorkflowAllFlowActionsResponse(flowActions, virtualResourceLT)
+
+	// feedback
+	controller.FeedbackOK(c, getAllFlowActionResponse)
+	return
 }

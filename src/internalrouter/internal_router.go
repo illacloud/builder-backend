@@ -22,6 +22,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	teamsRouter := routerGroup.Group("/teams")
 	appRouter := routerGroup.Group("/apps")
 	flowActionRouter := routerGroup.Group("/teams/:teamID/workflow/:workflowID/flowActions")
+	rawFlowActionRouter := routerGroup.Group("/flowActions")
 
 	// teams routers
 	teamsRouter.PATCH("/:teamID/apps/:appID", r.Controller.PublishAppToMarketplaceInternal)
@@ -33,4 +34,8 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	// flow action routers
 	flowActionRouter.GET("/all", r.Controller.GetWorkflowAllFlowActionsInternal)
 	flowActionRouter.POST("/:flowActionID/run", r.Controller.RunFlowActionInternal)
+
+	// raw flow action routers
+	rawFlowActionRouter.GET("/allNearExpired", r.Controller.GetAllNearExpiredFlowActionsInternal)
+
 }
