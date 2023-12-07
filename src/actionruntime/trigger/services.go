@@ -21,14 +21,6 @@ import (
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
 )
 
-const (
-	DRIVE_ACTION_OPTIONS_FIELD_OPERATION     = "operation"
-	DRIVE_ACTION_OPTIONS_FIELD_TEAM_ID       = "teamID"
-	DRIVE_ACTION_OPTIONS_FIELD_USER_ID       = "userID"
-	DRIVE_ACTION_OPTIONS_FIELD_INSTANCE_TYPE = "instanceType"
-	DRIVE_ACTION_OPTIONS_FIELD_INSTANCE_ID   = "instanceID"
-)
-
 type TriggerConnector struct {
 	Action TriggerTemplate
 }
@@ -40,12 +32,7 @@ func (r *TriggerConnector) ValidateResourceOptions(resourceOptions map[string]in
 
 func (r *TriggerConnector) ValidateActionTemplate(actionOptions map[string]interface{}) (common.ValidateResult, error) {
 	fmt.Printf("[DUMP] actionOptions: %+v \n", actionOptions)
-	// check action options common field
-	_, hitOperation := actionOptions[DRIVE_ACTION_OPTIONS_FIELD_OPERATION]
-	if !hitOperation {
-		return common.ValidateResult{Valid: false}, errors.New("missing operation field")
-
-	}
+	// @todo: check action needed field
 	return common.ValidateResult{Valid: true}, nil
 }
 
