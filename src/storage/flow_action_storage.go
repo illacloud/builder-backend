@@ -61,9 +61,9 @@ func (impl *FlowActionStorage) RetrieveFlowActionByTeamIDAndID(teamID int, flowA
 	return action, nil
 }
 
-func (impl *FlowActionStorage) RetrieveAll(teamID int, workflowID int) ([]*model.FlowAction, error) {
+func (impl *FlowActionStorage) RetrieveAll(teamID int, workflowID int, version int) ([]*model.FlowAction, error) {
 	var actions []*model.FlowAction
-	if err := impl.db.Where("team_id = ? AND workflow_id = ?", teamID, workflowID).Find(&actions).Error; err != nil {
+	if err := impl.db.Where("team_id = ? AND workflow_id = ? AND version = ?", teamID, workflowID, version).Find(&actions).Error; err != nil {
 		return nil, err
 	}
 	return actions, nil

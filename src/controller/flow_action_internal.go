@@ -24,18 +24,20 @@ func (controller *Controller) GetWorkflowAllFlowActionsInternal(c *gin.Context) 
 	teamIDInString, errInGetTeamIDInString := controller.GetStringParamFromRequest(c, PARAM_TEAM_ID)
 	workflowID, errInGetWorkflowID := controller.GetMagicIntParamFromRequest(c, PARAM_WORKFLOW_ID)
 	workflowIDInString, errInGetWorkflowIDInString := controller.GetStringParamFromRequest(c, PARAM_WORKFLOW_ID)
-	if errInGetTeamID != nil || errInGetWorkflowID != nil || errInGetTeamIDInString != nil || errInGetWorkflowIDInString != nil {
+	version, errInGetVersion := controller.GetMagicIntParamFromRequest(c, PARAM_VERSION)
+	versionInString, errInGetVersionInString := controller.GetStringParamFromRequest(c, PARAM_VERSION)
+	if errInGetTeamID != nil || errInGetWorkflowID != nil || errInGetTeamIDInString != nil || errInGetWorkflowIDInString != nil || errInGetVersion != nil || errInGetVersionInString != nil {
 		return
 	}
 
 	// validate request data
-	validated, errInValidate := controller.ValidateRequestTokenFromHeader(c, teamIDInString, workflowIDInString)
+	validated, errInValidate := controller.ValidateRequestTokenFromHeader(c, teamIDInString, workflowIDInString, versionInString)
 	if !validated && errInValidate != nil {
 		return
 	}
 
 	// fetch data
-	flowActions, errInGetActions := controller.Storage.FlowActionStorage.RetrieveAll(teamID, workflowID)
+	flowActions, errInGetActions := controller.Storage.FlowActionStorage.RetrieveAll(teamID, workflowID, version)
 	if errors.Is(errInGetActions, gorm.ErrRecordNotFound) {
 		// no data
 		controller.FeedbackOK(c, response.NewEmptyGetWorkflowAllFlowActionsResponse())

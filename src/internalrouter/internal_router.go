@@ -31,7 +31,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	appRouter.GET("/:appID/releaseVersion", r.Controller.GetReleaseVersionAppInternal)
 
 	// flow action routers
-	flowActionRouter.GET("/all", r.Controller.GetWorkflowAllFlowActionsInternal)
+	flowActionRouter.GET("/version/:version/all", r.Controller.GetWorkflowAllFlowActionsInternal)
 	flowActionRouter.POST("/:flowActionID/run", r.Controller.RunFlowActionInternal)
 
 }
