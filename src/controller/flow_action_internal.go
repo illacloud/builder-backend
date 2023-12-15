@@ -135,11 +135,11 @@ func (controller *Controller) RunFlowActionInternal(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	teamIDInString, errInGetTeamIDInString := controller.GetStringParamFromRequest(c, PARAM_TEAM_ID)
-	_, errInGetAppID := controller.GetMagicIntParamFromRequest(c, PARAM_WORKFLOW_ID)
+	_, errInGetWorkflowID := controller.GetMagicIntParamFromRequest(c, PARAM_WORKFLOW_ID)
 	workflowIDInString, errInGetWorkflowIDInString := controller.GetStringParamFromRequest(c, PARAM_WORKFLOW_ID)
-	flowActionID, errInGetActionID := controller.GetMagicIntParamFromRequest(c, PARAM_FLOW_ACTION_ID)
+	flowActionID, errInGetFlowActionID := controller.GetMagicIntParamFromRequest(c, PARAM_FLOW_ACTION_ID)
 	flowActionIDInString, errInGetFlowActionIDInString := controller.GetStringParamFromRequest(c, PARAM_FLOW_ACTION_ID)
-	if errInGetTeamID != nil || errInGetAppID != nil || errInGetActionID != nil || errInGetTeamIDInString != nil || errInGetWorkflowIDInString != nil || errInGetFlowActionIDInString != nil {
+	if errInGetTeamID != nil || errInGetWorkflowID != nil || errInGetFlowActionID != nil || errInGetTeamIDInString != nil || errInGetWorkflowIDInString != nil || errInGetFlowActionIDInString != nil {
 		return
 	}
 
