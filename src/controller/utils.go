@@ -44,6 +44,7 @@ const (
 	PARAM_WORKFLOW_ID      = "workflowID"
 	PARAM_FLOW_ACTION_ID   = "flowActionID"
 	PARAM_EXPIRE_AT        = "expireAt"
+	PARAM_ACTION_TYPE      = "actionType"
 )
 
 const (

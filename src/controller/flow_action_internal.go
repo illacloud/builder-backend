@@ -73,6 +73,64 @@ func (controller *Controller) GetWorkflowAllFlowActionsInternal(c *gin.Context) 
 	return
 }
 
+func (controller *Controller) GetWorkflowFlowActionsByTypeInternal(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	teamIDInString, errInGetTeamIDInString := controller.GetStringParamFromRequest(c, PARAM_TEAM_ID)
+	workflowID, errInGetWorkflowID := controller.GetMagicIntParamFromRequest(c, PARAM_WORKFLOW_ID)
+	workflowIDInString, errInGetWorkflowIDInString := controller.GetStringParamFromRequest(c, PARAM_WORKFLOW_ID)
+	version, errInGetVersion := controller.GetMagicIntParamFromRequest(c, PARAM_VERSION)
+	versionInString, errInGetVersionInString := controller.GetStringParamFromRequest(c, PARAM_VERSION)
+	actionType, errInGetActionType := controller.GetIntParamFromRequest(c, PARAM_ACTION_TYPE)
+	actionTypeInString, errInGetActionTypeInString := controller.GetStringParamFromRequest(c, PARAM_ACTION_TYPE)
+
+	if errInGetTeamID != nil || errInGetWorkflowID != nil || errInGetTeamIDInString != nil || errInGetWorkflowIDInString != nil || errInGetVersion != nil || errInGetVersionInString != nil || errInGetActionType != nil || errInGetActionTypeInString != nil {
+		return
+	}
+
+	// validate request data
+	validated, errInValidate := controller.ValidateRequestTokenFromHeader(c, teamIDInString, workflowIDInString, versionInString, actionTypeInString)
+	if !validated && errInValidate != nil {
+		return
+	}
+
+	// fetch data
+	flowActions, errInGetActions := controller.Storage.FlowActionStorage.RetrieveByType(teamID, workflowID, version, actionType)
+	if errors.Is(errInGetActions, gorm.ErrRecordNotFound) {
+		// no data
+		controller.FeedbackOK(c, response.NewEmptyGetWorkflowAllFlowActionsResponse())
+		return
+	} else if errInGetActions != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_FLOW_ACTION, "get workflow all flowActions error: "+errInGetActions.Error())
+		return
+	}
+
+	// build remote virtual resource lookup table
+	virtualResourceLT := make(map[int]map[string]interface{}, 0)
+	api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
+	if errInNewAPI != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInNewAPI.Error())
+		return
+	}
+	for _, flowAction := range flowActions {
+		if flowAction.IsRemoteVirtualFlowAction() {
+			virtualResource, errInGetVirtualResource := api.GetResource(flowAction.ExportType(), flowAction.ExportResourceID())
+			if errInGetVirtualResource != nil {
+				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInGetVirtualResource.Error())
+				return
+			}
+			virtualResourceLT[flowAction.ExportID()] = virtualResource
+		}
+	}
+
+	// new response
+	getAllFlowActionResponse := response.NewGetWorkflowAllFlowActionsResponse(flowActions, virtualResourceLT)
+
+	// feedback
+	controller.FeedbackOK(c, getAllFlowActionResponse)
+	return
+}
+
 func (controller *Controller) RunFlowActionInternal(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
