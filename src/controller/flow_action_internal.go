@@ -346,12 +346,12 @@ func (controller *Controller) DuplicateFlowActionsInternal(c *gin.Context) {
 	}
 
 	// dupliate flow actions
-	errInDuplicate := controller.duplicateFlowActionByVersion(c, fromTeamID, toTeamID, fromWorkflowID, toWorkflowID, fromVersion, toVersion, userID, isForkWorkflow)
+	idMap, errInDuplicate := controller.duplicateFlowActionByVersion(c, fromTeamID, toTeamID, fromWorkflowID, toWorkflowID, fromVersion, toVersion, userID, isForkWorkflow)
 	if errInDuplicate != nil {
 		return
 	}
 
 	// feedback
-	controller.FeedbackOK(c, nil)
+	controller.FeedbackOK(c, response.NewDuplicateWorkflowActionsResponse(idMap))
 	return
 }
