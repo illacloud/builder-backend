@@ -85,7 +85,7 @@ func (impl *FlowActionStorage) RetrieveByID(teamID int, flowActionID int) (*mode
 	return action, nil
 }
 
-func (impl *FlowActionStorage) RetrieveFlowActionsByTeamIDAppIDAndVersion(teamID int, workflowID int, version int) ([]*model.FlowAction, error) {
+func (impl *FlowActionStorage) RetrieveFlowActionsByTeamIDWorkflowIDAndVersion(teamID int, workflowID int, version int) ([]*model.FlowAction, error) {
 	var actions []*model.FlowAction
 	if err := impl.db.Where("team_id = ? AND workflow_id = ? AND version = ?", teamID, workflowID, version).Find(&actions).Error; err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (impl *FlowActionStorage) RetrieveFlowActionsByTeamIDAppIDAndVersion(teamID
 	return actions, nil
 }
 
-func (impl *FlowActionStorage) RetrieveFlowActionsByTeamIDAppIDVersionAndType(teamID int, workflowID int, version int, actionType int) ([]*model.FlowAction, error) {
+func (impl *FlowActionStorage) RetrieveFlowActionsByTeamIDWorkflowIDVersionAndType(teamID int, workflowID int, version int, actionType int) ([]*model.FlowAction, error) {
 	var actions []*model.FlowAction
 	if err := impl.db.Where("team_id = ? AND workflow_id = ? AND version = ? AND type = ?", teamID, workflowID, version, actionType).Find(&actions).Error; err != nil {
 		return nil, err
@@ -109,7 +109,7 @@ func (impl *FlowActionStorage) RetrieveFlowActionByTeamIDFlowActionID(teamID int
 	return action, nil
 }
 
-func (impl *FlowActionStorage) DeleteFlowActionsByApp(teamID int, workflowID int) error {
+func (impl *FlowActionStorage) DeleteFlowActionsByWorkflow(teamID int, workflowID int) error {
 	if err := impl.db.Where("team_id = ? AND workflow_id = ?", teamID, workflowID).Delete(&model.FlowAction{}).Error; err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func (impl *FlowActionStorage) CountFlowActionByTeamID(teamID int) (int, error) 
 	return int(count), nil
 }
 
-func (impl *FlowActionStorage) DeleteAllFlowActionsByTeamIDAppIDAndVersion(teamID int, workflowID int, targetVersion int) error {
+func (impl *FlowActionStorage) DeleteAllFlowActionsByTeamIDWorkflowIDAndVersion(teamID int, workflowID int, targetVersion int) error {
 	if err := impl.db.Where("team_id = ? AND workflow_id = ? AND version = ?", teamID, workflowID, targetVersion).Delete(&model.FlowAction{}).Error; err != nil {
 		return err
 	}

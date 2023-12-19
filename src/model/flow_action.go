@@ -11,6 +11,10 @@ import (
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 )
 
+const (
+	FLOW_ACTION_EDIT_VERSION = 0
+)
+
 type FlowAction struct {
 	ID          int       `gorm:"column:id;type:bigserial;primary_key"`
 	UID         uuid.UUID `gorm:"column:uid;type:uuid;not null"`
@@ -112,9 +116,9 @@ func (action *FlowAction) InitUpdatedAt() {
 	action.UpdatedAt = time.Now().UTC()
 }
 
-func (action *FlowAction) InitForFork(teamID int, appID int, version int, userID int) {
+func (action *FlowAction) InitForFork(teamID int, workflowID int, version int, userID int) {
 	action.TeamID = teamID
-	action.WorkflowID = appID
+	action.WorkflowID = workflowID
 	action.Version = version
 	action.CreatedBy = userID
 	action.UpdatedBy = userID

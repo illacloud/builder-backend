@@ -298,3 +298,33 @@ func (controller *Controller) RunFlowActionInternal(c *gin.Context) {
 	// feedback
 	c.JSON(http.StatusOK, flowActionRunResult)
 }
+
+func (controller *Controller) ReleaseFlowActionsInternal(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	teamIDInString, errInGetTeamIDInString := controller.GetStringParamFromRequest(c, PARAM_TEAM_ID)
+	workflowID, errInGetWorkflowID := controller.GetMagicIntParamFromRequest(c, PARAM_WORKFLOW_ID)
+	workflowIDInString, errInGetWorkflowIDInString := controller.GetStringParamFromRequest(c, PARAM_WORKFLOW_ID)
+	version, errInGetVersion := controller.GetMagicIntParamFromRequest(c, PARAM_VERSION)
+	versionInString, errInGetVersionInString := controller.GetStringParamFromRequest(c, PARAM_VERSION)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
+	if errInGetTeamID != nil || errInGetWorkflowID != nil || errInGetTeamIDInString != nil || errInGetWorkflowIDInString != nil || errInGetVersion != nil || errInGetVersionInString != nil || errInGetUserID != nil {
+		return
+	}
+
+	// validate request data
+	validated, errInValidate := controller.ValidateRequestTokenFromHeader(c, teamIDInString, workflowIDInString, versionInString)
+	if !validated && errInValidate != nil {
+		return
+	}
+
+	// dupliate flow actions
+	errInDuplicate := controller.duplicateFlowActionByVersion(c, teamID, teamID, workflowID, workflowID, model.FLOW_ACTION_EDIT_VERSION, version, userID, false)
+	if errInDuplicate != nil {
+		return
+	}
+
+	// feedback
+	controller.FeedbackOK(c, nil)
+	return
+}
