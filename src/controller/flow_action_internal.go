@@ -299,27 +299,54 @@ func (controller *Controller) RunFlowActionInternal(c *gin.Context) {
 	c.JSON(http.StatusOK, flowActionRunResult)
 }
 
-func (controller *Controller) ReleaseFlowActionsInternal(c *gin.Context) {
+func (controller *Controller) DuplicateFlowActionsInternal(c *gin.Context) {
 	// fetch needed param
-	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	teamIDInString, errInGetTeamIDInString := controller.GetStringParamFromRequest(c, PARAM_TEAM_ID)
-	workflowID, errInGetWorkflowID := controller.GetMagicIntParamFromRequest(c, PARAM_WORKFLOW_ID)
-	workflowIDInString, errInGetWorkflowIDInString := controller.GetStringParamFromRequest(c, PARAM_WORKFLOW_ID)
-	version, errInGetVersion := controller.GetMagicIntParamFromRequest(c, PARAM_VERSION)
-	versionInString, errInGetVersionInString := controller.GetStringParamFromRequest(c, PARAM_VERSION)
+	fromTeamID, errInGetFromTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_FROM_TEAM_ID)
+	fromTeamIDInString, errInGetFromTeamIDInString := controller.GetStringParamFromRequest(c, PARAM_FROM_TEAM_ID)
+	toTeamID, errInGetToTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TO_TEAM_ID)
+	toTeamIDInString, errInGetToTeamIDInString := controller.GetStringParamFromRequest(c, PARAM_TO_TEAM_ID)
+	fromWorkflowID, errInGetFromWorkflowID := controller.GetMagicIntParamFromRequest(c, PARAM_FROM_WORKFLOW_ID)
+	fromWorkflowIDInString, errInGetFromWorkflowIDInString := controller.GetStringParamFromRequest(c, PARAM_FROM_WORKFLOW_ID)
+	toWorkflowID, errInGetToWorkflowID := controller.GetMagicIntParamFromRequest(c, PARAM_TO_WORKFLOW_ID)
+	toWorkflowIDInString, errInGetToWorkflowIDInString := controller.GetStringParamFromRequest(c, PARAM_TO_WORKFLOW_ID)
+
+	fromVersion, errInGetFromVersion := controller.GetIntParamFromRequest(c, PARAM_FROM_VERSION)
+	fromVersionInString, errInGetFromVersionInString := controller.GetStringParamFromRequest(c, PARAM_FROM_VERSION)
+	toVersion, errInGetToVersion := controller.GetIntParamFromRequest(c, PARAM_TO_VERSION)
+	toVersionInString, errInGetToVersionInString := controller.GetStringParamFromRequest(c, PARAM_TO_VERSION)
+
+	isForkWorkflowRaw, _ := controller.TestFirstStringParamValueFromURI(c, PARAM_IS_FORK_WORKFLOW)
+	isForkWorkflow := false
+	if isForkWorkflowRaw == "true" {
+		isForkWorkflow = true
+	}
+
 	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
-	if errInGetTeamID != nil || errInGetWorkflowID != nil || errInGetTeamIDInString != nil || errInGetWorkflowIDInString != nil || errInGetVersion != nil || errInGetVersionInString != nil || errInGetUserID != nil {
+
+	if errInGetFromTeamID != nil ||
+		errInGetFromTeamIDInString != nil ||
+		errInGetToTeamID != nil ||
+		errInGetToTeamIDInString != nil ||
+		errInGetFromWorkflowID != nil ||
+		errInGetFromWorkflowIDInString != nil ||
+		errInGetToWorkflowID != nil ||
+		errInGetToWorkflowIDInString != nil ||
+		errInGetFromVersion != nil ||
+		errInGetFromVersionInString != nil ||
+		errInGetToVersion != nil ||
+		errInGetToVersionInString != nil ||
+		errInGetUserID != nil {
 		return
 	}
 
 	// validate request data
-	validated, errInValidate := controller.ValidateRequestTokenFromHeader(c, teamIDInString, workflowIDInString, versionInString)
+	validated, errInValidate := controller.ValidateRequestTokenFromHeader(c, fromTeamIDInString, toTeamIDInString, fromWorkflowIDInString, toWorkflowIDInString, fromVersionInString, toVersionInString)
 	if !validated && errInValidate != nil {
 		return
 	}
 
 	// dupliate flow actions
-	errInDuplicate := controller.duplicateFlowActionByVersion(c, teamID, teamID, workflowID, workflowID, model.FLOW_ACTION_EDIT_VERSION, version, userID, false)
+	errInDuplicate := controller.duplicateFlowActionByVersion(c, fromTeamID, toTeamID, fromWorkflowID, toWorkflowID, fromVersion, toVersion, userID, isForkWorkflow)
 	if errInDuplicate != nil {
 		return
 	}

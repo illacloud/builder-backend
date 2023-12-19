@@ -22,6 +22,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	teamsRouter := routerGroup.Group("/teams")
 	appRouter := routerGroup.Group("/apps")
 	flowActionRouter := routerGroup.Group("/teams/:teamID/workflow/:workflowID/flowActions")
+	flowActionRDuplicateouter := routerGroup.Group("/duplicateFlowActoins/fromTeamID/:fromTeamID/toTeamID/:toTeamID/fromWorkflowID/:fromWorkflowID/toWorkflowID/:toWorkflowID/fromVersion/:fromVersion/toVersion/:toVersion")
 
 	// teams routers
 	teamsRouter.PATCH("/:teamID/apps/:appID", r.Controller.PublishAppToMarketplaceInternal)
@@ -35,6 +36,6 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	flowActionRouter.GET("/version/:version/type/:actionType", r.Controller.GetWorkflowFlowActionsByTypeInternal)
 	flowActionRouter.GET("/id/:actionID", r.Controller.GetWorkflowFlowActionByIDInternal)
 	flowActionRouter.POST("/:flowActionID/run", r.Controller.RunFlowActionInternal)
-	flowActionRouter.POST("/version/:version/release", r.Controller.ReleaseFlowActionsInternal)
+	flowActionRDuplicateouter.POST("", r.Controller.DuplicateFlowActionsInternal)
 
 }

@@ -45,6 +45,12 @@ const (
 	PARAM_FLOW_ACTION_ID   = "flowActionID"
 	PARAM_EXPIRE_AT        = "expireAt"
 	PARAM_ACTION_TYPE      = "actionType"
+	PARAM_FROM_TEAM_ID     = "fromTeamID"
+	PARAM_FROM_WORKFLOW_ID = "fromWorkflowID"
+	PARAM_TO_WORKFLOW_ID   = "toWorkflowID"
+	PARAM_FROM_VERSION     = "fromVersion"
+	PARAM_TO_VERSION       = "toVersion"
+	PARAM_IS_FORK_WORKFLOW = "isForkWorkflow"
 )
 
 const (
