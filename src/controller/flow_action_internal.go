@@ -321,8 +321,6 @@ func (controller *Controller) DuplicateFlowActionsInternal(c *gin.Context) {
 		isForkWorkflow = true
 	}
 
-	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
-
 	if errInGetFromTeamID != nil ||
 		errInGetFromTeamIDInString != nil ||
 		errInGetToTeamID != nil ||
@@ -334,8 +332,7 @@ func (controller *Controller) DuplicateFlowActionsInternal(c *gin.Context) {
 		errInGetFromVersion != nil ||
 		errInGetFromVersionInString != nil ||
 		errInGetToVersion != nil ||
-		errInGetToVersionInString != nil ||
-		errInGetUserID != nil {
+		errInGetToVersionInString != nil {
 		return
 	}
 
@@ -346,7 +343,7 @@ func (controller *Controller) DuplicateFlowActionsInternal(c *gin.Context) {
 	}
 
 	// dupliate flow actions
-	idMap, errInDuplicate := controller.duplicateFlowActionByVersion(c, fromTeamID, toTeamID, fromWorkflowID, toWorkflowID, fromVersion, toVersion, userID, isForkWorkflow)
+	idMap, errInDuplicate := controller.duplicateFlowActionByVersion(c, fromTeamID, toTeamID, fromWorkflowID, toWorkflowID, fromVersion, toVersion, model.ANONYMOUS_USER_ID, isForkWorkflow)
 	if errInDuplicate != nil {
 		return
 	}
