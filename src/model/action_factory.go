@@ -28,6 +28,7 @@ import (
 	"github.com/illacloud/builder-backend/src/actionruntime/s3"
 	"github.com/illacloud/builder-backend/src/actionruntime/smtp"
 	"github.com/illacloud/builder-backend/src/actionruntime/snowflake"
+	"github.com/illacloud/builder-backend/src/actionruntime/trigger"
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 )
 
@@ -38,6 +39,12 @@ type ActionFactory struct {
 func NewActionFactoryByAction(action *Action) *ActionFactory {
 	return &ActionFactory{
 		Type: action.Type,
+	}
+}
+
+func NewFlowActionFactoryByFlowAction(flowAction *FlowAction) *ActionFactory {
+	return &ActionFactory{
+		Type: flowAction.Type,
 	}
 }
 
@@ -121,6 +128,9 @@ func (f *ActionFactory) Build() (common.DataConnector, error) {
 	case resourcelist.TYPE_ILLA_DRIVE_ID:
 		illadriveAction := &illadrive.IllaDriveConnector{}
 		return illadriveAction, nil
+	case resourcelist.TYPE_TRIGGER_ID:
+		triggerAction := &trigger.TriggerConnector{}
+		return triggerAction, nil
 	default:
 		return nil, errors.New("invalid ActionType: unsupported type " + resourcelist.GetResourceIDMappedType(f.Type))
 	}

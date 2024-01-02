@@ -32,6 +32,7 @@ var (
 	TYPE_AI_AGENT      = "aiagent"
 	TYPE_ORACLE_9I     = "oracle9i"
 	TYPE_ILLA_DRIVE    = "illadrive"
+	TYPE_TRIGGER       = "trigger"
 )
 
 var (
@@ -66,6 +67,7 @@ var (
 	TYPE_AI_AGENT_ID      = 28
 	TYPE_ORACLE_9I_ID     = 29
 	TYPE_ILLA_DRIVE_ID    = 30
+	TYPE_TRIGGER_ID       = 31
 )
 
 var type_array = []string{
@@ -100,6 +102,7 @@ var type_array = []string{
 	28: TYPE_AI_AGENT,
 	29: TYPE_ORACLE_9I,
 	30: TYPE_ILLA_DRIVE,
+	31: TYPE_TRIGGER,
 }
 
 var type_map = map[string]int{
@@ -134,6 +137,7 @@ var type_map = map[string]int{
 	TYPE_AI_AGENT:      TYPE_AI_AGENT_ID,
 	TYPE_ORACLE_9I:     TYPE_ORACLE_9I_ID,
 	TYPE_ILLA_DRIVE:    TYPE_ILLA_DRIVE_ID,
+	TYPE_TRIGGER:       TYPE_TRIGGER_ID,
 }
 
 var virtualResourceList = map[string]bool{

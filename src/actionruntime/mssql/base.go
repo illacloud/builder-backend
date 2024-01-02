@@ -21,6 +21,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"net/url"
 
 	mssqldb "github.com/microsoft/go-mssqldb"
 	"github.com/microsoft/go-mssqldb/msdsn"
@@ -42,10 +43,14 @@ func (m *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 	if err := mapstructure.Decode(resourceOptions, &m.ResourceOpts); err != nil {
 		return nil, err
 	}
+	escapedPassword, errInEscape := url.QueryUnescape(m.ResourceOpts.Password)
+	if errInEscape != nil {
+		escapedPassword = m.ResourceOpts.Password
+	}
 
 	// build base Microsoft SQL Server connection string
 	connString := fmt.Sprintf("server=%s;port=%s;database=%s;user id=%s;password=%s", m.ResourceOpts.Host,
-		m.ResourceOpts.Port, m.ResourceOpts.DatabaseName, m.ResourceOpts.Username, m.ResourceOpts.Password)
+		m.ResourceOpts.Port, m.ResourceOpts.DatabaseName, m.ResourceOpts.Username, escapedPassword)
 	// append connection options
 	for _, opt := range m.ResourceOpts.ConnectionOpts {
 		if opt["key"] != "" {
