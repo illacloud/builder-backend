@@ -16,6 +16,7 @@ package couchdb
 
 import (
 	"fmt"
+	"net/url"
 
 	_ "github.com/go-kivik/couchdb/v4"
 	"github.com/go-kivik/kivik/v4"
@@ -42,7 +43,11 @@ func (c *Connector) getClient(resourceOptions map[string]interface{}) (*kivik.Cl
 	if c.resourceOptions.SSL {
 		protocolStr = "https"
 	}
-	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/", protocolStr, c.resourceOptions.Username, c.resourceOptions.Password,
+	escapedPassword, errInEscape := url.QueryUnescape(c.resourceOptions.Password)
+	if errInEscape != nil {
+		escapedPassword = c.resourceOptions.Password
+	}
+	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/", protocolStr, c.resourceOptions.Username, escapedPassword,
 		c.resourceOptions.Host, c.resourceOptions.Port)
 	client, err := kivik.New("couch", dsn)
 	if err != nil {

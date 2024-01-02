@@ -34,6 +34,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	roomRouter := routerGroup.Group("/teams/:teamID/room")
 	statusRouter := routerGroup.Group("/status")
 	oauth2Router := routerGroup.Group("/oauth2")
+	flowActionRouter := routerGroup.Group("/teams/:teamID/workflow/:workflowID/flowActions")
 
 	// register auth
 	builderRouter.Use(remotejwtauth.RemoteJWTAuth())
@@ -43,6 +44,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	actionRouter.Use(remotejwtauth.RemoteJWTAuth())
 	internalActionRouter.Use(remotejwtauth.RemoteJWTAuth())
 	resourceRouter.Use(remotejwtauth.RemoteJWTAuth())
+	flowActionRouter.Use(remotejwtauth.RemoteJWTAuth())
 
 	// builder routers
 	builderRouter.GET("/desc", r.Controller.GetTeamBuilderDesc)
@@ -102,6 +104,13 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 
 	// oauth2 router
 	oauth2Router.GET("/authorize", r.Controller.GoogleOAuth2Exchange)
+
+	// flow action routers
+	flowActionRouter.POST("", r.Controller.CreateFlowAction)
+	flowActionRouter.GET("/:flowActionID", r.Controller.GetFlowAction)
+	flowActionRouter.PUT("/:flowActionID", r.Controller.UpdateFlowAction)
+	flowActionRouter.DELETE("/:flowActionID", r.Controller.DeleteFlowAction)
+	flowActionRouter.POST("/:flowActionID/run", r.Controller.RunFlowAction)
 
 	// status router
 	statusRouter.GET("", r.Controller.GetStatus)

@@ -45,6 +45,9 @@ const (
 	UNIT_TYPE_AUDIT_LOG                 = 27 // cloud audit log
 	UNIT_TYPE_MARKETPLACE               = 28 // marketplace
 	UNIT_TYPE_AI_AGENT                  = 29 // ai-agent
+	UNIT_TYPE_WORKFLOW                  = 30 // workflow
+	UNIT_TYPE_FLOW_NODE                 = 31 // workflow node
+	UNIT_TYPE_FLOW_ACTION               = 32 // workflow action
 )
 
 // User Role ID in Team
@@ -82,7 +85,7 @@ var MadifyRoleToAttributeMap = map[int]int{
 // action access
 const (
 	// Basic Attribute
-	ACTION_ACCESS_VIEW = iota + 1 // 访问 Attribute
+	ACTION_ACCESS_VIEW = iota + 1 // access Attribute
 	// Invite Attribute
 	ACTION_ACCESS_INVITE_BY_LINK  // invite team member by link
 	ACTION_ACCESS_INVITE_BY_EMAIL // invite team member by email
@@ -161,6 +164,16 @@ const (
 	ACTION_MANAGE_RUN_AI_AGENT    // run ai-agent
 
 	ACTION_MANAGE_FORK_APP // for app
+
+	// workflow
+	ACTION_MANAGE_CREATE_WORKFLOW
+	ACTION_MANAGE_EDIT_WORKFLOW
+
+	// Flow Action Attribute
+	ACTION_MANAGE_CREATE_FLOW_ACTION  // create flow action
+	ACTION_MANAGE_EDIT_FLOW_ACTION    // edit flow action
+	ACTION_MANAGE_PREVIEW_FLOW_ACTION // preview flow action
+	ACTION_MANAGE_RUN_FLOW_ACTION     // run flow action
 )
 
 // action delete

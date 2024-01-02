@@ -22,6 +22,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -42,8 +43,12 @@ func (m *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 			return nil, err
 		}
 		if mOptions.DatabaseUsername != "" && mOptions.DatabasePassword != "" {
+			escapedPassword, errInEscape := url.QueryUnescape(mOptions.DatabasePassword)
+			if errInEscape != nil {
+				escapedPassword = mOptions.DatabasePassword
+			}
 			uri = fmt.Sprintf("%s://%s:%s@%s", CONNECTION_FORMAT[mOptions.ConnectionFormat],
-				mOptions.DatabaseUsername, mOptions.DatabasePassword, mOptions.Host)
+				mOptions.DatabaseUsername, escapedPassword, mOptions.Host)
 		} else {
 			uri = fmt.Sprintf("%s://%s", CONNECTION_FORMAT[mOptions.ConnectionFormat], mOptions.Host)
 		}
