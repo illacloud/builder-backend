@@ -21,6 +21,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"net/url"
 	"reflect"
 
 	"github.com/google/uuid"
@@ -48,8 +49,12 @@ func (p *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 }
 
 func (p *Connector) connectPure() (db *pgx.Conn, err error) {
+	escapedPassword, errInEscape := url.QueryUnescape(p.Resource.DatabasePassword)
+	if errInEscape != nil {
+		escapedPassword = p.Resource.DatabasePassword
+	}
 	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", p.Resource.DatabaseUsername,
-		p.Resource.DatabasePassword, p.Resource.Host, p.Resource.Port, p.Resource.DatabaseName)
+		escapedPassword, p.Resource.Host, p.Resource.Port, p.Resource.DatabaseName)
 	pgCfg, err := pgx.ParseConfig(dsn)
 	if err != nil {
 		return nil, err
@@ -62,8 +67,12 @@ func (p *Connector) connectPure() (db *pgx.Conn, err error) {
 }
 
 func (p *Connector) connectViaSSL() (db *pgx.Conn, err error) {
+	escapedPassword, errInEscape := url.QueryUnescape(p.Resource.DatabasePassword)
+	if errInEscape != nil {
+		escapedPassword = p.Resource.DatabasePassword
+	}
 	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", p.Resource.DatabaseUsername,
-		p.Resource.DatabasePassword, p.Resource.Host, p.Resource.Port, p.Resource.DatabaseName)
+		escapedPassword, p.Resource.Host, p.Resource.Port, p.Resource.DatabaseName)
 	pgCfg, err := pgx.ParseConfig(dsn)
 	if err != nil {
 		return nil, err
