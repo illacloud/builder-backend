@@ -43,10 +43,7 @@ func (c *Connector) getClient(resourceOptions map[string]interface{}) (*kivik.Cl
 	if c.resourceOptions.SSL {
 		protocolStr = "https"
 	}
-	escapedPassword, errInEscape := url.QueryUnescape(c.resourceOptions.Password)
-	if errInEscape != nil {
-		escapedPassword = c.resourceOptions.Password
-	}
+	escapedPassword := url.QueryEscape(c.resourceOptions.Password)
 	dsn := fmt.Sprintf("%s://%s:%s@%s:%s/", protocolStr, c.resourceOptions.Username, escapedPassword,
 		c.resourceOptions.Host, c.resourceOptions.Port)
 	client, err := kivik.New("couch", dsn)

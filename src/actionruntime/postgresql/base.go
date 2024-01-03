@@ -49,10 +49,7 @@ func (p *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 }
 
 func (p *Connector) connectPure() (db *pgx.Conn, err error) {
-	escapedPassword, errInEscape := url.QueryUnescape(p.Resource.DatabasePassword)
-	if errInEscape != nil {
-		escapedPassword = p.Resource.DatabasePassword
-	}
+	escapedPassword := url.QueryEscape(p.Resource.DatabasePassword)
 	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", p.Resource.DatabaseUsername,
 		escapedPassword, p.Resource.Host, p.Resource.Port, p.Resource.DatabaseName)
 	pgCfg, err := pgx.ParseConfig(dsn)
@@ -67,10 +64,7 @@ func (p *Connector) connectPure() (db *pgx.Conn, err error) {
 }
 
 func (p *Connector) connectViaSSL() (db *pgx.Conn, err error) {
-	escapedPassword, errInEscape := url.QueryUnescape(p.Resource.DatabasePassword)
-	if errInEscape != nil {
-		escapedPassword = p.Resource.DatabasePassword
-	}
+	escapedPassword := url.QueryEscape(p.Resource.DatabasePassword)
 	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", p.Resource.DatabaseUsername,
 		escapedPassword, p.Resource.Host, p.Resource.Port, p.Resource.DatabaseName)
 	pgCfg, err := pgx.ParseConfig(dsn)

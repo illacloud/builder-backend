@@ -43,11 +43,7 @@ func (m *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 	if err := mapstructure.Decode(resourceOptions, &m.ResourceOpts); err != nil {
 		return nil, err
 	}
-	escapedPassword, errInEscape := url.QueryUnescape(m.ResourceOpts.Password)
-	if errInEscape != nil {
-		escapedPassword = m.ResourceOpts.Password
-	}
-
+	escapedPassword := url.QueryEscape(m.ResourceOpts.Password)
 	// build base Microsoft SQL Server connection string
 	connString := fmt.Sprintf("server=%s;port=%s;database=%s;user id=%s;password=%s", m.ResourceOpts.Host,
 		m.ResourceOpts.Port, m.ResourceOpts.DatabaseName, m.ResourceOpts.Username, escapedPassword)

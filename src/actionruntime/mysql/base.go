@@ -48,10 +48,7 @@ func (m *MySQLConnector) getConnectionWithOptions(resourceOptions map[string]int
 }
 
 func (m *MySQLConnector) connectPure() (db *sql.DB, err error) {
-	escapedPassword, errInEscape := url.QueryUnescape(m.Resource.DatabasePassword)
-	if errInEscape != nil {
-		escapedPassword = m.Resource.DatabasePassword
-	}
+	escapedPassword := url.QueryEscape(m.Resource.DatabasePassword)
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.Resource.DatabaseUsername,
 		escapedPassword, m.Resource.Host, m.Resource.Port, m.Resource.DatabaseName)
 	db, err = sql.Open("mysql", dsn+"?timeout=30s")
@@ -62,10 +59,7 @@ func (m *MySQLConnector) connectPure() (db *sql.DB, err error) {
 }
 
 func (m *MySQLConnector) connectViaSSL() (db *sql.DB, err error) {
-	escapedPassword, errInEscape := url.QueryUnescape(m.Resource.DatabasePassword)
-	if errInEscape != nil {
-		escapedPassword = m.Resource.DatabasePassword
-	}
+	escapedPassword := url.QueryEscape(m.Resource.DatabasePassword)
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.Resource.DatabaseUsername,
 		escapedPassword, m.Resource.Host, m.Resource.Port, m.Resource.DatabaseName)
 	pool := x509.NewCertPool()

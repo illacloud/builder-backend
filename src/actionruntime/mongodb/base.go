@@ -43,10 +43,7 @@ func (m *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 			return nil, err
 		}
 		if mOptions.DatabaseUsername != "" && mOptions.DatabasePassword != "" {
-			escapedPassword, errInEscape := url.QueryUnescape(mOptions.DatabasePassword)
-			if errInEscape != nil {
-				escapedPassword = mOptions.DatabasePassword
-			}
+			escapedPassword := url.QueryEscape(mOptions.DatabasePassword)
 			uri = fmt.Sprintf("%s://%s:%s@%s", CONNECTION_FORMAT[mOptions.ConnectionFormat],
 				mOptions.DatabaseUsername, escapedPassword, mOptions.Host)
 		} else {

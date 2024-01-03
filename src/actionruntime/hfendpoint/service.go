@@ -128,7 +128,6 @@ func (h *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		if err != nil {
 			return common.RuntimeResult{Success: false}, err
 		}
-		// decodedBinaryString, err := url.QueryUnescape(string(binaryBytes))
 		if err != nil {
 			return common.RuntimeResult{Success: false}, err
 		}
