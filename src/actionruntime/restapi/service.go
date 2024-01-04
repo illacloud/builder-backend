@@ -202,8 +202,11 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	// set body for action client
 	switch r.Action.BodyType {
 	case BODY_RAW:
+		fmt.Printf("[DUMP] restapi r.Action: %+v\n", r.Action)
+
 		b := r.Action.ReflectBodyToRaw()
 		rawBody, contentType := b.UnmarshalRawBody()
+		fmt.Printf("[DUMP] restapi request body: %+v\n", rawBody)
 		client.OnBeforeRequest(
 			func(c *resty.Client, req *resty.Request) error {
 				req.Header.Add("Content-Type", contentType)
