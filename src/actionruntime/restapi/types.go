@@ -83,6 +83,13 @@ func (r *RawBody) UnmarshalRawBody() (interface{}, string) {
 		if err := json.Unmarshal([]byte(rawStr), &listData); err == nil {
 			return listData, "application/json"
 		}
+		// try non-unquote
+		if err := json.Unmarshal([]byte(r.Content), &data); err == nil {
+			return data, "application/json"
+		}
+		if err := json.Unmarshal([]byte(r.Content), &listData); err == nil {
+			return listData, "application/json"
+		}
 		return rawStr, "application/json"
 	case "xml":
 		rawStr, err := strconv.Unquote(r.Content)
