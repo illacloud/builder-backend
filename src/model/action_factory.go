@@ -26,6 +26,7 @@ import (
 	"github.com/illacloud/builder-backend/src/actionruntime/redis"
 	"github.com/illacloud/builder-backend/src/actionruntime/restapi"
 	"github.com/illacloud/builder-backend/src/actionruntime/s3"
+	"github.com/illacloud/builder-backend/src/actionruntime/serversidetransformer"
 	"github.com/illacloud/builder-backend/src/actionruntime/smtp"
 	"github.com/illacloud/builder-backend/src/actionruntime/snowflake"
 	"github.com/illacloud/builder-backend/src/actionruntime/trigger"
@@ -131,6 +132,9 @@ func (f *ActionFactory) Build() (common.DataConnector, error) {
 	case resourcelist.TYPE_TRIGGER_ID:
 		triggerAction := &trigger.TriggerConnector{}
 		return triggerAction, nil
+	case resourcelist.TYPE_SERVER_SIDE_TRANSFORMER_ID:
+		transformerAction := &serversidetransformer.ServerSideTransformerConnector{}
+		return transformerAction, nil
 	default:
 		return nil, errors.New("invalid ActionType: unsupported type " + resourcelist.GetResourceIDMappedType(f.Type))
 	}
