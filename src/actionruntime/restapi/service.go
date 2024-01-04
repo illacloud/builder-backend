@@ -206,12 +206,13 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 
 		b := r.Action.ReflectBodyToRaw()
 		rawBody, contentType := b.UnmarshalRawBody()
-		fmt.Printf("[DUMP] restapi request body: %+v\n", rawBody)
+		fmt.Printf("[DUMP] restapi request contentType: %+v\n", contentType)
 		client.OnBeforeRequest(
 			func(c *resty.Client, req *resty.Request) error {
 				req.Header.Add("Content-Type", contentType)
 				return nil
 			})
+		fmt.Printf("[DUMP] restapi request body: %+v\n", rawBody)
 		actionClient.SetBody(rawBody)
 	case BODY_BINARY:
 		b := r.Action.ReflectBodyToBinary()
@@ -259,6 +260,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		res.Extra["statusText"] = resp.Status()
 	case METHOD_POST:
 		resp, errInPost := actionClient.SetQueryParams(actionURLParams).Post(baseURL + r.Action.URL)
+		fmt.Printf("[DUMP] restapi POST resp.Body(): %+v\n", resp.Body())
 		if errInPost != nil && (resp == nil || resp.RawResponse == nil) {
 			return res, errInPost
 		}
