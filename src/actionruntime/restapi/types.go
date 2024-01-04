@@ -75,6 +75,8 @@ func (r *RawBody) UnmarshalRawBody() (interface{}, string) {
 	switch r.Type {
 	case "json":
 		rawStr, _ := strconv.Unquote(r.Content)
+		fmt.Printf("[UnmarshalRawBody()] r.Content: %+v\n", r.Content)
+		fmt.Printf("[UnmarshalRawBody()] rawStr: %+v\n", rawStr)
 		var data map[string]interface{}
 		if err := json.Unmarshal([]byte(rawStr), &data); err == nil {
 			return data, "application/json"
