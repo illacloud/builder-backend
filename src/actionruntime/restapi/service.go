@@ -260,7 +260,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		res.Extra["statusText"] = resp.Status()
 	case METHOD_POST:
 		resp, errInPost := actionClient.SetQueryParams(actionURLParams).Post(baseURL + r.Action.URL)
-		fmt.Printf("[DUMP] restapi POST resp.Body(): %+v\n", resp.Body())
+		fmt.Printf("[DUMP] restapi POST resp.Body(): %+v\n", string(resp.Body()))
 		if errInPost != nil && (resp == nil || resp.RawResponse == nil) {
 			return res, errInPost
 		}
