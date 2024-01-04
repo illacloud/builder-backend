@@ -18,8 +18,10 @@ func (controller *Controller) duplicateFlowActionByVersion(c *gin.Context, fromT
 	}
 
 	// set fork info
-	for serial, _ := range flowActions {
+	oldIDList := make([]int, 0)
+	for serial, flowAction := range flowActions {
 		flowActions[serial].InitForFork(toTeamID, toWorkflowID, toVersion, modifierID)
+		oldIDList = append(oldIDList, flowAction.ID)
 	}
 
 	// and put them to the database as duplicate
@@ -27,7 +29,8 @@ func (controller *Controller) duplicateFlowActionByVersion(c *gin.Context, fromT
 	if errInNewResourceManagerSDK != nil {
 		return nil, errInNewResourceManagerSDK
 	}
-	for _, flowAction := range flowActions {
+
+	for serial, flowAction := range flowActions {
 		// check if action is ai-agent, and if ai-agent is public, and we are forking app from marketplace (not publish app to marketplace) fork it automatically
 		if flowAction.Type == resourcelist.TYPE_AI_AGENT_ID && isForkWorkflow {
 			fmt.Printf("[DUMP] DuplicateFlowActionByVersion: hit AI_AGENT action\n")
@@ -47,7 +50,7 @@ func (controller *Controller) duplicateFlowActionByVersion(c *gin.Context, fromT
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "create action failed: "+errInCreateFlowAction.Error())
 			return nil, errInCreateFlowAction
 		}
-		idMap[flowAction.ID] = newFlowActionID
+		idMap[oldIDList[serial]] = newFlowActionID
 	}
 	return idMap, nil
 }
