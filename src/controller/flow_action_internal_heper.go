@@ -20,8 +20,8 @@ func (controller *Controller) duplicateFlowActionByVersion(c *gin.Context, fromT
 	// set fork info
 	oldIDList := make([]int, 0)
 	for serial, flowAction := range flowActions {
-		flowActions[serial].InitForFork(toTeamID, toWorkflowID, toVersion, modifierID)
 		oldIDList = append(oldIDList, flowAction.ID)
+		flowActions[serial].InitForFork(toTeamID, toWorkflowID, toVersion, modifierID)
 	}
 
 	// and put them to the database as duplicate
