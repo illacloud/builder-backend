@@ -59,6 +59,7 @@ type RecordBody struct {
 func (t *RESTTemplate) ReflectBodyToRaw() *RawBody {
 	rbd := &RawBody{}
 	rb, _ := t.Body.(map[string]interface{})
+	fmt.Printf("[DUMP] ReflectBodyToRaw().rb: %+v\n", rb)
 	for k, v := range rb {
 		switch k {
 		case "type":

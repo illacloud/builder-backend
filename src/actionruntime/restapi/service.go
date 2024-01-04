@@ -205,6 +205,8 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		fmt.Printf("[DUMP] restapi r.Action: %+v\n", r.Action)
 
 		b := r.Action.ReflectBodyToRaw()
+		fmt.Printf("[DUMP] b := r.Action.ReflectBodyToRaw(): %+v\n", b)
+
 		rawBody, contentType := b.UnmarshalRawBody()
 		fmt.Printf("[DUMP] restapi request contentType: %+v\n", contentType)
 		client.OnBeforeRequest(
