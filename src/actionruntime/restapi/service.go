@@ -27,6 +27,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/icholy/digest"
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
+	parser_template "github.com/illacloud/builder-backend/src/utils/parser/template"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -99,6 +100,10 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		Extra:   map[string]interface{}{},
 	}
 	var err error
+
+	// process context
+	r.Action.SetRawQueryAndContext(rawActionOptions)
+	fmt.Printf("[DUMP] r.Action.Context: %+v\n", r.Action.Context)
 
 	fmt.Printf("[DUMP] RESTAPIConnector.Resource: %+v, r.Resource.BaseURL: %+v\n", r.Resource, r.Resource.BaseURL)
 	uriParsed, err := url.ParseRequestURI(r.Resource.BaseURL)
@@ -205,6 +210,11 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		fmt.Printf("[DUMP] restapi r.Action: %+v\n", r.Action)
 
 		b := r.Action.ReflectBodyToRaw()
+		var errInAssembleBodyContent error
+		b.Content, errInAssembleBodyContent = parser_template.AssembleTemplateWithVariable(b.Content, r.Action.Context)
+		if errInAssembleBodyContent != nil {
+			return res, errInAssembleBodyContent
+		}
 		fmt.Printf("[DUMP] b := r.Action.ReflectBodyToRaw(): %+v\n", b)
 
 		rawBody, contentType := b.UnmarshalRawBody()
