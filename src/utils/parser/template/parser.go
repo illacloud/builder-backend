@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
+	"strings"
 )
 
 type JSONNumberConvertor struct {
@@ -128,6 +129,15 @@ func ExtractVariableNameConst(template string) []string {
 }
 
 func AssembleTemplateWithVariable(template string, variableLT map[string]interface{}) (string, error) {
+	// check if template is json
+	templateIsJSON := false
+	var templateInJSONObject interface{}
+	errInUnmarshalTemplate := json.Unmarshal([]byte(template), &templateInJSONObject)
+	if errInUnmarshalTemplate == nil {
+		templateIsJSON = true
+	}
+
+	// process start
 	processesPrompt := ""
 	variable := ""
 	escapedBracketWithVariable := ""
@@ -171,7 +181,12 @@ func AssembleTemplateWithVariable(template string, variableLT map[string]interfa
 			dataInFloat64 := data.(float64)
 			return ExportFloat64ToNumberInString(dataInFloat64), nil
 		case string:
-			return data.(string), nil
+			finalStr := data.(string)
+			if templateIsJSON {
+				finalStr = strings.Replace(finalStr, "\"", "\\\"", -1)
+				finalStr = strings.Replace(finalStr, "\n", "\\n", -1)
+			}
+			return finalStr, nil
 		case bool:
 			dataInBool := data.(bool)
 			if dataInBool {

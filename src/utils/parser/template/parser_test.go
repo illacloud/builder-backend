@@ -63,3 +63,14 @@ func TestAssembleTemplateWithVariable_case3_WarppedString(t *testing.T) {
 	assert.Equal(t, `{"mode": "sql", "query": "select * \nfrom users\njoin orders\non users.id = orders.id\nwhere \"BIG APPLE\" or lower(users.name) like '%[A\nAA]%'"}`, finalTemplate, "it should be equal ")
 
 }
+
+func TestAssembleTemplateWithVariable_case4_EscapeCase(t *testing.T) {
+	actionTemplate := `{"msg_type":"post","content":{"post":{"zh_cn":{"title":"☀️ 早上好","content":[[{"tag":"text","text":"{{restapi3.data[0].choices[0].message.content}}"}]]}}}}`
+	dataLT := map[string]interface{}{
+		"restapi3.data[0].choices[0].message.content": "\"Success is not final, failure is not fatal: It is the courage to continue that counts.\" - Winston Churchill\n（成功不是终点，失败也不是致命的：真正重要的是勇于继续前进。）",
+	}
+	finalTemplate, errInAssemble := AssembleTemplateWithVariable(actionTemplate, dataLT)
+	assert.Nil(t, errInAssemble)
+	assert.Equal(t, `{"mode": "sql", "query": "select * \nfrom users\njoin orders\non users.id = orders.id\nwhere \"BIG APPLE\" or lower(users.name) like '%[A\nAA]%'"}`, finalTemplate, "it should be equal ")
+
+}
