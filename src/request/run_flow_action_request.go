@@ -70,6 +70,10 @@ func (req *RunFlowActionRequest) ExportContext() map[string]interface{} {
 	return req.Context
 }
 
+func (req *RunFlowActionRequest) DoesContextAvaliable() bool {
+	return len(req.Context) > 0
+}
+
 func (req *RunFlowActionRequest) IsVirtualAction() bool {
 	return resourcelist.IsVirtualResource(req.FlowActionType)
 }

@@ -16,23 +16,24 @@ const (
 )
 
 type FlowAction struct {
-	ID          int       `gorm:"column:id;type:bigserial;primary_key"`
-	UID         uuid.UUID `gorm:"column:uid;type:uuid;not null"`
-	TeamID      int       `gorm:"column:team_id;type:bigserial"`
-	WorkflowID  int       `gorm:"column:workflow_id;type:bigint;not null"`
-	Version     int       `gorm:"column:version;type:bigint;not null"`
-	ResourceID  int       `gorm:"column:resource_id;type:bigint;not null"`
-	Name        string    `gorm:"column:name;type:varchar;size:255;not null"`
-	Type        int       `gorm:"column:type;type:smallint;not null"`
-	TriggerMode string    `gorm:"column:trigger_mode;type:varchar;size:16;not null"`
-	Transformer string    `gorm:"column:transformer;type:jsonb"`
-	Template    string    `gorm:"column:template;type:jsonb"`
-	RawTemplate string    `gorm:"-" sql:"-"`
-	Config      string    `gorm:"column:config;type:jsonb"`
-	CreatedAt   time.Time `gorm:"column:created_at;type:timestamp;not null"`
-	CreatedBy   int       `gorm:"column:created_by;type:bigint;not null"`
-	UpdatedAt   time.Time `gorm:"column:updated_at;type:timestamp;not null"`
-	UpdatedBy   int       `gorm:"column:updated_by;type:bigint;not null"`
+	ID          int                    `gorm:"column:id;type:bigserial;primary_key"`
+	UID         uuid.UUID              `gorm:"column:uid;type:uuid;not null"`
+	TeamID      int                    `gorm:"column:team_id;type:bigserial"`
+	WorkflowID  int                    `gorm:"column:workflow_id;type:bigint;not null"`
+	Version     int                    `gorm:"column:version;type:bigint;not null"`
+	ResourceID  int                    `gorm:"column:resource_id;type:bigint;not null"`
+	Name        string                 `gorm:"column:name;type:varchar;size:255;not null"`
+	Type        int                    `gorm:"column:type;type:smallint;not null"`
+	TriggerMode string                 `gorm:"column:trigger_mode;type:varchar;size:16;not null"`
+	Transformer string                 `gorm:"column:transformer;type:jsonb"`
+	Template    string                 `gorm:"column:template;type:jsonb"`
+	RawTemplate string                 `gorm:"-" sql:"-"`
+	Context     map[string]interface{} `gorm:"-" sql:"-"`
+	Config      string                 `gorm:"column:config;type:jsonb"`
+	CreatedAt   time.Time              `gorm:"column:created_at;type:timestamp;not null"`
+	CreatedBy   int                    `gorm:"column:created_by;type:bigint;not null"`
+	UpdatedAt   time.Time              `gorm:"column:updated_at;type:timestamp;not null"`
+	UpdatedBy   int                    `gorm:"column:updated_by;type:bigint;not null"`
 }
 
 func NewFlowAction() *FlowAction {
@@ -179,6 +180,13 @@ func (action *FlowAction) ExportIcon() string {
 
 func (action *FlowAction) ExportTypeInString() string {
 	return resourcelist.GetResourceIDMappedType(action.Type)
+}
+
+func (action *FlowAction) SetContextByMap(context map[string]interface{}) {
+	template := action.ExportTemplateInMap()
+	template[ACTION_RUNTIME_INFO_FIELD_CONTEXT] = context
+	templateJsonByte, _ := json.Marshal(template)
+	action.Template = string(templateJsonByte)
 }
 
 func (action *FlowAction) UpdateAppConfig(actionConfig *FlowActionConfig, userID int) {

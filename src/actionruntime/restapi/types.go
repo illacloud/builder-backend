@@ -19,8 +19,21 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
+)
+
+const (
+	FIELD_CONTEXT    = "context"
+	FIELD_TEMPLATE   = "template"
+	FIELD_URL        = "url"
+	FIELD_BODY       = "body"
+	FIELD_METHOD     = "method"
+	FIELD_COOKIES    = "cookies"
+	FIELD_HEADERS    = "headers"
+	FIELD_BODY_TYPE  = "bodyType"
+	FIELD_URL_PARAMS = "urlParams"
 )
 
 type RESTOptions struct {
@@ -42,6 +55,7 @@ type RESTTemplate struct {
 	Headers   []map[string]string
 	Body      interface{} `validate:"required_unless=BodyType none"`
 	Cookies   []map[string]string
+	Context   map[string]interface{}
 }
 
 type RawBody struct {
@@ -233,4 +247,55 @@ func loadSelfSignedCerts(server string, certs map[string]string) (*tls.Config, e
 	}
 
 	return cfg, nil
+}
+
+func (q *RESTTemplate) DoesContextValied(rawTemplate map[string]interface{}) bool {
+	contextRaw, hit := rawTemplate[FIELD_CONTEXT]
+	if !hit {
+		return false
+	}
+	contextAsserted, assertPass := contextRaw.(map[string]interface{})
+	if !assertPass {
+		return false
+	}
+	return len(contextAsserted) > 0
+}
+
+func (q *RESTTemplate) SetRawQueryAndContext(rawTemplate map[string]interface{}) error {
+	assertStringField := func(rawTemplate map[string]interface{}, field string) (string, error) {
+		// set template
+		fieldRaw, hit := rawTemplate[field]
+		if !hit {
+			return "", fmt.Errorf("missing query field \"%s\" for SetRawQueryAndContext() in query", FIELD_URL)
+		}
+		fieldAsserted, assertPass := fieldRaw.(string)
+		if !assertPass {
+			return "", fmt.Errorf("query field \"%s\" assert failed in SetRawQueryAndContext() method", FIELD_URL)
+		}
+		return fieldAsserted, nil
+	}
+
+	// set string field
+	var errInAssert error
+	if q.URL, errInAssert = assertStringField(rawTemplate, FIELD_URL); errInAssert != nil {
+		return errInAssert
+	}
+	if q.Method, errInAssert = assertStringField(rawTemplate, FIELD_METHOD); errInAssert != nil {
+		return errInAssert
+	}
+	if q.BodyType, errInAssert = assertStringField(rawTemplate, FIELD_BODY_TYPE); errInAssert != nil {
+		return errInAssert
+	}
+
+	// set context
+	contextRaw, hit := rawTemplate[FIELD_CONTEXT]
+	if !hit {
+		return errors.New("missing context field SetRawQueryAndContext() in query")
+	}
+	contextAsserted, assertPass := contextRaw.(map[string]interface{})
+	if !assertPass {
+		return errors.New("context field assert failed in SetRawQueryAndContext() method")
+	}
+	q.Context = contextAsserted
+	return nil
 }
