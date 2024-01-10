@@ -211,7 +211,12 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 
 		b := r.Action.ReflectBodyToRaw()
 		var errInAssembleBodyContent error
+		fmt.Printf("[DUMP] b.Content pre: %+v\n", b.Content)
 		b.Content, errInAssembleBodyContent = parser_template.AssembleTemplateWithVariable(b.Content, r.Action.Context)
+		fmt.Printf("[DUMP] b.Content: %+v\n", b.Content)
+		fmt.Printf("[DUMP] r.Action.Context: %+v\n", r.Action.Context)
+		fmt.Printf("[DUMP] errInAssembleBodyContent: %+v\n", errInAssembleBodyContent)
+
 		if errInAssembleBodyContent != nil {
 			return res, errInAssembleBodyContent
 		}
