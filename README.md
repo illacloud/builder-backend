@@ -7,7 +7,7 @@
 <p align="center">Accelerate your internal tools development.</p>
 
 <div align="center">
-  <p>Create with ❤︎ by <a href="https://github.com/illacloud/illa/graphs/contributors">contributors</a></p>
+  <p>Create with ❤︎ by <a href="https://github.com/illacloud/builder-backend/graphs/contributors">contributors</a></p>
 </div>
 
 [![Chat on Discord](https://img.shields.io/badge/chat-Discord-7289DA?logo=discord)](https://discord.gg/illacloud)
