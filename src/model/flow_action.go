@@ -195,6 +195,13 @@ func (action *FlowAction) UpdateAppConfig(actionConfig *FlowActionConfig, userID
 	action.InitUpdatedAt()
 }
 
+func (action *FlowAction) MergeRunFlowActionContextToRawTemplate(context map[string]interface{}) {
+	template := action.ExportTemplateInMap()
+	template[ACTION_RUNTIME_INFO_FIELD_CONTEXT] = context
+	templateJsonByte, _ := json.Marshal(template)
+	action.RawTemplate = string(templateJsonByte)
+}
+
 func (action *FlowAction) UpdateWithRunFlowActionRequest(req *request.RunFlowActionRequest, userID int) {
 	action.MergeRunFlowActionContextToRawTemplate(req.ExportContext())
 	action.Template = req.ExportTemplateInString()
@@ -269,13 +276,6 @@ func (action *FlowAction) AppendRuntimeInfoForVirtualResource(authorization stri
 	template[ACTION_RUNTIME_INFO_FIELD_RUN_BY_ANONYMOUS] = (authorization == "")
 	templateInByte, _ := json.Marshal(template)
 	action.Template = string(templateInByte)
-}
-
-func (action *FlowAction) MergeRunFlowActionContextToRawTemplate(context map[string]interface{}) {
-	template := action.ExportTemplateInMap()
-	template[ACTION_RUNTIME_INFO_FIELD_CONTEXT] = context
-	templateJsonByte, _ := json.Marshal(template)
-	action.RawTemplate = string(templateJsonByte)
 }
 
 func (action *FlowAction) SetResourceIDByAiAgent(aiAgent *illaresourcemanagersdk.AIAgentForExport) {
