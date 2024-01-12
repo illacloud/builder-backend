@@ -224,11 +224,7 @@ func (controller *Controller) RunFlowActionInternal(c *gin.Context) {
 	}
 
 	// update flowAction data with run flowAction reqeust
-	if runFlowActionRequest.DoesContextAvaliable() {
-		flowAction.SetContextByMap(runFlowActionRequest.ExportContext())
-	} else {
-		flowAction.UpdateWithRunFlowActionRequest(runFlowActionRequest, model.ANONYMOUS_USER_ID)
-	}
+	flowAction.UpdateWithRunFlowActionRequest(runFlowActionRequest, model.ANONYMOUS_USER_ID)
 	fmt.Printf("[DUMP] flowAction: %+v\n", flowAction)
 
 	// assembly flowAction
