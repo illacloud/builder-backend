@@ -117,7 +117,9 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	actionURLParams := map[string]string{}
 	for _, param := range r.Action.UrlParams {
 		if param["key"] != "" {
-			actionURLParams[param["key"]] = param["value"]
+			key, _ := parser_template.AssembleTemplateWithVariable(param["key"], r.Action.Context)
+			value, _ := parser_template.AssembleTemplateWithVariable(param["value"], r.Action.Context)
+			actionURLParams[key] = value
 		}
 	}
 
@@ -129,7 +131,9 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	}
 	for _, header := range r.Action.Headers {
 		if header["key"] != "" {
-			headers[header["key"]] = header["value"]
+			key, _ := parser_template.AssembleTemplateWithVariable(header["key"], r.Action.Context)
+			value, _ := parser_template.AssembleTemplateWithVariable(header["value"], r.Action.Context)
+			headers[key] = value
 		}
 	}
 
@@ -141,7 +145,9 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	}
 	for _, cookie := range r.Action.Cookies {
 		if cookie["key"] != "" {
-			cookies[cookie["key"]] = cookie["value"]
+			key, _ := parser_template.AssembleTemplateWithVariable(cookies["key"], r.Action.Context)
+			value, _ := parser_template.AssembleTemplateWithVariable(cookies["value"], r.Action.Context)
+			cookies[key] = value
 		}
 	}
 
@@ -166,7 +172,9 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	params := url.Values{}
 	for _, v := range r.Resource.URLParams {
 		if v["key"] != "" {
-			params.Set(v["key"], v["value"])
+			key, _ := parser_template.AssembleTemplateWithVariable(v["key"], r.Action.Context)
+			value, _ := parser_template.AssembleTemplateWithVariable(v["value"], r.Action.Context)
+			params.Set(key, value)
 		}
 	}
 	uri.RawQuery = params.Encode()
@@ -196,6 +204,7 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	// resty client instance set `action` options
 	actionClient := client.R()
 	// set headers, will override `resource` headers
+
 	actionClient.SetHeaders(headers)
 	// set cookies, will override `resource` cookies
 	actionCookies := make([]*http.Cookie, 0, len(r.Action.Cookies))
@@ -237,14 +246,30 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	case BODY_FORM:
 		ts, fs := r.Action.ReflectBodyToMultipart()
 		if len(ts) > 0 {
-			actionClient.SetFormData(ts)
+			newTS := make(map[string]string, 0)
+			for tskey, tsvalue := range ts {
+				key, _ := parser_template.AssembleTemplateWithVariable(tskey, r.Action.Context)
+				value, _ := parser_template.AssembleTemplateWithVariable(tsvalue, r.Action.Context)
+				newTS[key] = value
+			}
+			actionClient.SetFormData(newTS)
 		}
 		for k, file := range fs {
-			actionClient.SetFileReader(k, file["filename"], strings.NewReader(file["data"]))
+			newFileName, _ := parser_template.AssembleTemplateWithVariable(file["filename"], r.Action.Context)
+			newFileData, _ := parser_template.AssembleTemplateWithVariable(file["data"], r.Action.Context)
+			actionClient.SetFileReader(k, newFileName, strings.NewReader(newFileData))
 		}
 	case BODY_XWFU:
 		b := r.Action.ReflectBodyToMap()
-		actionClient.SetFormData(b)
+		if len(b) > 0 {
+			newB := make(map[string]string, 0)
+			for bkey, bvalue := range b {
+				key, _ := parser_template.AssembleTemplateWithVariable(bkey, r.Action.Context)
+				value, _ := parser_template.AssembleTemplateWithVariable(bvalue, r.Action.Context)
+				newB[key] = value
+			}
+			actionClient.SetFormData(newB)
+		}
 	case BODY_NONE:
 		break
 	}
@@ -253,6 +278,14 @@ func (r *RESTAPIConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	fmt.Printf("[DUMP] actionOptions: %+v\n", actionOptions)
 	fmt.Printf("[DUMP] rawActionOptions: %+v\n", rawActionOptions)
 
+	// process r.Action.URL template
+	var errInAssembleActionURL error
+	r.Action.URL, errInAssembleActionURL = parser_template.AssembleTemplateWithVariable(r.Action.URL, r.Action.Context)
+	if errInAssembleActionURL != nil {
+		return res, errInAssembleActionURL
+	}
+
+	// query start
 	switch r.Action.Method {
 	case METHOD_GET:
 		actionClient.SetBody(nil)

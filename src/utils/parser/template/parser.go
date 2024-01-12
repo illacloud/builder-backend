@@ -129,6 +129,10 @@ func ExtractVariableNameConst(template string) []string {
 }
 
 func AssembleTemplateWithVariable(template string, variableLT map[string]interface{}) (string, error) {
+	// check if do not have variable to replace
+	if len(variableLT) == 0 {
+		return template, nil
+	}
 	// check if template is json
 	templateIsJSON := false
 	var templateInJSONObject interface{}
