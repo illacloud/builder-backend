@@ -211,7 +211,7 @@ func reflectVariableToString(variable interface{}) (string, error) {
 				if errInReflect != nil {
 					return "", errInReflect
 				}
-				finalString += "'" + subVarInString + "'"
+				finalString += subVarInString
 			}
 			return finalString, nil
 		}
