@@ -142,13 +142,65 @@ func reflectVariableToString(variable interface{}) (string, error) {
 	case reflect.Bool:
 		variableAsserted, variableMappedValueAssertPass := variable.(bool)
 		if !variableMappedValueAssertPass {
-			return "", errors.New("provided variables assert to float64 failed")
+			return "", errors.New("provided variables assert to bool failed")
 		}
 		if variableAsserted {
 			return "TRUE", nil
 		} else {
 			return "FALSE", nil
 		}
+	case reflect.Slice:
+		fmt.Printf("???: %+v\n", variable)
+		// try int slice
+		variableAssertedInInt, variableMappedIntValueAssertPass := variable.([]int)
+		if variableMappedIntValueAssertPass {
+			finalString := ""
+			for i, subVar := range variableAssertedInInt {
+				if i != 0 {
+					finalString += ", "
+				}
+				subVarInString, errInReflect := reflectVariableToString(subVar)
+				if errInReflect != nil {
+					return "", errInReflect
+				}
+				finalString += "'" + subVarInString + "'"
+			}
+			return finalString, nil
+		}
+		// try float64 slice
+		variableAssertedInFloat64, variableMappedFloat64ValueAssertPass := variable.([]float64)
+		if variableMappedFloat64ValueAssertPass {
+			finalString := ""
+			for i, subVar := range variableAssertedInFloat64 {
+				if i != 0 {
+					finalString += ", "
+				}
+				subVarInString, errInReflect := reflectVariableToString(subVar)
+				if errInReflect != nil {
+					return "", errInReflect
+				}
+				finalString += "'" + subVarInString + "'"
+			}
+			return finalString, nil
+		}
+		// try string slice
+		variableAssertedInString, variableMappedStringValueAssertPass := variable.([]string)
+		if variableMappedStringValueAssertPass {
+			finalString := ""
+			for i, subVar := range variableAssertedInString {
+				if i != 0 {
+					finalString += ", "
+				}
+				subVarInString, errInReflect := reflectVariableToString(subVar)
+				if errInReflect != nil {
+					return "", errInReflect
+				}
+				finalString += "'" + subVarInString + "'"
+			}
+			return finalString, nil
+		}
+
+		return "", errors.New("invalied array type inputed")
 	default:
 		return "", nil
 	}
