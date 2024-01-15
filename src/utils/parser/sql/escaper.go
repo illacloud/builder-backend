@@ -212,13 +212,6 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		ret.WriteString("}")
 		escapedBracketWithVariable = ""
 	}
-	isIgnoredCharacter := func(c rune) bool {
-		switch c {
-		case '\t', '\n', '\v', '\f', '\r', ' ':
-			return true
-		}
-		return false
-	}
 	getNextChar := func(serial int) (rune, error) {
 		if len(sql)-1 <= serial {
 			return rune(0), errors.New("over range")
@@ -282,7 +275,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 			escapedBracketWithVariable += "}"
 
 			// process variable signal
-			variableMappedValue, hitVariable := escapedArgs[variable]
+			variableMappedValue, hitVariable := escapedArgs[strings.TrimSpace(variable)]
 			variableContent := ""
 			if !hitVariable {
 				// missing variable
@@ -358,10 +351,6 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		}
 		// process bracket inner (record variable name)
 		if leftBraketCounter == 2 && rightBraketCounter == 0 {
-			// filter escape character
-			if isIgnoredCharacter(c) {
-				continue
-			}
 			// collect variable name
 			variable += string(c)
 			escapedBracketWithVariable += string(c)

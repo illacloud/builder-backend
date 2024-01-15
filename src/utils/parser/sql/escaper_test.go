@@ -241,3 +241,15 @@ func TestEscapePostgresSQLIssue3463(t *testing.T) {
 	assert.Equal(t, usedArgs, []interface{}{"11"}, "the usedArgs should be equal")
 	assert.Equal(t, "select count(1) as CNT from TMP_OPTION_CLOSE where TASK_ID like CONCAT('EO_MID_', :1, '%')", escapedSQL, "the token should be equal")
 }
+
+func TestEscapePostgresSQLInQuery(t *testing.T) {
+	sql_1 := `select * from users where id in ({{multiselect1.value.map(b => Number(b))}})`
+	args := map[string]interface{}{
+		`multiselect1.value.map(b => Number(b))`: []int{1, 2, 3},
+	}
+	sqlEscaper := NewSQLEscaper(resourcelist.TYPE_ORACLE_ID)
+	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, true)
+	assert.Nil(t, errInEscape)
+	assert.Equal(t, []interface{}{[]int{1, 2, 3}}, usedArgs, "the usedArgs should be equal")
+	assert.Equal(t, "select * from users where id in (:1)", escapedSQL, "the token should be equal")
+}
