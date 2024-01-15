@@ -213,7 +213,7 @@ func reflectVariableToString(variable interface{}) (string, error) {
 				}
 				finalString += subVarInString
 			}
-			return finalString, nil
+			return "{" + finalString + "}", nil
 		}
 
 		return "", errors.New("invalied array type inputed")
