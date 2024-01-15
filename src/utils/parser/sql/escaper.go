@@ -199,6 +199,22 @@ func reflectVariableToString(variable interface{}) (string, error) {
 			}
 			return finalString, nil
 		}
+		// try interface slice
+		variableAssertedInInterface, variableMappedInterfaceValueAssertPass := variable.([]interface{})
+		if variableMappedInterfaceValueAssertPass {
+			finalString := ""
+			for i, subVar := range variableAssertedInInterface {
+				if i != 0 {
+					finalString += ", "
+				}
+				subVarInString, errInReflect := reflectVariableToString(subVar)
+				if errInReflect != nil {
+					return "", errInReflect
+				}
+				finalString += "'" + subVarInString + "'"
+			}
+			return finalString, nil
+		}
 
 		return "", errors.New("invalied array type inputed")
 	default:
