@@ -52,61 +52,62 @@ func (controller *Controller) CreateAction(c *gin.Context) {
 		return
 	}
 
-	// append remote virtual resource (like aiagent, but the transformet is local virtual resource)
-	if createActionRequest.IsRemoteVirtualAction() {
-		// the AI_Agent need fetch resource info from resource manager, but illa drive does not need that
-		if createActionRequest.NeedFetchResourceInfoFromSourceManager() {
-			api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
-			if errInNewAPI != nil {
-				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
-				return
-			}
-			virtualResource, errInGetVirtualResource := api.GetResource(createActionRequest.ExportActionTypeInInt(), createActionRequest.ExportResourceIDInInt())
-			if errInGetVirtualResource != nil {
-				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetVirtualResource.Error())
-				return
-			}
-			createActionRequest.AppendVirtualResourceToTemplate(virtualResource)
-		}
-	}
-
-	// get action mapped app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
-	if errInRetrieveApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
-		return
-	}
-
-	// init action instace
-	action, errorInNewAction := model.NewAcitonByCreateActionRequest(app, userID, createActionRequest)
-	if errorInNewAction != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in create action instance: "+errorInNewAction.Error())
-		return
-	}
-
-	// validate action options
-	errInValidateActionOptions := controller.ValidateActionTemplate(c, action)
-	if errInValidateActionOptions != nil {
-		return
-	}
-
-	// create action
-	_, errInCreateAction := controller.Storage.ActionStorage.Create(action)
-	if errInCreateAction != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "create action error: "+errInCreateAction.Error())
-		return
-	}
-
-	// update app updatedAt, updatedBy, editedBy field
-	app.Modify(userID)
-	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
-	if errInUpdateApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app modify info error: "+errInUpdateApp.Error())
+	// create
+	newAction, errInCreateRequest := controller.createAction(c, teamID, appID, userID, createActionRequest)
+	if errInCreateRequest != nil {
 		return
 	}
 
 	// feedback
-	controller.FeedbackOK(c, response.NewCreateActionResponse(action))
+	controller.FeedbackOK(c, response.NewCreateActionResponse(newAction))
+}
+
+func (controller *Controller) CreateActionByBatch(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
+		return
+	}
+
+	// validate
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_ACTION,
+		accesscontrol.DEFAULT_UNIT_ID,
+		accesscontrol.ACTION_MANAGE_CREATE_ACTION,
+	)
+	if errInCheckAttr != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canManage {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// fetch payload
+	createActionByBatchRequest := request.NewCreateActionByBatchRequest()
+	if err := json.NewDecoder(c.Request.Body).Decode(&createActionByBatchRequest); err != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
+		return
+	}
+
+	// create by batch
+	newActions := make([]*model.Action, 0)
+	for _, createActionRequest := range createActionByBatchRequest.ExportActions() {
+		newAction, errInCreateRequest := controller.createAction(c, teamID, appID, userID, createActionRequest)
+		if errInCreateRequest != nil {
+			return
+		}
+		newActions = append(newActions, newAction)
+	}
+
+	// feedback
+	controller.FeedbackOK(c, response.NewCreateActionByBatchResponse(newActions))
 }
 
 func (controller *Controller) UpdateAction(c *gin.Context) {
@@ -144,64 +145,61 @@ func (controller *Controller) UpdateAction(c *gin.Context) {
 		return
 	}
 
-	// append remote virtual resource (like aiagent, but the transformet is local virtual resource)
-	if updateActionRequest.IsRemoteVirtualAction() {
-		// the AI_Agent need fetch resource info from resource manager, but illa drive does not need that
-		if updateActionRequest.NeedFetchResourceInfoFromSourceManager() {
-			api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
-			if errInNewAPI != nil {
-				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
-				return
-			}
-			virtualResource, errInGetVirtualResource := api.GetResource(updateActionRequest.ExportActionTypeInInt(), updateActionRequest.ExportResourceIDInInt())
-			if errInGetVirtualResource != nil {
-				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetVirtualResource.Error())
-				return
-			}
-			updateActionRequest.AppendVirtualResourceToTemplate(virtualResource)
-		}
-	}
-
-	// get action mapped app
-	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
-	if errInRetrieveApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
-		return
-	}
-
-	// get action
-	inDatabaseAction, errInRetrieveAction := controller.Storage.ActionStorage.RetrieveActionByTeamIDActionID(teamID, actionID)
-	if errInRetrieveAction != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveAction.Error())
-		return
-	}
-
-	// update inDatabaseAction instance
-	inDatabaseAction.UpdateAcitonByUpdateActionRequest(app, userID, updateActionRequest)
-
-	// validate action options
-	errInValidateActionOptions := controller.ValidateActionTemplate(c, inDatabaseAction)
-	if errInValidateActionOptions != nil {
-		return
-	}
-
-	// update action
-	errInUpdateAction := controller.Storage.ActionStorage.UpdateWholeAction(inDatabaseAction)
+	// update
+	newInDatabaseAction, errInUpdateAction := controller.updateAction(c, teamID, appID, userID, actionID, updateActionRequest)
 	if errInUpdateAction != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_ACTION, "update action error: "+errInUpdateAction.Error())
-		return
-	}
-
-	// update app updatedAt, updatedBy, editedBy field
-	app.Modify(userID)
-	errInUpdateApp := controller.Storage.AppStorage.UpdateWholeApp(app)
-	if errInUpdateApp != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_APP, "update app modify info error: "+errInUpdateApp.Error())
 		return
 	}
 
 	// feedback
-	controller.FeedbackOK(c, response.NewUpdateActionResponse(inDatabaseAction))
+	controller.FeedbackOK(c, response.NewUpdateActionResponse(newInDatabaseAction))
+}
+
+func (controller *Controller) UpdateActionByBatch(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
+		return
+	}
+
+	// validate
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_ACTION,
+		0,
+		accesscontrol.ACTION_MANAGE_EDIT_ACTION,
+	)
+	if errInCheckAttr != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canManage {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// fetch payload
+	updateActionByBatchRequest := request.NewUpdateActionByBatchRequest()
+	if err := json.NewDecoder(c.Request.Body).Decode(&updateActionByBatchRequest); err != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
+		return
+	}
+
+	inDatabaseActions := make([]*model.Action, 0)
+	for _, updateActionRequest := range updateActionByBatchRequest.ExportActions() {
+		newInDatabaseAction, errInUpdateAction := controller.updateAction(c, teamID, appID, userID, updateActionRequest.ExportActionIDInInt(), updateActionRequest)
+		if errInUpdateAction != nil {
+			return
+		}
+		inDatabaseActions = append(inDatabaseActions, newInDatabaseAction)
+	}
+
+	// feedback
+	controller.FeedbackOK(c, response.NewUpdateActionByBatchResponse(inDatabaseActions))
 }
 
 func (controller *Controller) DeleteAction(c *gin.Context) {

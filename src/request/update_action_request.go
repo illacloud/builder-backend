@@ -46,6 +46,7 @@ import (
 //
 // ```
 type UpdateActionRequest struct {
+	ActionID          string                 `json:"actionID"         `
 	ActionType        string                 `json:"actionType"         validate:"required"`
 	DisplayName       string                 `json:"displayName"        validate:"required"`
 	ResourceID        string                 `json:"resourceID,omitempty"`
@@ -67,6 +68,10 @@ func (req *UpdateActionRequest) ExportTransformerInString() string {
 
 func (req *UpdateActionRequest) ExportResourceIDInInt() int {
 	return idconvertor.ConvertStringToInt(req.ResourceID)
+}
+
+func (req *UpdateActionRequest) ExportActionIDInInt() int {
+	return idconvertor.ConvertStringToInt(req.ActionID)
 }
 
 func (req *UpdateActionRequest) ExportActionTypeInInt() int {

@@ -74,9 +74,11 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	roomRouter.GET("/binaryWebsocketConnection/app/:appID", r.Controller.GetAppRoomBinaryConnectionAddress)
 
 	// action routers
-	actionRouter.POST("", r.Controller.CreateAction)
 	actionRouter.GET("/:actionID", r.Controller.GetAction)
+	actionRouter.POST("", r.Controller.CreateAction)
+	actionRouter.POST("/byBatch", r.Controller.CreateActionByBatch)
 	actionRouter.PUT("/:actionID", r.Controller.UpdateAction)
+	actionRouter.PUT("/byBatch", r.Controller.UpdateActionByBatch)
 	actionRouter.DELETE("/:actionID", r.Controller.DeleteAction)
 	actionRouter.POST("/:actionID/run", r.Controller.RunAction)
 
