@@ -290,11 +290,7 @@ func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int
 				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInNewAPI.Error())
 				return nil, errInNewAPI
 			}
-			aiAgent, errInGetAIAgent := api.GetAIAgent(actionForExport.ExportResourceIDInInt())
-			if errInGetAIAgent != nil {
-				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_ACTION, "error in fetch action mapped virtual resource: "+errInGetAIAgent.Error())
-				return nil, errInGetAIAgent
-			}
+			aiAgent, _ := api.GetAIAgent(actionForExport.ExportResourceIDInInt())
 			actionForExport.AppendVirtualResourceToTemplate(aiAgent)
 		}
 		actionsForExport = append(actionsForExport, actionForExport)

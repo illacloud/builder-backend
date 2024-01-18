@@ -227,6 +227,14 @@ func (action *Action) SetPrivate(userID int) {
 	action.InitUpdatedAt()
 }
 
+func (action *Action) SetTutorialLink(link string, userID int) {
+	ac := action.ExportConfig()
+	ac.SetTutorialLink(link)
+	action.Config = ac.ExportToJSONString()
+	action.UpdatedBy = userID
+	action.InitUpdatedAt()
+}
+
 // WARRING! this is an view-level method, do not use this method to sync database changes, just for export data.
 func (action *Action) RewritePublicSettings(isPublic bool) {
 	actionConfig := action.ExportConfig()

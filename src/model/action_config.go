@@ -29,6 +29,7 @@ type ActionConfig struct {
 	IsVirtualResource bool            `json:"isVirtualResource"`
 	AdvancedConfig    *AdvancedConfig `json:"advancedConfig"` // 2023_4_20: add advanced config for action
 	MockConfig        *MockConfig     `json:"mockConfig"`
+	TutorialLink      string          `json:"tutorialLink"`
 }
 
 type AdvancedConfig struct {
@@ -73,12 +74,22 @@ func (ac *ActionConfig) SetPrivate() {
 	ac.Public = false
 }
 
+func (ac *ActionConfig) SetTutorialLink(link string) {
+	ac.TutorialLink = link
+}
+
 func (ac *ActionConfig) SetIsVirtualResource() {
 	ac.IsVirtualResource = true
 }
 
 func (ac *ActionConfig) SetIsNotVirtualResource() {
 	ac.IsVirtualResource = false
+}
+
+func (ac *ActionConfig) RenderDefaultTutorialLink(actionType int) {
+	if ac.TutorialLink == "" {
+		ac.TutorialLink, _ = actionDefaultTutorialMaps[actionType]
+	}
 }
 
 func NewActionConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*ActionConfig, error) {

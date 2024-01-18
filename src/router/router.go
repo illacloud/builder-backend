@@ -79,6 +79,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	actionRouter.POST("/byBatch", r.Controller.CreateActionByBatch)
 	actionRouter.PUT("/:actionID", r.Controller.UpdateAction)
 	actionRouter.PUT("/byBatch", r.Controller.UpdateActionByBatch)
+	actionRouter.PATCH("/tutorial", r.Controller.SetActionTutorialLink)
 	actionRouter.DELETE("/:actionID", r.Controller.DeleteAction)
 	actionRouter.POST("/:actionID/run", r.Controller.RunAction)
 
