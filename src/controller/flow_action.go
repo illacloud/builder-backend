@@ -142,7 +142,7 @@ func (controller *Controller) UpdateFlowAction(c *gin.Context) {
 func (controller *Controller) UpdateFlowActionByBatch(c *gin.Context) {
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
-	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	workflowID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_WORKFLOW_ID)
 	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
 	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
@@ -175,7 +175,7 @@ func (controller *Controller) UpdateFlowActionByBatch(c *gin.Context) {
 
 	inDatabaseFlowActions := make([]*model.FlowAction, 0)
 	for _, updateFlowActionRequest := range updateFlowActionByBatchRequest.ExportFlowActions() {
-		newInDatabaseFlowAction, errInUpdateAction := controller.updateFlowAction(c, teamID, appID, userID, updateFlowActionRequest.ExportFlowActionIDInInt(), updateFlowActionRequest)
+		newInDatabaseFlowAction, errInUpdateAction := controller.updateFlowAction(c, teamID, workflowID, userID, updateFlowActionRequest.ExportFlowActionIDInInt(), updateFlowActionRequest)
 		if errInUpdateAction != nil {
 			return
 		}
