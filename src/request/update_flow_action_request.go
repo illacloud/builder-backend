@@ -46,13 +46,14 @@ import (
 //
 // ```
 type UpdateFlowActionRequest struct {
+	FlowActionID      string                 `json:"flowActionID"           validate:"required"`
 	FlowActionType    string                 `json:"flowActionType"         validate:"required"`
-	DisplayName       string                 `json:"displayName"        validate:"required"`
+	DisplayName       string                 `json:"displayName"            validate:"required"`
 	ResourceID        string                 `json:"resourceID,omitempty"`
 	IsVirtualResource bool                   `json:"isVirtualResource"`
-	Content           map[string]interface{} `json:"content"            validate:"required"`
-	Transformer       map[string]interface{} `json:"transformer"        validate:"required"`
-	TriggerMode       string                 `json:"triggerMode"        validate:"oneof=manually automate"`
+	Content           map[string]interface{} `json:"content"                validate:"required"`
+	Transformer       map[string]interface{} `json:"transformer"            validate:"required"`
+	TriggerMode       string                 `json:"triggerMode"            validate:"oneof=manually automate"`
 	Config            map[string]interface{} `json:"config"`
 }
 
@@ -63,6 +64,10 @@ func NewUpdateFlowActionRequest() *UpdateFlowActionRequest {
 func (req *UpdateFlowActionRequest) ExportTransformerInString() string {
 	jsonByte, _ := json.Marshal(req.Transformer)
 	return string(jsonByte)
+}
+
+func (req *UpdateFlowActionRequest) ExportFlowActionIDInInt() int {
+	return idconvertor.ConvertStringToInt(req.FlowActionID)
 }
 
 func (req *UpdateFlowActionRequest) ExportResourceIDInInt() int {

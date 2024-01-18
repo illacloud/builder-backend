@@ -129,49 +129,61 @@ func (controller *Controller) UpdateFlowAction(c *gin.Context) {
 		return
 	}
 
-	// append remote virtual resource (like aiagent, but the transformet is local virtual resource)
-	if updateFlowActionRequest.IsRemoteVirtualAction() {
-		// the AI_Agent need fetch resource info from resource manager, but illa drive does not need that
-		if updateFlowActionRequest.NeedFetchResourceInfoFromSourceManager() {
-			api, errInNewAPI := illaresourcemanagersdk.NewIllaResourceManagerRestAPI()
-			if errInNewAPI != nil {
-				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInNewAPI.Error())
-				return
-			}
-			virtualResource, errInGetVirtualResource := api.GetResource(updateFlowActionRequest.ExportFlowActionTypeInInt(), updateFlowActionRequest.ExportResourceIDInInt())
-			if errInGetVirtualResource != nil {
-				controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "error in fetch flowAction mapped virtual resource: "+errInGetVirtualResource.Error())
-				return
-			}
-			updateFlowActionRequest.AppendVirtualResourceToTemplate(virtualResource)
-		}
-	}
-
-	// get flowAction
-	inDatabaseFlowAction, errInRetrieveFlowAction := controller.Storage.FlowActionStorage.RetrieveFlowActionByTeamIDFlowActionID(teamID, flowActionID)
-	if errInRetrieveFlowAction != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_FLOW_ACTION, "get app failed: "+errInRetrieveFlowAction.Error())
-		return
-	}
-
-	// update inDatabaseFlowAction instance
-	inDatabaseFlowAction.UpdateFlowAcitonByUpdateFlowActionRequest(teamID, workflowID, userID, updateFlowActionRequest)
-
-	// validate flowAction options
-	errInValidateActionOptions := controller.ValidateFlowActionTemplate(c, inDatabaseFlowAction)
-	if errInValidateActionOptions != nil {
-		return
-	}
-
-	// update flowAction
-	errInUpdateAction := controller.Storage.FlowActionStorage.UpdateWholeFlowAction(inDatabaseFlowAction)
+	// update
+	newInDatabaseFlowAction, errInUpdateAction := controller.updateFlowAction(c, teamID, workflowID, userID, flowActionID, updateFlowActionRequest)
 	if errInUpdateAction != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_UPDATE_FLOW_ACTION, "update flowAction error: "+errInUpdateAction.Error())
 		return
 	}
 
 	// feedback
-	controller.FeedbackOK(c, response.NewUpdateFlowActionResponse(inDatabaseFlowAction))
+	controller.FeedbackOK(c, response.NewUpdateFlowActionResponse(newInDatabaseFlowAction))
+}
+
+func (controller *Controller) UpdateFlowActionByBatch(c *gin.Context) {
+	// fetch needed param
+	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
+	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
+	userID, errInGetUserID := controller.GetUserIDFromAuth(c)
+	userAuthToken, errInGetAuthToken := controller.GetUserAuthTokenFromHeader(c)
+	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetUserID != nil || errInGetAuthToken != nil {
+		return
+	}
+
+	// validate
+	canManage, errInCheckAttr := controller.AttributeGroup.CanManage(
+		teamID,
+		userAuthToken,
+		accesscontrol.UNIT_TYPE_ACTION,
+		0,
+		accesscontrol.ACTION_MANAGE_EDIT_ACTION,
+	)
+	if errInCheckAttr != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "error in check attribute: "+errInCheckAttr.Error())
+		return
+	}
+	if !canManage {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
+		return
+	}
+
+	// fetch payload
+	updateFlowActionByBatchRequest := request.NewUpdateFlowActionByBatchRequest()
+	if err := json.NewDecoder(c.Request.Body).Decode(&updateFlowActionByBatchRequest); err != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
+		return
+	}
+
+	inDatabaseFlowActions := make([]*model.FlowAction, 0)
+	for _, updateFlowActionRequest := range updateFlowActionByBatchRequest.ExportFlowActions() {
+		newInDatabaseFlowAction, errInUpdateAction := controller.updateFlowAction(c, teamID, appID, userID, updateFlowActionRequest.ExportFlowActionIDInInt(), updateFlowActionRequest)
+		if errInUpdateAction != nil {
+			return
+		}
+		inDatabaseFlowActions = append(inDatabaseFlowActions, newInDatabaseFlowAction)
+	}
+
+	// feedback
+	controller.FeedbackOK(c, response.NewUpdateFlowActionByBatchResponse(inDatabaseFlowActions))
 }
 
 func (controller *Controller) DeleteFlowAction(c *gin.Context) {

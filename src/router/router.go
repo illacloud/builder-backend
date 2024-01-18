@@ -114,6 +114,7 @@ func (r *Router) RegisterRouters(engine *gin.Engine) {
 	flowActionRouter.PUT("/:flowActionID", r.Controller.UpdateFlowAction)
 	flowActionRouter.DELETE("/:flowActionID", r.Controller.DeleteFlowAction)
 	flowActionRouter.POST("/:flowActionID/run", r.Controller.RunFlowAction)
+	flowActionRouter.PUT("/byBatch", r.Controller.UpdateFlowActionByBatch)
 
 	// status router
 	statusRouter.GET("", r.Controller.GetStatus)
