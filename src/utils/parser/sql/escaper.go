@@ -393,7 +393,13 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					if errInReflect != nil {
 						return "", nil, errInReflect
 					}
-					userArgs = append(userArgs, variableMappedValueInString)
+					// check if variable is slice then use raw value
+					typeOfVariableMappedValue := reflect.TypeOf(variableMappedValue).Kind()
+					if typeOfVariableMappedValue == reflect.Slice {
+						userArgs = append(userArgs, variableMappedValue)
+					} else {
+						userArgs = append(userArgs, variableMappedValueInString)
+					}
 				} else {
 					userArgs = append(userArgs, variableMappedValue)
 				}
