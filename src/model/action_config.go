@@ -86,12 +86,6 @@ func (ac *ActionConfig) SetIsNotVirtualResource() {
 	ac.IsVirtualResource = false
 }
 
-func (ac *ActionConfig) RenderDefaultTutorialLink(actionType int) {
-	if ac.TutorialLink == "" {
-		ac.TutorialLink, _ = actionDefaultTutorialMaps[actionType]
-	}
-}
-
 func NewActionConfigByConfigAppRawRequest(rawReq map[string]interface{}) (*ActionConfig, error) {
 	assertPass := true
 	actionConfig := &ActionConfig{}

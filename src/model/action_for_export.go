@@ -34,8 +34,6 @@ type ActionForExport struct {
 }
 
 func NewActionForExport(action *Action) *ActionForExport {
-	actionConfig := action.ExportConfig()
-	actionConfig.RenderDefaultTutorialLink(action.ExportType())
 	return &ActionForExport{
 		ID:                idconvertor.ConvertIntToString(action.ID),
 		UID:               action.UID,
@@ -49,7 +47,7 @@ func NewActionForExport(action *Action) *ActionForExport {
 		Template:          action.ExportTemplateInMap(),
 		Transformer:       action.ExportTransformerInMap(),
 		TriggerMode:       action.TriggerMode,
-		Config:            actionConfig,
+		Config:            action.ExportConfig(),
 		CreatedAt:         action.CreatedAt,
 		CreatedBy:         idconvertor.ConvertIntToString(action.CreatedBy),
 		UpdatedAt:         action.UpdatedAt,
