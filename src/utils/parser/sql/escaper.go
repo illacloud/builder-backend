@@ -117,6 +117,74 @@ func (i *stringConcatTarget) ExportWithoutQuote() string {
 	}
 }
 
+func reflectVariableToIntSlice(variable interface{}) ([]int, error) {
+	// try interface slice
+	ret := make([]int, 0)
+	variableAssertedInInterface, variableMappedInterfaceValueAssertPass := variable.([]interface{})
+	if variableMappedInterfaceValueAssertPass {
+		for _, subVar := range variableAssertedInInterface {
+			subVarInInt, subVarAssertPass := subVar.(int)
+			if !subVarAssertPass {
+				return nil, errors.New("provided variables.subVariables assert to int failed")
+			}
+			ret = append(ret, subVarInInt)
+		}
+		return ret, nil
+	}
+	return nil, errors.New("provided variables assert to slice failed")
+}
+
+func reflectVariableToFloat64Slice(variable interface{}) ([]float64, error) {
+	// try interface slice
+	ret := make([]float64, 0)
+	variableAssertedInInterface, variableMappedInterfaceValueAssertPass := variable.([]interface{})
+	if variableMappedInterfaceValueAssertPass {
+		for _, subVar := range variableAssertedInInterface {
+			subVarInFloat64, subVarAssertPass := subVar.(float64)
+			if !subVarAssertPass {
+				return nil, errors.New("provided variables.subVariables assert to int failed")
+			}
+			ret = append(ret, subVarInFloat64)
+		}
+		return ret, nil
+	}
+	return nil, errors.New("provided variables assert to slice failed")
+}
+
+func reflectVariableToStringSlice(variable interface{}) ([]string, error) {
+	// try interface slice
+	ret := make([]string, 0)
+	variableAssertedInInterface, variableMappedInterfaceValueAssertPass := variable.([]interface{})
+	if variableMappedInterfaceValueAssertPass {
+		for _, subVar := range variableAssertedInInterface {
+			subVarInString, subVarAssertPass := subVar.(string)
+			if !subVarAssertPass {
+				return nil, errors.New("provided variables.subVariables assert to string failed")
+			}
+			ret = append(ret, subVarInString)
+		}
+		return ret, nil
+	}
+	return nil, errors.New("provided variables assert to slice failed")
+}
+
+func reflectVariableToBoolSlice(variable interface{}) ([]bool, error) {
+	// try interface slice
+	ret := make([]bool, 0)
+	variableAssertedInInterface, variableMappedInterfaceValueAssertPass := variable.([]interface{})
+	if variableMappedInterfaceValueAssertPass {
+		for _, subVar := range variableAssertedInInterface {
+			subVarInBool, subVarAssertPass := subVar.(bool)
+			if !subVarAssertPass {
+				return nil, errors.New("provided variables.subVariables assert to string failed")
+			}
+			ret = append(ret, subVarInBool)
+		}
+		return ret, nil
+	}
+	return nil, errors.New("provided variables assert to slice failed")
+}
+
 func reflectVariableToString(variable interface{}) (string, error) {
 	// check type of variable value
 	typeOfVariableMappedValue := reflect.TypeOf(variable)
@@ -396,7 +464,37 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					// check if variable is slice then use raw value
 					typeOfVariableMappedValue := reflect.TypeOf(variableMappedValue).Kind()
 					if typeOfVariableMappedValue == reflect.Slice {
-						userArgs = append(userArgs, variableMappedValue)
+						variableMappedValueInSlice := variableMappedValue.([]interface{})
+						for _, element := range variableMappedValueInSlice {
+							switch reflect.TypeOf(element).Kind() {
+							case reflect.String:
+								variableMappedValueReflected, errInReflect := reflectVariableToStringSlice(variableMappedValue)
+								if errInReflect != nil {
+									return "", nil, errInReflect
+								}
+								userArgs = append(userArgs, variableMappedValueReflected)
+							case reflect.Int:
+								variableMappedValueReflected, errInReflect := reflectVariableToIntSlice(variableMappedValue)
+								if errInReflect != nil {
+									return "", nil, errInReflect
+								}
+								userArgs = append(userArgs, variableMappedValueReflected)
+							case reflect.Float64:
+								variableMappedValueReflected, errInReflect := reflectVariableToFloat64Slice(variableMappedValue)
+								if errInReflect != nil {
+									return "", nil, errInReflect
+								}
+								userArgs = append(userArgs, variableMappedValueReflected)
+							case reflect.Bool:
+								variableMappedValueReflected, errInReflect := reflectVariableToBoolSlice(variableMappedValue)
+								if errInReflect != nil {
+									return "", nil, errInReflect
+								}
+								userArgs = append(userArgs, variableMappedValueReflected)
+							default:
+								userArgs = append(userArgs, variableMappedValue)
+							}
+						}
 					} else {
 						userArgs = append(userArgs, variableMappedValueInString)
 					}
