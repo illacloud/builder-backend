@@ -117,70 +117,10 @@ func (i *stringConcatTarget) ExportWithoutQuote() string {
 	}
 }
 
-func reflectVariableToIntSlice(variable interface{}) ([]int, error) {
+func reflectVariableToSlice(variable interface{}) ([]interface{}, error) {
 	// try interface slice
-	ret := make([]int, 0)
-	variableAssertedInInterface, variableMappedInterfaceValueAssertPass := variable.([]interface{})
-	if variableMappedInterfaceValueAssertPass {
-		for _, subVar := range variableAssertedInInterface {
-			subVarInInt, subVarAssertPass := subVar.(int)
-			if !subVarAssertPass {
-				return nil, errors.New("provided variables.subVariables assert to int failed")
-			}
-			ret = append(ret, subVarInInt)
-		}
-		return ret, nil
-	}
-	return nil, errors.New("provided variables assert to slice failed")
-}
-
-func reflectVariableToFloat64Slice(variable interface{}) ([]float64, error) {
-	// try interface slice
-	ret := make([]float64, 0)
-	variableAssertedInInterface, variableMappedInterfaceValueAssertPass := variable.([]interface{})
-	if variableMappedInterfaceValueAssertPass {
-		for _, subVar := range variableAssertedInInterface {
-			subVarInFloat64, subVarAssertPass := subVar.(float64)
-			if !subVarAssertPass {
-				return nil, errors.New("provided variables.subVariables assert to int failed")
-			}
-			ret = append(ret, subVarInFloat64)
-		}
-		return ret, nil
-	}
-	return nil, errors.New("provided variables assert to slice failed")
-}
-
-func reflectVariableToStringSlice(variable interface{}) ([]string, error) {
-	// try interface slice
-	ret := make([]string, 0)
-	variableAssertedInInterface, variableMappedInterfaceValueAssertPass := variable.([]interface{})
-	if variableMappedInterfaceValueAssertPass {
-		for _, subVar := range variableAssertedInInterface {
-			subVarInString, subVarAssertPass := subVar.(string)
-			if !subVarAssertPass {
-				return nil, errors.New("provided variables.subVariables assert to string failed")
-			}
-			ret = append(ret, subVarInString)
-		}
-		return ret, nil
-	}
-	return nil, errors.New("provided variables assert to slice failed")
-}
-
-func reflectVariableToBoolSlice(variable interface{}) ([]bool, error) {
-	// try interface slice
-	ret := make([]bool, 0)
-	variableAssertedInInterface, variableMappedInterfaceValueAssertPass := variable.([]interface{})
-	if variableMappedInterfaceValueAssertPass {
-		for _, subVar := range variableAssertedInInterface {
-			subVarInBool, subVarAssertPass := subVar.(bool)
-			if !subVarAssertPass {
-				return nil, errors.New("provided variables.subVariables assert to string failed")
-			}
-			ret = append(ret, subVarInBool)
-		}
-		return ret, nil
+	if variableAssertedInInterface, pass := variable.([]interface{}); pass {
+		return variableAssertedInInterface, nil
 	}
 	return nil, errors.New("provided variables assert to slice failed")
 }
@@ -410,11 +350,11 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 			rightBraketCounter++
 			escapedBracketWithVariable += "}"
 
-			// process variable signal
+			// process variable
 			variableMappedValue, hitVariable := escapedArgs[strings.TrimSpace(variable)]
 			variableContent := ""
+			// missing variable
 			if !hitVariable {
-				// missing variable
 				if singleQuoteStart {
 					variableContent = "''"
 				} else if doubleQuoteStart {
@@ -422,6 +362,13 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 				} else {
 					variableContent = escapedBracketWithVariable
 				}
+				// hit variable
+				// - check if it is safe mode:
+				//     - 'safe-mode', format the var with template
+				//     - 'unsafe-mode', just replace the template with var
+				// - then, check if param is a array,
+				//     - it is, split array into single variable and push them into userArgs, and rewrite template variable into '(?, ?, ...)' stype
+				// 	       - then, process single var by mode, also note the MySQL instance need convert all single var into string value.
 			} else {
 				// hit variable
 				fmt.Printf("-- [DUMP] sqlEscaper.ResourceType: %+v\n", sqlEscaper.ResourceType)
@@ -444,62 +391,69 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					} else {
 						variableContent = variableMappedValueInString
 					}
-				} else if sqlEscaper.IsSerializedParameterizedSQL() {
-					// safe mode, with serialized param
-					variableContent = fmt.Sprintf("%s%d", sqlEscaper.GetSerializedParameterPrefixMap(), usedArgsSerial)
-					usedArgsSerial++
 				} else {
-					// safe mode, with "?" as param
-					variableContent = "?"
-				}
-
-				// record sql param serial
-				if sqlEscaper.ResourceType == resourcelist.TYPE_MYSQL_ID {
-					// hack for mysql, according to this link: https://github.com/sidorares/node-mysql2/issues/1239#issuecomment-718471799
-					// the MysQL 8.0.22 above version only accept string type valiable, so convert all varable to string
-					variableMappedValueInString, errInReflect := reflectVariableToString(variableMappedValue)
-					if errInReflect != nil {
-						return "", nil, errInReflect
-					}
-					// check if variable is slice then use raw value
-					typeOfVariableMappedValue := reflect.TypeOf(variableMappedValue).Kind()
-					if typeOfVariableMappedValue == reflect.Slice {
-						variableMappedValueInSlice := variableMappedValue.([]interface{})
-						for _, element := range variableMappedValueInSlice {
-							switch reflect.TypeOf(element).Kind() {
-							case reflect.String:
-								variableMappedValueReflected, errInReflect := reflectVariableToStringSlice(variableMappedValue)
-								if errInReflect != nil {
-									return "", nil, errInReflect
-								}
-								userArgs = append(userArgs, variableMappedValueReflected)
-							case reflect.Int:
-								variableMappedValueReflected, errInReflect := reflectVariableToIntSlice(variableMappedValue)
-								if errInReflect != nil {
-									return "", nil, errInReflect
-								}
-								userArgs = append(userArgs, variableMappedValueReflected)
-							case reflect.Float64:
-								variableMappedValueReflected, errInReflect := reflectVariableToFloat64Slice(variableMappedValue)
-								if errInReflect != nil {
-									return "", nil, errInReflect
-								}
-								userArgs = append(userArgs, variableMappedValueReflected)
-							case reflect.Bool:
-								variableMappedValueReflected, errInReflect := reflectVariableToBoolSlice(variableMappedValue)
-								if errInReflect != nil {
-									return "", nil, errInReflect
-								}
-								userArgs = append(userArgs, variableMappedValueReflected)
-							default:
-								userArgs = append(userArgs, variableMappedValue)
+					// safe mode
+					// check the variable is array
+					variableMappedValueInSlice, errInReflectVariableToSlice := reflectVariableToSlice(variableMappedValue)
+					fmt.Printf("[DUMP] variableMappedValue: %+v\n", variableMappedValue)
+					fmt.Printf("[DUMP] variableMappedValueInSlice: %+v\n", variableMappedValueInSlice)
+					fmt.Printf("[DUMP] errInReflectVariableToSlice: %+v\n", errInReflectVariableToSlice)
+					variableIsArray := errInReflectVariableToSlice == nil
+					if !variableIsArray {
+						// process variable content
+						if sqlEscaper.IsSerializedParameterizedSQL() {
+							// safe mode, with serialized param
+							variableContent = fmt.Sprintf("%s%d", sqlEscaper.GetSerializedParameterPrefixMap(), usedArgsSerial)
+							usedArgsSerial++
+						} else {
+							// safe mode, with "?" as param
+							variableContent = "?"
+						}
+						// process user args
+						if sqlEscaper.ResourceType == resourcelist.TYPE_MYSQL_ID {
+							// hack for mysql, according to this link: https://github.com/sidorares/node-mysql2/issues/1239#issuecomment-718471799
+							// the MysQL 8.0.22 above version only accept string type valiable, so convert all varable to string
+							variableMappedValueInString, errInReflectVariableToString := reflectVariableToString(variableMappedValue)
+							if errInReflectVariableToString != nil {
+								return "", nil, errInReflectVariableToString
 							}
+							userArgs = append(userArgs, variableMappedValueInString)
+						} else {
+							userArgs = append(userArgs, variableMappedValue)
 						}
 					} else {
-						userArgs = append(userArgs, variableMappedValueInString)
+						fmt.Printf("---------- variable in safe mode, and it is a slice variable input!\n")
+						// process variable content
+						variableMappedValueInSliceLen := len(variableMappedValueInSlice)
+						for i := 0; i < variableMappedValueInSliceLen; i++ {
+							if i > 0 {
+								variableContent += ", "
+							}
+							if sqlEscaper.IsSerializedParameterizedSQL() {
+								// safe mode, with serialized param
+								variableContent += fmt.Sprintf("%s%d", sqlEscaper.GetSerializedParameterPrefixMap(), usedArgsSerial)
+								usedArgsSerial++
+							} else {
+								// safe mode, with "?" as param
+								variableContent += "?"
+							}
+						}
+						// process user args
+						for _, subVariableMappedValue := range variableMappedValueInSlice {
+							if sqlEscaper.ResourceType == resourcelist.TYPE_MYSQL_ID {
+								// hack for mysql, according to this link: https://github.com/sidorares/node-mysql2/issues/1239#issuecomment-718471799
+								// the MysQL 8.0.22 above version only accept string type valiable, so convert all varable to string
+								subVariableMappedValueInString, errInReflectVariableToString := reflectVariableToString(subVariableMappedValue)
+								if errInReflectVariableToString != nil {
+									return "", nil, errInReflectVariableToString
+								}
+								userArgs = append(userArgs, subVariableMappedValueInString)
+							} else {
+								userArgs = append(userArgs, subVariableMappedValue)
+							}
+						}
 					}
-				} else {
-					userArgs = append(userArgs, variableMappedValue)
+
 				}
 			}
 
