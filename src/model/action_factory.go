@@ -8,6 +8,7 @@ import (
 	"github.com/illacloud/builder-backend/src/actionruntime/appwrite"
 	"github.com/illacloud/builder-backend/src/actionruntime/clickhouse"
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
+	"github.com/illacloud/builder-backend/src/actionruntime/condition"
 	"github.com/illacloud/builder-backend/src/actionruntime/couchdb"
 	"github.com/illacloud/builder-backend/src/actionruntime/dynamodb"
 	"github.com/illacloud/builder-backend/src/actionruntime/elasticsearch"
@@ -135,6 +136,9 @@ func (f *ActionFactory) Build() (common.DataConnector, error) {
 	case resourcelist.TYPE_SERVER_SIDE_TRANSFORMER_ID:
 		transformerAction := &serversidetransformer.ServerSideTransformerConnector{}
 		return transformerAction, nil
+	case resourcelist.TYPE_CONDITION_ID:
+		conditionAction := &condition.ConditionConnector{}
+		return conditionAction, nil
 	default:
 		return nil, errors.New("invalid ActionType: unsupported type " + resourcelist.GetResourceIDMappedType(f.Type))
 	}
