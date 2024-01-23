@@ -250,6 +250,10 @@ func (action *FlowAction) ExportTransformerInMap() map[string]interface{} {
 func (action *FlowAction) ExportTemplateInMap() map[string]interface{} {
 	var payload map[string]interface{}
 	json.Unmarshal([]byte(action.Template), &payload)
+	// add resourceID, runByAnonymous, teamID field for extend action runtime info
+	payload["resourceID"] = action.ResourceID
+	payload["runByAnonymous"] = true
+	payload["teamID"] = action.TeamID
 	return payload
 }
 
