@@ -51,6 +51,7 @@ func (controller *Controller) CreateFlowAction(c *gin.Context) {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_PARSE_REQUEST_BODY_FAILED, "parse request body error: "+err.Error())
 		return
 	}
+	fmt.Printf("createFlowActionRequest: %+v\n", createFlowActionRequest)
 
 	// append remote virtual resource (like aiagent, but the transformet is local virtual resource)
 	if createFlowActionRequest.IsRemoteVirtualAction() {
@@ -76,6 +77,7 @@ func (controller *Controller) CreateFlowAction(c *gin.Context) {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_FLOW_ACTION, "error in create flowAction instance: "+errorInNewAction.Error())
 		return
 	}
+	fmt.Printf("flowAction: %+v\n", flowAction)
 
 	// validate flowAction options
 	errInValidateActionOptions := controller.ValidateFlowActionTemplate(c, flowAction)
