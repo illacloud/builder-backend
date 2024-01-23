@@ -64,6 +64,7 @@ func (r *AIAgentConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		return res, errInNewAPI
 	}
 	api.OpenDebug()
+	fmt.Printf("[DUMP] actionOptions: %+v\n", actionOptions)
 	runAIAgentResult, errInRunAIAgent := api.RunAIAgent(actionOptions)
 	fmt.Printf("[DUMP] runAIAgentResult: %+v\n", runAIAgentResult)
 	fmt.Printf("[DUMP] errInRunAIAgent: %+v\n", errInRunAIAgent)
