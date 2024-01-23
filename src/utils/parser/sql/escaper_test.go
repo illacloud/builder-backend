@@ -287,3 +287,15 @@ func TestEscapeMySQLSQLInStatementQueryInIntStringInUnsafeMode(t *testing.T) {
 	assert.Equal(t, []interface{}{}, usedArgs, "the usedArgs should be equal")
 	assert.Equal(t, "select * from users where id in ('a', 'b', 'c')", escapedSQL, "the token should be equal")
 }
+
+func TestEscapePostgresSQLAnyStatementQuery(t *testing.T) {
+	sql_1 := `select * from users where name = ANY('{{{multiselect1.value}}}')`
+	args := map[string]interface{}{
+		`multiselect1.value.map(b => Number(b))`: []interface{}{"a", "b", "c"},
+	}
+	sqlEscaper := NewSQLEscaper(resourcelist.TYPE_MYSQL_ID)
+	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, false)
+	assert.Nil(t, errInEscape)
+	assert.Equal(t, []interface{}{}, usedArgs, "the usedArgs should be equal")
+	assert.Equal(t, "select * from users where id in ('a', 'b', 'c')", escapedSQL, "the token should be equal")
+}

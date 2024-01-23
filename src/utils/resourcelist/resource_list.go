@@ -34,6 +34,7 @@ var (
 	TYPE_ILLA_DRIVE              = "illadrive"
 	TYPE_TRIGGER                 = "trigger"
 	TYPE_SERVER_SIDE_TRANSFORMER = "serversidetransformer"
+	TYPE_CONDITION               = "condition"
 )
 
 var (
@@ -70,6 +71,7 @@ var (
 	TYPE_ILLA_DRIVE_ID              = 30
 	TYPE_TRIGGER_ID                 = 31
 	TYPE_SERVER_SIDE_TRANSFORMER_ID = 32
+	TYPE_CONDITION_ID               = 33
 )
 
 var type_array = []string{
@@ -106,6 +108,7 @@ var type_array = []string{
 	30: TYPE_ILLA_DRIVE,
 	31: TYPE_TRIGGER,
 	32: TYPE_SERVER_SIDE_TRANSFORMER,
+	33: TYPE_CONDITION,
 }
 
 var type_map = map[string]int{
@@ -142,6 +145,7 @@ var type_map = map[string]int{
 	TYPE_ILLA_DRIVE:              TYPE_ILLA_DRIVE_ID,
 	TYPE_TRIGGER:                 TYPE_TRIGGER_ID,
 	TYPE_SERVER_SIDE_TRANSFORMER: TYPE_SERVER_SIDE_TRANSFORMER_ID,
+	TYPE_CONDITION:               TYPE_CONDITION_ID,
 }
 
 var virtualResourceList = map[string]bool{
