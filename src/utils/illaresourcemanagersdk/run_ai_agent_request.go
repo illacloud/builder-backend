@@ -51,12 +51,18 @@ func assertMagicStringIDToInt(magicStringID interface{}) (int, bool) {
 	return idconvertor.ConvertStringToInt(magicStringIDAsserted), true
 }
 
-func assertFloatIDToInt(floatID interface{}) (int, bool) {
+func assertNumberIDToInt(floatID interface{}) (int, bool) {
 	floatIDAsserted, assertPass := floatID.(float64)
-	if !assertPass {
-		return 0, assertPass
+	if assertPass {
+		return int(floatIDAsserted), true
+
 	}
-	return int(floatIDAsserted), true
+	floatIDIntAsserted, assertPassInInt := floatID.(int)
+	if assertPassInInt {
+		return floatIDIntAsserted, true
+
+	}
+	return 0, false
 }
 
 func NewRunAIAgentRequest(rawRequest map[string]interface{}) (*RunAIAgentRequest, error) {
@@ -71,28 +77,28 @@ func NewRunAIAgentRequest(rawRequest map[string]interface{}) (*RunAIAgentRequest
 			// accept string & float64 type id
 			runAIAgentRequest.TeamID, assertPass = assertMagicStringIDToInt(value)
 			if !assertPass {
-				runAIAgentRequest.TeamID, assertPass = assertFloatIDToInt(value)
+				runAIAgentRequest.TeamID, assertPass = assertNumberIDToInt(value)
 			}
 		case RUN_AI_AGENT_REQUEST_FIELD_RESOURCE_ID:
 			// accept string & float64 type id
 			runAIAgentRequest.AIAgentID, assertPass = assertMagicStringIDToInt(value)
 			if !assertPass {
-				runAIAgentRequest.AIAgentID, assertPass = assertFloatIDToInt(value)
+				runAIAgentRequest.AIAgentID, assertPass = assertNumberIDToInt(value)
 			}
 		case RUN_AI_AGENT_REQUEST_FIELD_AI_AGENT_ID:
 			// accept string & float64 type id
 			runAIAgentRequest.AIAgentID, assertPass = assertMagicStringIDToInt(value)
 			if !assertPass {
-				runAIAgentRequest.AIAgentID, assertPass = assertFloatIDToInt(value)
+				runAIAgentRequest.AIAgentID, assertPass = assertNumberIDToInt(value)
 			}
 		case RUN_AI_AGENT_REQUEST_FIELD_AUTHORIZATION:
 			runAIAgentRequest.Authorization, assertPass = value.(string)
 		case RUN_AI_AGENT_REQUEST_FIELD_RUN_BY_ANONYMOUS:
 			runAIAgentRequest.RunByAnonymous, assertPass = value.(bool)
 		case RUN_AI_AGENT_REQUEST_FIELD_AGENT_TYPE:
-			runAIAgentRequest.AgentType, assertPass = assertFloatIDToInt(value)
+			runAIAgentRequest.AgentType, assertPass = assertNumberIDToInt(value)
 		case RUN_AI_AGENT_REQUEST_FIELD_MODEL:
-			runAIAgentRequest.Model, assertPass = assertFloatIDToInt(value)
+			runAIAgentRequest.Model, assertPass = assertNumberIDToInt(value)
 		case RUN_AI_AGENT_REQUEST_FIELD_VARIABLES:
 			variablesRaw, assertPass = value.([]interface{})
 			for _, variableRaw := range variablesRaw {

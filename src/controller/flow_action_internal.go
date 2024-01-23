@@ -263,7 +263,7 @@ func (controller *Controller) RunFlowActionInternal(c *gin.Context) {
 	fmt.Printf("[DUMP] flowAction.ExportRawTemplateInMap(): %+v\n", flowAction.ExportRawTemplateInMap())
 	_, errInValidateActionTemplate := flowActionAssemblyLine.ValidateActionTemplate(flowAction.ExportTemplateInMap())
 	if errInValidateActionTemplate != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate flowAction template error: "+errInValidate.Error())
+		controller.FeedbackBadRequest(c, ERROR_FLAG_VALIDATE_REQUEST_BODY_FAILED, "validate flowAction template error: "+errInValidateActionTemplate.Error())
 		return
 	}
 
