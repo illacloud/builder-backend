@@ -45,24 +45,25 @@ func (m *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 	}
 	escapedPassword := url.QueryEscape(m.ResourceOpts.Password)
 	// build base Microsoft SQL Server connection string
-	connString := fmt.Sprintf("server=%s;port=%s;database=%s;user id=%s;password=%s", m.ResourceOpts.Host,
-		m.ResourceOpts.Port, m.ResourceOpts.DatabaseName, m.ResourceOpts.Username, escapedPassword)
+	connString := fmt.Sprintf("sqlserver://%s:%s@%s:%s/%s?connection+timeout=120", m.ResourceOpts.Username, escapedPassword, m.ResourceOpts.Host, m.ResourceOpts.Port, m.ResourceOpts.DatabaseName)
+
 	// append connection options
 	for _, opt := range m.ResourceOpts.ConnectionOpts {
 		if opt["key"] != "" {
-			connString += fmt.Sprintf(";%s=%s", opt["key"], opt["value"])
+			connString += fmt.Sprintf("&%s=%s", opt["key"], opt["value"])
 		}
 	}
+
 	// add SSL/TLS verification parameters
 	if m.ResourceOpts.SSL.SSL {
 		if m.ResourceOpts.SSL.VerificationMode == VERIFY_FULL_MODE {
 			if m.ResourceOpts.SSL.CACert == "" {
 				return nil, errors.New("CA Cert required")
 			} else {
-				connString += ";encrypt=true;trustServerCertificate=false"
+				connString += "&encrypt=true&trustServerCertificate=false"
 			}
 		} else if m.ResourceOpts.SSL.VerificationMode == SKIP_CA_MODE {
-			connString += ";encrypt=true;trustServerCertificate=true"
+			connString += "&encrypt=true&trustServerCertificate=true"
 		} else {
 			return nil, errors.New("unsupported verification mode")
 		}
