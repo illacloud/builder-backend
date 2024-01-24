@@ -58,12 +58,20 @@ func (r *AIAgentConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		Extra:   map[string]interface{}{},
 	}
 
+	// replace template with context
+
+	// contextRaw := actionOptions["variables"]
+	// contextRaw := actionOptions["input"]
+	// parser_template.AssembleTemplateWithVariable(p.Action.RawQuery, ,)
+
 	// call api
 	api, errInNewAPI := resourcemanager.NewIllaResourceManagerRestAPI()
 	if errInNewAPI != nil {
 		return res, errInNewAPI
 	}
 	api.OpenDebug()
+	fmt.Printf("[DUMP] r: %+v\n", r)
+	fmt.Printf("[DUMP] rawActionOptions: %+v\n", rawActionOptions)
 	fmt.Printf("[DUMP] actionOptions: %+v\n", actionOptions)
 	runAIAgentResult, errInRunAIAgent := api.RunAIAgent(actionOptions)
 	fmt.Printf("[DUMP] runAIAgentResult: %+v\n", runAIAgentResult)
