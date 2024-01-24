@@ -1,8 +1,6 @@
 package illaresourcemanagersdk
 
-import (
-	"errors"
-)
+import "fmt"
 
 const (
 	AIAGENTPROMPTVARIABLE_FIELD_KEY           = "key"
@@ -29,7 +27,7 @@ func NewAIAgentPromptVariableByMap(rawData map[string]interface{}) (*AIAgentProm
 			aiAgentPromptVariable.DefaultValue, assertPass = value.(string)
 		}
 		if !assertPass {
-			return nil, errors.New("new ai agent prompt variables failed due to assert failed.")
+			return nil, fmt.Errorf("new ai agent prompt variables failed due to assert failed with key: '%s', value: '%+v'\n", key, value)
 		}
 	}
 	return aiAgentPromptVariable, nil

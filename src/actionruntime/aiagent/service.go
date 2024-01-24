@@ -84,7 +84,11 @@ func (r *AIAgentConnector) Run(resourceOptions map[string]interface{}, actionOpt
 				}
 				// process key
 				newKVPair["key"] = kvpairAsserted["key"]
-				newKVPair["defaultValue"] = kvpairAsserted["defaultValue"]
+
+				// process defaultValue
+				if kvpairAsserted["defaultValue"] != nil {
+					newKVPair["defaultValue"] = kvpairAsserted["defaultValue"]
+				}
 
 				// process value
 				value, hitValue := kvpairAsserted["value"]
