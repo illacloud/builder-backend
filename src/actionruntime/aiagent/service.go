@@ -20,6 +20,7 @@ import (
 
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
 	resourcemanager "github.com/illacloud/builder-backend/src/utils/illaresourcemanagersdk"
+	parser_template "github.com/illacloud/builder-backend/src/utils/parser/template"
 )
 
 type AIAgentConnector struct {
@@ -57,12 +58,59 @@ func (r *AIAgentConnector) Run(resourceOptions map[string]interface{}, actionOpt
 		Rows:    []map[string]interface{}{},
 		Extra:   map[string]interface{}{},
 	}
+	getContext := func() map[string]interface{} {
+		contextRaw := rawActionOptions["context"]
+		context, _ := contextRaw.(map[string]interface{})
+		return context
+	}
+	getInput := func() string {
+		return actionOptions["input"].(string)
+	}
+	getVariables := func() []interface{} {
+		variablesRaw := actionOptions["variables"]
+		variables, _ := variablesRaw.([]interface{})
+		return variables
+	}
+	preprocessKVPairSliceWithContext := func(KVPairSlice []interface{}, context map[string]interface{}) ([]map[string]interface{}, error) {
+		var errInPreprocessTemplate error
+		if len(KVPairSlice) > 0 {
+			newKVPairSlice := make([]map[string]interface{}, 0)
+			for _, kvpair := range KVPairSlice {
+				kvpairAsserted, _ := kvpair.(map[string]interface{})
+				newKVPair := map[string]interface{}{
+					"key":          "",
+					"value":        "",
+					"defaultValue": "",
+				}
+				// process key
+				newKVPair["key"] = kvpairAsserted["key"]
+				newKVPair["defaultValue"] = kvpairAsserted["defaultValue"]
+
+				// process value
+				value, hitValue := kvpairAsserted["value"]
+				if !hitValue {
+					return nil, errors.New("preprocessKVPairSlice() can not find value field \"value\"")
+				}
+				valueInString, assertStringPass := value.(string)
+
+				// not a string type value
+				if !assertStringPass {
+					newKVPair["value"] = value
+				} else {
+					if newKVPair["value"], errInPreprocessTemplate = parser_template.AssembleTemplateWithVariable(valueInString, context); errInPreprocessTemplate != nil {
+						return nil, errInPreprocessTemplate
+					}
+				}
+				newKVPairSlice = append(newKVPairSlice, newKVPair)
+			}
+			return newKVPairSlice, nil
+		}
+		return nil, nil
+	}
 
 	// replace template with context
-
-	// contextRaw := actionOptions["variables"]
-	// contextRaw := actionOptions["input"]
-	// parser_template.AssembleTemplateWithVariable(p.Action.RawQuery, ,)
+	actionOptions["input"], _ = parser_template.AssembleTemplateWithVariable(getInput(), getContext())
+	actionOptions["variables"], _ = preprocessKVPairSliceWithContext(getVariables(), getContext())
 
 	// call api
 	api, errInNewAPI := resourcemanager.NewIllaResourceManagerRestAPI()
