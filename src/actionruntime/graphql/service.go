@@ -230,7 +230,7 @@ func (g *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 
 	// preprocess Header
 	headersPreprocessed, errInPreprocessHeadersKVPair := preprocessKVPairSliceWithContext(g.ResourceOpts.Headers, context)
-	if headersPreprocessed != nil {
+	if errInPreprocessHeadersKVPair != nil {
 		return common.RuntimeResult{Success: false}, errInPreprocessHeadersKVPair
 	}
 	for _, header := range headersPreprocessed {
@@ -242,7 +242,7 @@ func (g *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 
 	// preprocess cookie
 	cookiesPreprocessed, errInPreprocessCookiesKVPair := preprocessKVPairSliceWithContext(g.ResourceOpts.Cookies, context)
-	if cookiesPreprocessed != nil {
+	if errInPreprocessCookiesKVPair != nil {
 		return common.RuntimeResult{Success: false}, errInPreprocessCookiesKVPair
 	}
 	for _, cookie := range cookiesPreprocessed {
