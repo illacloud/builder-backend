@@ -69,6 +69,7 @@ func NewRunAIAgentRequest(rawRequest map[string]interface{}) (*RunAIAgentRequest
 	runAIAgentRequest := &RunAIAgentRequest{}
 	assertPass := true
 	var variablesRaw []interface{}
+	var variablesRawWarrped []map[string]interface{}
 	var modelConfigRaw map[string]interface{}
 	var errInNewModelConfig error
 	for key, value := range rawRequest {
@@ -101,16 +102,29 @@ func NewRunAIAgentRequest(rawRequest map[string]interface{}) (*RunAIAgentRequest
 			runAIAgentRequest.Model, assertPass = assertNumberIDToInt(value)
 		case RUN_AI_AGENT_REQUEST_FIELD_VARIABLES:
 			variablesRaw, assertPass = value.([]interface{})
-			for _, variableRaw := range variablesRaw {
-				variableAsserted, assertPass := variableRaw.(map[string]interface{})
-				if assertPass {
-					variable, errInNewVariable := NewAIAgentPromptVariableByMap(variableAsserted)
-					if errInNewVariable != nil {
-						return nil, errInNewVariable
+			if assertPass {
+				for _, variableRaw := range variablesRaw {
+					variableAsserted, assertPass := variableRaw.(map[string]interface{})
+					if assertPass {
+						variable, errInNewVariable := NewAIAgentPromptVariableByMap(variableAsserted)
+						if errInNewVariable != nil {
+							return nil, errInNewVariable
+						}
+						runAIAgentRequest.Variables = append(runAIAgentRequest.Variables, variable)
+					} else {
+						break
 					}
-					runAIAgentRequest.Variables = append(runAIAgentRequest.Variables, variable)
-				} else {
-					break
+				}
+			} else {
+				variablesRawWarrped, assertPass = value.([]map[string]interface{})
+				if assertPass {
+					for _, variableRaw := range variablesRawWarrped {
+						variable, errInNewVariable := NewAIAgentPromptVariableByMap(variableRaw)
+						if errInNewVariable != nil {
+							return nil, errInNewVariable
+						}
+						runAIAgentRequest.Variables = append(runAIAgentRequest.Variables, variable)
+					}
 				}
 			}
 		case RUN_AI_AGENT_REQUEST_FIELD_MODEL_CONFIG:
@@ -127,7 +141,7 @@ func NewRunAIAgentRequest(rawRequest map[string]interface{}) (*RunAIAgentRequest
 
 		}
 		if !assertPass {
-			return nil, errors.New(fmt.Sprintf("assert request field %s with value \"%s\"for RunAIAgentRequest", key, value))
+			return nil, errors.New(fmt.Sprintf("assert request field '%s' with value '%s' for RunAIAgentRequest", key, value))
 		}
 	}
 	return runAIAgentRequest, nil
