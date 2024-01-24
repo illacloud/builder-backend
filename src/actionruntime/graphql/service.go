@@ -17,6 +17,7 @@ package graphql
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
@@ -225,6 +226,7 @@ func (g *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryParams[param["key"]] = param["value"]
 		}
 	}
+	fmt.Printf("[DUMP] queryParams: %+v\n", queryParams)
 
 	// preprocess Header
 	headersPreprocessed, errInPreprocessHeadersKVPair := preprocessKVPairSliceWithContext(g.ResourceOpts.Headers, context)
@@ -236,6 +238,7 @@ func (g *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			headers[header["key"]] = header["value"]
 		}
 	}
+	fmt.Printf("[DUMP] headers: %+v\n", headers)
 
 	// preprocess cookie
 	cookiesPreprocessed, errInPreprocessCookiesKVPair := preprocessKVPairSliceWithContext(g.ResourceOpts.Cookies, context)
@@ -247,6 +250,7 @@ func (g *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			cookies[cookie["key"]] = cookie["value"]
 		}
 	}
+	fmt.Printf("[DUMP] cookies: %+v\n", cookies)
 
 	// preprocess variables, the variables should returns with original data type from JSON. When context concat with string, it will return in string type.
 	variablesPreprocessed, errInPreprocessVariablesKVPair := preprocessKVPairSliceForGraphqlVariableWithContext(g.ActionOpts.Variables, context)
@@ -258,6 +262,7 @@ func (g *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			vars[variable["key"].(string)] = variable["value"]
 		}
 	}
+	fmt.Printf("[DUMP] vars: %+v\n", vars)
 
 	resp, err := g.doQuery(g.ResourceOpts.BaseURL, queryParams, headers, cookies, g.ResourceOpts.Authentication,
 		g.ResourceOpts.AuthContent, g.ActionOpts.Query, vars)
