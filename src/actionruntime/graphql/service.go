@@ -17,8 +17,10 @@ package graphql
 import (
 	"encoding/json"
 	"errors"
+	"strings"
 
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
+	parser_template "github.com/illacloud/builder-backend/src/utils/parser/template"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
@@ -117,34 +119,141 @@ func (g *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		return common.RuntimeResult{Success: false}, err
 	}
 
+	getContext := func() map[string]interface{} {
+		contextRaw := rawActionOptions["context"]
+		context, _ := contextRaw.(map[string]interface{})
+		return context
+	}
+	preprocessKVPairSliceWithContext := func(KVPairSlice []map[string]string, context map[string]interface{}) ([]map[string]string, error) {
+		var errInPreprocessTemplate error
+		if len(KVPairSlice) > 0 {
+			newKVPairSlice := make([]map[string]string, 0)
+			for _, kvpair := range KVPairSlice {
+				newKVPair := map[string]string{
+					"key":   "",
+					"value": "",
+				}
+				// process key
+				key, hitKye := kvpair["key"]
+				if !hitKye {
+					return nil, errors.New("preprocessKVPairSlice() can not find field \"key\"")
+				}
+				if newKVPair["key"], errInPreprocessTemplate = parser_template.AssembleTemplateWithVariable(key, context); errInPreprocessTemplate != nil {
+					return nil, errInPreprocessTemplate
+				}
+				// process value
+				value, hitValue := kvpair["value"]
+				if !hitValue {
+					return nil, errors.New("preprocessKVPairSlice() can not find value field \"value\"")
+				}
+
+				if newKVPair["value"], errInPreprocessTemplate = parser_template.AssembleTemplateWithVariable(value, context); errInPreprocessTemplate != nil {
+					return nil, errInPreprocessTemplate
+				}
+				newKVPairSlice = append(newKVPairSlice, newKVPair)
+			}
+			return newKVPairSlice, nil
+		}
+		return nil, nil
+	}
+	preprocessKVPairSliceForGraphqlVariableWithContext := func(KVPairSlice []map[string]interface{}, context map[string]interface{}) ([]map[string]interface{}, error) {
+		var errInPreprocessTemplate error
+		if len(KVPairSlice) > 0 {
+			newKVPairSlice := make([]map[string]interface{}, 0)
+			for _, kvpair := range KVPairSlice {
+				newKVPair := map[string]interface{}{
+					"key":   "",
+					"value": "",
+				}
+				// process key
+				key, hitKye := kvpair["key"].(string)
+				if !hitKye {
+					return nil, errors.New("preprocessKVPairSlice() can not find field or target field is not string, field name: \"key\"")
+				}
+				if newKVPair["key"], errInPreprocessTemplate = parser_template.AssembleTemplateWithVariable(key, context); errInPreprocessTemplate != nil {
+					return nil, errInPreprocessTemplate
+				}
+				// process value
+				value, hitValue := kvpair["value"]
+				if !hitValue {
+					return nil, errors.New("preprocessKVPairSlice() can not find value field \"value\"")
+				}
+				valueAsserted, assertValuePass := value.(string)
+				if !assertValuePass {
+					// not a string value (or not string template), we use original value
+					newKVPair["value"] = value
+				} else {
+					if newKVPair["value"], errInPreprocessTemplate = parser_template.AssembleTemplateWithVariable(valueAsserted, context); errInPreprocessTemplate != nil {
+						return nil, errInPreprocessTemplate
+					}
+
+					// check if value itself are context key, then use context original value as value
+					valueAssertedTrimmed := strings.TrimSpace(valueAsserted)
+					// start with "{{" and end with "}}"
+					if strings.Index(valueAssertedTrimmed, "{{") == 0 && strings.Index(valueAssertedTrimmed, "}}") == len(valueAssertedTrimmed)-2 {
+						valueAssertedWithoutLeftBrace := strings.Replace(valueAsserted, "{{", "", -1)
+						valueAssertedRawValueInBrace := strings.Replace(valueAssertedWithoutLeftBrace, "}}", "", -1)
+						hitContext := false
+						newKVPair["value"], hitContext = context[valueAssertedRawValueInBrace]
+						if !hitContext {
+							newKVPair["value"] = nil
+						}
+					}
+				}
+				newKVPairSlice = append(newKVPairSlice, newKVPair)
+			}
+			return newKVPairSlice, nil
+		}
+		return nil, nil
+	}
+
 	queryParams := make(map[string]string)
 	headers := make(map[string]string)
 	cookies := make(map[string]string)
-	for _, param := range g.ResourceOpts.URLParams {
+	vars := make(map[string]interface{})
+
+	// get context
+	context := getContext()
+
+	// preprocess URL params
+	urlParamsPreprocessed, errInPreprocessURLParamKVPair := preprocessKVPairSliceWithContext(g.ResourceOpts.URLParams, context)
+	if errInPreprocessURLParamKVPair != nil {
+		return common.RuntimeResult{Success: false}, errInPreprocessURLParamKVPair
+	}
+	for _, param := range urlParamsPreprocessed {
 		if param["key"] != "" {
 			queryParams[param["key"]] = param["value"]
 		}
 	}
 
-	for _, header := range g.ResourceOpts.Headers {
-		if header["key"] != "" {
-			headers[header["key"]] = header["value"]
-		}
+	// preprocess Header
+	headersPreprocessed, errInPreprocessHeadersKVPair := preprocessKVPairSliceWithContext(g.ResourceOpts.Headers, context)
+	if headersPreprocessed != nil {
+		return common.RuntimeResult{Success: false}, errInPreprocessHeadersKVPair
 	}
-	for _, header := range g.ActionOpts.Headers {
+	for _, header := range headersPreprocessed {
 		if header["key"] != "" {
 			headers[header["key"]] = header["value"]
 		}
 	}
 
-	for _, cookie := range g.ResourceOpts.Cookies {
+	// preprocess cookie
+	cookiesPreprocessed, errInPreprocessCookiesKVPair := preprocessKVPairSliceWithContext(g.ResourceOpts.Cookies, context)
+	if cookiesPreprocessed != nil {
+		return common.RuntimeResult{Success: false}, errInPreprocessCookiesKVPair
+	}
+	for _, cookie := range cookiesPreprocessed {
 		if cookie["key"] != "" {
 			cookies[cookie["key"]] = cookie["value"]
 		}
 	}
 
-	vars := make(map[string]interface{})
-	for _, variable := range g.ActionOpts.Variables {
+	// preprocess variables, the variables should returns with original data type from JSON. When context concat with string, it will return in string type.
+	variablesPreprocessed, errInPreprocessVariablesKVPair := preprocessKVPairSliceForGraphqlVariableWithContext(g.ActionOpts.Variables, context)
+	if errInPreprocessVariablesKVPair != nil {
+		return common.RuntimeResult{Success: false}, errInPreprocessVariablesKVPair
+	}
+	for _, variable := range variablesPreprocessed {
 		if variable["key"] != "" {
 			vars[variable["key"].(string)] = variable["value"]
 		}

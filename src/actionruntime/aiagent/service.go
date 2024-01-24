@@ -113,8 +113,9 @@ func (r *AIAgentConnector) Run(resourceOptions map[string]interface{}, actionOpt
 	}
 
 	// replace template with context
-	actionOptions["input"], _ = parser_template.AssembleTemplateWithVariable(getInput(), getContext())
-	actionOptions["variables"], _ = preprocessKVPairSliceWithContext(getVariables(), getContext())
+	context := getContext()
+	actionOptions["input"], _ = parser_template.AssembleTemplateWithVariable(getInput(), context)
+	actionOptions["variables"], _ = preprocessKVPairSliceWithContext(getVariables(), context)
 
 	// call api
 	api, errInNewAPI := resourcemanager.NewIllaResourceManagerRestAPI()
