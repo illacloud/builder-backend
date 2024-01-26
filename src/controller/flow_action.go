@@ -355,14 +355,14 @@ func (controller *Controller) RunFlowAction(c *gin.Context) {
 		resourcelist.TYPE_AIRTABLE_ID: true,
 	}
 	if avaliableDoProcessList[flowAction.ExportType()] {
-		fmt.Printf("[DUMP] flowAction.ExportTemplateInMap() original: %s\n", flowAction.ExportTemplateInMap())
+		fmt.Printf("[DUMP] flowAction.ExportTemplateInMap() original: %+v\n", flowAction.ExportTemplateInMap())
 		processedTemplate, errInProcessTemplate := common.ProcessTemplateByContext(flowAction.ExportTemplateInMap(), runFlowActionRequest.ExportContext())
 		if errInProcessTemplate != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PROCESS_FLOW_ACTION, "process flow action failed: "+errInProcessTemplate.Error())
 			return
 		}
 		flowAction.SetTemplate(processedTemplate)
-		fmt.Printf("[DUMP] flowAction.ExportTemplateInMap() converted: %s\n", flowAction.ExportTemplateInMap())
+		fmt.Printf("[DUMP] flowAction.ExportTemplateInMap() converted: %+v\n", flowAction.ExportTemplateInMap())
 	}
 
 	// assembly flowAction
