@@ -350,12 +350,14 @@ func (controller *Controller) RunFlowAction(c *gin.Context) {
 	// process input context with action template
 	// @todo: this method should rewrite to common method for all flow actions.
 	if flowAction.ExportType() == resourcelist.TYPE_MONGODB_ID {
+		fmt.Printf("[DUMP] flowAction.ExportTemplateInMap() original: %s\n", flowAction.ExportTemplateInMap())
 		processedTemplate, errInProcessTemplate := common.ProcessTemplateByContext(flowAction.ExportTemplateInMap(), runFlowActionRequest.ExportContext())
 		if errInProcessTemplate != nil {
 			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PROCESS_FLOW_ACTION, "process flow action failed: "+errInProcessTemplate.Error())
 			return
 		}
 		flowAction.SetTemplate(processedTemplate)
+		fmt.Printf("[DUMP] flowAction.ExportTemplateInMap() converted: %s\n", flowAction.ExportTemplateInMap())
 	}
 
 	// assembly flowAction
