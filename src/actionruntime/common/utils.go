@@ -105,41 +105,27 @@ func RetrieveToMapByDriverRows(rows driver.Rows) ([]map[string]interface{}, erro
 
 func ProcessTemplateByContext(template interface{}, context map[string]interface{}) (interface{}, error) {
 	fmt.Printf("[IDUMP] template: %+v\n", template)
-	processorMethod := func(template interface{}, context map[string]interface{}) (interface{}, error) {
-		valueInMap, valueIsMap := template.(map[string]interface{})
-		if valueIsMap {
-			processedValue, errInPreprocessTemplate := ProcessTemplateByContext(valueInMap, context)
+	processorMethod := func(template string, context map[string]interface{}) (interface{}, error) {
+		// check if value is json string
+		var valueInJson interface{}
+		errInUnmarshal := json.Unmarshal([]byte(template), &valueInJson)
+		itIsJSONString := errInUnmarshal == nil
+		if itIsJSONString {
+			// json string, process it as array or map
+			processedValue, errInPreprocessTemplate := ProcessTemplateByContext(valueInJson, context)
 			if errInPreprocessTemplate != nil {
 				return nil, errInPreprocessTemplate
 			}
-			return processedValue, nil
-		}
-
-		// check if value is string, then process it
-		valueInString, valueIsString := template.(string)
-		if valueIsString {
-			// check if value is json string
-			var valueInJson interface{}
-			errInUnmarshal := json.Unmarshal([]byte(valueInString), &valueInJson)
-			itIsJSONString := errInUnmarshal == nil
-			if itIsJSONString {
-				// json string, process it as array or map
-				processedValue, errInPreprocessTemplate := ProcessTemplateByContext(valueInJson, context)
-				if errInPreprocessTemplate != nil {
-					return nil, errInPreprocessTemplate
-				}
-				processedValueInJSON, _ := json.Marshal(processedValue)
-				return string(processedValueInJSON), nil
-			} else {
-				// jsut a normal string
-				processedTemplate, errInAssembleTemplate := parser_template.AssembleTemplateWithVariable(valueInString, context)
-				if errInAssembleTemplate != nil {
-					return nil, errInAssembleTemplate
-				}
-				return processedTemplate, nil
+			processedValueInJSON, _ := json.Marshal(processedValue)
+			return string(processedValueInJSON), nil
+		} else {
+			// jsut a normal string
+			processedTemplate, errInAssembleTemplate := parser_template.AssembleTemplateWithVariable(template, context)
+			if errInAssembleTemplate != nil {
+				return nil, errInAssembleTemplate
 			}
+			return processedTemplate, nil
 		}
-		return template, nil
 	}
 
 	// assert input
@@ -157,7 +143,7 @@ func ProcessTemplateByContext(template interface{}, context map[string]interface
 
 		newSlice := make([]interface{}, 0)
 		for _, value := range inputInSLice {
-			processedTemplate, errInProcess := processorMethod(value, context)
+			processedTemplate, errInProcess := ProcessTemplateByContext(value, context)
 			if errInProcess != nil {
 				return nil, errInProcess
 			}
@@ -170,7 +156,7 @@ func ProcessTemplateByContext(template interface{}, context map[string]interface
 
 		newMap := make(map[string]interface{}, 0)
 		for key, value := range inputInMap {
-			processedTemplate, errInProcess := processorMethod(value, context)
+			processedTemplate, errInProcess := ProcessTemplateByContext(value, context)
 			if errInProcess != nil {
 				return nil, errInProcess
 			}
