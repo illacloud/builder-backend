@@ -144,6 +144,10 @@ func ProcessTemplateByContext(template interface{}, context map[string]interface
 	if template == nil {
 		return template, nil
 	}
+	if template == "" {
+		return nil, nil
+	}
+
 	inputInSLice, inputIsSlice := template.([]interface{})
 	inputInMap, inputIsMap := template.(map[string]interface{})
 	inputInString, inputIsString := template.(string)
