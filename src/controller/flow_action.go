@@ -17,6 +17,7 @@ import (
 	"github.com/illacloud/builder-backend/src/response"
 	"github.com/illacloud/builder-backend/src/utils/accesscontrol"
 	"github.com/illacloud/builder-backend/src/utils/illaresourcemanagersdk"
+	"github.com/illacloud/builder-backend/src/utils/resourcelist"
 )
 
 func (controller *Controller) CreateFlowAction(c *gin.Context) {
@@ -347,12 +348,15 @@ func (controller *Controller) RunFlowAction(c *gin.Context) {
 	fmt.Printf("[DUMP] flowAction: %+v\n", flowAction)
 
 	// process input context with action template
-	processedTemplate, errInProcessTemplate := common.ProcessTemplateByContext(flowAction.ExportTemplateInMap(), runFlowActionRequest.ExportContext())
-	if errInProcessTemplate != nil {
-		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PROCESS_FLOW_ACTION, "process flow action failed: "+errInProcessTemplate.Error())
-		return
+	// @todo: this method should rewrite to common method for all flow actions.
+	if flowAction.ExportType() == resourcelist.TYPE_MONGODB_ID {
+		processedTemplate, errInProcessTemplate := common.ProcessTemplateByContext(flowAction.ExportTemplateInMap(), runFlowActionRequest.ExportContext())
+		if errInProcessTemplate != nil {
+			controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PROCESS_FLOW_ACTION, "process flow action failed: "+errInProcessTemplate.Error())
+			return
+		}
+		flowAction.SetTemplate(processedTemplate)
 	}
-	flowAction.SetTemplate(processedTemplate)
 
 	// assembly flowAction
 	flowActionFactory := model.NewFlowActionFactoryByFlowAction(flowAction)
