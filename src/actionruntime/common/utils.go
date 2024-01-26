@@ -126,7 +126,8 @@ func ProcessTemplateByContext(template interface{}, context map[string]interface
 				if errInPreprocessTemplate != nil {
 					return nil, errInPreprocessTemplate
 				}
-				return processedValue, nil
+				processedValueInJSON, _ := json.Marshal(processedValue)
+				return string(processedValueInJSON), nil
 			} else {
 				// jsut a normal string
 				processedTemplate, errInAssembleTemplate := parser_template.AssembleTemplateWithVariable(valueInString, context)
