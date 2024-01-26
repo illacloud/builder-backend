@@ -129,6 +129,11 @@ func (action *FlowAction) InitForFork(teamID int, workflowID int, version int, u
 	action.InitUpdatedAt()
 }
 
+func (action *FlowAction) SetTemplate(tempalte interface{}) {
+	templateInJSONByte, _ := json.Marshal(tempalte)
+	action.Template = string(templateInJSONByte)
+}
+
 func (action *FlowAction) AppendNewVersion(newVersion int) {
 	action.CleanID()
 	action.InitUID()

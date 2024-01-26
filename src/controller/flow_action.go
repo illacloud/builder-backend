@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/illacloud/builder-backend/src/actionruntime/common"
 	"github.com/illacloud/builder-backend/src/model"
 	"github.com/illacloud/builder-backend/src/request"
 	"github.com/illacloud/builder-backend/src/response"
@@ -344,6 +345,14 @@ func (controller *Controller) RunFlowAction(c *gin.Context) {
 	// update flowAction data with run flowAction reqeust
 	flowAction.UpdateWithRunFlowActionRequest(runFlowActionRequest, userID)
 	fmt.Printf("[DUMP] flowAction: %+v\n", flowAction)
+
+	// process input context with action template
+	processedTemplate, errInProcessTemplate := common.ProcessTemplateByContext(flowAction.ExportTemplateInMap(), runFlowActionRequest.ExportContext())
+	if errInProcessTemplate != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_PROCESS_FLOW_ACTION, "process flow action failed: "+errInProcessTemplate.Error())
+		return
+	}
+	flowAction.SetTemplate(processedTemplate)
 
 	// assembly flowAction
 	flowActionFactory := model.NewFlowActionFactoryByFlowAction(flowAction)

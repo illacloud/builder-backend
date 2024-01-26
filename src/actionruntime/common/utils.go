@@ -17,6 +17,9 @@ package common
 import (
 	"database/sql"
 	"database/sql/driver"
+	"encoding/json"
+
+	parser_template "github.com/illacloud/builder-backend/src/utils/parser/template"
 )
 
 func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
@@ -97,4 +100,75 @@ func RetrieveToMapByDriverRows(rows driver.Rows) ([]map[string]interface{}, erro
 	}
 
 	return mapData, nil
+}
+
+func ProcessTemplateByContext(template interface{}, context map[string]interface{}) (interface{}, error) {
+	processorMethod := func(template interface{}, context map[string]interface{}) (interface{}, error) {
+		valueInMap, valueIsMap := template.(map[string]interface{})
+		if valueIsMap {
+			processedValue, errInPreprocessTemplate := ProcessTemplateByContext(valueInMap, context)
+			if errInPreprocessTemplate != nil {
+				return nil, errInPreprocessTemplate
+			}
+			return processedValue, nil
+		}
+
+		// check if value is string, then process it
+		valueInString, valueIsString := template.(string)
+		if valueIsString {
+			// check if value is json string
+			var valueInJson interface{}
+			errInUnmarshal := json.Unmarshal([]byte(valueInString), &valueInJson)
+			itIsJSONString := errInUnmarshal == nil
+			if itIsJSONString {
+				// json string, process it as array or map
+				processedValue, errInPreprocessTemplate := ProcessTemplateByContext(valueInJson, context)
+				if errInPreprocessTemplate != nil {
+					return nil, errInPreprocessTemplate
+				}
+				return processedValue, nil
+			} else {
+				// jsut a normal string
+				processedTemplate, errInAssembleTemplate := parser_template.AssembleTemplateWithVariable(valueInString, context)
+				if errInAssembleTemplate != nil {
+					return nil, errInAssembleTemplate
+				}
+				return processedTemplate, nil
+			}
+		}
+		return template, nil
+	}
+
+	// assert input
+	inputInSLice, inputIsSlice := template.([]interface{})
+	inputInMap, inputIsMap := template.(map[string]interface{})
+	inputInString, inputIsString := template.(string)
+
+	// process it
+	if inputIsSlice {
+		newSlice := make([]interface{}, 0)
+		for _, value := range inputInSLice {
+			processedTemplate, errInProcess := processorMethod(value, context)
+			if errInProcess != nil {
+				return nil, errInProcess
+			}
+			newSlice = append(newSlice, processedTemplate)
+		}
+		return newSlice, nil
+	}
+	if inputIsMap {
+		newMap := make(map[string]interface{}, 0)
+		for key, value := range inputInMap {
+			processedTemplate, errInProcess := processorMethod(value, context)
+			if errInProcess != nil {
+				return nil, errInProcess
+			}
+			newMap[key] = processedTemplate
+		}
+		return newMap, nil
+	}
+	if inputIsString {
+		return processorMethod(inputInString, context)
+	}
+	return template, nil
 }
