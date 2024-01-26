@@ -18,6 +18,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 
 	parser_template "github.com/illacloud/builder-backend/src/utils/parser/template"
 )
@@ -103,6 +104,7 @@ func RetrieveToMapByDriverRows(rows driver.Rows) ([]map[string]interface{}, erro
 }
 
 func ProcessTemplateByContext(template interface{}, context map[string]interface{}) (interface{}, error) {
+	fmt.Printf("[IDUMP] template: %+v\n", template)
 	processorMethod := func(template interface{}, context map[string]interface{}) (interface{}, error) {
 		valueInMap, valueIsMap := template.(map[string]interface{})
 		if valueIsMap {
@@ -151,6 +153,8 @@ func ProcessTemplateByContext(template interface{}, context map[string]interface
 
 	// process it
 	if inputIsSlice {
+		fmt.Printf("[IDUMP] inputIsSlice: %+v\n", inputIsSlice)
+
 		newSlice := make([]interface{}, 0)
 		for _, value := range inputInSLice {
 			processedTemplate, errInProcess := processorMethod(value, context)
@@ -162,6 +166,8 @@ func ProcessTemplateByContext(template interface{}, context map[string]interface
 		return newSlice, nil
 	}
 	if inputIsMap {
+		fmt.Printf("[IDUMP] inputIsMap: %+v\n", inputIsMap)
+
 		newMap := make(map[string]interface{}, 0)
 		for key, value := range inputInMap {
 			processedTemplate, errInProcess := processorMethod(value, context)
@@ -173,7 +179,9 @@ func ProcessTemplateByContext(template interface{}, context map[string]interface
 		return newMap, nil
 	}
 	if inputIsString {
+		fmt.Printf("[IDUMP] inputIsString: %+v\n", inputIsString)
 		if inputInString == "" {
+			fmt.Printf("[IDUMP] inputIsEmptyString: %+v\n", inputInString == "")
 			return nil, nil
 		}
 		return processorMethod(inputInString, context)
