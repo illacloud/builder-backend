@@ -363,6 +363,8 @@ func (controller *Controller) RunFlowAction(c *gin.Context) {
 		}
 		flowAction.SetTemplate(processedTemplate)
 		fmt.Printf("[DUMP] flowAction.ExportTemplateInMap() converted: %+v\n", flowAction.ExportTemplateInMap())
+		processedTemplateInJSONbyte, _ := json.Marshal(processedTemplate)
+		fmt.Printf("[DUMP] flowAction.ExportTemplateInMap() converted in json: %+v\n", string(processedTemplateInJSONbyte))
 	}
 
 	// assembly flowAction
