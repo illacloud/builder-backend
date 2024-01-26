@@ -141,6 +141,9 @@ func ProcessTemplateByContext(template interface{}, context map[string]interface
 	}
 
 	// assert input
+	if template == nil {
+		return template, nil
+	}
 	inputInSLice, inputIsSlice := template.([]interface{})
 	inputInMap, inputIsMap := template.(map[string]interface{})
 	inputInString, inputIsString := template.(string)
