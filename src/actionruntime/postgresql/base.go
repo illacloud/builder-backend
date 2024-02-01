@@ -143,8 +143,16 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 	fmt.Printf("[DUMP] valuePtrs: %s\n", string(fieldDescriptionsInJSONByte))
 
 	var columns []string
+	columnNameHitMap := make(map[string]int, 0)
 	for _, col := range fieldDescriptions {
-		columns = append(columns, col.Name)
+		hitColumnTimes, hitColumn := columnNameHitMap[col.Name]
+		cloName := col.Name
+		if hitColumn {
+			cloName += fmt.Sprintf("_%d", hitColumnTimes)
+			columnNameHitMap[col.Name]++
+		}
+		columnNameHitMap[cloName] = 1
+		columns = append(columns, cloName)
 	}
 	count := len(columns)
 	tableData := make([]map[string]interface{}, 0)
