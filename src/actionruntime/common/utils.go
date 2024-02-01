@@ -25,6 +25,8 @@ import (
 
 func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 	columns, err := rows.Columns()
+	columnsInJSONByte, _ := json.Marshal(columns)
+	fmt.Printf("[DUMP] columnsInJSONByte: %s\n", columnsInJSONByte)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +47,8 @@ func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 
 		// get query result
 		rows.Scan(valPointers...)
-
+		valPointersInJSONByte, _ := json.Marshal(valPointers)
+		fmt.Printf("[DUMP] valPointersInJSONByte: %s\n", valPointersInJSONByte)
 		// value for every single row
 		entry := make(map[string]interface{})
 

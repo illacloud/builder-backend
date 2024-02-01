@@ -18,7 +18,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -139,9 +138,6 @@ func fieldsInfo(db *pgx.Conn, tableSchema string, tableNames []string) map[strin
 
 func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 	fieldDescriptions := rows.FieldDescriptions()
-	fieldDescriptionsInJSONByte, _ := json.Marshal(fieldDescriptions)
-	fmt.Printf("[DUMP] valuePtrs: %s\n", string(fieldDescriptionsInJSONByte))
-
 	var columns []string
 	columnNameHitMap := make(map[string]int, 0)
 	for _, col := range fieldDescriptions {
@@ -164,8 +160,6 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 			valuePtrs[i] = &values[i]
 		}
 		rows.Scan(valuePtrs...)
-		valuePtrsInJSONByte, _ := json.Marshal(valuePtrs)
-		fmt.Printf("[DUMP] valuePtrs: %s\n", string(valuePtrsInJSONByte))
 		entry := make(map[string]interface{})
 		for i, col := range columns {
 			// uuid
