@@ -30,8 +30,21 @@ func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	// rewrite columns for duplicate name
+	renamedColumns := make([]string, 0)
+	columnNameHitMap := make(map[string]int, 0)
+	for _, column := range columns {
+		hitColumnTimes, hitColumn := columnNameHitMap[column]
+		cloName := column
+		if hitColumn {
+			cloName += fmt.Sprintf("_%d", hitColumnTimes)
+			columnNameHitMap[column]++
+		}
+		columnNameHitMap[cloName] = 1
+		renamedColumns = append(renamedColumns, cloName)
+	}
 	// count of columns
-	count := len(columns)
+	count := len(renamedColumns)
 	mapData := make([]map[string]interface{}, 0)
 
 	// value of every row
@@ -52,7 +65,7 @@ func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 		// value for every single row
 		entry := make(map[string]interface{})
 
-		for i, col := range columns {
+		for i, col := range renamedColumns {
 			var v interface{}
 
 			val := values[i]
