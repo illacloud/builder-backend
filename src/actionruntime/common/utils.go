@@ -25,22 +25,27 @@ import (
 
 func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 	columns, err := rows.Columns()
-	columnsInJSONByte, _ := json.Marshal(columns)
-	fmt.Printf("[DUMP] columnsInJSONByte: %s\n", columnsInJSONByte)
 	if err != nil {
 		return nil, err
 	}
 	// rewrite columns for duplicate name
 	renamedColumns := make([]string, 0)
 	columnNameHitMap := make(map[string]int, 0)
-	for _, column := range columns {
+	columnNamePosMap := make(map[string]int, 0)
+	for pos, column := range columns {
 		hitColumnTimes, hitColumn := columnNameHitMap[column]
 		cloName := column
 		if hitColumn {
 			cloName += fmt.Sprintf("_%d", hitColumnTimes)
+			// rewrite first column to "_0"
+			if columnNameHitMap[column] == 1 {
+				firstHitPos := columnNamePosMap[column]
+				renamedColumns[firstHitPos] += "_0"
+			}
 			columnNameHitMap[column]++
 		}
 		columnNameHitMap[cloName] = 1
+		columnNamePosMap[cloName] = pos
 		renamedColumns = append(renamedColumns, cloName)
 	}
 	// count of columns
@@ -87,9 +92,29 @@ func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 func RetrieveToMapByDriverRows(rows driver.Rows) ([]map[string]interface{}, error) {
 	columns := rows.Columns()
 	mapData := make([]map[string]interface{}, 0)
+	// rewrite columns for duplicate name
+	renamedColumns := make([]string, 0)
+	columnNameHitMap := make(map[string]int, 0)
+	columnNamePosMap := make(map[string]int, 0)
+	for pos, column := range columns {
+		hitColumnTimes, hitColumn := columnNameHitMap[column]
+		cloName := column
+		if hitColumn {
+			cloName += fmt.Sprintf("_%d", hitColumnTimes)
+			// rewrite first column to "_0"
+			if columnNameHitMap[column] == 1 {
+				firstHitPos := columnNamePosMap[column]
+				renamedColumns[firstHitPos] += "_0"
+			}
+			columnNameHitMap[column]++
+		}
+		columnNameHitMap[cloName] = 1
+		columnNamePosMap[cloName] = pos
+		renamedColumns = append(renamedColumns, cloName)
+	}
 
 	// value of every row
-	values := make([]driver.Value, len(columns))
+	values := make([]driver.Value, len(renamedColumns))
 	// get all values
 	for {
 		errInFetchNextRows := rows.Next(values)
@@ -100,7 +125,7 @@ func RetrieveToMapByDriverRows(rows driver.Rows) ([]map[string]interface{}, erro
 		// value for every single row
 		entry := make(map[string]interface{})
 
-		for i, col := range columns {
+		for i, col := range renamedColumns {
 			var v interface{}
 
 			val := values[i]

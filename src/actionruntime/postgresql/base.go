@@ -138,19 +138,26 @@ func fieldsInfo(db *pgx.Conn, tableSchema string, tableNames []string) map[strin
 
 func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 	fieldDescriptions := rows.FieldDescriptions()
-	var columns []string
+	renamedColumns := make([]string, 0)
 	columnNameHitMap := make(map[string]int, 0)
-	for _, col := range fieldDescriptions {
+	columnNamePosMap := make(map[string]int, 0)
+	for pos, col := range fieldDescriptions {
 		hitColumnTimes, hitColumn := columnNameHitMap[col.Name]
 		cloName := col.Name
 		if hitColumn {
 			cloName += fmt.Sprintf("_%d", hitColumnTimes)
+			// rewrite first column to "_0"
+			if columnNameHitMap[col.Name] == 1 {
+				firstHitPos := columnNamePosMap[col.Name]
+				renamedColumns[firstHitPos] += "_0"
+			}
 			columnNameHitMap[col.Name]++
 		}
 		columnNameHitMap[cloName] = 1
-		columns = append(columns, cloName)
+		columnNamePosMap[cloName] = pos
+		renamedColumns = append(renamedColumns, cloName)
 	}
-	count := len(columns)
+	count := len(renamedColumns)
 	tableData := make([]map[string]interface{}, 0)
 	values := make([]interface{}, count)
 	valuePtrs := make([]interface{}, count)
@@ -161,7 +168,7 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 		}
 		rows.Scan(valuePtrs...)
 		entry := make(map[string]interface{})
-		for i, col := range columns {
+		for i, col := range renamedColumns {
 			// uuid
 			if values[i] != nil && reflect.TypeOf(values[i]).String() == "[16]uint8" {
 				byteArray, _ := values[i].([16]uint8)
