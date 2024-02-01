@@ -139,6 +139,9 @@ func fieldsInfo(db *pgx.Conn, tableSchema string, tableNames []string) map[strin
 
 func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 	fieldDescriptions := rows.FieldDescriptions()
+	fieldDescriptionsInJSONByte, _ := json.Marshal(fieldDescriptions)
+	fmt.Printf("[DUMP] valuePtrs: %s\n", string(fieldDescriptionsInJSONByte))
+
 	var columns []string
 	for _, col := range fieldDescriptions {
 		columns = append(columns, col.Name)
