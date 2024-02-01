@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -152,6 +153,8 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 			valuePtrs[i] = &values[i]
 		}
 		rows.Scan(valuePtrs...)
+		valuePtrsInJSONByte, _ := json.Marshal(valuePtrs)
+		fmt.Printf("[DUMP] valuePtrs: %s\n", string(valuePtrsInJSONByte))
 		entry := make(map[string]interface{})
 		for i, col := range columns {
 			// uuid
