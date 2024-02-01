@@ -16,6 +16,7 @@ package postgresql
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -142,6 +143,8 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	// fetch data
 	if isSelectQuery && p.Action.IsSafeMode() {
 		rows, err := db.Query(context.Background(), escapedSQL, sqlArgs...)
+		rowsInJSONByte, _ := json.Marshal(rows)
+		fmt.Printf("[DUMP] rows: %s\n", string(rowsInJSONByte))
 		if err != nil {
 			return queryResult, err
 		}
