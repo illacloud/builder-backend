@@ -312,7 +312,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		}
 		c := sqlRuneList[sqlRuneSerialList[charSerial]]
 
-		fmt.Printf("[%d:%d] char: %s\n", sqlRuneSerialList[charSerial], charSerial, string(c))
+		// fmt.Printf("[%d:%d] char: %s\n", sqlRuneSerialList[charSerial], charSerial, string(c))
 		// process bracket
 		// '' + '{' or '{' + '{'
 		if c == '{' && leftBraketCounter <= 1 {
