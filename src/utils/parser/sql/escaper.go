@@ -301,13 +301,11 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		sqlRuneList = append(sqlRuneList, j)
 	}
 
-	charSerial := -1
-	for {
+	charSerial := 0
+	for _, c := range sql {
 		charSerial++
-		if charSerial > len(sqlRuneList)-1 {
-			break
-		}
-		c := rune(sqlRuneList[charSerial])
+
+		// fmt.Printf("[%d] char: %s\n", charSerial, string(c))
 		// process bracket
 		// '' + '{' or '{' + '{'
 		if c == '{' && leftBraketCounter <= 1 {
@@ -400,6 +398,7 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 					fmt.Printf("[DUMP] errInReflectVariableToSlice: %+v\n", errInReflectVariableToSlice)
 					variableIsArray := errInReflectVariableToSlice == nil
 					if !variableIsArray {
+						fmt.Printf("---------- variable in safe mode, and it is a basic variable input!\n")
 						// process variable content
 						if sqlEscaper.IsSerializedParameterizedSQL() {
 							// safe mode, with serialized param
@@ -503,8 +502,12 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		}
 		// single quote end, form concat function to sql
 		if c == '\'' && singleQuoteStart && !doubleQuoteStart {
+			fmt.Printf("[DUMP] single quote end at (%d)\n", charSerial)
+
 			// check if is escape character
 			nextChar, errInGetNextChar := getNextChar(charSerial)
+			fmt.Printf("-- [DUMP] single quote nextChar: %s\n", string(nextChar))
+
 			if errInGetNextChar == nil {
 				// psotgres specified escape method
 				if nextChar == '\'' {
@@ -516,7 +519,10 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 			}
 
 			// not escape, it is string finish quote
-			ret.WriteString(formatConcatTarget(sqlEscaper, concatStringTargets, singleQuoteStart, doubleQuoteStart))
+			concatResult := formatConcatTarget(sqlEscaper, concatStringTargets, singleQuoteStart, doubleQuoteStart)
+			fmt.Printf("-- [DUMP] single quote concatStringTargets: %v\n", concatStringTargets)
+			fmt.Printf("-- [DUMP] single quote concatResult: %s\n", concatResult)
+			ret.WriteString(concatResult)
 
 			// clean status
 			singleQuoteStart = false
