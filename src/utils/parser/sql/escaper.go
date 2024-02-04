@@ -288,24 +288,31 @@ func (sqlEscaper *SQLEscaper) EscapeSQLActionTemplate(sql string, args map[strin
 		ret.WriteString("}")
 		escapedBracketWithVariable = ""
 	}
+	// init sql rune serial list
+	sqlRuneSerialList := make([]int, 0)
+	sqlRuneList := []rune(sql)
+	// convert to rune slice
+	for i, _ := range sqlRuneList {
+		sqlRuneSerialList = append(sqlRuneSerialList, i)
+	}
+
+	// get next char method.
 	getNextChar := func(serial int) (rune, error) {
-		if len(sql)-1 <= serial {
+		if len(sqlRuneSerialList)-1 <= serial {
 			return rune(0), errors.New("over range")
 		}
-		return rune(sql[serial+1]), nil
+		return sqlRuneList[sqlRuneSerialList[serial+1]], nil
 	}
 
-	// convert to rune slice
-	sqlRuneList := make([]rune, 0)
-	for _, j := range sql {
-		sqlRuneList = append(sqlRuneList, j)
-	}
-
-	charSerial := 0
-	for _, c := range sql {
+	charSerial := -1
+	for {
 		charSerial++
+		if charSerial > len(sqlRuneSerialList)-1 {
+			break
+		}
+		c := sqlRuneList[sqlRuneSerialList[charSerial]]
 
-		// fmt.Printf("[%d] char: %s\n", charSerial, string(c))
+		fmt.Printf("[%d:%d] char: %s\n", sqlRuneSerialList[charSerial], charSerial, string(c))
 		// process bracket
 		// '' + '{' or '{' + '{'
 		if c == '{' && leftBraketCounter <= 1 {

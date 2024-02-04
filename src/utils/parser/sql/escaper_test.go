@@ -295,15 +295,15 @@ func TestEscapeMySQLSQLInStatementQueryInIntStringInUnsafeMode(t *testing.T) {
 // SELECT * FROM apps WHERE uid = ANY (VALUES ('ca5e3145-f9b4-4610-bd25-0ffbf258cce7'::uuid), ('feb398fa-e5eb-43f6-8488-82a9f4806570'::uuid));
 // ```
 func TestEscapePostgresSQLAnyStatementQuery(t *testing.T) {
-	sql_1 := `select * from users where name = ANY('{{multiselect1.value.map(b => Number(b))}}')`
+	sql_1 := `select * from users where name = ANY(ARRAY[{{multiselect1.value.map(b => Number(b))}}])`
 	args := map[string]interface{}{
 		`multiselect1.value.map(b => Number(b))`: []interface{}{"a", "b", "c"},
 	}
 	sqlEscaper := NewSQLEscaper(resourcelist.TYPE_POSTGRESQL_ID)
 	escapedSQL, usedArgs, errInEscape := sqlEscaper.EscapeSQLActionTemplate(sql_1, args, true)
 	assert.Nil(t, errInEscape)
-	assert.Equal(t, []interface{}{}, usedArgs, "the usedArgs should be equal")
-	assert.Equal(t, "select * from users where id in ('a', 'b', 'c')", escapedSQL, "the token should be equal")
+	assert.Equal(t, []interface{}{"a", "b", "c"}, usedArgs, "the usedArgs should be equal")
+	assert.Equal(t, "select * from users where name = ANY(ARRAY[$1, $2, $3])", escapedSQL, "the token should be equal")
 }
 
 func TestEscapePostgresSQLInvaliedLengthUTF8Case(t *testing.T) {
