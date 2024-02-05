@@ -21,7 +21,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"net/url"
 
 	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
@@ -48,9 +47,10 @@ func (m *MySQLConnector) getConnectionWithOptions(resourceOptions map[string]int
 }
 
 func (m *MySQLConnector) connectPure() (db *sql.DB, err error) {
-	escapedPassword := url.QueryEscape(m.Resource.DatabasePassword)
+	// @NOTE: the  go-sql-driver lib does NOT need escape the password in DSN
+	// refer: https://github.com/go-sql-driver/mysql?tab=readme-ov-file#password
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.Resource.DatabaseUsername,
-		escapedPassword, m.Resource.Host, m.Resource.Port, m.Resource.DatabaseName)
+		m.Resource.DatabasePassword, m.Resource.Host, m.Resource.Port, m.Resource.DatabaseName)
 	db, err = sql.Open("mysql", dsn+"?timeout=30s")
 	if err != nil {
 		return nil, err
@@ -59,9 +59,10 @@ func (m *MySQLConnector) connectPure() (db *sql.DB, err error) {
 }
 
 func (m *MySQLConnector) connectViaSSL() (db *sql.DB, err error) {
-	escapedPassword := url.QueryEscape(m.Resource.DatabasePassword)
+	// @NOTE: the  go-sql-driver lib does NOT need escape the password in DSN
+	// refer: https://github.com/go-sql-driver/mysql?tab=readme-ov-file#password
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", m.Resource.DatabaseUsername,
-		escapedPassword, m.Resource.Host, m.Resource.Port, m.Resource.DatabaseName)
+		m.Resource.DatabasePassword, m.Resource.Host, m.Resource.Port, m.Resource.DatabaseName)
 	pool := x509.NewCertPool()
 	if ok := pool.AppendCertsFromPEM([]byte(m.Resource.SSL.ServerCert)); !ok {
 		return nil, errors.New("MySQL SSL/TLS Connection failed")
