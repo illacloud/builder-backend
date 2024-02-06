@@ -751,7 +751,7 @@ func (controller *Controller) DuplicateApp(c *gin.Context) {
 
 func (controller *Controller) ReleaseApp(c *gin.Context) {
 	// init timer
-	performanceTimerStart := time.Now().Unix()
+	performanceTimerStart := time.Now().UnixMilli()
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
@@ -840,12 +840,12 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	}
 
 	// add timer
-	performanceTimerEnd0 := time.Now().Unix()
+	performanceTimerEnd0 := time.Now().UnixMilli()
 	performanceTimerEnd1 := performanceTimerEnd0
 	performanceTimerEnd2 := performanceTimerEnd0
 	performanceTimerEnd3 := performanceTimerEnd0
 	performanceTimerEnd4 := performanceTimerEnd0
-	fmt.Printf("[timer] phrase 0: %d s\n", -(performanceTimerStart - performanceTimerEnd0))
+	fmt.Printf("[timer] phrase 0: %d ms\n", -(performanceTimerStart - performanceTimerEnd0))
 
 	// release app following components & actions
 	// release will copy following units from edit version to app mainline version
@@ -859,29 +859,29 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	go func() {
 		defer wg.Done()
 		errInDuplicateTreeStateByVersion = controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-		performanceTimerEnd1 = time.Now().Unix()
-		fmt.Printf("[timer] phrase 1: %d s\n", -(performanceTimerStart - performanceTimerEnd1))
+		performanceTimerEnd1 = time.Now().UnixMilli()
+		fmt.Printf("[timer] phrase 1: %d ms\n", -(performanceTimerEnd0 - performanceTimerEnd1))
 
 	}()
 	go func() {
 		defer wg.Done()
 		errInDuplicateKVStateByVersion = controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-		performanceTimerEnd2 = time.Now().Unix()
-		fmt.Printf("[timer] phrase 2: %d s\n", -(performanceTimerStart - performanceTimerEnd2))
+		performanceTimerEnd2 = time.Now().UnixMilli()
+		fmt.Printf("[timer] phrase 2: %d ms\n", -(performanceTimerEnd0 - performanceTimerEnd2))
 
 	}()
 	go func() {
 		defer wg.Done()
 		errInDuplicateSetStateByVersion = controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-		performanceTimerEnd3 = time.Now().Unix()
-		fmt.Printf("[timer] phrase 3: %d s\n", -(performanceTimerStart - performanceTimerEnd3))
+		performanceTimerEnd3 = time.Now().UnixMilli()
+		fmt.Printf("[timer] phrase 3: %d ms\n", -(performanceTimerEnd0 - performanceTimerEnd3))
 
 	}()
 	go func() {
 		defer wg.Done()
 		errInDuplicateActionByVersion = controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), req.ExportPublic(), userID, false)
-		performanceTimerEnd4 = time.Now().Unix()
-		fmt.Printf("[timer] phrase 4: %d s\n", -(performanceTimerStart - performanceTimerEnd4))
+		performanceTimerEnd4 = time.Now().UnixMilli()
+		fmt.Printf("[timer] phrase 4: %d ms\n", -(performanceTimerEnd0 - performanceTimerEnd4))
 
 	}()
 
@@ -891,7 +891,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		return
 	}
 
-	performanceTimerEnd5 := time.Now().Unix()
+	performanceTimerEnd5 := time.Now().UnixMilli()
 
 	// if app already published to marketplace, sync app to marketplace
 	if app.IsPublishedToMarketplace() {
@@ -909,9 +909,9 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		AppID:     appID,
 		AppName:   app.ExportAppName(),
 	})
-	performanceTimerEnd6 := time.Now().Unix()
+	performanceTimerEnd6 := time.Now().UnixMilli()
 
-	fmt.Printf("[timer] phrase 5: %d s\n", -(performanceTimerEnd5 - performanceTimerEnd6))
+	fmt.Printf("[timer] phrase 5: %d ms\n", -(performanceTimerEnd5 - performanceTimerEnd6))
 
 	// feedback
 	controller.FeedbackOK(c, response.NewReleaseAppResponse(app))
