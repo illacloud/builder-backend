@@ -786,7 +786,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		return
 	}
 	performanceTimerEnd0_2 := time.Now().UnixMilli()
-	fmt.Printf("[timer] phrase 0_2: %d ms\n", -(performanceTimerStart - performanceTimerEnd0_2))
+	fmt.Printf("[timer] phrase 0_2: %d ms\n", -(performanceTimerEnd0_1 - performanceTimerEnd0_2))
 
 	// fetch app
 	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
@@ -796,7 +796,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	}
 
 	performanceTimerEnd0_3 := time.Now().UnixMilli()
-	fmt.Printf("[timer] phrase 0_3: %d ms\n", -(performanceTimerStart - performanceTimerEnd0_3))
+	fmt.Printf("[timer] phrase 0_3: %d ms\n", -(performanceTimerEnd0_2 - performanceTimerEnd0_3))
 
 	// check team can release public app, the free team can not release app as public.
 	// but when publish app to marketplace, the can re-deploy this app as public.
@@ -818,7 +818,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		}
 	}
 	performanceTimerEnd0_4 := time.Now().UnixMilli()
-	fmt.Printf("[timer] phrase 0_4: %d ms\n", -(performanceTimerStart - performanceTimerEnd0_4))
+	fmt.Printf("[timer] phrase 0_4: %d ms\n", -(performanceTimerEnd0_3 - performanceTimerEnd0_4))
 
 	// config app & action public status
 	if req.ExportPublic() {
@@ -837,7 +837,7 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	}
 
 	performanceTimerEnd0_5 := time.Now().UnixMilli()
-	fmt.Printf("[timer] phrase 0_5: %d ms\n", -(performanceTimerStart - performanceTimerEnd0_5))
+	fmt.Printf("[timer] phrase 0_5: %d ms\n", -(performanceTimerEnd0_4 - performanceTimerEnd0_5))
 
 	// release app version
 	treeStateLatestVersion, _ := controller.Storage.TreeStateStorage.RetrieveTreeStatesLatestVersion(teamID, appID)
