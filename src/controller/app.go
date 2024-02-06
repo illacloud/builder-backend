@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -749,6 +750,8 @@ func (controller *Controller) DuplicateApp(c *gin.Context) {
 }
 
 func (controller *Controller) ReleaseApp(c *gin.Context) {
+	// init timer
+	performanceTimerStart := time.Now().Unix()
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
@@ -836,29 +839,64 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		return
 	}
 
+	// add timer
+	performanceTimerEnd0 := time.Now().Unix()
+	performanceTimerEnd1 := performanceTimerEnd0
+	performanceTimerEnd2 := performanceTimerEnd0
+	performanceTimerEnd3 := performanceTimerEnd0
+	performanceTimerEnd4 := performanceTimerEnd0
+	fmt.Printf("[timer] phrase 0: %d s\n", -(performanceTimerStart - performanceTimerEnd0))
+
 	// release app following components & actions
 	// release will copy following units from edit version to app mainline version
-	errInDuplicateTreeStateByVersion := controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-	errInDuplicateKVStateByVersion := controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-	errInDuplicateSetStateByVersion := controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-	errInDuplicateActionByVersion := controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), req.ExportPublic(), userID, false)
+	var wg sync.WaitGroup
+	var errInDuplicateTreeStateByVersion error
+	var errInDuplicateKVStateByVersion error
+	var errInDuplicateSetStateByVersion error
+	var errInDuplicateActionByVersion error
+	wg.Add(4)
+
+	go func() {
+		defer wg.Done()
+		errInDuplicateTreeStateByVersion = controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+		performanceTimerEnd1 = time.Now().Unix()
+		fmt.Printf("[timer] phrase 1: %d s\n", -(performanceTimerStart - performanceTimerEnd1))
+
+	}()
+	go func() {
+		defer wg.Done()
+		errInDuplicateKVStateByVersion = controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+		performanceTimerEnd2 = time.Now().Unix()
+		fmt.Printf("[timer] phrase 2: %d s\n", -(performanceTimerStart - performanceTimerEnd2))
+
+	}()
+	go func() {
+		defer wg.Done()
+		errInDuplicateSetStateByVersion = controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+		performanceTimerEnd3 = time.Now().Unix()
+		fmt.Printf("[timer] phrase 3: %d s\n", -(performanceTimerStart - performanceTimerEnd3))
+
+	}()
+	go func() {
+		defer wg.Done()
+		errInDuplicateActionByVersion = controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), req.ExportPublic(), userID, false)
+		performanceTimerEnd4 = time.Now().Unix()
+		fmt.Printf("[timer] phrase 4: %d s\n", -(performanceTimerStart - performanceTimerEnd4))
+
+	}()
+
+	// waitting duplicate method done
+	wg.Wait()
 	if errInDuplicateTreeStateByVersion != nil || errInDuplicateKVStateByVersion != nil || errInDuplicateSetStateByVersion != nil || errInDuplicateActionByVersion != nil {
 		return
 	}
 
+	performanceTimerEnd5 := time.Now().Unix()
+
 	// if app already published to marketplace, sync app to marketplace
 	if app.IsPublishedToMarketplace() {
-		// init parallel counter
-		var wg sync.WaitGroup
-		wg.Add(1)
-
-		// add counter to marketpalce
-		go func() {
-			defer wg.Done()
-			marketplaceAPI := illamarketplacesdk.NewIllaMarketplaceRestAPI()
-			marketplaceAPI.UpdateProduct(illamarketplacesdk.PRODUCT_TYPE_APPS, appID, illamarketplacesdk.NewAppForMarketplace(app))
-		}()
-
+		marketplaceAPI := illamarketplacesdk.NewIllaMarketplaceRestAPI()
+		marketplaceAPI.UpdateProduct(illamarketplacesdk.PRODUCT_TYPE_APPS, appID, illamarketplacesdk.NewAppForMarketplace(app))
 	}
 
 	// audit log
@@ -871,6 +909,9 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		AppID:     appID,
 		AppName:   app.ExportAppName(),
 	})
+	performanceTimerEnd6 := time.Now().Unix()
+
+	fmt.Printf("[timer] phrase 5: %d s\n", -(performanceTimerEnd5 - performanceTimerEnd6))
 
 	// feedback
 	controller.FeedbackOK(c, response.NewReleaseAppResponse(app))

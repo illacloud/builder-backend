@@ -49,6 +49,8 @@ func (p *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 }
 
 func (p *Connector) connectPure() (db *pgx.Conn, err error) {
+	// @NOTE: following this issue: https://github.com/jackc/pgx/issues/1285
+	// the postgres connection string must be escaped in password
 	escapedPassword := url.QueryEscape(p.Resource.DatabasePassword)
 	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", p.Resource.DatabaseUsername,
 		escapedPassword, p.Resource.Host, p.Resource.Port, p.Resource.DatabaseName)
@@ -64,6 +66,8 @@ func (p *Connector) connectPure() (db *pgx.Conn, err error) {
 }
 
 func (p *Connector) connectViaSSL() (db *pgx.Conn, err error) {
+	// @NOTE: following this issue: https://github.com/jackc/pgx/issues/1285
+	// the postgres connection string must be escaped in password
 	escapedPassword := url.QueryEscape(p.Resource.DatabasePassword)
 	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", p.Resource.DatabaseUsername,
 		escapedPassword, p.Resource.Host, p.Resource.Port, p.Resource.DatabaseName)
