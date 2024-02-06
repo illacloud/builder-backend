@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -749,6 +750,8 @@ func (controller *Controller) DuplicateApp(c *gin.Context) {
 }
 
 func (controller *Controller) ReleaseApp(c *gin.Context) {
+	// init timer
+	performanceTimerStart := time.Now().UnixMilli()
 	// fetch needed param
 	teamID, errInGetTeamID := controller.GetMagicIntParamFromRequest(c, PARAM_TEAM_ID)
 	appID, errInGetAPPID := controller.GetMagicIntParamFromRequest(c, PARAM_APP_ID)
@@ -757,6 +760,8 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
 	}
+	performanceTimerEnd0_1 := time.Now().UnixMilli()
+	fmt.Printf("[timer] phrase 0_1: %d ms\n", -(performanceTimerStart - performanceTimerEnd0_1))
 
 	// get request body
 	req := request.NewReleaseAppRequest()
@@ -780,6 +785,8 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
+	performanceTimerEnd0_2 := time.Now().UnixMilli()
+	fmt.Printf("[timer] phrase 0_2: %d ms\n", -(performanceTimerEnd0_1 - performanceTimerEnd0_2))
 
 	// fetch app
 	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
@@ -787,6 +794,9 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
 		return
 	}
+
+	performanceTimerEnd0_3 := time.Now().UnixMilli()
+	fmt.Printf("[timer] phrase 0_3: %d ms\n", -(performanceTimerEnd0_2 - performanceTimerEnd0_3))
 
 	// check team can release public app, the free team can not release app as public.
 	// but when publish app to marketplace, the can re-deploy this app as public.
@@ -807,6 +817,8 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 			return
 		}
 	}
+	performanceTimerEnd0_4 := time.Now().UnixMilli()
+	fmt.Printf("[timer] phrase 0_4: %d ms\n", -(performanceTimerEnd0_3 - performanceTimerEnd0_4))
 
 	// config app & action public status
 	if req.ExportPublic() {
@@ -824,6 +836,9 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		controller.Storage.ActionStorage.MakeActionPrivateByTeamIDAndAppID(teamID, appID, userID)
 	}
 
+	performanceTimerEnd0_5 := time.Now().UnixMilli()
+	fmt.Printf("[timer] phrase 0_5: %d ms\n", -(performanceTimerEnd0_4 - performanceTimerEnd0_5))
+
 	// release app version
 	treeStateLatestVersion, _ := controller.Storage.TreeStateStorage.RetrieveTreeStatesLatestVersion(teamID, appID)
 	app.SyncMainlineVersionWithTreeStateLatestVersion(treeStateLatestVersion)
@@ -836,29 +851,64 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		return
 	}
 
+	// add timer
+	performanceTimerEnd0 := time.Now().UnixMilli()
+	performanceTimerEnd1 := performanceTimerEnd0
+	performanceTimerEnd2 := performanceTimerEnd0
+	performanceTimerEnd3 := performanceTimerEnd0
+	performanceTimerEnd4 := performanceTimerEnd0
+	fmt.Printf("[timer] phrase 0: %d ms\n", -(performanceTimerStart - performanceTimerEnd0))
+
 	// release app following components & actions
 	// release will copy following units from edit version to app mainline version
-	errInDuplicateTreeStateByVersion := controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-	errInDuplicateKVStateByVersion := controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-	errInDuplicateSetStateByVersion := controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
-	errInDuplicateActionByVersion := controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), req.ExportPublic(), userID, false)
+	var wg sync.WaitGroup
+	var errInDuplicateTreeStateByVersion error
+	var errInDuplicateKVStateByVersion error
+	var errInDuplicateSetStateByVersion error
+	var errInDuplicateActionByVersion error
+	wg.Add(4)
+
+	go func() {
+		defer wg.Done()
+		errInDuplicateTreeStateByVersion = controller.DuplicateTreeStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+		performanceTimerEnd1 = time.Now().UnixMilli()
+		fmt.Printf("[timer] phrase 1: %d ms\n", -(performanceTimerEnd0 - performanceTimerEnd1))
+
+	}()
+	go func() {
+		defer wg.Done()
+		errInDuplicateKVStateByVersion = controller.DuplicateKVStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+		performanceTimerEnd2 = time.Now().UnixMilli()
+		fmt.Printf("[timer] phrase 2: %d ms\n", -(performanceTimerEnd0 - performanceTimerEnd2))
+
+	}()
+	go func() {
+		defer wg.Done()
+		errInDuplicateSetStateByVersion = controller.DuplicateSetStateByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), userID)
+		performanceTimerEnd3 = time.Now().UnixMilli()
+		fmt.Printf("[timer] phrase 3: %d ms\n", -(performanceTimerEnd0 - performanceTimerEnd3))
+
+	}()
+	go func() {
+		defer wg.Done()
+		errInDuplicateActionByVersion = controller.DuplicateActionByVersion(c, teamID, teamID, appID, appID, model.APP_EDIT_VERSION, app.ExportMainlineVersion(), req.ExportPublic(), userID, false)
+		performanceTimerEnd4 = time.Now().UnixMilli()
+		fmt.Printf("[timer] phrase 4: %d ms\n", -(performanceTimerEnd0 - performanceTimerEnd4))
+
+	}()
+
+	// waitting duplicate method done
+	wg.Wait()
 	if errInDuplicateTreeStateByVersion != nil || errInDuplicateKVStateByVersion != nil || errInDuplicateSetStateByVersion != nil || errInDuplicateActionByVersion != nil {
 		return
 	}
 
+	performanceTimerEnd5 := time.Now().UnixMilli()
+
 	// if app already published to marketplace, sync app to marketplace
 	if app.IsPublishedToMarketplace() {
-		// init parallel counter
-		var wg sync.WaitGroup
-		wg.Add(1)
-
-		// add counter to marketpalce
-		go func() {
-			defer wg.Done()
-			marketplaceAPI := illamarketplacesdk.NewIllaMarketplaceRestAPI()
-			marketplaceAPI.UpdateProduct(illamarketplacesdk.PRODUCT_TYPE_APPS, appID, illamarketplacesdk.NewAppForMarketplace(app))
-		}()
-
+		marketplaceAPI := illamarketplacesdk.NewIllaMarketplaceRestAPI()
+		marketplaceAPI.UpdateProduct(illamarketplacesdk.PRODUCT_TYPE_APPS, appID, illamarketplacesdk.NewAppForMarketplace(app))
 	}
 
 	// audit log
@@ -871,6 +921,9 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		AppID:     appID,
 		AppName:   app.ExportAppName(),
 	})
+	performanceTimerEnd6 := time.Now().UnixMilli()
+
+	fmt.Printf("[timer] phrase 5: %d ms\n", -(performanceTimerEnd5 - performanceTimerEnd6))
 
 	// feedback
 	controller.FeedbackOK(c, response.NewReleaseAppResponse(app))

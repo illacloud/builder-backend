@@ -20,6 +20,9 @@ import (
 	"gorm.io/gorm"
 )
 
+const SQL_SET_ACTION_PUBLIC = `update actions set config = jsonb_set(config, '{public}', 'true'::jsonb, true), updated_by= ? where team_id = ? and app_ref_id = ?;`
+const SQL_SET_ACTION_PRIVATE = `update actions set config = jsonb_set(config, '{public}', 'false'::jsonb, true), updated_by= ? where team_id = ? and app_ref_id = ?;`
+
 type ActionStorage struct {
 	logger *zap.SugaredLogger
 	db     *gorm.DB
@@ -74,36 +77,17 @@ func (impl *ActionStorage) UpdatePrivacyByTeamIDAndAppIDAndUserID(teamID int, ap
 }
 
 func (impl *ActionStorage) MakeActionPublicByTeamIDAndAppID(teamID int, appID int, userID int) error {
-	actions, errInGetAll := impl.RetrieveAll(teamID, appID)
-	if errInGetAll != nil {
-		return errInGetAll
-	}
-	// set status
-	for _, action := range actions {
-		action.SetPublic(userID)
-		// update
-		errorInUpdate := impl.UpdateWholeAction(action)
-		if errorInUpdate != nil {
-			return errorInUpdate
-		}
-
+	tx := impl.db.Exec(SQL_SET_ACTION_PUBLIC, userID, teamID, appID)
+	if tx.Error != nil {
+		return tx.Error
 	}
 	return nil
 }
 
 func (impl *ActionStorage) MakeActionPrivateByTeamIDAndAppID(teamID int, appID int, userID int) error {
-	actions, errInGetAll := impl.RetrieveAll(teamID, appID)
-	if errInGetAll != nil {
-		return errInGetAll
-	}
-	// set status
-	for _, action := range actions {
-		action.SetPrivate(userID)
-		// update
-		errorInUpdate := impl.UpdateWholeAction(action)
-		if errorInUpdate != nil {
-			return errorInUpdate
-		}
+	tx := impl.db.Exec(SQL_SET_ACTION_PRIVATE, userID, teamID, appID)
+	if tx.Error != nil {
+		return tx.Error
 	}
 	return nil
 }
