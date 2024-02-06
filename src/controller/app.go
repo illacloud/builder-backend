@@ -760,6 +760,8 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 	if errInGetTeamID != nil || errInGetAPPID != nil || errInGetAuthToken != nil || errInGetUserID != nil {
 		return
 	}
+	performanceTimerEnd0_1 := time.Now().UnixMilli()
+	fmt.Printf("[timer] phrase 0_1: %d ms\n", -(performanceTimerStart - performanceTimerEnd0_1))
 
 	// get request body
 	req := request.NewReleaseAppRequest()
@@ -783,6 +785,8 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_ACCESS_DENIED, "you can not access this attribute due to access control policy.")
 		return
 	}
+	performanceTimerEnd0_2 := time.Now().UnixMilli()
+	fmt.Printf("[timer] phrase 0_2: %d ms\n", -(performanceTimerStart - performanceTimerEnd0_2))
 
 	// fetch app
 	app, errInRetrieveApp := controller.Storage.AppStorage.RetrieveAppByTeamIDAndAppID(teamID, appID)
@@ -790,6 +794,9 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_GET_APP, "get app failed: "+errInRetrieveApp.Error())
 		return
 	}
+
+	performanceTimerEnd0_3 := time.Now().UnixMilli()
+	fmt.Printf("[timer] phrase 0_3: %d ms\n", -(performanceTimerStart - performanceTimerEnd0_3))
 
 	// check team can release public app, the free team can not release app as public.
 	// but when publish app to marketplace, the can re-deploy this app as public.
@@ -810,6 +817,8 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 			return
 		}
 	}
+	performanceTimerEnd0_4 := time.Now().UnixMilli()
+	fmt.Printf("[timer] phrase 0_4: %d ms\n", -(performanceTimerStart - performanceTimerEnd0_4))
 
 	// config app & action public status
 	if req.ExportPublic() {
@@ -826,6 +835,9 @@ func (controller *Controller) ReleaseApp(c *gin.Context) {
 		app.SetPrivate(userID)
 		controller.Storage.ActionStorage.MakeActionPrivateByTeamIDAndAppID(teamID, appID, userID)
 	}
+
+	performanceTimerEnd0_5 := time.Now().UnixMilli()
+	fmt.Printf("[timer] phrase 0_5: %d ms\n", -(performanceTimerStart - performanceTimerEnd0_5))
 
 	// release app version
 	treeStateLatestVersion, _ := controller.Storage.TreeStateStorage.RetrieveTreeStatesLatestVersion(teamID, appID)
