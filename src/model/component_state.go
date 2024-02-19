@@ -17,6 +17,7 @@ package model
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"strconv"
 )
 
@@ -163,12 +164,26 @@ func ExportComponentTreeAllDisplayNames(cnode *ComponentNode, displayNames []str
 	}
 }
 
-func BuildComponentTree(treeState *TreeState, treeStateMap map[int]*TreeState, parentComponentNode *ComponentNode) (*ComponentNode, error) {
+func BuildComponentTree(treeState *TreeState, treeStateMap map[int]*TreeState, parentComponentNode *ComponentNode, dagNodeMarkTable map[int]bool) (*ComponentNode, error) {
+	// init mark table for DAG circle
+	if dagNodeMarkTable == nil {
+		dagNodeMarkTable = make(map[int]bool, 0)
+	}
+	// check dag if node has traversed
+	if dagNodeMarkTable[treeState.ExportID()] {
+		log.Printf("[ERROR] error in build component tree, the components DAG have circle reference, in teamID: %d, appID: %d\n", treeState.TeamID, treeState.AppRefID)
+		return nil, errors.New("error in build component tree, the components DAG have circle reference")
+	}
+
+	// start
 	cnode := &ComponentNode{}
 	var err error
 	if cnode, err = treeState.ExportContentAsComponentState(); err != nil {
 		return nil, err
 	}
+	dagNodeMarkTable[treeState.ExportID()] = true
+
+	// travel children nodes
 	var treestateIDs []int
 	treestateIDs, err = treeState.ExportChildrenNodeRefIDs()
 	if err != nil {
@@ -182,7 +197,7 @@ func BuildComponentTree(treeState *TreeState, treeStateMap map[int]*TreeState, p
 		if !ok {
 			return nil, errors.New("TreeState relation has broken, can not find children node id: " + strconv.Itoa(id))
 		}
-		if subcnode, err = BuildComponentTree(subTreeState, treeStateMap, cnode); err != nil {
+		if subcnode, err = BuildComponentTree(subTreeState, treeStateMap, cnode, dagNodeMarkTable); err != nil {
 			return nil, err
 		}
 		cnode.AppendChildrenNode(subcnode)

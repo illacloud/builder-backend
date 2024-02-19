@@ -179,7 +179,7 @@ func TestBuildComponentTree(t *testing.T) {
 	treeStateMap := map[int]*TreeState{1: &treeState1, 2: &treeState2, 3: &treeState3, 4: &treeState4, 5: &treeState5}
 	cnodefin := &ComponentNode{}
 	var err error
-	cnodefin, err = BuildComponentTree(&treeState1, treeStateMap, nil)
+	cnodefin, err = BuildComponentTree(&treeState1, treeStateMap, nil, nil)
 	assert.Nil(t, err)
 	// export
 	var b []byte

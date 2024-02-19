@@ -314,7 +314,7 @@ func (controller *Controller) GetTargetVersionFullApp(c *gin.Context, teamID int
 	}
 	treeStateLT := model.BuildTreeStateLookupTable(treeStateComponents)
 	rootOfTreeState := model.PickUpTreeStatesRootNode(treeStateComponents)
-	componentTree, errInBuildComponentsTree := model.BuildComponentTree(rootOfTreeState, treeStateLT, nil)
+	componentTree, errInBuildComponentsTree := model.BuildComponentTree(rootOfTreeState, treeStateLT, nil, nil)
 	if errInBuildComponentsTree != nil {
 		fmt.Printf("[DUMP] errInBuildComponentsTree: %+v\n", errInBuildComponentsTree)
 	}
@@ -502,7 +502,7 @@ func (controller *Controller) GetTargetVersionFullAppByAppID(c *gin.Context, app
 	}
 	treeStateLT := model.BuildTreeStateLookupTable(treeStateComponents)
 	rootOfTreeState := model.PickUpTreeStatesRootNode(treeStateComponents)
-	componentTree, _ := model.BuildComponentTree(rootOfTreeState, treeStateLT, nil)
+	componentTree, _ := model.BuildComponentTree(rootOfTreeState, treeStateLT, nil, nil)
 
 	// form editor object field appForExport, We need:
 	//     AppInfo               which is: *AppForExport
