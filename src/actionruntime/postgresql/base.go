@@ -196,7 +196,7 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 		tableData = append(tableData, entry)
 
 		// check tableData size every 100 results
-		if iteratorNums%100 == 0 {
+		if iteratorNums%common.SQL_RESULT_MEMORY_CHECK_RATE == 0 {
 			tableDataSize := size.Of(tableData)
 			if tableDataSize > common.SQL_RESULT_MEMORY_LIMIT {
 				return nil, errors.New("returned result exceeds 500MiB, please adjust the query limit to reduce the number of results")
