@@ -18,8 +18,11 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 
+	"github.com/DmitriyVTitov/size"
 	parser_template "github.com/illacloud/builder-backend/src/utils/parser/template"
 )
 
@@ -59,8 +62,10 @@ func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 	values := make([]interface{}, count)
 	// pointer of every row values
 	valPointers := make([]interface{}, count)
+	iteratorNums := 0
+	tableDataCapacity := 10000
 	for rows.Next() {
-
+		iteratorNums++
 		// get pointer for every row
 		for i := 0; i < count; i++ {
 			valPointers[i] = &values[i]
@@ -87,6 +92,15 @@ func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 			entry[col] = v
 		}
 		mapData = append(mapData, entry)
+		// check tableData size by sample
+		if iteratorNums == SQL_RESULT_MEMORY_CHECK_SAMPLE {
+			tableDataSizeBySample := size.Of(mapData)
+			tableDataCapacity = (SQL_RESULT_MEMORY_LIMIT / tableDataSizeBySample) * 1000
+		}
+		if iteratorNums > tableDataCapacity {
+			log.Printf("[ERROR] RetrieveToMap result exceeds 200MiB by iteratorNums: %d, size: %d", iteratorNums, size.Of(mapData))
+			return nil, errors.New("returned result exceeds 200MiB, please adjust the query limit to reduce the number of results")
+		}
 	}
 
 	return mapData, nil
@@ -118,8 +132,11 @@ func RetrieveToMapByDriverRows(rows driver.Rows) ([]map[string]interface{}, erro
 
 	// value of every row
 	values := make([]driver.Value, len(renamedColumns))
+	iteratorNums := 0
+	tableDataCapacity := 10000
 	// get all values
 	for {
+		iteratorNums++
 		errInFetchNextRows := rows.Next(values)
 		if errInFetchNextRows != nil {
 			break
@@ -142,6 +159,15 @@ func RetrieveToMapByDriverRows(rows driver.Rows) ([]map[string]interface{}, erro
 			entry[col] = v
 		}
 		mapData = append(mapData, entry)
+		// check tableData size by sample
+		if iteratorNums == SQL_RESULT_MEMORY_CHECK_SAMPLE {
+			tableDataSizeBySample := size.Of(mapData)
+			tableDataCapacity = (SQL_RESULT_MEMORY_LIMIT / tableDataSizeBySample) * 1000
+		}
+		if iteratorNums > tableDataCapacity {
+			log.Printf("[ERROR] RetrieveToMap result exceeds 200MiB by iteratorNums: %d, size: %d", iteratorNums, size.Of(mapData))
+			return nil, errors.New("returned result exceeds 200MiB, please adjust the query limit to reduce the number of results")
+		}
 	}
 
 	return mapData, nil
