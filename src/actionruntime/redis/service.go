@@ -17,7 +17,6 @@ package redis
 import (
 	"context"
 	"strings"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
@@ -84,7 +83,7 @@ func (r *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.
 
 func (r *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}, rawActionOptions map[string]interface{}) (common.RuntimeResult, error) {
 	// start a default context
-	ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), common.DEFAULT_QUERY_AND_EXEC_TIMEOUT)
 	defer cancel()
 
 	// get redis connection

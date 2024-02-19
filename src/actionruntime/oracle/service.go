@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
@@ -122,7 +121,7 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	err = nil
 
 	// start a default context
-	ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), common.DEFAULT_QUERY_AND_EXEC_TIMEOUT)
 	defer cancel()
 
 	// action mode switch

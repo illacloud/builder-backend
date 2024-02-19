@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"time"
 
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
 
@@ -117,7 +116,7 @@ func (d *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	}
 
 	// start a default context
-	ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), common.DEFAULT_QUERY_AND_EXEC_TIMEOUT)
 	defer cancel()
 
 	// switch based on different method

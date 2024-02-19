@@ -21,11 +21,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/DmitriyVTitov/size"
 	parser_template "github.com/illacloud/builder-backend/src/utils/parser/template"
 )
 
+const DEFAULT_QUERY_AND_EXEC_TIMEOUT = 120 * time.Second
 const SQL_RESULT_MEMORY_LIMIT = 209715200   // 200 * 1024 * 1024 bytes
 const SQL_RESULT_MEMORY_CHECK_SAMPLE = 1000 // check 1000 item bytes and calculate max item capacity
 
