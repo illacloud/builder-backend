@@ -15,8 +15,10 @@
 package mssql
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
 	parser_sql "github.com/illacloud/builder-backend/src/utils/parser/sql"
@@ -123,6 +125,10 @@ func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	queryResult.Extra = make(map[string]interface{})
 	err = nil
 
+	// start a default context
+	ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+	defer cancel()
+
 	// action mode switch
 	switch m.ActionOpts.Mode {
 	case ACTION_SQL_MODE:
@@ -149,7 +155,7 @@ func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 
 		// fetch data
 		if isSelectQuery && m.ActionOpts.IsSafeMode() {
-			rows, err := db.Query(escapedSQL, sqlArgs...)
+			rows, err := db.QueryContext(ctx, escapedSQL, sqlArgs...)
 			if err != nil {
 				return queryResult, err
 			}
@@ -161,7 +167,7 @@ func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Success = true
 			queryResult.Rows = mapRes
 		} else if isSelectQuery && !m.ActionOpts.IsSafeMode() {
-			rows, err := db.Query(escapedSQL)
+			rows, err := db.QueryContext(ctx, escapedSQL)
 			if err != nil {
 				return queryResult, err
 			}
@@ -173,7 +179,7 @@ func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Success = true
 			queryResult.Rows = mapRes
 		} else if !isSelectQuery && m.ActionOpts.IsSafeMode() {
-			execResult, err := db.Exec(escapedSQL, sqlArgs...)
+			execResult, err := db.ExecContext(ctx, escapedSQL, sqlArgs...)
 			if err != nil {
 				return queryResult, err
 			}
@@ -184,7 +190,7 @@ func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Success = true
 			queryResult.Extra["message"] = fmt.Sprintf("Affeted %d rows.", affectedRows)
 		} else if !isSelectQuery && !m.ActionOpts.IsSafeMode() {
-			execResult, err := db.Exec(escapedSQL)
+			execResult, err := db.ExecContext(ctx, escapedSQL)
 			if err != nil {
 				return queryResult, err
 			}
@@ -234,7 +240,7 @@ func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			for _, tableColumn := range tableColumns {
 				tableValues = append(tableValues, records[i][tableColumn])
 			}
-			_, err = stmt.Exec(tableValues...)
+			_, err = stmt.ExecContext(ctx, tableValues...)
 			if err != nil {
 				stmt.Close()
 				txn.Rollback()
@@ -242,7 +248,7 @@ func (m *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			}
 		}
 		// exec prepared statement with given batch data
-		result, err := stmt.Exec()
+		result, err := stmt.ExecContext(ctx)
 		if err != nil {
 			stmt.Close()
 			txn.Rollback()

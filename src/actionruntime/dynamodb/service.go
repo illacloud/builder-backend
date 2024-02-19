@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
 
@@ -115,6 +116,10 @@ func (d *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		d.ActionOpts.StructParams = res
 	}
 
+	// start a default context
+	ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+	defer cancel()
+
 	// switch based on different method
 	res := common.RuntimeResult{
 		Success: false,
@@ -127,7 +132,7 @@ func (d *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		if err != nil {
 			return res, err
 		}
-		out, err := svc.Query(context.TODO(), in)
+		out, err := svc.Query(ctx, in)
 		if err != nil {
 			return res, err
 		}
@@ -142,7 +147,7 @@ func (d *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		if err != nil {
 			return res, err
 		}
-		out, err := svc.Scan(context.TODO(), in)
+		out, err := svc.Scan(ctx, in)
 		if err != nil {
 			return res, err
 		}
@@ -157,7 +162,7 @@ func (d *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		if err != nil {
 			return res, err
 		}
-		if _, err := svc.PutItem(context.TODO(), in); err != nil {
+		if _, err := svc.PutItem(ctx, in); err != nil {
 			return res, err
 		}
 		res.Success = true
@@ -167,7 +172,7 @@ func (d *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		if err != nil {
 			return res, err
 		}
-		out, err := svc.GetItem(context.TODO(), in)
+		out, err := svc.GetItem(ctx, in)
 		if err != nil {
 			return res, err
 		}
@@ -182,7 +187,7 @@ func (d *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		if err != nil {
 			return res, err
 		}
-		if _, err := svc.UpdateItem(context.TODO(), in); err != nil {
+		if _, err := svc.UpdateItem(ctx, in); err != nil {
 			return res, err
 		}
 		res.Success = true
@@ -192,7 +197,7 @@ func (d *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		if err != nil {
 			return res, err
 		}
-		if _, err := svc.DeleteItem(context.TODO(), in); err != nil {
+		if _, err := svc.DeleteItem(ctx, in); err != nil {
 			return res, err
 		}
 		res.Success = true

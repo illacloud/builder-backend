@@ -15,8 +15,10 @@
 package mysql
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
@@ -132,9 +134,13 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 		return common.RuntimeResult{Success: false}, err
 	}
 
+	// start a default context
+	ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+	defer cancel()
+
 	// fetch data
 	if isSelectQuery && m.Action.IsSafeMode() {
-		rows, err := db.Query(escapedSQL, sqlArgs...)
+		rows, err := db.QueryContext(ctx, escapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}
@@ -146,7 +152,7 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else if isSelectQuery && !m.Action.IsSafeMode() {
-		rows, err := db.Query(escapedSQL)
+		rows, err := db.QueryContext(ctx, escapedSQL)
 		if err != nil {
 			return queryResult, err
 		}
@@ -158,7 +164,7 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else if !isSelectQuery && m.Action.IsSafeMode() {
-		execResult, err := db.Exec(escapedSQL, sqlArgs...)
+		execResult, err := db.ExecContext(ctx, escapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}
@@ -169,7 +175,7 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 		queryResult.Success = true
 		queryResult.Extra["message"] = fmt.Sprintf("Affeted %d rows.", affectedRows)
 	} else if !isSelectQuery && !m.Action.IsSafeMode() {
-		execResult, err := db.Exec(escapedSQL)
+		execResult, err := db.ExecContext(ctx, escapedSQL)
 		if err != nil {
 			return queryResult, err
 		}

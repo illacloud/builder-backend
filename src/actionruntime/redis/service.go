@@ -17,6 +17,7 @@ package redis
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
@@ -82,6 +83,10 @@ func (r *Connector) GetMetaInfo(resourceOptions map[string]interface{}) (common.
 }
 
 func (r *Connector) Run(resourceOptions map[string]interface{}, actionOptions map[string]interface{}, rawActionOptions map[string]interface{}) (common.RuntimeResult, error) {
+	// start a default context
+	ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+	defer cancel()
+
 	// get redis connection
 	rdb, err := r.getConnectionWithOptions(resourceOptions)
 	if err != nil {
@@ -90,7 +95,7 @@ func (r *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	defer rdb.Close()
 
 	// test redis connection
-	if _, err := rdb.Ping(context.Background()).Result(); err != nil {
+	if _, err := rdb.Ping(ctx).Result(); err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}
 
@@ -106,7 +111,7 @@ func (r *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	}
 
 	// run redis command
-	val, err := rdb.Do(context.Background(), inputRedisCMDSlice...).Result()
+	val, err := rdb.Do(ctx, inputRedisCMDSlice...).Result()
 	if err != nil {
 		return common.RuntimeResult{Success: false}, err
 	}

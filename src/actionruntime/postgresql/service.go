@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
 	parser_sql "github.com/illacloud/builder-backend/src/utils/parser/sql"
@@ -139,9 +140,13 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 
 	fmt.Printf("[DUMP] escapedSQL: %s\n", escapedSQL)
 
+	// start a default context
+	ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+	defer cancel()
+
 	// fetch data
 	if isSelectQuery && p.Action.IsSafeMode() {
-		rows, err := db.Query(context.Background(), escapedSQL, sqlArgs...)
+		rows, err := db.Query(ctx, escapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}
@@ -153,7 +158,7 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else if isSelectQuery && !p.Action.IsSafeMode() {
-		rows, err := db.Query(context.Background(), escapedSQL)
+		rows, err := db.Query(ctx, escapedSQL)
 		if err != nil {
 			return queryResult, err
 		}
@@ -165,7 +170,7 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else if !isSelectQuery && p.Action.IsSafeMode() { // update, insert, delete data
-		execResult, err := db.Exec(context.Background(), escapedSQL, sqlArgs...)
+		execResult, err := db.Exec(ctx, escapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}
@@ -173,7 +178,7 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		queryResult.Success = true
 		queryResult.Extra["message"] = fmt.Sprintf("Affeted %d rows.", affectedRows)
 	} else if !isSelectQuery && !p.Action.IsSafeMode() {
-		execResult, err := db.Exec(context.Background(), escapedSQL)
+		execResult, err := db.Exec(ctx, escapedSQL)
 		if err != nil {
 			return queryResult, err
 		}

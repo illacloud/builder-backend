@@ -15,8 +15,10 @@
 package oracle
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
@@ -119,6 +121,10 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 	queryResult.Extra = make(map[string]interface{})
 	err = nil
 
+	// start a default context
+	ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+	defer cancel()
+
 	// action mode switch
 	switch o.actionOptions.Mode {
 	case ACTION_SQL_MODE:
@@ -145,7 +151,7 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 		// fetch data
 		if isSelectQuery && o.actionOptions.IsSafeMode() {
 			fmt.Printf("[oracle] [RUN] isSelectQuery, IsSafeMode, escapedSQL: %s\n", escapedSQL)
-			rows, err := db.Query(escapedSQL, sqlArgs...)
+			rows, err := db.QueryContext(ctx, escapedSQL, sqlArgs...)
 			if err != nil {
 				return queryResult, err
 			}
@@ -158,7 +164,7 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Rows = mapRes
 		} else if isSelectQuery && !o.actionOptions.IsSafeMode() {
 			fmt.Printf("[oracle] [RUN] isSelectQuery, !IsSafeMode, query.Raw: %s\n", query.Raw)
-			rows, err := db.Query(escapedSQL)
+			rows, err := db.QueryContext(ctx, escapedSQL)
 			if err != nil {
 				return queryResult, err
 			}
@@ -171,7 +177,7 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Rows = mapRes
 		} else if !isSelectQuery && o.actionOptions.IsSafeMode() {
 			fmt.Printf("[oracle] [RUN] !isSelectQuery, IsSafeMode, escapedSQL: %s\n", escapedSQL)
-			execResult, err := db.Exec(escapedSQL, sqlArgs...)
+			execResult, err := db.ExecContext(ctx, escapedSQL, sqlArgs...)
 			if err != nil {
 				return queryResult, err
 			}
@@ -183,7 +189,7 @@ func (o *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 			queryResult.Extra["message"] = fmt.Sprintf("Affeted %d rows.", affectedRows)
 		} else if !isSelectQuery && !o.actionOptions.IsSafeMode() {
 			fmt.Printf("[oracle] [RUN] !isSelectQuery, !IsSafeMode, query.Raw: %s\n", query.Raw)
-			execResult, err := db.Exec(escapedSQL)
+			execResult, err := db.ExecContext(ctx, escapedSQL)
 			if err != nil {
 				return queryResult, err
 			}
