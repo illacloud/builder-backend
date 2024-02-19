@@ -21,12 +21,12 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"log"
 	"net/url"
 	"reflect"
 
 	"github.com/DmitriyVTitov/size"
 	"github.com/google/uuid"
+	"github.com/illacloud/builder-backend/src/actionruntime/common"
 	"github.com/jackc/pgx/v5"
 	"github.com/mitchellh/mapstructure"
 )
@@ -148,7 +148,6 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 	columnNameHitMap := make(map[string]int, 0)
 	columnNamePosMap := make(map[string]int, 0)
 
-	log.Printf("[DUMP] generate fields\n")
 	for pos, col := range fieldDescriptions {
 		hitColumnTimes, hitColumn := columnNameHitMap[col.Name]
 		cloName := col.Name
@@ -165,30 +164,21 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 		columnNamePosMap[cloName] = pos
 		renamedColumns = append(renamedColumns, cloName)
 	}
-	log.Printf("[DUMP] generate fields done\n")
 
 	count := len(renamedColumns)
 	tableData := make([]map[string]interface{}, 0)
 	values := make([]interface{}, count)
 	valuePtrs := make([]interface{}, count)
 
-	log.Printf("[DUMP] big loop start\n")
-
+	iteratorNums := 0
 	for rows.Next() {
-		log.Printf("[DUMP] generate valuePtrs\n")
-
+		iteratorNums++
 		for i := 0; i < count; i++ {
 			valuePtrs[i] = &values[i]
-			// check valuePtrs size
-			valuePtrsSize := size.Of(valuePtrs)
-			log.Printf("[DUMP] valuePtrsSize: %d\n", valuePtrsSize)
-
 		}
-		log.Printf("[DUMP] generate valuePtrs done\n")
 
 		rows.Scan(valuePtrs...)
 		entry := make(map[string]interface{})
-		log.Printf("[DUMP] generate columns\n")
 
 		for i, col := range renamedColumns {
 			// uuid
@@ -202,14 +192,17 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 			val := values[i]
 			entry[col] = val
 		}
-		log.Printf("[DUMP] generate columns done\n")
 
 		tableData = append(tableData, entry)
-		// check tableData size
-		tableDataSize := size.Of(tableData)
-		log.Printf("[DUMP] tableDataSize: %d\n", tableDataSize)
+
+		// check tableData size every 100 results
+		if iteratorNums%100 == 0 {
+			tableDataSize := size.Of(tableData)
+			if tableDataSize > common.SQL_RESULT_MEMORY_LIMIT {
+				return nil, errors.New("returned result exceeds 500MiB, please adjust the query limit to reduce the number of results")
+			}
+		}
 	}
-	log.Printf("[DUMP] big loop end\n")
 
 	return tableData, nil
 }
