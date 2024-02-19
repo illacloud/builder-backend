@@ -24,8 +24,8 @@ import (
 	"log"
 	"net/url"
 	"reflect"
-	"unsafe"
 
+	"github.com/DmitriyVTitov/size"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/mitchellh/mapstructure"
@@ -180,7 +180,7 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 		for i := 0; i < count; i++ {
 			valuePtrs[i] = &values[i]
 			// check valuePtrs size
-			valuePtrsSize := unsafe.Sizeof(valuePtrs)
+			valuePtrsSize := size.Of(valuePtrs)
 			log.Printf("[DUMP] valuePtrsSize: %d\n", valuePtrsSize)
 
 		}
@@ -206,7 +206,7 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 
 		tableData = append(tableData, entry)
 		// check tableData size
-		tableDataSize := unsafe.Sizeof(tableData)
+		tableDataSize := size.Of(tableData)
 		log.Printf("[DUMP] tableDataSize: %d\n", tableDataSize)
 	}
 	log.Printf("[DUMP] big loop end\n")
