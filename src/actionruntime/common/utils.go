@@ -23,8 +23,8 @@ import (
 	parser_template "github.com/illacloud/builder-backend/src/utils/parser/template"
 )
 
-const SQL_RESULT_MEMORY_LIMIT = 524288000   // 500 * 1024 * 1024 bytes
-const SQL_RESULT_MEMORY_CHECK_RATE = 100000 // check in every 100,000 times
+const SQL_RESULT_MEMORY_LIMIT = 209715200   // 200 * 1024 * 1024 bytes
+const SQL_RESULT_MEMORY_CHECK_SAMPLE = 1000 // check 1000 item bytes and calculate max item capacity
 
 func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 	columns, err := rows.Columns()

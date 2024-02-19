@@ -21,6 +21,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"reflect"
 
@@ -171,6 +172,7 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 	valuePtrs := make([]interface{}, count)
 
 	iteratorNums := 0
+	tableDataCapacity := 10000
 	for rows.Next() {
 		iteratorNums++
 		for i := 0; i < count; i++ {
@@ -195,12 +197,14 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 
 		tableData = append(tableData, entry)
 
-		// check tableData size every 100 results
-		if iteratorNums%common.SQL_RESULT_MEMORY_CHECK_RATE == 0 {
-			tableDataSize := size.Of(tableData)
-			if tableDataSize > common.SQL_RESULT_MEMORY_LIMIT {
-				return nil, errors.New("returned result exceeds 500MiB, please adjust the query limit to reduce the number of results")
-			}
+		// check tableData size by sample
+		if iteratorNums == common.SQL_RESULT_MEMORY_CHECK_SAMPLE {
+			tableDataSizeBySample := size.Of(tableData)
+			tableDataCapacity = (common.SQL_RESULT_MEMORY_LIMIT / tableDataSizeBySample) * 1000
+		}
+		if iteratorNums > tableDataCapacity {
+			log.Printf("[ERROR] RetrieveToMap result exceeds 200MiB by iteratorNums: %d", iteratorNums)
+			return nil, errors.New("returned result exceeds 200MiB, please adjust the query limit to reduce the number of results")
 		}
 	}
 
