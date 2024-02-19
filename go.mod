@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go/firestore v1.12.0
 	firebase.google.com/go/v4 v4.12.0
 	github.com/ClickHouse/clickhouse-go/v2 v2.13.3
+	github.com/DmitriyVTitov/size v1.5.0
 	github.com/aws/aws-sdk-go v1.44.332
 	github.com/aws/aws-sdk-go-v2 v1.21.0
 	github.com/aws/aws-sdk-go-v2/config v1.18.37
@@ -36,7 +37,6 @@ require (
 	github.com/minio/minio-go/v7 v7.0.62
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/redis/go-redis/v9 v9.1.0
-	github.com/segmentio/kafka-go v0.4.42
 	github.com/sijms/go-ora/v2 v2.7.17
 	github.com/snowflakedb/gosnowflake v1.6.24
 	github.com/stretchr/testify v1.8.4
