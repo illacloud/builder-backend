@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/illacloud/builder-backend/src/actionruntime/common"
@@ -146,15 +147,19 @@ func (p *Connector) Run(resourceOptions map[string]interface{}, actionOptions ma
 
 	// fetch data
 	if isSelectQuery && p.Action.IsSafeMode() {
+		log.Printf("[DUMP] db.Query() sql: %s\n", escapedSQL)
 		rows, err := db.Query(ctx, escapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}
+		log.Printf("[DUMP] common.RetrieveToMap start.\n")
 		mapRes, err := RetrieveToMap(rows)
 		if err != nil {
 			return queryResult, err
 		}
 		defer rows.Close()
+		log.Printf("[DUMP] common.RetrieveToMap end.\n")
+
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else if isSelectQuery && !p.Action.IsSafeMode() {

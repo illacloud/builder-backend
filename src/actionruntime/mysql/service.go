@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -140,15 +141,18 @@ func (m *MySQLConnector) Run(resourceOptions map[string]interface{}, actionOptio
 
 	// fetch data
 	if isSelectQuery && m.Action.IsSafeMode() {
+		log.Printf("[DUMP] db.QueryContext() sql: %s\n", escapedSQL)
 		rows, err := db.QueryContext(ctx, escapedSQL, sqlArgs...)
 		if err != nil {
 			return queryResult, err
 		}
+		log.Printf("[DUMP] common.RetrieveToMap start.\n")
 		mapRes, err := common.RetrieveToMap(rows)
 		if err != nil {
 			return queryResult, err
 		}
 		defer rows.Close()
+		log.Printf("[DUMP] common.RetrieveToMap done.\n")
 		queryResult.Success = true
 		queryResult.Rows = mapRes
 	} else if isSelectQuery && !m.Action.IsSafeMode() {
