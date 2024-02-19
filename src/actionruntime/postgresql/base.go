@@ -21,8 +21,10 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"reflect"
+	"unsafe"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -145,6 +147,8 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 	renamedColumns := make([]string, 0)
 	columnNameHitMap := make(map[string]int, 0)
 	columnNamePosMap := make(map[string]int, 0)
+
+	log.Printf("[DUMP] generate fields\n")
 	for pos, col := range fieldDescriptions {
 		hitColumnTimes, hitColumn := columnNameHitMap[col.Name]
 		cloName := col.Name
@@ -161,17 +165,31 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 		columnNamePosMap[cloName] = pos
 		renamedColumns = append(renamedColumns, cloName)
 	}
+	log.Printf("[DUMP] generate fields done\n")
+
 	count := len(renamedColumns)
 	tableData := make([]map[string]interface{}, 0)
 	values := make([]interface{}, count)
 	valuePtrs := make([]interface{}, count)
 
+	log.Printf("[DUMP] big loop start\n")
+
 	for rows.Next() {
+		log.Printf("[DUMP] generate valuePtrs\n")
+
 		for i := 0; i < count; i++ {
 			valuePtrs[i] = &values[i]
+			// check valuePtrs size
+			valuePtrsSize := unsafe.Sizeof(valuePtrs)
+			log.Printf("[DUMP] valuePtrsSize: %d\n", valuePtrsSize)
+
 		}
+		log.Printf("[DUMP] generate valuePtrs done\n")
+
 		rows.Scan(valuePtrs...)
 		entry := make(map[string]interface{})
+		log.Printf("[DUMP] generate columns\n")
+
 		for i, col := range renamedColumns {
 			// uuid
 			if values[i] != nil && reflect.TypeOf(values[i]).String() == "[16]uint8" {
@@ -184,7 +202,14 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 			val := values[i]
 			entry[col] = val
 		}
+		log.Printf("[DUMP] generate columns done\n")
+
 		tableData = append(tableData, entry)
+		// check tableData size
+		tableDataSize := unsafe.Sizeof(tableData)
+		log.Printf("[DUMP] tableDataSize: %d\n", tableDataSize)
 	}
+	log.Printf("[DUMP] big loop end\n")
+
 	return tableData, nil
 }
