@@ -27,9 +27,9 @@ import (
 	parser_template "github.com/illacloud/builder-backend/src/utils/parser/template"
 )
 
-const DEFAULT_QUERY_AND_EXEC_TIMEOUT = 60 * time.Second
-const SQL_RESULT_MEMORY_LIMIT = 10485760   // 200 * 1024 * 1024 bytes
-const SQL_RESULT_MEMORY_CHECK_SAMPLE = 100 // check 1000 item bytes and calculate max item capacity
+const DEFAULT_QUERY_AND_EXEC_TIMEOUT = 30 * time.Second
+const SQL_RESULT_MEMORY_LIMIT = 209715200  // 200 * 1024 * 1024 bytes
+const SQL_RESULT_MEMORY_CHECK_SAMPLE = 100 // check 100 item bytes and calculate max item capacity
 
 func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 	columns, err := rows.Columns()
@@ -97,7 +97,7 @@ func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 		// check tableData size by sample
 		if iteratorNums == SQL_RESULT_MEMORY_CHECK_SAMPLE {
 			tableDataSizeBySample := size.Of(mapData)
-			tableDataCapacity = (SQL_RESULT_MEMORY_LIMIT / tableDataSizeBySample) * 1000
+			tableDataCapacity = (SQL_RESULT_MEMORY_LIMIT / tableDataSizeBySample) * SQL_RESULT_MEMORY_CHECK_SAMPLE
 		}
 		if iteratorNums > tableDataCapacity {
 			log.Printf("[ERROR] RetrieveToMap result exceeds 200MiB by iteratorNums: %d, size: %d", iteratorNums, size.Of(mapData))
@@ -164,7 +164,7 @@ func RetrieveToMapByDriverRows(rows driver.Rows) ([]map[string]interface{}, erro
 		// check tableData size by sample
 		if iteratorNums == SQL_RESULT_MEMORY_CHECK_SAMPLE {
 			tableDataSizeBySample := size.Of(mapData)
-			tableDataCapacity = (SQL_RESULT_MEMORY_LIMIT / tableDataSizeBySample) * 1000
+			tableDataCapacity = (SQL_RESULT_MEMORY_LIMIT / tableDataSizeBySample) * SQL_RESULT_MEMORY_CHECK_SAMPLE
 		}
 		if iteratorNums > tableDataCapacity {
 			log.Printf("[ERROR] RetrieveToMap result exceeds 200MiB by iteratorNums: %d, size: %d", iteratorNums, size.Of(mapData))

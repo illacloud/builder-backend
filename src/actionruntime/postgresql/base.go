@@ -200,7 +200,7 @@ func RetrieveToMap(rows pgx.Rows) ([]map[string]interface{}, error) {
 		// check tableData size by sample
 		if iteratorNums == common.SQL_RESULT_MEMORY_CHECK_SAMPLE {
 			tableDataSizeBySample := size.Of(tableData)
-			tableDataCapacity = (common.SQL_RESULT_MEMORY_LIMIT / tableDataSizeBySample) * 1000
+			tableDataCapacity = (common.SQL_RESULT_MEMORY_LIMIT / tableDataSizeBySample) * common.SQL_RESULT_MEMORY_CHECK_SAMPLE
 		}
 		if iteratorNums > tableDataCapacity {
 			log.Printf("[ERROR] RetrieveToMap result exceeds 200MiB by iteratorNums: %d, size: %d", iteratorNums, size.Of(tableData))
