@@ -62,7 +62,11 @@ func (controller *Controller) CreateApp(c *gin.Context) {
 	}
 
 	// construct app object
-	newApp := model.NewAppByCreateAppRequest(req.ExportAppName(), teamID, userID)
+	newApp, errInNewApp := model.NewAppByCreateAppRequest(req, teamID, userID)
+	if errInNewApp != nil {
+		controller.FeedbackBadRequest(c, ERROR_FLAG_CAN_NOT_CREATE_APP, "error in create app: "+errInNewApp.Error())
+		return
+	}
 
 	// create app
 	_, errInCreateApp := controller.Storage.AppStorage.Create(newApp)

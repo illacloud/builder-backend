@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/illacloud/builder-backend/src/request"
 )
 
 const APP_EDIT_VERSION = 0           // the editable version app ID always be 0
@@ -31,27 +32,32 @@ const APP_FIELD_NAME = "appName"
 const APP_EDITED_BY_MAX_LENGTH = 4
 
 type App struct {
-	ID              int       `json:"id" 				gorm:"column:id;type:bigserial;primary_key;unique"`
-	UID             uuid.UUID `json:"uid"   		    gorm:"column:uid;type:uuid;not null"`
-	TeamID          int       `json:"teamID" 		    gorm:"column:team_id;type:bigserial"`
-	Name            string    `json:"name" 				gorm:"column:name;type:varchar"`
-	ReleaseVersion  int       `json:"releaseVersion" 	gorm:"column:release_version;type:bigserial"`
-	MainlineVersion int       `json:"mainlineVersion" 	gorm:"column:mainline_version;type:bigserial"`
-	Config          string    `json:"config" 	        gorm:"column:config;type:jsonb"`
-	CreatedAt       time.Time `json:"createdAt" 		gorm:"column:created_at;type:timestamp"`
-	CreatedBy       int       `json:"createdBy" 		gorm:"column:created_by;type:bigserial"`
-	UpdatedAt       time.Time `json:"updatedAt" 		gorm:"column:updated_at;type:timestamp"`
-	UpdatedBy       int       `json:"updatedBy" 		gorm:"column:updated_by;type:bigserial"`
-	EditedBy        string    `json:"editedBy"          gorm:"column:edited_by;type:jsonb"`
+	ID              int       `json:"id" gorm:"column:id;type:bigserial;primary_key;unique"`
+	UID             uuid.UUID `json:"uid" gorm:"column:uid;type:uuid;not null"`
+	TeamID          int       `json:"teamID" gorm:"column:team_id;type:bigserial"`
+	Name            string    `json:"name" gorm:"column:name;type:varchar"`
+	ReleaseVersion  int       `json:"releaseVersion" gorm:"column:release_version;type:bigserial"`
+	MainlineVersion int       `json:"mainlineVersion" gorm:"column:mainline_version;type:bigserial"`
+	Config          string    `json:"config" gorm:"column:config;type:jsonb"`
+	CreatedAt       time.Time `json:"createdAt" gorm:"column:created_at;type:timestamp"`
+	CreatedBy       int       `json:"createdBy" gorm:"column:created_by;type:bigserial"`
+	UpdatedAt       time.Time `json:"updatedAt" gorm:"column:updated_at;type:timestamp"`
+	UpdatedBy       int       `json:"updatedBy" gorm:"column:updated_by;type:bigserial"`
+	EditedBy        string    `json:"editedBy" gorm:"column:edited_by;type:jsonb"`
 }
 
-func NewAppByCreateAppRequest(appName string, teamID int, modifyUserID int) *App {
+func NewAppByCreateAppRequest(req *request.CreateAppRequest, teamID int, modifyUserID int) (*App, error) {
+	appConfig := NewAppConfig()
+	errInSetAppType := appConfig.SetAppTypeByString(req.ExportAppType())
+	if errInSetAppType != nil {
+		return nil, errInSetAppType
+	}
 	app := &App{
 		TeamID:          teamID,
-		Name:            appName,
+		Name:            req.ExportAppName(),
 		ReleaseVersion:  APP_EDIT_VERSION,
 		MainlineVersion: APP_EDIT_VERSION,
-		Config:          NewAppConfig().ExportToJSONString(),
+		Config:          appConfig.ExportToJSONString(),
 		CreatedBy:       modifyUserID,
 		UpdatedBy:       modifyUserID,
 	}
@@ -59,34 +65,18 @@ func NewAppByCreateAppRequest(appName string, teamID int, modifyUserID int) *App
 	app.InitUID()
 	app.InitCreatedAt()
 	app.InitUpdatedAt()
-	return app
-}
-
-func NewAppWithID(appID int, teamID int, modifyUserID int) *App {
-	app := &App{
-		ID:              appID,
-		TeamID:          teamID,
-		Name:            "",
-		ReleaseVersion:  APP_EDIT_VERSION,
-		MainlineVersion: APP_EDIT_VERSION,
-		Config:          NewAppConfig().ExportToJSONString(),
-		CreatedBy:       modifyUserID,
-		UpdatedBy:       modifyUserID,
-	}
-	app.PushEditedBy(NewAppEditedByUserID(modifyUserID))
-	app.InitUID()
-	app.InitCreatedAt()
-	app.InitUpdatedAt()
-	return app
+	return app, nil
 }
 
 func NewAppForDuplicate(targetApp *App, newAppName string, modifyUserID int) *App {
+	appConfig := NewAppConfig()
+	appConfig.SetAppType(targetApp.ExportAppType())
 	newApp := &App{
 		TeamID:          targetApp.ExportTeamID(),
 		Name:            newAppName,
 		ReleaseVersion:  APP_EDIT_VERSION,
 		MainlineVersion: APP_EDIT_VERSION,
-		Config:          NewAppConfig().ExportToJSONString(),
+		Config:          appConfig.ExportToJSONString(),
 		CreatedBy:       modifyUserID,
 		UpdatedBy:       modifyUserID,
 	}
@@ -178,6 +168,11 @@ func (app *App) IsPublishedToMarketplace() bool {
 func (app *App) IsPublishWithAIAgent() bool {
 	ac := app.ExportConfig()
 	return ac.PublishWithAIAgent
+}
+
+func (app *App) ExportAppType() int {
+	ac := app.ExportConfig()
+	return ac.ExportAppType()
 }
 
 func (app *App) SetNotPublishedToMarketplace(userID int) {

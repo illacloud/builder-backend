@@ -7,6 +7,7 @@ type AppConfigForExport struct {
 	PublishedToMarketplace bool                      `json:"publishedToMarketplace"`
 	PublishWithAIAgent     bool                      `json:"publishWithAIAgent"`
 	Cover                  string                    `json:"cover"`
+	AppType                string                    `json:"appType"`
 	Components             []string                  `json:"components"`
 	Actions                []*ActionSummaryForExport `json:"actions"`
 }
@@ -19,6 +20,7 @@ func NewAppConfigForExport(appConfig *AppConfig, treeStates []*TreeState, action
 		PublishedToMarketplace: appConfig.PublishedToMarketplace,
 		PublishWithAIAgent:     appConfig.PublishWithAIAgent,
 		Cover:                  appConfig.Cover,
+		AppType:                appConfig.ExportAppTypeToString(),
 		Components:             ExtractComponentsNameList(treeStates),
 		Actions:                ExportAllActionASActionSummary(actions),
 	}
@@ -32,6 +34,7 @@ func NewAppConfigForExportWithoutComponentsAndActions(appConfig *AppConfig) *App
 		PublishedToMarketplace: appConfig.PublishedToMarketplace,
 		PublishWithAIAgent:     appConfig.PublishWithAIAgent,
 		Cover:                  appConfig.Cover,
+		AppType:                appConfig.ExportAppTypeToString(),
 		Components:             make([]string, 0),
 		Actions:                make([]*ActionSummaryForExport, 0),
 	}
