@@ -67,7 +67,7 @@ func (r *IllaDriveRestAPI) GenerateAccessJWTToken(usage string) (map[string]inte
 	}, nil
 }
 
-func (r *IllaDriveRestAPI) ListFiles(path string, page int, limit int, fileID string, search string, expirationType string, expiry string, hotlinkProtection bool) (map[string]interface{}, error) {
+func (r *IllaDriveRestAPI) ListFiles(path string, page int, limit int, fileID string, search string, sortedBy string, expirationType string, expiry string, hotlinkProtection bool) (map[string]interface{}, error) {
 	// self-host need skip this method.
 	if !r.Config.IsCloudMode() {
 		return nil, nil
@@ -95,6 +95,9 @@ func (r *IllaDriveRestAPI) ListFiles(path string, page int, limit int, fileID st
 	}
 	if search != "" {
 		params += "search=" + search + "&"
+	}
+	if sortedBy != "" {
+		params += "sortedBy=" + sortedBy + "&"
 	}
 
 	// get file list
