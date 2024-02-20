@@ -88,11 +88,11 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 	switch operation {
 	case illadrivesdk.DRIVE_API_ACTION_LIST_FILES:
 		// list files require field "path", "page", "limit", "fileID", "search", "sortedBy", "expirationType", "expiry", "hotlinkProtection"
-		path, page, limit, fileID, search, sortedBy, expirationType, expiry, hotlinkProtection, errInExtractParam := extractListFileOperationParams(actionOptions)
+		path, page, limit, fileID, search, sortedBy, sortedType, expirationType, expiry, hotlinkProtection, errInExtractParam := extractListFileOperationParams(actionOptions)
 		if errInExtractParam != nil {
 			return res, errInExtractParam
 		}
-		ret, errInCallAPI := driveAPI.ListFiles(path, page, limit, fileID, search, sortedBy, expirationType, expiry, hotlinkProtection)
+		ret, errInCallAPI := driveAPI.ListFiles(path, page, limit, fileID, search, sortedBy, sortedType, expirationType, expiry, hotlinkProtection)
 		if errInCallAPI != nil {
 			return res, errInCallAPI
 		}
@@ -195,13 +195,14 @@ func (r *IllaDriveConnector) Run(resourceOptions map[string]interface{}, actionO
 	return res, nil
 }
 
-func extractListFileOperationParams(actionOptions map[string]interface{}) (string, int, int, string, string, string, string, string, bool, error) {
+func extractListFileOperationParams(actionOptions map[string]interface{}) (string, int, int, string, string, string, string, string, string, bool, error) {
 	path := "/root"
 	page := 1
 	limit := 20
-	fileID := ""   // [OPTIONAL], if fileID given will not use "search" field.
-	search := ""   // [OPTIONAL], search for file name contains
-	sortedBy := "" // [OPTIONAL], sort result by field
+	fileID := ""     // [OPTIONAL], if fileID given will not use "search" field.
+	search := ""     // [OPTIONAL], search for file name contains
+	sortedBy := ""   // [OPTIONAL], sort result by field
+	sortedType := "" // [OPTIONAL], sort order
 	expirationType := "persistent"
 	expiry := "300s"
 	hotlinkProtection := true
@@ -210,60 +211,66 @@ func extractListFileOperationParams(actionOptions map[string]interface{}) (strin
 		case "path":
 			valueAsserted, ValueAssertPass := value.(string)
 			if !ValueAssertPass {
-				return "", 0, 0, "", "", "", "", "", false, errors.New("field path assert failed")
+				return "", 0, 0, "", "", "", "", "", "", false, errors.New("field path assert failed")
 			}
 			path = valueAsserted
 		case "page":
 			valueAsserted, ValueAssertPass := value.(float64)
 			if !ValueAssertPass {
-				return "", 0, 0, "", "", "", "", "", false, errors.New("field page assert failed")
+				return "", 0, 0, "", "", "", "", "", "", false, errors.New("field page assert failed")
 			}
 			page = int(valueAsserted)
 		case "limit":
 			valueAsserted, ValueAssertPass := value.(float64)
 			if !ValueAssertPass {
-				return "", 0, 0, "", "", "", "", "", false, errors.New("field limit assert failed")
+				return "", 0, 0, "", "", "", "", "", "", false, errors.New("field limit assert failed")
 			}
 			limit = int(valueAsserted)
 		case "fileID":
 			valueAsserted, ValueAssertPass := value.(string)
 			if !ValueAssertPass {
-				return "", 0, 0, "", "", "", "", "", false, errors.New("field fileID assert failed")
+				return "", 0, 0, "", "", "", "", "", "", false, errors.New("field fileID assert failed")
 			}
 			fileID = valueAsserted
 		case "search":
 			valueAsserted, ValueAssertPass := value.(string)
 			if !ValueAssertPass {
-				return "", 0, 0, "", "", "", "", "", false, errors.New("field search assert failed")
+				return "", 0, 0, "", "", "", "", "", "", false, errors.New("field search assert failed")
 			}
 			search = valueAsserted
 		case "sortedBy":
 			valueAsserted, ValueAssertPass := value.(string)
 			if !ValueAssertPass {
-				return "", 0, 0, "", "", "", "", "", false, errors.New("field search assert failed")
+				return "", 0, 0, "", "", "", "", "", "", false, errors.New("field sortedBy assert failed")
 			}
-			search = valueAsserted
+			sortedBy = valueAsserted
+		case "sortedType":
+			valueAsserted, ValueAssertPass := value.(string)
+			if !ValueAssertPass {
+				return "", 0, 0, "", "", "", "", "", "", false, errors.New("field sortedType assert failed")
+			}
+			sortedType = valueAsserted
 		case "expirationType":
 			valueAsserted, ValueAssertPass := value.(string)
 			if !ValueAssertPass {
-				return "", 0, 0, "", "", "", "", "", false, errors.New("field expirationType assert failed")
+				return "", 0, 0, "", "", "", "", "", "", false, errors.New("field expirationType assert failed")
 			}
 			expirationType = valueAsserted
 		case "expiry":
 			valueAsserted, ValueAssertPass := value.(string)
 			if !ValueAssertPass {
-				return "", 0, 0, "", "", "", "", "", false, errors.New("field expiry assert failed")
+				return "", 0, 0, "", "", "", "", "", "", false, errors.New("field expiry assert failed")
 			}
 			expiry = valueAsserted
 		case "hotlinkProtection":
 			valueAsserted, ValueAssertPass := value.(bool)
 			if !ValueAssertPass {
-				return "", 0, 0, "", "", "", "", "", false, errors.New("field hotlinkProtection assert failed")
+				return "", 0, 0, "", "", "", "", "", "", false, errors.New("field hotlinkProtection assert failed")
 			}
 			hotlinkProtection = valueAsserted
 		}
 	}
-	return path, page, limit, fileID, search, sortedBy, expirationType, expiry, hotlinkProtection, nil
+	return path, page, limit, fileID, search, sortedBy, sortedType, expirationType, expiry, hotlinkProtection, nil
 }
 
 func extractGetUploadAddressOperationParams(actionOptions map[string]interface{}) (bool, string, string, int64, string, error) {
