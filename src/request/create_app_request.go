@@ -1,5 +1,9 @@
 package request
 
+const (
+	APP_DEFAULT_TYPE_STRING = "pc"
+)
+
 type CreateAppRequest struct {
 	Name       string      `json:"appName" validate:"required"`
 	InitScheme interface{} `json:"initScheme"`
@@ -19,5 +23,8 @@ func (req *CreateAppRequest) ExportInitScheme() interface{} {
 }
 
 func (req *CreateAppRequest) ExportAppType() string {
+	if req.AppType == "" {
+		return APP_DEFAULT_TYPE_STRING
+	}
 	return req.AppType
 }
