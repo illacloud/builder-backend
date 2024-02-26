@@ -28,7 +28,7 @@ import (
 )
 
 const DEFAULT_QUERY_AND_EXEC_TIMEOUT = 30 * time.Second
-const SQL_RESULT_MEMORY_LIMIT = 209715200  // 200 * 1024 * 1024 bytes
+const SQL_RESULT_MEMORY_LIMIT = 20971520   // 20 * 1024 * 1024 bytes
 const SQL_RESULT_MEMORY_CHECK_SAMPLE = 100 // check 100 item bytes and calculate max item capacity
 
 func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
@@ -100,8 +100,8 @@ func RetrieveToMap(rows *sql.Rows) ([]map[string]interface{}, error) {
 			tableDataCapacity = (SQL_RESULT_MEMORY_LIMIT / tableDataSizeBySample) * SQL_RESULT_MEMORY_CHECK_SAMPLE
 		}
 		if iteratorNums > tableDataCapacity {
-			log.Printf("[ERROR] RetrieveToMap result exceeds 200MiB by iteratorNums: %d, size: %d", iteratorNums, size.Of(mapData))
-			return nil, errors.New("returned result exceeds 200MiB, please adjust the query limit to reduce the number of results")
+			log.Printf("[ERROR] RetrieveToMap result exceeds 20MiB by iteratorNums: %d, size: %d", iteratorNums, size.Of(mapData))
+			return nil, errors.New("returned result exceeds 20MiB, please adjust the query limit to reduce the number of results")
 		}
 	}
 
@@ -167,8 +167,8 @@ func RetrieveToMapByDriverRows(rows driver.Rows) ([]map[string]interface{}, erro
 			tableDataCapacity = (SQL_RESULT_MEMORY_LIMIT / tableDataSizeBySample) * SQL_RESULT_MEMORY_CHECK_SAMPLE
 		}
 		if iteratorNums > tableDataCapacity {
-			log.Printf("[ERROR] RetrieveToMap result exceeds 200MiB by iteratorNums: %d, size: %d", iteratorNums, size.Of(mapData))
-			return nil, errors.New("returned result exceeds 200MiB, please adjust the query limit to reduce the number of results")
+			log.Printf("[ERROR] RetrieveToMap result exceeds 20MiB by iteratorNums: %d, size: %d", iteratorNums, size.Of(mapData))
+			return nil, errors.New("returned result exceeds 20MiB, please adjust the query limit to reduce the number of results")
 		}
 	}
 
