@@ -35,6 +35,7 @@ var (
 	TYPE_TRIGGER                 = "trigger"
 	TYPE_SERVER_SIDE_TRANSFORMER = "serversidetransformer"
 	TYPE_CONDITION               = "condition"
+	TYPE_WEBHOOK_RESPONSE        = "webhookresponse"
 )
 
 var (
@@ -72,6 +73,7 @@ var (
 	TYPE_TRIGGER_ID                 = 31
 	TYPE_SERVER_SIDE_TRANSFORMER_ID = 32
 	TYPE_CONDITION_ID               = 33
+	TYPE_WEBHOOK_RESPONSE_ID        = 34
 )
 
 var type_array = []string{
@@ -109,6 +111,7 @@ var type_array = []string{
 	31: TYPE_TRIGGER,
 	32: TYPE_SERVER_SIDE_TRANSFORMER,
 	33: TYPE_CONDITION,
+	34: TYPE_WEBHOOK_RESPONSE,
 }
 
 var type_map = map[string]int{
@@ -146,6 +149,7 @@ var type_map = map[string]int{
 	TYPE_TRIGGER:                 TYPE_TRIGGER_ID,
 	TYPE_SERVER_SIDE_TRANSFORMER: TYPE_SERVER_SIDE_TRANSFORMER_ID,
 	TYPE_CONDITION:               TYPE_CONDITION_ID,
+	TYPE_WEBHOOK_RESPONSE:        TYPE_WEBHOOK_RESPONSE_ID,
 }
 
 var virtualResourceList = map[string]bool{
