@@ -20,6 +20,10 @@
 
 `illa-builder-backend` is the backend of [illa-builder](https://github.com/illacloud/illa-builder) which is a tool to help you build your internal tools.
 
+## How to build and start
+
+Please follow the [Makefile](Makefile). For more info please see [DOCUMENTS](./docs/).
+
 ## 💬 Community
 
 Join ILLA Community to share your ideas, suggestions or questions and connect with other users and contributors.
