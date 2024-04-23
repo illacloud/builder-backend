@@ -41,7 +41,7 @@ var ACLs = map[string]bool{
 }
 
 type Action struct {
-	Commands    string                 `validate:"required,oneof=list read download delete batchDelete upload batchUpload"`
+	Commands    string                 `validate:"required,oneof=list getDownloadURL"`
 	CommandArgs map[string]interface{} `validate:"required"`
 }
 
