@@ -30,6 +30,7 @@ import (
 	"github.com/illacloud/builder-backend/src/actionruntime/serversidetransformer"
 	"github.com/illacloud/builder-backend/src/actionruntime/smtp"
 	"github.com/illacloud/builder-backend/src/actionruntime/snowflake"
+	"github.com/illacloud/builder-backend/src/actionruntime/tencentcos"
 	"github.com/illacloud/builder-backend/src/actionruntime/trigger"
 	"github.com/illacloud/builder-backend/src/actionruntime/webhookresponse"
 	"github.com/illacloud/builder-backend/src/utils/resourcelist"
@@ -143,6 +144,9 @@ func (f *ActionFactory) Build() (common.DataConnector, error) {
 	case resourcelist.TYPE_WEBHOOK_RESPONSE_ID:
 		webhookResponseAction := &webhookresponse.WebhookResponseConnector{}
 		return webhookResponseAction, nil
+	case resourcelist.TYPE_TENCENT_COS_ID:
+		tencentCosAction := &tencentcos.Connector{}
+		return tencentCosAction, nil
 	default:
 		return nil, errors.New("invalid ActionType: unsupported type " + resourcelist.GetResourceIDMappedType(f.Type))
 	}

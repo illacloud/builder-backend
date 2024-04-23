@@ -1,6 +1,6 @@
 module github.com/illacloud/builder-backend
 
-go 1.20
+go 1.21
 
 require (
 	cloud.google.com/go/firestore v1.12.0
