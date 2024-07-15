@@ -45,7 +45,7 @@ func (m *Connector) getConnectionWithOptions(resourceOptions map[string]interfac
 	}
 	escapedPassword := url.QueryEscape(m.ResourceOpts.Password)
 	// build base Microsoft SQL Server connection string
-	connString := fmt.Sprintf("sqlserver://%s:%s@%s:%s/%s?connection+timeout=120", m.ResourceOpts.Username, escapedPassword, m.ResourceOpts.Host, m.ResourceOpts.Port, m.ResourceOpts.DatabaseName)
+	connString := fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s&connection+timeout=120", m.ResourceOpts.Username, escapedPassword, m.ResourceOpts.Host, m.ResourceOpts.Port, m.ResourceOpts.DatabaseName)
 
 	// append connection options
 	for _, opt := range m.ResourceOpts.ConnectionOpts {
