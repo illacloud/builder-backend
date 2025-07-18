@@ -1,6 +1,6 @@
 module github.com/illacloud/builder-backend
 
-go 1.20
+go 1.23.0
 
 require (
 	cloud.google.com/go/firestore v1.12.0
@@ -42,7 +42,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	go.mongodb.org/mongo-driver v1.12.1
 	go.uber.org/zap v1.25.0
-	golang.org/x/oauth2 v0.11.0
+	golang.org/x/oauth2 v0.27.0
 	google.golang.org/api v0.138.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
@@ -52,8 +52,7 @@ require (
 
 require (
 	cloud.google.com/go v0.110.6 // indirect
-	cloud.google.com/go/compute v1.23.0 // indirect
-	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	cloud.google.com/go/iam v1.1.1 // indirect
 	cloud.google.com/go/longrunning v0.5.1 // indirect
 	cloud.google.com/go/storage v1.30.1 // indirect
